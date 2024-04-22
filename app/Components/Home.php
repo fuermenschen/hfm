@@ -8,6 +8,6 @@ class Home extends Component
 {
     public function render(): \Illuminate\View\View
     {
-        return view("home");
+        return view("home")->extends("layouts.public");
     }
 }
