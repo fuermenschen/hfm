@@ -1,4 +1,5 @@
 bootstrap
+public
 node_modules
 resources/sass
 storage/framework
