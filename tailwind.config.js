@@ -1,6 +1,7 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 
 module.exports = {
+    presets: [require("./vendor/wireui/wireui/tailwind.config.js")],
     theme: {
         extend: {
             fontFamily: {
@@ -36,6 +37,9 @@ module.exports = {
         "./resources/**/*.php",
         "./resources/**/*.vue",
         "./resources/**/*.twig",
+        "./vendor/wireui/wireui/resources/**/*.blade.php",
+        "./vendor/wireui/wireui/ts/**/*.ts",
+        "./vendor/wireui/wireui/src/View/**/*.php",
     ],
     plugins: [
         require("@tailwindcss/forms"),

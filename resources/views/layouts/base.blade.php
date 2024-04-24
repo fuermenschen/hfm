@@ -19,6 +19,7 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @livewireStyles
     @livewireScripts
+    @wireUiScripts
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">

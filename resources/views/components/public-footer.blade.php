@@ -1,4 +1,4 @@
-<div>
+<div class="my-sm">
     <svg width="100%" height="2" class="stroke-hfm-dark mb-5">
         <line x1="0" y1="0" x2="100%" y2="0" style="stroke-width:2"/>
     </svg>
