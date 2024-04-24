@@ -1,5 +1,9 @@
 <?php
 
+use App\Components\About;
+use App\Components\BecomeAthlete;
+use App\Components\BecomeSponsor;
+use App\Components\EventInformation;
 use App\Components\Home;
 use Illuminate\Support\Facades\Route;
 
@@ -15,3 +19,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get("/", Home::class);
+Route::get("ueber-das-projekt", About::class);
+Route::get("sportlerin-werden", BecomeAthlete::class);
+Route::get("sponsorin-werden", BecomeSponsor::class);
+Route::get("informationen-zum-anlass", EventInformation::class);
