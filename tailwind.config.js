@@ -4,7 +4,16 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ["Inter var", ...defaultTheme.fontFamily.sans],
+                sans: ["darkmode-on", ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                hfm: {
+                    red: "#E81010",
+                    dark: "#1B2E47",
+                    light: "#97C9E6",
+                    white: "colors.slate.100",
+                    black: "colors.slate.900",
+                },
             },
         },
     },

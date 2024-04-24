@@ -1,3 +1,5 @@
 <div>
-    {{-- Care about people's approval and you will be their prisoner. --}}
+    <span class="text-4xl font-bold text-hfm-red">
+        HFM
+    </span>
 </div>
