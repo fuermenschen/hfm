@@ -3,6 +3,8 @@ AuthType Basic
 AuthName hfm
 AuthUserFile /home/rt25ch/.htpasswds/htpasswd.2647c11c-e348-458e-8065-c7c61b31bc6c
 
+AddHandler application/x-httpd-php83 .php
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
