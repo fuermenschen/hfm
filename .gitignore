@@ -21,3 +21,5 @@ Homestead.yaml
 Homestead.json
 /.vagrant
 .phpunit.result.cache
+/git_token.txt
+/.env.remote
