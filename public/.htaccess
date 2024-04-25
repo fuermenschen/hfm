@@ -1,3 +1,8 @@
+Require valid-user
+AuthType Basic
+AuthName hfm_dev
+AuthUserFile /home/rt25ch/.htpasswds/htpasswd.6436cd7d-e6d4-4e5f-acbf-7a4bf7048df6
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -19,3 +24,6 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+#@__HCP_END__@#
+# Anything after the comment above is left alone
