@@ -19,7 +19,16 @@ class AthleteFactory extends Factory
         return [
             "first_name" => fake()->firstName(),
             "last_name" => fake()->lastName(),
-            "date_of_birth" => fake()->date(),
+            "address" => fake()->streetAddress(),
+            "zip_code" => fake()->postcode(),
+            "city" => fake()->city(),
+            "phone_number" => fake()->phoneNumber(),
+            "email" => fake()->email(),
+            "type_of_sport" => "running",
+            "age" => fake()->numberBetween(18, 50),
+            "sponsoring_token" => fake()->numberBetween(100000000, 999999999),
+            "email_verified_at" => null,
+            "comment" => null,
         ];
     }
 }

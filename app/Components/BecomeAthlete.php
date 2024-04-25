@@ -17,6 +17,11 @@ class BecomeAthlete extends Component
         $this->redirect("/", navigate: true);
     }
 
+    public function mount()
+    {
+        // $this->form->types_of_sport = TypeOfSport::all()->pluck("name", "id")->all();
+    }
+
     public function render(): View
     {
         return view("pages.become-athlete")->extends("layouts.public");

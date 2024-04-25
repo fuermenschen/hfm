@@ -39,6 +39,7 @@
     <!-- Mobile menu, show/hide based on menu open state. -->
     <div
         x-show="open"
+        wire:transition.opacity.duration.300ms
         class="fixed inset-0 z-10"
         role="dialog"
         aria-modal="true">

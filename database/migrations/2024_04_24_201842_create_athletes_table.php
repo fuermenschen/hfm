@@ -14,7 +14,16 @@ return new class extends Migration {
             $table->id();
             $table->string("first_name");
             $table->string("last_name");
-            $table->date("date_of_birth");
+            $table->string("address");
+            $table->unsignedInteger("zip_code");
+            $table->string("city");
+            $table->string("phone_number");
+            $table->string("email");
+            $table->string("type_of_sport");
+            $table->unsignedInteger("age");
+            $table->unsignedInteger("sponsoring_token");
+            $table->timestamp("email_verified_at")->nullable();
+            $table->text("comment")->nullable();
             $table->timestamps();
         });
     }

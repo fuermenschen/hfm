@@ -1,5 +1,7 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 
+const colors = require("tailwindcss/colors");
+
 module.exports = {
     presets: [require("./vendor/wireui/wireui/tailwind.config.js")],
     theme: {
@@ -15,10 +17,13 @@ module.exports = {
                     white: "#f8fafc",
                     black: "#020617",
                 },
+                primary: colors.slate,
+                // TODO: Add Colors to wireui
             },
             spacing: {
                 xs: "0.75rem",
                 sm: "1.5rem",
+                md: "2.25rem",
             },
         },
     },
@@ -41,8 +46,5 @@ module.exports = {
         "./vendor/wireui/wireui/ts/**/*.ts",
         "./vendor/wireui/wireui/src/View/**/*.php",
     ],
-    plugins: [
-        require("@tailwindcss/forms"),
-        require("@tailwindcss/typography"),
-    ],
+    plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
 };
