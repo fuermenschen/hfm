@@ -5,7 +5,7 @@
       <paths name="Hostpoint_RT25">
         <serverdata>
           <mappings>
-            <mapping deploy="/www/hfm.rt25.ch" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/www/hfm" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
