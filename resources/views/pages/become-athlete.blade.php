@@ -19,7 +19,7 @@
     <form wire:submit="save"
           class="flex flex-col space-y-sm sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-sm mt-sm">
 
-        <x-input right-icon="user" label="Name" placeholder="Francesca" wire:model.blur="form.first_name"/>
+        <x-input right-icon="user" label="Vorname" placeholder="Francesca" wire:model.blur="form.first_name"/>
 
         <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="form.last_name"/>
 
@@ -56,10 +56,13 @@
                     placeholder="Ich freu mich druf. Bin zwar nöd mega sportlich, aber das isch ja egal. Hauptsach es chunnt e gueti Summe zäme!"
                     wire:model.live.debounce="form.comment" hint="{{ strlen($form->comment) }}/2000"/>
 
-        <span class="sm:col-span-2">
-            <x-toggle
-                label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden."
-                wire:model.boolean="form.privacy"/>
+        <span class="sm:col-span-2 flex flex-row space-x-sm items-center">
+            <x-toggle wire:model.boolean="form.privacy"/>
+            <span class="text-sm">
+                Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.
+                <button type="button" wire:click="showPrivacyInfo"
+                        class=" text-hfm-red">Was heisst das?</button>
+            </span>
         </span>
 
         <span class="sm:col-span-2">

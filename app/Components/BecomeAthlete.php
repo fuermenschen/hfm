@@ -28,6 +28,16 @@ class BecomeAthlete extends Component
         ]);
     }
 
+    public function showPrivacyInfo(): void
+    {
+        $this->dialog([
+            "title" => "Datenschutz",
+            "description" =>
+                "Wir benutzen deine Daten nur für Zwecke, die für die Organisation zwingend sind. Nach dem Anlass werden deine Daten gelöscht. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.",
+            "icon" => "info",
+        ]);
+    }
+
     public function mount()
     {
         $this->form->sport_types = SportType::all();
