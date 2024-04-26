@@ -2,12 +2,11 @@
 
 namespace App\Forms;
 
-use App\Models\Athlete;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\Sponsor;
 use Livewire\Attributes\Validate;
 use Livewire\Form;
 
-class AthleteForm extends Form
+class SponsorForm extends Form
 {
     // Vorname
     #[Validate("required", message: "Wir benötigen deinen Vornamen.")]
@@ -50,45 +49,67 @@ class AthleteForm extends Form
     #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
     public ?string $email = null;
 
-    // Sportart
-    public ?Collection $sport_types = null;
+    // Athlet
+    public ?array $athletes = null;
+    public string $currentAthlete = "";
 
-    #[Validate("required", message: "Wir benötigen deine Sportart.")]
-    #[Validate("exists:sport_types,id", message: "Die Sportart existiert nicht.")]
-    public int $sport_type_id = 0;
+    #[Validate("required", message: "Bitte wähle jemanden aus.")]
+    #[Validate("min:0", message: "Sportler:in existiert nicht.")]
+    #[Validate("exists:athletes,id", message: "Sportler:in existiert nicht.")]
+    public ?int $athlete_id = 0;
 
-    // Alter
-    #[Validate("required", message: "Wir benötigen dein Alter.")]
-    #[Validate("integer", message: "Das Alter muss eine Zahl sein.")]
-    #[Validate("min:5", message: "Du musst mindestens 5 Jahre alt sein.")]
-    public ?int $age;
+    // Partners
+    public $partners = null;
+    public string $currentPartner = "";
 
-    // Partner
-    public ?Collection $partners = null;
+    // Summe pro Runde
+    #[Validate("required", message: "Bitte gib einen Betrag ein.")]
+    #[Validate("numeric", message: "Der Betrag muss eine Zahl sein.")]
+    #[Validate("min:0.05", message: "Der Betrag muss mindestens Fr. 0.05 sein.")]
+    public ?float $amount_per_round = null;
 
-    #[Validate("required", message: "Bitte wähle eine:n Partner:in.")]
-    #[Validate("exists:partners,id", message: "Partner:in existiert nicht.")]
-    public int $partner_id = 0;
+    // Maximalbetrag
+    #[Validate("nullable")]
+    #[Validate("numeric", message: "Der Betrag muss eine Zahl sein.")]
+    #[Validate("min:1.00", message: "Der Betrag muss mindestens Fr. 1.- sein.")]
+    public ?float $amount_max = null;
+
+    // Minimalbetrag
+    #[Validate("nullable")]
+    #[Validate("numeric", message: "Der Betrag muss eine Zahl sein.")]
+    #[Validate("min:0.05", message: "Der Betrag muss mindestens Fr. 0.05 sein.")]
+    public ?float $amount_min = null;
 
     // Kommentar
     #[Validate("nullable")]
     #[Validate("max:2000", message: "Der Kommentar darf nicht länger als 2000 Zeichen sein.")]
     public ?string $comment = null;
 
-    // Sponsoring Token
-    public ?int $sponsoring_token = null;
-
     // privacy checkbox
     #[Validate("accepted", message: "Das muss akzeptiert werden.")]
     public bool $privacy = false;
+
+    public function updateNames(): void
+    {
+        // if the athlete_id is set, get the athlete name
+        if ($this->athlete_id) {
+            $this->currentAthlete =
+                $this->athletes[$this->athlete_id - 1]["first_name"] .
+                " " .
+                $this->athletes[$this->athlete_id - 1]["last_name"];
+        }
+
+        // if the athlete_id is set, get the partner of the athlete
+        if ($this->athlete_id) {
+            $this->currentPartner = $this->partners[$this->athletes[$this->athlete_id - 1]["partner_id"] - 1]["name"];
+        }
+    }
 
     public function save(): void
     {
         $this->validate();
 
-        $this->sponsoring_token = $this->generateSponsoringToken();
-
-        Athlete::create($this->all());
+        Sponsor::create($this->all());
 
         $this->reset([
             "first_name",
@@ -98,26 +119,12 @@ class AthleteForm extends Form
             "city",
             "phone_number",
             "email",
-            "sport_type",
-            "age",
+            "athlete_id",
+            "amount_per_round",
+            "amount_max",
+            "amount_min",
             "comment",
             "privacy",
         ]);
-    }
-
-    private function generateSponsoringToken(): int
-    {
-        $token = mt_rand(100000000, 999999999);
-
-        if ($this->tokenExists($token)) {
-            return $this->generateSponsoringToken();
-        }
-
-        return $token;
-    }
-
-    private function tokenExists(int $token): bool
-    {
-        return Athlete::where("sponsoring_token", $token)->exists();
     }
 }

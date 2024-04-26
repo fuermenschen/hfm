@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Forms\AthleteForm;
+use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -41,6 +42,8 @@ class BecomeAthlete extends Component
     public function mount()
     {
         $this->form->sport_types = SportType::all();
+
+        $this->form->partners = Partner::all();
     }
 
     public function render(): View

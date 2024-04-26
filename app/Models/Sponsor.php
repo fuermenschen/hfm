@@ -5,19 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Athlete extends Model
+class Sponsor extends Model
 {
     use HasFactory;
-
-    public function sportType()
-    {
-        return $this->belongsTo(SportType::class);
-    }
-
-    public function partner()
-    {
-        return $this->belongsTo(Partner::class);
-    }
 
     protected $fillable = [
         "first_name",
@@ -27,9 +17,11 @@ class Athlete extends Model
         "city",
         "phone_number",
         "email",
-        "sport_type_id",
-        "partner_id",
-        "age",
-        "sponsoring_token",
+        "athlete_id",
+        "amount_per_round",
+        "amount_max",
+        "amount_min",
+        "email_verified_at",
+        "comment",
     ];
 }
