@@ -26,6 +26,7 @@
 </head>
 
 <body class="h-full w-full bg-hfm-white text-hfm-dark">
+<x-dialog/>
 @yield('body')
 </body>
 </html>

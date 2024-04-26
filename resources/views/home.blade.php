@@ -1,4 +1,13 @@
-<x-logo-and-text class="mx-auto w-[600px] max-w-full p-10"/>
-Es haben sich schon {{ $athleteCount }} Sportler:innen registriert.sss
-::
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci alias amet animi aperiam aspernatur atque autem, beatae commodi consequatur corporis cumque delectus doloremque doloribus ducimus ea eius eligendi eos error est eum ex explicabo facere fugiat fugit harum id illum impedit in incidunt ipsa ipsam ipsum iure laborum laudantium magnam magni maiores maxime minima minus molestias mollitia natus nemo nesciunt nihil nisi nobis non nostrum numquam obcaecati odio officiis omnis optio pariatur perferendis perspiciatis placeat possimus praesentium provident quae quam quas qui quia quibusdam quisquam quo ratione recusandae rem repellendus repudiandae rerum saepe sapiente sequi similique sit soluta sunt suscipit tempora tenetur totam ullam unde vel veniam veritatis voluptas voluptates voluptatum.
+<div>
+    <x-logo-and-text class="mx-auto w-[600px] max-w-full p-10"/>
+    Es haben sich schon {{ $athleteCount }} Sportler:innen registriert. Mache auch du mit bei der wohltätigen Aktion!
+
+    <div class="sm:grid sm:grid-cols-2 max-w-full sm:gap-md mt-md">
+        <x-button icon="information-circle" label="Erfahre mehr" href="/ueber-das-projekt" wire:navigate red xl/>
+        <x-button icon="fire" label="Jetzt Sportler:in werden" href="/sportlerin-werden" wire:navigate
+                  red xl/>
+        <x-button icon="heart" label="Jetzt Spender:in werden" href="/spenderin-werden" wire:navigate
+                  red xl/>
+        <x-button icon="flag" label="Details zum Anlass" href="/informationen-zum-anlass" wire:navigate red xl/>
+    </div>
+</div>

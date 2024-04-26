@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string("city");
             $table->string("phone_number");
             $table->string("email");
-            $table->string("type_of_sport");
+            $table->string("sport_type");
             $table->unsignedInteger("age");
             $table->unsignedInteger("sponsoring_token");
             $table->timestamp("email_verified_at")->nullable();

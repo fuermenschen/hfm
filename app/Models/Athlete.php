@@ -9,6 +9,11 @@ class Athlete extends Model
 {
     use HasFactory;
 
+    public function sportType()
+    {
+        return $this->belongsTo(SportType::class);
+    }
+
     protected $fillable = [
         "first_name",
         "last_name",
@@ -17,7 +22,7 @@ class Athlete extends Model
         "city",
         "phone_number",
         "email",
-        "type_of_sport",
+        "sport_type",
         "age",
         "sponsoring_token",
     ];

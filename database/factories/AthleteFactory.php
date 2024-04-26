@@ -24,7 +24,7 @@ class AthleteFactory extends Factory
             "city" => fake()->city(),
             "phone_number" => fake()->phoneNumber(),
             "email" => fake()->email(),
-            "type_of_sport" => "running",
+            "sport_type" => fake()->randomElement([1, 2, 3, 4]),
             "age" => fake()->numberBetween(18, 50),
             "sponsoring_token" => fake()->numberBetween(100000000, 999999999),
             "email_verified_at" => null,
