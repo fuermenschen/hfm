@@ -25,3 +25,4 @@ Homestead.json
 /.env.remote
 
 .idea
+.DS_Store
