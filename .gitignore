@@ -23,3 +23,5 @@ Homestead.json
 .phpunit.result.cache
 /git_token.txt
 /.env.remote
+
+.idea
