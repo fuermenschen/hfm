@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="SshConfigs">
-    <configs>
-      <sshConfig authType="PASSWORD" host="sl40.web.hostpoint.ch" id="b7d94e6f-17c6-4ae8-93f0-39b77ddff621" port="22" nameFormat="DESCRIPTIVE" username="rt25ch" useOpenSSHConfig="true" />
-    </configs>
-  </component>
-</project>
