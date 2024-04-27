@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->unsignedBigInteger("sport_type_id");
             $table->unsignedBigInteger("partner_id");
             $table->unsignedInteger("age");
-            $table->unsignedInteger("sponsoring_token");
+            $table->unsignedInteger("donation_token");
             $table->timestamp("email_verified_at")->nullable();
             $table->text("comment")->nullable();
             $table->timestamps();

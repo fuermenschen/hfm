@@ -3,13 +3,13 @@
 namespace App\Components;
 
 use App\Models\Athlete;
+use App\Models\Donator;
 use App\Models\Partner;
-use App\Models\Sponsor;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use WireUi\Traits\Actions;
 
-class BecomeSponsorForm extends Component
+class BecomeDonatorForm extends Component
 {
     use Actions;
 
@@ -114,7 +114,7 @@ class BecomeSponsorForm extends Component
     {
         $this->validate();
 
-        Sponsor::create($this->all());
+        Donator::create($this->all());
 
         $this->reset([
             "first_name",
@@ -144,7 +144,7 @@ class BecomeSponsorForm extends Component
 
     public function render()
     {
-        return view("forms.become-sponsor-form");
+        return view("forms.become-donator-form");
     }
 
     public function showPrivacyInfo(): void
@@ -190,7 +190,7 @@ class BecomeSponsorForm extends Component
         // fetch all athletes
         $this->athletes = Athlete::all()
             ->sortBy("first_name")
-            ->select(["id", "first_name", "last_name", "sponsoring_token", "partner_id"])
+            ->select(["id", "first_name", "last_name", "donation_token", "partner_id"])
             ->toArray();
 
         // change all last names to the first letter
@@ -198,14 +198,14 @@ class BecomeSponsorForm extends Component
             $this->athletes[$key]["last_name"] = substr($athlete["last_name"], 0, 1) . ".";
         }
 
-        // change the sponsoring token to a string: ######### --> "###-###-###"
+        // change the donation token to a string: ######### --> "###-###-###"
         foreach ($this->athletes as $key => $athlete) {
-            $this->athletes[$key]["sponsoring_token"] =
-                substr($athlete["sponsoring_token"], 0, 3) .
+            $this->athletes[$key]["donation_token"] =
+                substr($athlete["donation_token"], 0, 3) .
                 "-" .
-                substr($athlete["sponsoring_token"], 3, 3) .
+                substr($athlete["donation_token"], 3, 3) .
                 "-" .
-                substr($athlete["sponsoring_token"], 6, 3);
+                substr($athlete["donation_token"], 6, 3);
         }
 
         // fetch all partners

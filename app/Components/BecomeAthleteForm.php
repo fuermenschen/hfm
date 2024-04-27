@@ -81,8 +81,8 @@ class BecomeAthleteForm extends Component
     #[Validate("max:2000", message: "Der Kommentar darf nicht länger als 2000 Zeichen sein.")]
     public ?string $comment = null;
 
-    // Sponsoring Token
-    public ?int $sponsoring_token = null;
+    // Donation Token
+    public ?int $donation_token = null;
 
     // privacy checkbox
     #[Validate("accepted", message: "Das muss akzeptiert werden.")]
@@ -92,7 +92,7 @@ class BecomeAthleteForm extends Component
     {
         $this->validate();
 
-        $this->sponsoring_token = $this->generateSponsoringToken();
+        $this->donation_token = $this->generateDonationToken();
 
         Athlete::create($this->all());
 
@@ -108,7 +108,7 @@ class BecomeAthleteForm extends Component
             "age",
             "partner_id",
             "comment",
-            "sponsoring_token",
+            "donation_token",
             "privacy",
         ]);
 
@@ -122,12 +122,12 @@ class BecomeAthleteForm extends Component
         ]);
     }
 
-    private function generateSponsoringToken(): int
+    private function generateDonationToken(): int
     {
         $token = mt_rand(100000000, 999999999);
 
         if ($this->tokenExists($token)) {
-            return $this->generateSponsoringToken();
+            return $this->generateDonationToken();
         }
 
         return $token;
@@ -135,7 +135,7 @@ class BecomeAthleteForm extends Component
 
     private function tokenExists(int $token): bool
     {
-        return Athlete::where("sponsoring_token", $token)->exists();
+        return Athlete::where("donation_token", $token)->exists();
     }
 
     public function showPrivacyInfo(): void

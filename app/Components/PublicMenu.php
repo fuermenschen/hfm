@@ -25,8 +25,8 @@ class PublicMenu extends Component
             "active" => false,
         ],
         [
-            "name" => "Sponsor:in werden",
-            "route" => "sponsorin-werden",
+            "name" => "Spender:in werden",
+            "route" => "spenderin-werden",
             "active" => false,
         ],
         [

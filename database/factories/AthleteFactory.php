@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Athlete;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Athlete>
+ * @extends Factory<Athlete>
  */
 class AthleteFactory extends Factory
 {
@@ -27,7 +28,7 @@ class AthleteFactory extends Factory
             "sport_type_id" => fake()->numberBetween(1, 4),
             "partner_id" => fake()->numberBetween(1, 4),
             "age" => fake()->numberBetween(18, 50),
-            "sponsoring_token" => fake()->numberBetween(100000000, 999999999),
+            "donation_token" => fake()->numberBetween(100000000, 999999999),
             "email_verified_at" => null,
             "comment" => null,
         ];

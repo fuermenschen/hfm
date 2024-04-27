@@ -20,7 +20,7 @@ Route::view("/", "home", [
 ]);
 Route::view("ueber-das-projekt", "pages.about");
 Route::view("sportlerin-werden", "pages.become-athlete");
-Route::view("sponsorin-werden", "pages.become-sponsor");
+Route::view("spenderin-werden", "pages.become-donator");
 Route::view("informationen-zum-anlass", "pages.event-information");
 
 // Footer Menu

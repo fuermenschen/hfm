@@ -3,7 +3,7 @@
 @section('content')
     <div>
         @component('components.page-title')
-            Sponsor:in werden
+            Spender:in werden
         @endcomponent
         Wir laden dich herzlich ein, Teil von "Höhenmeter für Menschen" zu werden. Du kannst deine gewünschte
         Sportler:in mit einem Geldbetrag pro Runde unterstützen. Die Sportlerin kann zwischen drei Benefizpartnern
@@ -17,9 +17,9 @@
         <x-page-subtitle>
             Anmeldeformular
         </x-page-subtitle>
-        Es freut uns, dass du Sponsor:in werden möchtest. Indem du das Formular ausfüllst, hilfst du den Sportler:innen,
+        Es freut uns, dass du Spender:in werden möchtest. Indem du das Formular ausfüllst, hilfst du den Sportler:innen,
         Spenden für unsere Benefizpartner:innen zu sammeln.
 
-        @livewire('become-sponsor-form')
+        @livewire('become-donator-form')
     </div>
 @endsection

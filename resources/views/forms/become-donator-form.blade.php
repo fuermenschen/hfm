@@ -31,7 +31,7 @@
                 <option disabled value="0">Bitte wählen</option>
                 @foreach ($athletes as $athlete)
                     <option value="{{ $athlete['id'] }}">{{ $athlete['first_name'] }} {{ $athlete['last_name'] }}
-                        ({{ $athlete['sponsoring_token'] }})
+                        ({{ $athlete['donation_token'] }})
                     </option>
                 @endforeach
             </x-native-select>

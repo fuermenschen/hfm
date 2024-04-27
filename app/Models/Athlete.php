@@ -9,16 +9,6 @@ class Athlete extends Model
 {
     use HasFactory;
 
-    public function sportType()
-    {
-        return $this->belongsTo(SportType::class);
-    }
-
-    public function partner()
-    {
-        return $this->belongsTo(Partner::class);
-    }
-
     protected $fillable = [
         "first_name",
         "last_name",
@@ -30,6 +20,16 @@ class Athlete extends Model
         "sport_type_id",
         "partner_id",
         "age",
-        "sponsoring_token",
+        "donation_token",
     ];
+
+    public function sportType()
+    {
+        return $this->belongsTo(SportType::class);
+    }
+
+    public function partner()
+    {
+        return $this->belongsTo(Partner::class);
+    }
 }
