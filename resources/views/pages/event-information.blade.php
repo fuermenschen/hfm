@@ -9,12 +9,18 @@
 
 Brühlgut Stiftung, Brühlbergstrasse 6, 8400 Winterthur
 
+<!-- TODO Simon: Google Maps embedden -->
+
     <x-page-subtitle>
         Ablauf
     </x-page-subtitle>
 
 Der Sponsorenlauf findet am Samstag, den 21. September 2024, in Winterthur statt. Der Anlass dauert von 13:00 - 18:00. Während dieser Zeit können die Teilnehmer den Rundkurs so oft wie möglich zurücklegen. Der Rundkurs liegt im Brühlberg Quartier und die Brühlgut Stiftung dient als Start/Ziel und Informationsstand. 
 
+    <x-page-subtitle>
+        Strecke
+    </x-page-subtitle>
+Die Strecke befindet sich am Brühlberg in Winterthur. <a href="https://drive.google.com/file/d/1-K43Ouj7fAi023aZnDZl8TKH4g8CQO-Y/view">Karte</a>
 
     <x-page-subtitle>
         Anreise
