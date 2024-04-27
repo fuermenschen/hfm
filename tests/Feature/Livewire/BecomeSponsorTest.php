@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Components\BecomeSponsor;
+use App\Components\BecomeSponsorForm;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Livewire\Livewire;
@@ -13,7 +13,7 @@ class BecomeSponsorTest extends TestCase
     /** @test */
     public function renders_successfully()
     {
-        Livewire::test(BecomeSponsor::class)
+        Livewire::test(BecomeSponsorForm::class)
             ->assertStatus(200);
     }
 }

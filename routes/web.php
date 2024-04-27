@@ -1,14 +1,6 @@
 <?php
 
-use App\Components\About;
-use App\Components\BecomeAthlete;
-use App\Components\BecomeSponsor;
-use App\Components\Contact;
-use App\Components\EventInformation;
-use App\Components\FAQ;
-use App\Components\Home;
-use App\Components\Impressum;
-use App\Components\Privacy;
+use App\Models\Athlete;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,13 +14,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get("/", Home::class);
-Route::get("ueber-das-projekt", About::class);
-Route::get("sportlerin-werden", BecomeAthlete::class);
-Route::get("sponsorin-werden", BecomeSponsor::class);
-Route::get("informationen-zum-anlass", EventInformation::class);
+// Main Menu
+Route::view("/", "home", [
+    'athleteCount' => Athlete::count(),
+]);
+Route::view("ueber-das-projekt", "pages.about");
+Route::view("sportlerin-werden", "pages.become-athlete");
+Route::view("sponsorin-werden", "pages.become-sponsor");
+Route::view("informationen-zum-anlass", "pages.event-information");
 
-Route::get("faq", FAQ::class);
-Route::get("kontakt", Contact::class);
-Route::get("impressum", Impressum::class);
-Route::get("datenschutz", Privacy::class);
+// Footer Menu
+Route::view("faq", "pages.f-a-q");
+Route::view("kontakt", "pages.contact");
+Route::view("impressum", "pages.impressum");
+Route::view("datenschutz", "pages.privacy");

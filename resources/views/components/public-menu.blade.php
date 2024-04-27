@@ -2,7 +2,7 @@
     <nav class="mx-auto flex items-baseline justify-between p-sm" aria-label="Global">
         <a href="/" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
-            <x-logo class="h-12 -mb-1.5"/>
+            <x-logo class="h-10 -mb-1.5"/>
         </a>
         <div class=" flex lg:hidden items">
             <button
@@ -24,7 +24,7 @@
                 <a
                     href="{{ $item['route'] }}"
                     wire:key="{{ $item['name'] }}"
-                    wire:navigate
+                    wire:navigate.hover
                     @class([
                         "text-sm leading-6 grow hover:text-hfm-light",
                         "text-hfm-dark font-normal" => !$item['active'],
@@ -50,7 +50,7 @@
             <div class="flex items-center justify-between">
                 <a wire:navigate href="/" class="-m-1.5 p-1.5">
                     <span class="sr-only">Höhenmeter für Menschen</span>
-                    <x-logo class="h-12"
+                    <x-logo class="h-10"
                             alt=""/>
                 </a>
                 <button
@@ -72,7 +72,7 @@
                             <a
                                 href="{{ $item['route'] }}"
                                 wire:key="{{ $item['name'] }}"
-                                wire:navigate
+                                wire:navigate.hover
                                 @class([
                                     "-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:bg-gray-50 hover:text-hfm-light",
                                     "text-hfm-red" => $item['active'],

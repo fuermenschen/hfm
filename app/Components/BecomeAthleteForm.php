@@ -1,14 +1,20 @@
 <?php
 
-namespace App\Forms;
+namespace App\Components;
 
 use App\Models\Athlete;
+use App\Models\Partner;
+use App\Models\SportType;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\View\View;
 use Livewire\Attributes\Validate;
-use Livewire\Form;
+use Livewire\Component;
+use WireUi\Traits\Actions;
 
-class AthleteForm extends Form
+class BecomeAthleteForm extends Component
 {
+    use Actions;
+
     // Vorname
     #[Validate("required", message: "Wir benötigen deinen Vornamen.")]
     #[Validate("string", message: "Der Vorname muss ein Text sein.")]
@@ -98,10 +104,21 @@ class AthleteForm extends Form
             "city",
             "phone_number",
             "email",
-            "sport_type",
+            "sport_type_id",
             "age",
+            "partner_id",
             "comment",
+            "sponsoring_token",
             "privacy",
+        ]);
+
+        $this->dialog([
+            "title" => "Erfolgreich registriert",
+            "description" => "Vielen Dank für deine Anmeldung. Wir melden uns bald bei dir.",
+            "icon" => "success",
+            "onClose" => [
+                "method" => "redirectHelper",
+            ],
         ]);
     }
 
@@ -119,5 +136,32 @@ class AthleteForm extends Form
     private function tokenExists(int $token): bool
     {
         return Athlete::where("sponsoring_token", $token)->exists();
+    }
+
+    public function showPrivacyInfo(): void
+    {
+        $this->dialog([
+            "title" => "Datenschutz",
+            "description" =>
+                "Wir benutzen deine Daten nur für Zwecke, die für die Organisation zwingend sind. Nach dem Anlass werden deine Daten gelöscht. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.",
+            "icon" => "info",
+        ]);
+    }
+
+    public function mount()
+    {
+        $this->sport_types = SportType::all();
+
+        $this->partners = Partner::all();
+    }
+
+    public function render(): View
+    {
+        return view("forms.become-athlete-form");
+    }
+
+    public function redirectHelper(): void
+    {
+        $this->redirect("/", navigate: true);
     }
 }

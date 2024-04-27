@@ -1,3 +1,5 @@
+@extends('layouts.public')
+@section('content')
 <div>
     @component('components.page-title')
         Über das Projekt
@@ -22,3 +24,5 @@
     Wir vom Round Table Winterthur arbeiten alle ehrenamtlich am Projekt Höhenmeter für Menschen. Das bedeutet, dass keiner von uns für seine Arbeit bezahlt wird und sämtliche Ressourcen und Spenden direkt denjenigen zugutekommen, die sie am dringendsten benötigen. Dadurch stellen wir sicher, dass 100% der von unseren großzügigen Sponsoren gesammelten Gelder unmittelbar unseren Benefizpartnern, der Brühlgut Stiftung Schweiz, Kinderseele Schweiz und der Dargebotenen Hand (Tel 143), zugutekommen. Ihre Spenden machen einen direkten und bedeutsamen Unterschied im Leben derjenigen, die Unterstützung brauchen.
 
 </div>
+
+@endsection

@@ -1,5 +1,10 @@
+@extends('layouts.public')
+
+@section('content')
 <div>
-    <x-logo-and-text class="mx-auto w-[600px] max-w-full p-10"/>
+    @component('components.page-title')
+        Höhenmeter für Menschen
+    @endcomponent
     Es haben sich schon {{ $athleteCount }} Sportler:innen registriert. Mache auch du mit bei der wohltätigen Aktion!
 
     <div class="flex flex-col space-y-sm sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-md mt-md">
@@ -11,3 +16,5 @@
         <x-button icon="flag" label="Details zum Anlass" href="/informationen-zum-anlass" wire:navigate red xl/>
     </div>
 </div>
+
+@endsection

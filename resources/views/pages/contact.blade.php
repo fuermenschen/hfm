@@ -1,4 +1,8 @@
-@component('components.page-title')
-    Kontakt
-@endcomponent
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci alias amet animi aperiam aspernatur atque autem, beatae commodi consequatur corporis cumque delectus doloremque doloribus ducimus ea eius eligendi eos error est eum ex explicabo facere fugiat fugit harum id illum impedit in incidunt ipsa ipsam ipsum iure laborum laudantium magnam magni maiores maxime minima minus molestias mollitia natus nemo nesciunt nihil nisi nobis non nostrum numquam obcaecati odio officiis omnis optio pariatur perferendis perspiciatis placeat possimus praesentium provident quae quam quas qui quia quibusdam quisquam quo ratione recusandae rem repellendus repudiandae rerum saepe sapiente sequi similique sit soluta sunt suscipit tempora tenetur totam ullam unde vel veniam veritatis voluptas voluptates voluptatum.
+@extends('layouts.public')
+
+@section('content')
+    @component('components.page-title')
+        Kontakt
+    @endcomponent
+    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci alias amet animi aperiam aspernatur atque autem, beatae commodi consequatur corporis cumque delectus doloremque doloribus ducimus ea eius eligendi eos error est eum ex explicabo facere fugiat fugit harum id illum impedit in incidunt ipsa ipsam ipsum iure laborum laudantium magnam magni maiores maxime minima minus molestias mollitia natus nemo nesciunt nihil nisi nobis non nostrum numquam obcaecati odio officiis omnis optio pariatur perferendis perspiciatis placeat possimus praesentium provident quae quam quas qui quia quibusdam quisquam quo ratione recusandae rem repellendus repudiandae rerum saepe sapiente sequi similique sit soluta sunt suscipit tempora tenetur totam ullam unde vel veniam veritatis voluptas voluptates voluptatum.
+@endsection
