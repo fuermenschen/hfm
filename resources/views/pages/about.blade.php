@@ -9,13 +9,13 @@
 
     <x-page-subtitle>Unterstützte Benefizpartner:innen</x-page-subtitle>
 
-    <p>
+    <p class="mb-xs">
     Die <strong><a href="https://www.brühlgut.ch">Brühlgut Stiftung Schweiz</a></strong> engagiert sich für Menschen mit einer geistigen Behinderung und bietet ihnen ein Zuhause sowie unterstützende Programme, um ihre Lebensqualität zu verbessern. Mit einem ganzheitlichen Ansatz fördert die Stiftung die individuelle Entwicklung und Integration dieser Menschen in die Gesellschaft. Durch unsere Unterstützung tragen wir dazu bei, dass die Brühlgut Stiftung weiterhin ihre wichtige Arbeit fortsetzen und noch mehr Menschen helfen kann.
     </p>
-    <p>
+    <p class="mb-xs">
     <strong><a href="https://www.kinderseele.ch">Kinderseele Schweiz</a></strong> setzt sich für das psychische Wohlbefinden von Kindern und Jugendlichen in der Schweiz ein. Die Organisation bietet Beratung, Unterstützung und Therapien für junge Menschen mit psychischen Herausforderungen sowie für ihre Familien an. Durch unsere Unterstützung helfen wir Kinderseele Schweiz, noch mehr Kindern und Jugendlichen in schwierigen Lebenssituationen Unterstützung und Hoffnung zu bieten.
     </p>
-    <p>
+    <p class="mb-xs">
     Die <strong><a href="https://www.143.ch">Dargebotene Hand (Tel 143)</a></strong> ist eine 24-Stunden-Hotline für Menschen in emotionalen Krisen oder Notlagen. Mit geschulten Freiwilligen am anderen Ende der Leitung bietet die Dargebotene Hand anonyme und kostenlose Gespräche sowie emotionale Unterstützung für Menschen in schwierigen Zeiten. Unsere Unterstützung hilft der Dargebotenen Hand, weiterhin ein offenes Ohr für diejenigen zu haben, die Hilfe und Unterstützung benötigen, wann immer sie gebraucht wird.
     </p>
     <x-page-subtitle>100 % des Geldes kommt an</x-page-subtitle>
