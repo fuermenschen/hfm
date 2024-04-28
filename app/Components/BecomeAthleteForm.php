@@ -57,11 +57,9 @@ class BecomeAthleteForm extends Component
     #[Validate("unique:athletes,email", message: "Die E-Mail-Adresse ist bereits registriert.")]
     public ?string $email = null;
 
-    // Alter
-    #[Validate("required", message: "Wir benötigen dein Alter.")]
-    #[Validate("integer", message: "Das Alter muss eine Zahl sein.")]
-    #[Validate("min:5", message: "Du musst mindestens 5 Jahre alt sein.")]
-    public ?int $age;
+    // Volljährig?
+    #[Validate("required", message: "Wir benötigen diese Information.")]
+    public bool $adult = false;
 
     // Sportart
     public ?Collection $sport_types = null;
@@ -105,7 +103,7 @@ class BecomeAthleteForm extends Component
                 "city" => $this->city,
                 "phone_number" => $this->phone_number,
                 "email" => $this->email,
-                "age" => $this->age,
+                "adult" => $this->adult,
                 "sport_type_id" => $this->sport_type_id,
                 "rounds_estimated" => $this->rounds_estimated,
                 "partner_id" => $this->partner_id,
@@ -121,7 +119,7 @@ class BecomeAthleteForm extends Component
             "city",
             "phone_number",
             "email",
-            "age",
+            "adult",
             "sport_type_id",
             "rounds_estimated",
             "partner_id",

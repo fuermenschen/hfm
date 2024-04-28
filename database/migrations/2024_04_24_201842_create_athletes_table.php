@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string("city");
             $table->string("phone_number");
             $table->string("email")->unique();
-            $table->unsignedInteger("age");
+            $table->boolean("adult");
             $table->foreignId("sport_type_id")->constrained();
             $table->smallInteger("rounds_estimated");
             $table->smallInteger("rounds_done")->default(0);

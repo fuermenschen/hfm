@@ -18,7 +18,7 @@ class Athlete extends Model
         "city",
         "phone_number",
         "email",
-        "age",
+        "adult",
         "sport_type_id",
         "rounds_estimated",
         "partner_id",

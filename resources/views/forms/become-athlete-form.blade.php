@@ -27,7 +27,10 @@
     <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
              wire:model.blur="email" />
 
-    <x-input right-icon="cake" label="Alter" placeholder="47" wire:model.blur="age" hint="Das brauchen wir, einfach." />
+    <span class="space-y-1">
+        <span class="text-gray-700 text-sm font-medium">Bist du volljährig?</span>
+    <x-toggle wire:model.boolean="adult" left-label="Nein" label="Ja" lg />
+        </span>
 
     <x-native-select label="Sportart" wire:model="sport_type_id"
                      hint="Das hilft uns bei der Organisation der Helfer:innen.">
