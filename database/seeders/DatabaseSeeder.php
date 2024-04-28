@@ -18,9 +18,6 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        // create athletes (example data)
-        Athlete::factory(10)->create();
-
         // create sport types
         SportType::create([
             "name" => "Rennen",
@@ -54,5 +51,8 @@ class DatabaseSeeder extends Seeder
         Partner::create([
             "name" => "Dargebotene Hand (Tel 143)",
         ]);
+
+        // create athletes (example data)
+        Athlete::factory(10)->create();
     }
 }

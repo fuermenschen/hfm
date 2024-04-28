@@ -9,8 +9,9 @@
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
-                <x-input right-icon="home" label="PLZ" placeholder="8406" wire:model.number.blur="zip_code"
-                         class="basis-1/3" />
+                <x-inputs.maskable mask="####" right-icon="home" label="PLZ" placeholder="8406"
+                                   wire:model.number.blur="zip_code"
+                                   class="basis-1/3" />
             </span>
             <span class="grow">
                 <x-input right-icon="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"
@@ -25,6 +26,8 @@
     <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
              wire:model.blur="email" />
 
+    <x-input right-icon="cake" label="Alter" placeholder="47" wire:model.blur="age" />
+
     <x-native-select label="Sportart" wire:model="sport_type_id">
         <option disabled value="0">Bitte auswählen</option>
         @foreach ($sport_types as $type)
@@ -32,7 +35,8 @@
         @endforeach
     </x-native-select>
 
-    <x-input right-icon="cake" label="Alter" placeholder="47" wire:model.blur="age" />
+    <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
+                     wire:model.blur="rounds_estimated" />
 
     <x-native-select label="Ich möchte sammeln für" wire:model="partner_id">
         <option disabled value="0">Bitte auswählen</option>

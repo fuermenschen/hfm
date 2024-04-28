@@ -3,6 +3,19 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Custom Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This file is for custom configuration that is not provided by the Laravel
+    | framework. You are free to add your own configuration options to this
+    | file to customize your application.
+    |
+    */
+    "login_token_expiry_days" => 5,
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Name
     |--------------------------------------------------------------------------
     |
@@ -38,7 +51,7 @@ return [
     |
     */
 
-    "debug" => (bool) env("APP_DEBUG", false),
+    "debug" => (bool)env("APP_DEBUG", false),
 
     /*
     |--------------------------------------------------------------------------

@@ -25,12 +25,12 @@ class AthleteFactory extends Factory
             "city" => fake()->city(),
             "phone_number" => fake()->phoneNumber(),
             "email" => fake()->email(),
-            "sport_type_id" => fake()->numberBetween(1, 4),
-            "partner_id" => fake()->numberBetween(1, 4),
             "age" => fake()->numberBetween(18, 50),
-            "donation_token" => fake()->numberBetween(100000000, 999999999),
-            "email_verified_at" => null,
-            "comment" => null,
+            "sport_type_id" => fake()->numberBetween(1, 4),
+            "rounds_estimated" => fake()->numberBetween(1, 10),
+            "rounds_done" => 0,
+            "partner_id" => fake()->numberBetween(1, 4),
+            "comment" => fake()->optional()->text(2000),
         ];
     }
 }

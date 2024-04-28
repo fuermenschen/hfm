@@ -54,7 +54,14 @@ class BecomeAthleteForm extends Component
     // E-Mail
     #[Validate("required", message: "Wir benötigen deine E-Mail-Adresse.")]
     #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
+    #[Validate("unique:athletes,email", message: "Die E-Mail-Adresse ist bereits registriert.")]
     public ?string $email = null;
+
+    // Alter
+    #[Validate("required", message: "Wir benötigen dein Alter.")]
+    #[Validate("integer", message: "Das Alter muss eine Zahl sein.")]
+    #[Validate("min:5", message: "Du musst mindestens 5 Jahre alt sein.")]
+    public ?int $age;
 
     // Sportart
     public ?Collection $sport_types = null;
@@ -63,11 +70,11 @@ class BecomeAthleteForm extends Component
     #[Validate("exists:sport_types,id", message: "Die Sportart existiert nicht.")]
     public int $sport_type_id = 0;
 
-    // Alter
-    #[Validate("required", message: "Wir benötigen dein Alter.")]
-    #[Validate("integer", message: "Das Alter muss eine Zahl sein.")]
-    #[Validate("min:5", message: "Du musst mindestens 5 Jahre alt sein.")]
-    public ?int $age;
+    // Anzahl Runden geschätzt
+    #[Validate("required", message: "Wir benötigen die Anzahl der geschätzten Runden.")]
+    #[Validate("integer", message: "Die Anzahl der geschätzten Runden muss eine Zahl sein.")]
+    #[Validate("min:1", message: "Die Anzahl der geschätzten Runden muss mindestens 1 sein.")]
+    public ?int $rounds_estimated = null;
 
     // Partner
     public ?Collection $partners = null;
@@ -81,9 +88,6 @@ class BecomeAthleteForm extends Component
     #[Validate("max:2000", message: "Der Kommentar darf nicht länger als 2000 Zeichen sein.")]
     public ?string $comment = null;
 
-    // Donation Token
-    public ?int $donation_token = null;
-
     // privacy checkbox
     #[Validate("accepted", message: "Das muss akzeptiert werden.")]
     public bool $privacy = false;
@@ -92,11 +96,24 @@ class BecomeAthleteForm extends Component
     {
         $this->validate();
 
-        $this->donation_token = $this->generateDonationToken();
+        Athlete::create(
+            [
+                "first_name" => $this->first_name,
+                "last_name" => $this->last_name,
+                "address" => $this->address,
+                "zip_code" => $this->zip_code,
+                "city" => $this->city,
+                "phone_number" => $this->phone_number,
+                "email" => $this->email,
+                "age" => $this->age,
+                "sport_type_id" => $this->sport_type_id,
+                "rounds_estimated" => $this->rounds_estimated,
+                "partner_id" => $this->partner_id,
+                "comment" => $this->comment,
+            ]
+        );
 
-        Athlete::create($this->all());
-
-        $this->reset([
+        $this->reset(
             "first_name",
             "last_name",
             "address",
@@ -104,13 +121,13 @@ class BecomeAthleteForm extends Component
             "city",
             "phone_number",
             "email",
-            "sport_type_id",
             "age",
+            "sport_type_id",
+            "rounds_estimated",
             "partner_id",
             "comment",
-            "donation_token",
-            "privacy",
-        ]);
+            "privacy"
+        );
 
         $this->dialog([
             "title" => "Erfolgreich registriert",
@@ -120,22 +137,6 @@ class BecomeAthleteForm extends Component
                 "method" => "redirectHelper",
             ],
         ]);
-    }
-
-    private function generateDonationToken(): int
-    {
-        $token = mt_rand(100000000, 999999999);
-
-        if ($this->tokenExists($token)) {
-            return $this->generateDonationToken();
-        }
-
-        return $token;
-    }
-
-    private function tokenExists(int $token): bool
-    {
-        return Athlete::where("donation_token", $token)->exists();
     }
 
     public function showPrivacyInfo(): void
@@ -148,7 +149,7 @@ class BecomeAthleteForm extends Component
         ]);
     }
 
-    public function mount()
+    public function mount(): void
     {
         $this->sport_types = SportType::all();
 
