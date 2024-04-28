@@ -30,12 +30,12 @@
                              @change="$wire.updateNames()">
                 <option disabled value="0">Bitte wählen</option>
                 @foreach ($athletes as $athlete)
-                    <option value="{{ $athlete['id'] }}">{{ $athlete['first_name'] }} {{ $athlete['last_name'] }}
-                        ({{ $athlete['donation_token'] }})
+                    <option value="{{ $athlete['id'] }}">{{ $athlete['privacy_name'] }}
+                        ({{ $athlete['public_id_string'] }})
                     </option>
                 @endforeach
             </x-native-select>
-            @if ($currentAthlete)
+            @if ($athlete_id)
             <span
                 class="text-xs">Mit deiner Unterstützung für <strong> {{ $currentAthlete }} </strong> hilfst du, Spenden für <strong>{{ $currentPartner }} </strong> zu sammeln. Danke!</span>
         @endif
@@ -66,7 +66,7 @@
         </span>
 
     <x-textarea label="Kommentar"
-                placeholder="Ich freu mich druf. Bin zwar nöd mega sportlich, aber das isch ja egal. Hauptsach es chunnt e gueti Summe zäme!"
+                placeholder="Cooli Sach! Ich tuen vil lieber d Claudia unterstütze und aafüüre als selber Velofahre =)."
                 wire:model.live.debounce="comment" hint="{{ strlen($comment) }}/2000" />
 
     <span class="sm:col-span-2 flex flex-row space-x-sm items-center">

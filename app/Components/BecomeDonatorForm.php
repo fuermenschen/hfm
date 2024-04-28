@@ -56,7 +56,7 @@ class BecomeDonatorForm extends Component
 
     // Athlet
     public ?array $athletes = null;
-    public string $currentAthlete = "";
+    public string $currentAthlete = "der:die Sportler:in";
 
     #[Validate("required", message: "Bitte wähle jemanden aus.")]
     #[Validate("min:0", message: "Sportler:in existiert nicht.")]
@@ -65,7 +65,7 @@ class BecomeDonatorForm extends Component
 
     // Partners
     public $partners = null;
-    public string $currentPartner = "";
+    public string $currentPartner = "den:die Benefizpartner:in";
 
     // Summe pro Runde
     #[Validate("required", message: "Bitte gib einen Betrag ein.")]
@@ -98,15 +98,12 @@ class BecomeDonatorForm extends Component
     {
         // if the athlete_id is set, get the athlete name
         if ($this->athlete_id) {
-            $this->currentAthlete =
-                $this->athletes[$this->athlete_id - 1]["first_name"] .
-                " " .
-                $this->athletes[$this->athlete_id - 1]["last_name"];
+            $this->currentAthlete = Athlete::find($this->athlete_id)->privacy_name;
         }
 
         // if the athlete_id is set, get the partner of the athlete
         if ($this->athlete_id) {
-            $this->currentPartner = $this->partners[$this->athletes[$this->athlete_id - 1]["partner_id"] - 1]["name"];
+            $this->currentPartner = Athlete::find($this->athlete_id)->partner->name;
         }
     }
 
@@ -159,14 +156,12 @@ class BecomeDonatorForm extends Component
 
     public function showAmountInfo(): void
     {
-        $athlete = $this->currentAthlete;
-        $partner = $this->currentPartner;
-
-        if ($athlete == "") {
+        if ($this->athlete_id) {
+            $athlete = Athlete::find($this->athlete_id)->privacy_name;
+            $partner = Athlete::find($this->athlete_id)->partner->name;
+        } else {
             $athlete = "der:die Sportler:in";
-        }
-        if ($partner == "") {
-            $partner = "die:der Benefizpartner:in";
+            $partner = "den:die Benefizpartner:in";
         }
 
         $message =
@@ -190,23 +185,9 @@ class BecomeDonatorForm extends Component
         // fetch all athletes
         $this->athletes = Athlete::all()
             ->sortBy("first_name")
-            ->select(["id", "first_name", "last_name", "donation_token", "partner_id"])
+            ->select(["id", "privacy_name", "public_id_string", "partner_id"])
             ->toArray();
 
-        // change all last names to the first letter
-        foreach ($this->athletes as $key => $athlete) {
-            $this->athletes[$key]["last_name"] = substr($athlete["last_name"], 0, 1) . ".";
-        }
-
-        // change the donation token to a string: ######### --> "###-###-###"
-        foreach ($this->athletes as $key => $athlete) {
-            $this->athletes[$key]["donation_token"] =
-                substr($athlete["donation_token"], 0, 3) .
-                "-" .
-                substr($athlete["donation_token"], 3, 3) .
-                "-" .
-                substr($athlete["donation_token"], 6, 3);
-        }
 
         // fetch all partners
         $this->partners = Partner::all()
