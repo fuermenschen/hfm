@@ -5,7 +5,8 @@
 
     <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" />
 
-    <x-input right-icon="home" label="Adresse" placeholder="Zelglistrasse 41" wire:model.blur="address" />
+    <x-input right-icon="home" label="Adresse" placeholder="Zelglistrasse 41" wire:model.blur="address"
+             hint="Wir werden dir ein Starter-Kit senden." />
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
@@ -26,9 +27,10 @@
     <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
              wire:model.blur="email" />
 
-    <x-input right-icon="cake" label="Alter" placeholder="47" wire:model.blur="age" />
+    <x-input right-icon="cake" label="Alter" placeholder="47" wire:model.blur="age" hint="Das brauchen wir, einfach." />
 
-    <x-native-select label="Sportart" wire:model="sport_type_id">
+    <x-native-select label="Sportart" wire:model="sport_type_id"
+                     hint="Das hilft uns bei der Organisation der Helfer:innen.">
         <option disabled value="0">Bitte auswählen</option>
         @foreach ($sport_types as $type)
             <option value="{{ $type->id }}">{{ $type->name }}</option>
@@ -36,9 +38,11 @@
     </x-native-select>
 
     <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
-                     wire:model.blur="rounds_estimated" />
+                     wire:model.blur="rounds_estimated"
+                     hint="Das hilf deinen Spender:innen, den Betrag pro Runde festzulegen." />
 
-    <x-native-select label="Ich möchte sammeln für" wire:model="partner_id">
+    <x-native-select label="Ich möchte sammeln für" wire:model="partner_id"
+                     hint="Das Geld, das du mit deinen Spender:innen sammelst, geht an diese:n Benefizpartner:in.">
         <option disabled value="0">Bitte auswählen</option>
         @foreach ($partners as $partner)
             <option value="{{ $partner->id }}">{{ $partner->name }}</option>
