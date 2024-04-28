@@ -5,6 +5,7 @@ namespace App\Components;
 use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -94,47 +95,57 @@ class BecomeAthleteForm extends Component
     {
         $this->validate();
 
-        Athlete::create(
-            [
-                "first_name" => $this->first_name,
-                "last_name" => $this->last_name,
-                "address" => $this->address,
-                "zip_code" => $this->zip_code,
-                "city" => $this->city,
-                "phone_number" => $this->phone_number,
-                "email" => $this->email,
-                "adult" => $this->adult,
-                "sport_type_id" => $this->sport_type_id,
-                "rounds_estimated" => $this->rounds_estimated,
-                "partner_id" => $this->partner_id,
-                "comment" => $this->comment,
-            ]
-        );
+        try {
 
-        $this->reset(
-            "first_name",
-            "last_name",
-            "address",
-            "zip_code",
-            "city",
-            "phone_number",
-            "email",
-            "adult",
-            "sport_type_id",
-            "rounds_estimated",
-            "partner_id",
-            "comment",
-            "privacy"
-        );
+            Athlete::create(
+                [
+                    "first_name" => $this->first_name,
+                    "last_name" => $this->last_name,
+                    "address" => $this->address,
+                    "zip_code" => $this->zip_code,
+                    "city" => $this->city,
+                    "phone_number" => $this->phone_number,
+                    "email" => $this->email,
+                    "adult" => $this->adult,
+                    "sport_type_id" => $this->sport_type_id,
+                    "rounds_estimated" => $this->rounds_estimated,
+                    "partner_id" => $this->partner_id,
+                    "comment" => $this->comment,
+                ]
+            );
 
-        $this->dialog([
-            "title" => "Erfolgreich registriert",
-            "description" => "Vielen Dank für deine Anmeldung. Wir melden uns bald bei dir.",
-            "icon" => "success",
-            "onClose" => [
-                "method" => "redirectHelper",
-            ],
-        ]);
+            $this->reset(
+                "first_name",
+                "last_name",
+                "address",
+                "zip_code",
+                "city",
+                "phone_number",
+                "email",
+                "adult",
+                "sport_type_id",
+                "rounds_estimated",
+                "partner_id",
+                "comment",
+                "privacy"
+            );
+
+            $this->dialog([
+                "title" => "Prüfe deine E-Mails!",
+                "description" => "Vielen Dank für deine Anmeldung. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.",
+                "icon" => "mail-open",
+                "onClose" => [
+                    "method" => "redirectHelper",
+                ],
+            ]);
+
+        } catch (Exception $e) {
+            $this->dialog([
+                "title" => "Fehler",
+                "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+                "icon" => "error",
+            ]);
+        }
     }
 
     public function showPrivacyInfo(): void

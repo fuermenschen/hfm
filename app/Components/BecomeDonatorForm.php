@@ -5,6 +5,7 @@ namespace App\Components;
 use App\Models\Athlete;
 use App\Models\Donator;
 use App\Models\Partner;
+use Exception;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use WireUi\Traits\Actions;
@@ -111,32 +112,42 @@ class BecomeDonatorForm extends Component
     {
         $this->validate();
 
-        Donator::create($this->all());
+        try {
 
-        $this->reset([
-            "first_name",
-            "last_name",
-            "address",
-            "zip_code",
-            "city",
-            "phone_number",
-            "email",
-            "athlete_id",
-            "amount_per_round",
-            "amount_max",
-            "amount_min",
-            "comment",
-            "privacy",
-        ]);
+            Donator::create($this->all());
 
-        $this->dialog([
-            "title" => "Erfolgreich registriert",
-            "description" => "Vielen Dank für deine Anmeldung. Wir melden uns bald bei dir.",
-            "icon" => "success",
-            "onClose" => [
-                "method" => "redirectHelper",
-            ],
-        ]);
+            $this->reset([
+                "first_name",
+                "last_name",
+                "address",
+                "zip_code",
+                "city",
+                "phone_number",
+                "email",
+                "athlete_id",
+                "amount_per_round",
+                "amount_max",
+                "amount_min",
+                "comment",
+                "privacy",
+            ]);
+
+            $this->dialog([
+                "title" => "Prüfe deine E-Mails",
+                "description" => "Vielen Dank für deine Anmeldung. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.",
+                "icon" => "mail-open",
+                "onClose" => [
+                    "method" => "redirectHelper",
+                ],
+            ]);
+
+        } catch (Exception $e) {
+            $this->dialog([
+                "title" => "Fehler",
+                "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+                "icon" => "error",
+            ]);
+        }
     }
 
     public function render()
