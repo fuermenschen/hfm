@@ -46,17 +46,22 @@ class BecomeAthleteForm extends Component
     #[Validate("max:255", message: "Der Wohnort darf nicht länger als 255 Zeichen sein.")]
     public ?string $city = null;
 
-    // Telefonnummer
-    #[Validate("required", message: "Wir benötigen deine Telefonnummer.")]
-    #[Validate("string", message: "Wir benötigen deine Telefonnummer.")]
-    #[Validate("size:10", message: "Die Telefonnummer besteht aus 10 Zahlen.")]
-    public ?string $phone_number = null;
-
     // E-Mail
     #[Validate("required", message: "Wir benötigen deine E-Mail-Adresse.")]
     #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
     #[Validate("unique:athletes,email", message: "Die E-Mail-Adresse ist bereits registriert.")]
     public ?string $email = null;
+
+    // E-Mail bestätigen
+    #[Validate("required", message: "Wir benötigen die Bestätigung deiner E-Mail-Adresse.")]
+    #[Validate("same:email", message: "Die E-Mail-Adressen stimmen nicht überein.")]
+    public ?string $email_confirmation = null;
+
+    // Telefonnummer
+    #[Validate("required", message: "Wir benötigen deine Telefonnummer.")]
+    #[Validate("string", message: "Wir benötigen deine Telefonnummer.")]
+    #[Validate("size:10", message: "Die Telefonnummer besteht aus 10 Zahlen.")]
+    public ?string $phone_number = null;
 
     // Volljährig?
     #[Validate("required", message: "Wir benötigen diese Information.")]
@@ -97,38 +102,9 @@ class BecomeAthleteForm extends Component
 
         try {
 
-            Athlete::create(
-                [
-                    "first_name" => $this->first_name,
-                    "last_name" => $this->last_name,
-                    "address" => $this->address,
-                    "zip_code" => $this->zip_code,
-                    "city" => $this->city,
-                    "phone_number" => $this->phone_number,
-                    "email" => $this->email,
-                    "adult" => $this->adult,
-                    "sport_type_id" => $this->sport_type_id,
-                    "rounds_estimated" => $this->rounds_estimated,
-                    "partner_id" => $this->partner_id,
-                    "comment" => $this->comment,
-                ]
-            );
+            Athlete::create($this->all());
 
-            $this->reset(
-                "first_name",
-                "last_name",
-                "address",
-                "zip_code",
-                "city",
-                "phone_number",
-                "email",
-                "adult",
-                "sport_type_id",
-                "rounds_estimated",
-                "partner_id",
-                "comment",
-                "privacy"
-            );
+            $this->reset();
 
             $this->dialog([
                 "title" => "Prüfe deine E-Mails!",

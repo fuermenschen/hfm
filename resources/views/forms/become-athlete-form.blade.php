@@ -20,12 +20,15 @@
             </span>
         </span>
 
+    <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
+             wire:model.blur="email" />
+
+    <x-input right-icon="mail" label="E-Mail bestätigen " placeholder="francesca.arslan@posteo.ch"
+             wire:model.blur="email_confirmation" />
+
     <x-inputs.phone right-icon="phone" label="Telefon"
                     mask="['### ### ## ##']" placeholder="079 123 45 67"
                     wire:model.blur="phone_number" />
-
-    <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email" />
 
     <span class="space-y-1">
         <span class="text-gray-700 text-sm font-medium">Bist du volljährig?</span>
@@ -35,9 +38,13 @@
     <x-native-select label="Sportart" wire:model="sport_type_id"
                      hint="Das hilft uns bei der Organisation der Helfer:innen.">
         <option disabled value="0">Bitte auswählen</option>
-        @foreach ($sport_types as $type)
-            <option value="{{ $type->id }}">{{ $type->name }}</option>
-        @endforeach
+        @if (!$sport_types || $sport_types->isEmpty())
+            <option disabled value="0">Keine Sportarten verfügbar</option>
+        @else
+            @foreach ($sport_types as $type)
+                <option value="{{ $type->id }}">{{ $type->name }}</option>
+            @endforeach
+        @endif
     </x-native-select>
 
     <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
@@ -47,9 +54,13 @@
     <x-native-select label="Ich möchte sammeln für" wire:model="partner_id"
                      hint="Das Geld, das du mit deinen Spender:innen sammelst, geht an diese:n Benefizpartner:in.">
         <option disabled value="0">Bitte auswählen</option>
-        @foreach ($partners as $partner)
-            <option value="{{ $partner->id }}">{{ $partner->name }}</option>
-        @endforeach
+        @if (!$partners || $partners->isEmpty())
+            <option disabled value="0">Keine Partner:innen verfügbar</option>
+        @else
+            @foreach ($partners as $partner)
+                <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+            @endforeach
+        @endif
     </x-native-select>
 
     <x-textarea label="Kommentar"
