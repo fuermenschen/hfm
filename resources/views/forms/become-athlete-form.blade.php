@@ -77,6 +77,9 @@
         </span>
 
     <span class="sm:col-span-2">
-            <x-button label=" Senden" type="submit" />
+            <x-button label="Senden" type="submit" />
+            <div wire:loading wire:target="save">
+                Die Daten werden übermittelt...
+            </div>
         </span>
 </form>

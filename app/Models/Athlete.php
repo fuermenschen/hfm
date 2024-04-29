@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Notifications\AthleteRegistered;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Notifications\Notifiable;
 
 class Athlete extends Model
 {
     use HasFactory;
+    use Notifiable;
 
     protected $fillable = [
         "first_name",
@@ -57,6 +60,8 @@ class Athlete extends Model
             $athlete->login_token = bin2hex(random_bytes(32));
             $athlete->login_token_expires_at = now()->addDays(config("login_token_expiry_days"));
             $athlete->save();
+
+            $athlete->notify(new AthleteRegistered($athlete));
         });
     }
 

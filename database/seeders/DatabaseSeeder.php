@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Database\Seeder;
@@ -53,6 +52,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // create athletes (example data)
-        Athlete::factory(10)->create();
+        //Athlete::factory(10)->create();
     }
 }

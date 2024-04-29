@@ -116,6 +116,9 @@ class BecomeAthleteForm extends Component
             ]);
 
         } catch (Exception $e) {
+
+            throw $e;
+
             $this->dialog([
                 "title" => "Fehler",
                 "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
