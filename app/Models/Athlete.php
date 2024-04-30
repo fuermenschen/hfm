@@ -46,6 +46,7 @@ class Athlete extends Model
         "full_name",
         "privacy_name",
         "public_id_string",
+        "isVerified",
     ];
 
     protected static function boot()
@@ -98,6 +99,17 @@ class Athlete extends Model
         $publicId = str_pad($this->public_id, 6, "0", STR_PAD_LEFT);
         // return the formatted string
         return substr($publicId, 0, 3) . "-" . substr($publicId, 3);
+    }
+
+    public function getIsVerifiedAttribute(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    public function markEmailAsVerified(): void
+    {
+        $this->email_verified_at = now();
+        $this->save();
     }
 
     public function sportType(): BelongsTo

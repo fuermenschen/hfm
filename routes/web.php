@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AthleteController;
 use App\Models\Athlete;
 use Illuminate\Support\Facades\Route;
 
@@ -28,3 +29,6 @@ Route::view("faq", "pages.f-a-q");
 Route::view("kontakt", "pages.contact");
 Route::view("impressum", "pages.impressum");
 Route::view("datenschutz", "pages.privacy");
+
+// Athlete
+Route::get("sportlerinnen/{login_token}", [AthleteController::class, 'show'])->name("athletes.show");
