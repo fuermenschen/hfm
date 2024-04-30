@@ -61,7 +61,7 @@ class Athlete extends Model
             $athlete->login_token_expires_at = now()->addDays(config("login_token_expiry_days"));
             $athlete->save();
 
-            $athlete->notify(new AthleteRegistered($athlete));
+            $athlete->notify(new AthleteRegistered($athlete->first_name, $athlete->login_token));
         });
     }
 
