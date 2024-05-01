@@ -13,7 +13,7 @@ class PublicFooter extends Component
         ],
         [
             "name" => "Kontakt",
-            "route" => "kontakt",
+            "route" => "contact",
         ],
         [
             "name" => "Impressum",
@@ -21,7 +21,7 @@ class PublicFooter extends Component
         ],
         [
             "name" => "Datenschutz",
-            "route" => "datenschutz",
+            "route" => "privacy",
         ],
     ];
 

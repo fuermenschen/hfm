@@ -11,27 +11,27 @@ class PublicMenu extends Component
     public $menuItems = [
         [
             "name" => "Startseite",
-            "route" => "/",
+            "route" => "home",
             "active" => false,
         ],
         [
             "name" => "Über das Projekt",
-            "route" => "ueber-das-projekt",
+            "route" => "about",
             "active" => false,
         ],
         [
             "name" => "Sportler:in werden",
-            "route" => "sportlerin-werden",
+            "route" => "become-athlete",
             "active" => false,
         ],
         [
             "name" => "Spender:in werden",
-            "route" => "spenderin-werden",
+            "route" => "become-donator",
             "active" => false,
         ],
         [
             "name" => "Informationen zum Anlass",
-            "route" => "informationen-zum-anlass",
+            "route" => "event-information",
             "active" => false,
         ],
     ];

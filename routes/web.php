@@ -18,17 +18,17 @@ use Illuminate\Support\Facades\Route;
 // Main Menu
 Route::view("/", "home", [
     'athleteCount' => Athlete::count(),
-]);
-Route::view("ueber-das-projekt", "pages.about");
-Route::view("sportlerin-werden", "pages.become-athlete");
-Route::view("spenderin-werden", "pages.become-donator");
-Route::view("informationen-zum-anlass", "pages.event-information");
+])->name("home");
+Route::view("ueber-das-projekt", "pages.about")->name("about");
+Route::view("sportlerin-werden", "pages.become-athlete")->name("become-athlete");
+Route::view("spenderin-werden", "pages.become-donator")->name("become-donator");
+Route::view("informationen-zum-anlass", "pages.event-information")->name("event-information");
 
 // Footer Menu
-Route::view("faq", "pages.f-a-q");
-Route::view("kontakt", "pages.contact");
-Route::view("impressum", "pages.impressum");
-Route::view("datenschutz", "pages.privacy");
+Route::view("faq", "pages.f-a-q")->name("faq");
+Route::view("kontakt", "pages.contact")->name("contact");
+Route::view("impressum", "pages.impressum")->name("impressum");
+Route::view("datenschutz", "pages.privacy")->name("privacy");
 
 // Athlete
-Route::get("sportlerinnen/{login_token}", [AthleteController::class, 'show'])->name("athletes.show");
+Route::get("sportlerinnen/{login_token}", [AthleteController::class, 'show'])->name("athlete.show");

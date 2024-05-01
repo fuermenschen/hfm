@@ -2,7 +2,7 @@
     <nav class="mx-auto flex items-baseline justify-between p-sm" aria-label="Global">
         <a href="/" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
-            <x-logo class="h-10 -mb-1.5"/>
+            <x-logo class="h-10 -mb-1.5" />
         </a>
         <div class=" flex lg:hidden items">
             <button
@@ -15,14 +15,14 @@
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
                      aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+                          d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                 </svg>
             </button>
         </div>
         <div class="hidden lg:flex lg:gap-x-9">
             @foreach($menuItems as $item)
                 <a
-                    href="{{ $item['route'] }}"
+                    href="{{ route($item['route']) }}"
                     wire:key="{{ $item['name'] }}"
                     wire:navigate.hover
                     @class([
@@ -51,7 +51,7 @@
                 <a wire:navigate href="/" class="-m-1.5 p-1.5">
                     <span class="sr-only">Höhenmeter für Menschen</span>
                     <x-logo class="h-10"
-                            alt=""/>
+                            alt="" />
                 </a>
                 <button
                     @click="open = false"
@@ -61,7 +61,7 @@
                     <span class="sr-only">Menü schliessen</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
                          aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -70,7 +70,7 @@
                     <div class="space-y-2 py-6">
                         @foreach($menuItems as $item)
                             <a
-                                href="{{ $item['route'] }}"
+                                href="{{ route($item['route']) }}"
                                 wire:key="{{ $item['name'] }}"
                                 wire:navigate.hover
                                 @class([

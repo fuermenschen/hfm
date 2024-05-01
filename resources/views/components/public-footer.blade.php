@@ -7,7 +7,7 @@
             class="grid grid-cols-2 gap-4 justify-items-center md:flex md:flex-row md:space-x-7 md:justify-center md:flex-wrap">
             @foreach($footerItems as $item)
                 <a
-                    href="{{ $item['route'] }}"
+                    href="{{ route($item['route']) }}"
                     wire:key="{{ $item['name'] }}"
                     wire:navigate.hover
                     class="text-sm hover:text-hfm-light text-hfm-dark"
