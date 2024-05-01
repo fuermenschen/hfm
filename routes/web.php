@@ -35,3 +35,17 @@ Route::get("sportlerinnen/{login_token}", function ($login_token) {
         'login_token' => $login_token,
     ]);
 })->name("show-athlete");
+
+// Donator
+Route::get("spenderinnen/{login_token}", function ($login_token) {
+    return view("pages.show-donator", [
+        'login_token' => $login_token
+    ]);
+})->name("show-donator");
+
+Route::get("spenderinnen/{login_token}/{donation_id}", function ($login_token, $donation_id) {
+    return view("pages.show-donator", [
+        'login_token' => $login_token,
+        'donation_id' => $donation_id,
+    ]);
+})->name("verify-donation");

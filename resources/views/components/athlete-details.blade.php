@@ -4,15 +4,19 @@
     <p>Auf dieser Seite siehst du, wer sich bei dir als Spender:in eingetragen hat.</p>
 
     <x-page-subtitle>Spender:innen</x-page-subtitle>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        @if ($donations->count() > 0)
+    @if ($donations->count() > 0)
+        <ul>
             @foreach ($donations as $donation)
-                <span>{{ $donation->first_name }}</span>
+                <li class="list-disc">
+                    {{ $donation->donator->privacy_name }}
+                    @if (!$donation->verified)
+                        <span class="text-red-500 text-sm">(noch nicht verifiziert)</span>
+                    @endif
+                </li>
             @endforeach
-        @else
-            <p>Es hat sich noch niemand als Spender:in eingetragen.</p>
-        @endif
-    </div>
+        </ul>
+    @else
+        <p>Es hat sich noch niemand als Spender:in eingetragen.</p>
+    @endif
 
 </div>

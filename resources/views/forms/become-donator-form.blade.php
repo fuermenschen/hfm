@@ -19,24 +19,31 @@
             </span>
         </span>
 
+    <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
+             wire:model.blur="email" />
+
+    <x-input right-icon="mail" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch"
+             wire:model.blur="email_confirmation" />
+
     <x-inputs.phone right-icon="phone" label="Telefon"
                     mask="['### ### ## ##']" placeholder="079 123 45 67"
                     wire:model.blur="phone_number" />
 
-    <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email" />
-
     <span>
-            <x-native-select label="Meine Unterstützung geht an" wire:model.live="athlete_id"
-                             @change="$wire.updateNames()">
+           <x-native-select label="Meine Unterstützung geht an" wire:model.live="athlete_id"
+                            @change="$wire.updateNames()">
                 <option disabled value="0">Bitte wählen</option>
-                @foreach ($athletes as $athlete)
-                    <option value="{{ $athlete['id'] }}">{{ $athlete['privacy_name'] }}
-                        ({{ $athlete['public_id_string'] }})
-                    </option>
-                @endforeach
+                @if (!$athletes || sizeof($athletes) === 0)
+                   <option disabled value="0">Keine Sportler:innen verfügbar</option>
+               @else
+                   @foreach ($athletes as $athlete)
+                       <option value="{{ $athlete['id'] }}">{{ $athlete['privacy_name'] }}
+                            ({{ $athlete['public_id_string'] }})
+                        </option>
+                   @endforeach
+               @endif
             </x-native-select>
-            @if ($athlete_id)
+       @if ($athlete_id)
             <span
                 class="text-xs">Mit deiner Unterstützung für <strong> {{ $currentAthlete }} </strong> hilfst du, Spenden für <strong>{{ $currentPartner }} </strong> zu sammeln. Danke!</span>
         @endif
@@ -81,5 +88,8 @@
 
     <span class="sm:col-span-2">
             <x-button label=" Senden" type="submit" />
+            <div wire:loading wire:target="save">
+                Die Daten werden übermittelt...
+            </div>
         </span>
 </form>

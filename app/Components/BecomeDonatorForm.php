@@ -55,6 +55,11 @@ class BecomeDonatorForm extends Component
     #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
     public ?string $email = null;
 
+    // E-Mail bestätigen
+    #[Validate("required", message: "Wir benötigen die Bestätigung deiner E-Mail-Adresse.")]
+    #[Validate("same:email", message: "Die E-Mail-Adressen stimmen nicht überein.")]
+    public ?string $email_confirmation = null;
+
     // Athlet
     public ?array $athletes = null;
     public string $currentAthlete = "der:die Sportler:in";
@@ -65,7 +70,7 @@ class BecomeDonatorForm extends Component
     public ?int $athlete_id = 0;
 
     // Partners
-    public $partners = null;
+    public ?array $partners = null;
     public string $currentPartner = "den:die Benefizpartner:in";
 
     // Summe pro Runde
@@ -97,14 +102,11 @@ class BecomeDonatorForm extends Component
 
     public function updateNames(): void
     {
-        // if the athlete_id is set, get the athlete name
-        if ($this->athlete_id) {
-            $this->currentAthlete = Athlete::find($this->athlete_id)->privacy_name;
-        }
-
-        // if the athlete_id is set, get the partner of the athlete
-        if ($this->athlete_id) {
-            $this->currentPartner = Athlete::find($this->athlete_id)->partner->name;
+        // if the athlete_id is set, get the athlete and partner name
+        $athlete = Athlete::find($this->athlete_id);
+        if ($athlete) {
+            $this->currentAthlete = $athlete->privacy_name;
+            $this->currentPartner = $athlete->partner->name;
         }
     }
 
@@ -114,27 +116,22 @@ class BecomeDonatorForm extends Component
 
         try {
 
-            Donator::create($this->all());
+            // check if the donator already exists
+            $donator = Donator::where("email", $this->email)->first();
 
-            $this->reset([
-                "first_name",
-                "last_name",
-                "address",
-                "zip_code",
-                "city",
-                "phone_number",
-                "email",
-                "athlete_id",
-                "amount_per_round",
-                "amount_max",
-                "amount_min",
-                "comment",
-                "privacy",
-            ]);
+            // if the donator does not exist, create a new one
+            if (!$donator) {
+                $donator = Donator::create($this->all());
+            }
+
+            // create a new donation
+            $donator->donations()->create($this->all());
+
+            $this->reset();
 
             $this->dialog([
                 "title" => "Prüfe deine E-Mails",
-                "description" => "Vielen Dank für deine Anmeldung. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.",
+                "description" => "Vielen Dank für deine Anmeldung zur Spende. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.",
                 "icon" => "mail-open",
                 "onClose" => [
                     "method" => "redirectHelper",
@@ -142,6 +139,9 @@ class BecomeDonatorForm extends Component
             ]);
 
         } catch (Exception $e) {
+
+            throw $e;
+
             $this->dialog([
                 "title" => "Fehler",
                 "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
@@ -195,10 +195,10 @@ class BecomeDonatorForm extends Component
     {
         // fetch all athletes
         $this->athletes = Athlete::all()
+            ->where("verified", true)
             ->sortBy("first_name")
             ->select(["id", "privacy_name", "public_id_string", "partner_id"])
             ->toArray();
-
 
         // fetch all partners
         $this->partners = Partner::all()

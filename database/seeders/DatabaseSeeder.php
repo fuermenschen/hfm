@@ -52,6 +52,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // create athletes (example data)
-        //Athlete::factory(10)->create();
+        //Athlete::factory(1)->create();
     }
 }

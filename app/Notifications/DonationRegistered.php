@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewLoginToken extends Notification implements ShouldQueue
+class DonationRegistered extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -15,9 +15,9 @@ class NewLoginToken extends Notification implements ShouldQueue
      * Create a new notification instance.
      */
     public function __construct(public readonly string $first_name,
-                                public readonly string $login_token,
-                                public readonly string $route_name
-    )
+                                public readonly string $athlete_name,
+                                public readonly string $donation_id,
+                                public readonly string $login_token)
     {
         //
     }
@@ -38,10 +38,15 @@ class NewLoginToken extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Neuer Anmelde-Link")
+            ->subject("Anmeldung als Spender:in für $this->athlete_name")
             ->greeting("Hallo " . $this->first_name)
-            ->line('Dein Login-Link wurde erneuert. Bitte klicke auf den untenstehenden Button, um dich einzuloggen.')
-            ->action('Login', route($this->route_name, $this->login_token));
+            ->line("Du hast dich als Spender:in für $this->athlete_name angemeldet.")
+            ->line("Bitte bestätige deine Anmeldung, indem du auf den folgenden Link klickst:")
+            ->action('Spende bestätigen', route('verify-donation', [
+                'login_token' => $this->login_token,
+                'donation_id' => $this->donation_id,
+            ]))
+            ->line('Vielen Dank für deine Unterstützung!');
     }
 
     /**

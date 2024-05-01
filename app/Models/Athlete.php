@@ -68,7 +68,7 @@ class Athlete extends Model
     public function newTokenAndNotify(): void
     {
         $this->generateLoginToken();
-        $this->notify(new NewLoginToken($this->first_name, $this->login_token));
+        $this->notify(new NewLoginToken($this->first_name, $this->login_token, "show-athlete"));
     }
 
     private function generatePublicId(): int
@@ -142,7 +142,7 @@ class Athlete extends Model
 
     public function donations(): HasMany
     {
-        return $this->hasMany(Donator::class);
+        return $this->hasMany(Donation::class);
     }
 
     protected function casts(): array

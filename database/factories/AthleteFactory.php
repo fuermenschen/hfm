@@ -24,7 +24,7 @@ class AthleteFactory extends Factory
             "zip_code" => fake()->postcode(),
             "city" => fake()->city(),
             "phone_number" => fake()->phoneNumber(),
-            "email" => fake()->email(),
+            "email" => "moss@zhaw.ch",
             "adult" => fake()->boolean(),
             "sport_type_id" => fake()->numberBetween(1, 4),
             "rounds_estimated" => fake()->numberBetween(1, 10),

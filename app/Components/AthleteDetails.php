@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Models\Athlete;
+use App\Models\Donation;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -51,9 +52,8 @@ class AthleteDetails extends Component
                     ],
                 ]);
         }
-
         $this->athlete = $athlete;
-        $this->donations = $athlete->donations;
+        $this->donations = Donation::where('athlete_id', $athlete->id)->with('donator')->get();
     }
 
     public function render()

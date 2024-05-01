@@ -19,12 +19,8 @@ return new class extends Migration {
             $table->string("city");
             $table->string("phone_number");
             $table->string("email");
-            $table->unsignedBigInteger("athlete_id")->nullable();
-            $table->float("amount_per_round");
-            $table->float("amount_max");
-            $table->float("amount_min");
-            $table->timestamp("email_verified_at")->nullable();
-            $table->text("comment")->nullable();
+            $table->string("login_token")->unique()->nullable();
+            $table->timestamp("login_token_expires_at")->nullable();
             $table->timestamps();
         });
     }
