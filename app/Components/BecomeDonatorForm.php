@@ -83,12 +83,14 @@ class BecomeDonatorForm extends Component
     #[Validate("nullable")]
     #[Validate("numeric", message: "Der Betrag muss eine Zahl sein.")]
     #[Validate("min:1.00", message: "Der Betrag muss mindestens Fr. 1.- sein.")]
+    #[Validate("gt:amount_min", message: "Der Betrag muss grösser als der Minimalbetrag sein.")]
     public ?float $amount_max = null;
 
     // Minimalbetrag
     #[Validate("nullable")]
     #[Validate("numeric", message: "Der Betrag muss eine Zahl sein.")]
     #[Validate("min:0.05", message: "Der Betrag muss mindestens Fr. 0.05 sein.")]
+    #[Validate("gte:amount_per_round", message: "Der Betrag muss grösser oder gleich dem Betrag pro Runde sein.")]
     public ?float $amount_min = null;
 
     // Kommentar
@@ -139,9 +141,6 @@ class BecomeDonatorForm extends Component
             ]);
 
         } catch (Exception $e) {
-
-            throw $e;
-
             $this->dialog([
                 "title" => "Fehler",
                 "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
