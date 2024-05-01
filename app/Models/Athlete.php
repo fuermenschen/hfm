@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @method static create($all)
+ */
 class Athlete extends Model
 {
     use HasFactory;
@@ -49,7 +52,7 @@ class Athlete extends Model
         "public_id_string",
     ];
 
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
@@ -99,12 +102,12 @@ class Athlete extends Model
 
     public function getFullNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name}";
+        return "$this->first_name $this->last_name";
     }
 
     public function getPrivacyNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name[0]}.";
+        return "$this->first_name $this->last_name[0].";
     }
 
     // make a string in the format ###-###
