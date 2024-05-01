@@ -63,7 +63,11 @@ class Athlete extends Model
         static::created(function ($athlete) {
             $athlete->generateLoginToken();
 
-            $athlete->notify(new AthleteRegistered($athlete->first_name, $athlete->login_token));
+            $athlete->notify(new AthleteRegistered(
+                $athlete->first_name,
+                $athlete->public_id_string,
+                $athlete->login_token
+            ));
         });
     }
 

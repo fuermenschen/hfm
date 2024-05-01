@@ -16,6 +16,7 @@ class AthleteNewDonation extends Notification implements ShouldQueue
      */
     public function __construct(public readonly string $first_name,
                                 public readonly string $donator_name,
+                                public readonly string $public_id_string,
                                 public readonly string $login_token)
     {
         //
@@ -42,7 +43,8 @@ class AthleteNewDonation extends Notification implements ShouldQueue
             ->line("Soeben hat sich $this->donator_name als Spender:in für dich registriert.")
             ->line("Wenn du dich einloggst, siehst du, wer alles für dich spenden wird.")
             ->action('Login', route('show-athlete', $this->login_token))
-            ->line('Vielen Dank, dass du so fleissig mithilfst, spenden zu sammeln!');
+            ->line('Vielen Dank, dass du so fleissig mithilfst, spenden zu sammeln! Wir freuen uns schon auf den:die nächste:n Spender:in von dir!')
+            ->line("Vergiss nicht, deinen Code zu teilen: " . $this->public_id_string);
     }
 
     /**

@@ -27,6 +27,7 @@ class Donation extends Model
             $donation->athlete->notify(new AthleteNewDonation(
                 $donation->athlete->first_name,
                 $donation->donator->privacy_name,
+                $donation->athlete->public_id_string,
                 $donation->athlete->login_token
             ));
         });
