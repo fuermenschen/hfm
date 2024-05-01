@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AthleteRegistered extends Notification implements ShouldQueue
+class NewLoginToken extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -36,11 +36,10 @@ class AthleteRegistered extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Deine Registrierung als Sportler:in")
+            ->subject("Neuer Anmelde-Link")
             ->greeting("Hallo " . $this->first_name)
-            ->line('Vielen Dank für deine Registrierung bei uns. Bitte klicke auf den unten stehenden Button, um deine E-Mail-Adresse zu bestätigen.')
-            ->action('Login', url("/sportlerinnen/" . $this->login_token))
-            ->line('Sobald du deine E-Mail-Adresse bestätigt hast, können deine Sponsor:innen dich auswählen.');
+            ->line('Dein Login-Link wurde erneuert. Bitte klicke auf den untenstehenden Button, um dich einzuloggen.')
+            ->action('Login', url("/sportlerinnen/" . $this->login_token));
     }
 
     /**
@@ -51,7 +50,7 @@ class AthleteRegistered extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-//
+            //
         ];
     }
 }

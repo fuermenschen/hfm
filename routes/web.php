@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AthleteController;
 use App\Models\Athlete;
 use Illuminate\Support\Facades\Route;
 
@@ -31,4 +30,8 @@ Route::view("impressum", "pages.impressum")->name("impressum");
 Route::view("datenschutz", "pages.privacy")->name("privacy");
 
 // Athlete
-Route::get("sportlerinnen/{login_token}", [AthleteController::class, 'show'])->name("athlete.show");
+Route::get("sportlerinnen/{login_token}", function ($login_token) {
+    return view("pages.show-athlete", [
+        'login_token' => $login_token,
+    ]);
+})->name("show-athlete");

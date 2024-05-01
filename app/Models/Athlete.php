@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Notifications\AthleteRegistered;
+use App\Notifications\NewLoginToken;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 
 class Athlete extends Model
@@ -46,7 +48,6 @@ class Athlete extends Model
         "full_name",
         "privacy_name",
         "public_id_string",
-        "isVerified",
     ];
 
     protected static function boot()
@@ -58,12 +59,16 @@ class Athlete extends Model
         });
 
         static::created(function ($athlete) {
-            $athlete->login_token = bin2hex(random_bytes(32));
-            $athlete->login_token_expires_at = now()->addDays(config("login_token_expiry_days"));
-            $athlete->save();
+            $athlete->generateLoginToken();
 
             $athlete->notify(new AthleteRegistered($athlete->first_name, $athlete->login_token));
         });
+    }
+
+    public function newTokenAndNotify(): void
+    {
+        $this->generateLoginToken();
+        $this->notify(new NewLoginToken($this->first_name, $this->login_token));
     }
 
     private function generatePublicId(): int
@@ -80,6 +85,24 @@ class Athlete extends Model
     private function idExists(int $token): bool
     {
         return Athlete::where("public_id", $token)->exists();
+    }
+
+    private function generateLoginToken(): void
+    {
+        $token = bin2hex(random_bytes(32));
+
+        if ($this->tokenExists($token)) {
+            $this->generateLoginToken();
+        }
+
+        $this->login_token = $token;
+        $this->login_token_expires_at = now()->addDays(config("app.login_token_expiry_days"));
+        $this->save();
+    }
+
+    private function tokenExists(string $token): bool
+    {
+        return Athlete::where("login_token", $token)->exists();
     }
 
     public function getFullNameAttribute(): string
@@ -101,11 +124,6 @@ class Athlete extends Model
         return substr($publicId, 0, 3) . "-" . substr($publicId, 3);
     }
 
-    public function getIsVerifiedAttribute(): bool
-    {
-        return $this->email_verified_at !== null;
-    }
-
     public function markEmailAsVerified(): void
     {
         $this->email_verified_at = now();
@@ -120,5 +138,17 @@ class Athlete extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
+    }
+
+    public function donations(): HasMany
+    {
+        return $this->hasMany(Donator::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            "login_token_expires_at" => "datetime",
+        ];
     }
 }
