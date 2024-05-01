@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Notifications\NewLoginToken;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
@@ -15,12 +14,6 @@ class Donator extends Model
         "privacy_name",
     ];
 
-    public function newTokenAndNotify(): void
-    {
-        $this->generateLoginToken();
-        $this->notify(new NewLoginToken($this->first_name, $this->login_token, "verify-donation"));
-    }
-
     public function generateLoginToken(): void
     {
         $token = bin2hex(random_bytes(32));
@@ -30,7 +23,6 @@ class Donator extends Model
         }
 
         $this->login_token = $token;
-        $this->login_token_expires_at = now()->addDays(config("app.login_token_expiry_days"));
         $this->save();
     }
 
@@ -58,11 +50,4 @@ class Donator extends Model
         "phone_number",
         "email",
     ];
-
-    protected function casts(): array
-    {
-        return [
-            "login_token_expires_at" => "datetime",
-        ];
-    }
 }

@@ -27,7 +27,6 @@ return new class extends Migration {
             $table->text("comment")->nullable();
             $table->unsignedInteger("public_id")->unique()->nullable();
             $table->string("login_token")->unique()->nullable();
-            $table->timestamp("login_token_expires_at")->nullable();
             $table->boolean("verified")->default(false);
             $table->timestamps();
         });

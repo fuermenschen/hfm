@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->string("phone_number");
             $table->string("email");
             $table->string("login_token")->unique()->nullable();
-            $table->timestamp("login_token_expires_at")->nullable();
             $table->timestamps();
         });
     }

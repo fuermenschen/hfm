@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Notifications\AthleteRegistered;
-use App\Notifications\NewLoginToken;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,12 +62,6 @@ class Athlete extends Model
 
             $athlete->notify(new AthleteRegistered($athlete->first_name, $athlete->login_token));
         });
-    }
-
-    public function newTokenAndNotify(): void
-    {
-        $this->generateLoginToken();
-        $this->notify(new NewLoginToken($this->first_name, $this->login_token, "show-athlete"));
     }
 
     private function generatePublicId(): int
@@ -145,10 +138,4 @@ class Athlete extends Model
         return $this->hasMany(Donation::class);
     }
 
-    protected function casts(): array
-    {
-        return [
-            "login_token_expires_at" => "datetime",
-        ];
-    }
 }

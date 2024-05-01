@@ -39,24 +39,6 @@ class DonatorDetails extends Component
             }
         }
 
-
-        // check if the login token is still valid
-        if ($donator->login_token_expires_at < now()) {
-
-            $donator->login_token = $donator->newTokenAndNotify();
-
-            // show an error message
-            $this->dialog(
-                [
-                    'icon' => 'info',
-                    'title' => 'Anmeldung abgelaufen!',
-                    'description' => 'Dein Anmeldelink ist abgelaufen. Du hast einen neuen Link per Mail bekommen.',
-                    "onClose" => [
-                        "method" => "redirectHelper",
-                    ],
-                ]);
-        }
-
         $this->donator = $donator;
         $this->donations = Donation::where('donator_id', $donator->id)->with('athlete')->get();
     }
@@ -66,8 +48,4 @@ class DonatorDetails extends Component
         return view('components.donator-details');
     }
 
-    public function redirectHelper(): void
-    {
-        $this->redirect(route("home"), navigate: true);
-    }
 }
