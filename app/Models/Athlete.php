@@ -107,7 +107,7 @@ class Athlete extends Model
 
     public function getPrivacyNameAttribute(): string
     {
-        return "$this->first_name $this->last_name[0].";
+        return "{$this->first_name} {$this->last_name[0]}.";
     }
 
     // make a string in the format ###-###

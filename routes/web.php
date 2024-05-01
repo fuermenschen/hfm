@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Athlete;
+use App\Models\Donation;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 // Main Menu
 Route::view("/", "home", [
     'athleteCount' => Athlete::count(),
+    'donationCount' => Donation::count(),
 ])->name("home");
 Route::view("ueber-das-projekt", "pages.about")->name("about");
 Route::view("sportlerin-werden", "pages.become-athlete")->name("become-athlete");
