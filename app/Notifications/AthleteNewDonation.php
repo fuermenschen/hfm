@@ -3,11 +3,10 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AthleteRegistered extends Notification implements ShouldQueue
+class AthleteNewDonation extends Notification
 {
     use Queueable;
 
@@ -15,6 +14,7 @@ class AthleteRegistered extends Notification implements ShouldQueue
      * Create a new notification instance.
      */
     public function __construct(public readonly string $first_name,
+                                public readonly string $donator_name,
                                 public readonly string $login_token)
     {
         //
@@ -36,12 +36,12 @@ class AthleteRegistered extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Deine Registrierung als Sportler:in")
-            ->greeting("Hallo " . $this->first_name)
-            ->line('Vielen Dank für deine Registrierung bei uns. Bitte klicke auf den unten stehenden Button, um deine E-Mail-Adresse zu bestätigen.')
+            ->subject("Ein:e Spender:in hat sich für dich registriert!")
+            ->greeting("Hallo $this->first_name,")
+            ->line("Soeben hat sich $this->donator_name als Spender:in für dich registriert.")
+            ->line("Wenn du dich einloggst, siehst du, wer alles für dich spenden wird.")
             ->action('Login', route('show-athlete', $this->login_token))
-            ->line('Sobald du deine E-Mail-Adresse bestätigt hast, können deine Sponsor:innen dich auswählen.')
-            ->line('Übrigens: Du kannst jederzeit nachsehen, wer dich bereits unterstützt. Klicke dafür einfach auf den Button oben.');
+            ->line('Vielen Dank, dass du so fleissig mithilfst, spenden zu sammeln!');
     }
 
     /**
@@ -52,7 +52,7 @@ class AthleteRegistered extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-//
+            //
         ];
     }
 }

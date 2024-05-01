@@ -89,7 +89,6 @@ class Athlete extends Model
         }
 
         $this->login_token = $token;
-        $this->login_token_expires_at = now()->addDays(config("app.login_token_expiry_days"));
         $this->save();
     }
 
