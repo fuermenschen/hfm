@@ -49,7 +49,7 @@
 
     <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
                      wire:model.blur="rounds_estimated"
-                     hint="Das hilf deinen Spender:innen, den Betrag pro Runde festzulegen." />
+                     hint="Das hilft deinen Spender:innen, den Betrag pro Runde festzulegen." />
 
     <x-native-select label="Ich möchte sammeln für" wire:model="partner_id"
                      hint="Das Geld, das du mit deinen Spender:innen sammelst, geht an diese:n Benefizpartner:in.">
