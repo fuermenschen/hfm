@@ -33,7 +33,7 @@
            <x-native-select label="Meine Unterstützung geht an" wire:model.live="athlete_id"
                             @change="$wire.updateNames()">
                 <option disabled value="0">Bitte wählen</option>
-                @if (!$athletes || sizeof($athletes) === 0)
+               @if (!$athletes || sizeof($athletes) === 0)
                    <option disabled value="0">Keine Sportler:innen verfügbar</option>
                @else
                    @foreach ($athletes as $athlete)
@@ -52,9 +52,12 @@
     <span>
             <x-inputs.currency
                 label="Dein Beitrag pro Runde"
-                placeholder="1.25" wire:model.number.blur="amount_per_round" prefix="Fr." />
-            <button type="button" wire:click="showAmountInfo"
-                    class="text-xs text-hfm-dark">Wie funktioniert das?</button>
+                placeholder="7.25" wire:model.number.blur="amount_per_round" prefix="Fr." />
+            @if ($athlete_id)
+            <span
+                class="text-xs"><strong> {{ $currentAthlete }} </strong> hat angegeben, ungefähr <strong>{{ $currentRounds }} </strong> Runden zu absolvieren.
+                </span>
+        @endif
         </span>
 
     <span>

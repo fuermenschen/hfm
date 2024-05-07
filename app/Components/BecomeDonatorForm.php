@@ -63,6 +63,7 @@ class BecomeDonatorForm extends Component
     // Athlet
     public ?array $athletes = null;
     public string $currentAthlete = "der:die Sportler:in";
+    public ?int $currentRounds = null;
 
     #[Validate("required", message: "Bitte wähle jemanden aus.")]
     #[Validate("min:0", message: "Sportler:in existiert nicht.")]
@@ -109,6 +110,7 @@ class BecomeDonatorForm extends Component
         if ($athlete) {
             $this->currentAthlete = $athlete->privacy_name;
             $this->currentPartner = $athlete->partner->name;
+            $this->currentRounds = $athlete->rounds_estimated;
         }
     }
 
