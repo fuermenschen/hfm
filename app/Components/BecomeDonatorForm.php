@@ -166,14 +166,8 @@ class BecomeDonatorForm extends Component
 
     public function showAmountInfo(): void
     {
-        if ($this->athlete_id) {
-            $athlete = Athlete::find($this->athlete_id)->privacy_name;
-            $partner = Athlete::find($this->athlete_id)->partner->name;
-        } else {
-            $athlete = "der:die Sportler:in";
-            $partner = "den:die Benefizpartner:in";
-        }
-
+        $athlete = $this->currentAthlete;
+        $partner = $this->currentPartner;
         $message =
             "Der Betrag, den du pro Runde spenden möchtest, wird mit der Anzahl Runden multipliziert, die " .
             $athlete .
