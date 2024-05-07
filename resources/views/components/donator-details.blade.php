@@ -1,5 +1,5 @@
 <div>
-    <x-page-title>Hallo {{ $donator->first_name }}</x-page-title>
+    <x-page-title>Hallo {{ $donator['first_name'] }}</x-page-title>
 
     <p>Auf dieser Seite siehst du, bei wem du dich als Spender:in eingetragen hast.</p>
 
@@ -10,12 +10,12 @@
             <ul>
                 @foreach ($donations as $donation)
                     <li class="list-disc">
-                        {{ $donation->athlete->privacy_name }} ({{ $donation->athlete->public_id_string }})
+                        {{ $donation['athlete'] }} ({{ $donation['public_id'] }})
                     </li>
                 @endforeach
             </ul>
         @else
-            <p>Es hat sich noch niemand als Spender:in eingetragen.</p>
+            <p>Du hast noch für niemanden gespendet.</p>
         @endif
     </div>
 

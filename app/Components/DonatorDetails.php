@@ -4,7 +4,7 @@ namespace App\Components;
 
 use App\Models\Donation;
 use App\Models\Donator;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use WireUi\Traits\Actions;
@@ -14,7 +14,7 @@ class DonatorDetails extends Component
     use Actions;
 
     #[Locked]
-    public Donator $donator;
+    public array $donator;
 
     public Collection $donations;
 
@@ -39,8 +39,17 @@ class DonatorDetails extends Component
             }
         }
 
-        $this->donator = $donator;
-        $this->donations = Donation::where('donator_id', $donator->id)->with('athlete')->get();
+        $this->donator = [
+            'first_name' => $donator->first_name,
+        ];
+
+        $donations = Donation::where('donator_id', $donator->id)->with('athlete')->get();
+        $this->donations = $donations->map(function ($donation) {
+            return [
+                'athlete' => $donation->athlete->privacy_name,
+                'public_id' => $donation->athlete->public_id_string,
+            ];
+        });
     }
 
     public function render()

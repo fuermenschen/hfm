@@ -1,5 +1,5 @@
 <div>
-    <x-page-title>Hallo {{ $athlete->first_name }}</x-page-title>
+    <x-page-title>Hallo {{ $athlete['first_name'] }}</x-page-title>
 
     <p>Auf dieser Seite siehst du, wer sich bei dir als Spender:in eingetragen hat.</p>
 
@@ -8,8 +8,8 @@
         <ul>
             @foreach ($donations as $donation)
                 <li class="list-disc">
-                    {{ $donation->donator->privacy_name }}
-                    @if (!$donation->verified)
+                    {{ $donation['donator'] }}
+                    @if (!$donation['verified'])
                         <span class="text-red-500 text-sm">(noch nicht verifiziert)</span>
                     @endif
                 </li>
