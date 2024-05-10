@@ -20,10 +20,8 @@ return new class extends Migration {
             $table->string("phone_number");
             $table->string("email")->unique();
             $table->boolean("adult");
-            $table->foreignId("sport_type_id")->constrained();
             $table->unsignedTinyInteger("rounds_estimated");
             $table->unsignedTinyInteger("rounds_done")->default(0);
-            $table->foreignId("partner_id")->constrained();
             $table->text("comment")->nullable();
             $table->unsignedInteger("public_id")->unique()->nullable();
             $table->string("login_token")->unique()->nullable();

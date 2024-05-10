@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Athlete;
+use App\Models\Donator;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,8 +14,8 @@ return new class extends Migration {
     {
         Schema::create('donations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("donator_id")->cascadeOnDelete()->cascadeOnUpdate();
-            $table->foreignId("athlete_id")->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreignIdFor(Donator::class)->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreignIdFor(Athlete::class)->cascadeOnDelete()->cascadeOnUpdate();
             $table->float("amount_per_round");
             $table->float("amount_max");
             $table->float("amount_min");
