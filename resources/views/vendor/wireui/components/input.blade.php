@@ -101,7 +101,7 @@
         </label>
     @endif
 
-    @if ($name && !$errorless)
+    @if ($name && !$errorless && false)
         <x-dynamic-component
             :component="WireUi::component('error')"
             :name="$name"
