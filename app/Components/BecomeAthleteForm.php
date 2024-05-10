@@ -48,7 +48,7 @@ class BecomeAthleteForm extends Component
 
     // E-Mail
     #[Validate("required", message: "Wir benötigen deine E-Mail-Adresse.")]
-    #[Validate("email")]  //, message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
+    #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
     #[Validate("unique:athletes,email", message: "Die E-Mail-Adresse ist bereits registriert.")]
     public ?string $email = null;
 
