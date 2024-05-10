@@ -14,8 +14,8 @@ return new class extends Migration {
     {
         Schema::create('donations', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Donator::class)->cascadeOnDelete()->cascadeOnUpdate();
-            $table->foreignIdFor(Athlete::class)->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreignIdFor(Donator::class)->cascadeOnDelete()->cascadeOnUpdate()->constrained();
+            $table->foreignIdFor(Athlete::class)->cascadeOnDelete()->cascadeOnUpdate()->constrained();
             $table->float("amount_per_round");
             $table->float("amount_max");
             $table->float("amount_min");
