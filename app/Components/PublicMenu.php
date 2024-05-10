@@ -38,7 +38,7 @@ class PublicMenu extends Component
 
     public function mount(): void
     {
-        $currentRoute = Request::path();
+        $currentRoute = Request::route()->getName();
 
         foreach ($this->menuItems as $key => $menuItem) {
             if ($menuItem["route"] === $currentRoute) {

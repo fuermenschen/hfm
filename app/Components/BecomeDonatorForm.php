@@ -154,6 +154,21 @@ class BecomeDonatorForm extends Component
                 $donator = Donator::create($this->all());
             }
 
+            // check if this donator already has a donation for this athlete
+            if ($donator->donations()->where("athlete_id", $this->athlete_id)->exists()) {
+                $this->dialog([
+                    "title" => "Bereits angemeldet",
+                    "description" => "Du hast dich bereits als Spender:in für diese:n Sportler:in angemeldet. Falls du den gewählten Betrag anpassen möchtest, kontaktiere uns bitte.",
+                    "icon" => "warning",
+                    "onClose" => [
+                        "method" => "redirectHelper",
+                        "params" => ["/kontakt"],
+                    ],
+                ]);
+
+                return;
+            }
+
             // create a new donation
             $donator->donations()->create($this->all());
 
@@ -165,6 +180,7 @@ class BecomeDonatorForm extends Component
                 "icon" => "mail-open",
                 "onClose" => [
                     "method" => "redirectHelper",
+                    "params" => ["/"],
                 ],
             ]);
 
@@ -187,7 +203,7 @@ class BecomeDonatorForm extends Component
         $this->dialog([
             "title" => "Datenschutz",
             "description" =>
-                "Wir benutzen deine Daten nur für Zwecke, die für die Organisation zwingend sind. Nach dem Anlass werden deine Daten gelöscht. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.",
+                "Wir benutzen deine Daten nur für Zwecke, die für die Organisation zwingend sind. Nach dem Anlass werden deine Daten gelöscht. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.<br><br><a href='/datenschutz' target='_blank' class='underline'>Datenschutzerklärung</a>",
             "icon" => "info",
         ]);
     }
@@ -227,8 +243,8 @@ class BecomeDonatorForm extends Component
             ->toArray();
     }
 
-    public function redirectHelper(): void
+    public function redirectHelper(string $url): void
     {
-        $this->redirect("/", navigate: true);
+        $this->redirect($url, navigate: true);
     }
 }

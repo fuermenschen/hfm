@@ -14,7 +14,7 @@
         Brühlgut Stiftung, Brühlbergstrasse 6, 8400 Winterthur
 
         <iframe
-            src='https://map.geo.admin.ch/embed.html?lang=de&topic=ech&bgLayer=ch.swisstopo.swissimage&layers=ch.swisstopo.zeitreihen,ch.bfs.gebaeude_wohnungs_register,ch.bav.haltestellen-oev,ch.swisstopo.swisstlm3d-wanderwege,ch.astra.wanderland-sperrungen_umleitungen,KML%7C%7Chttps:%2F%2Fpublic.geo.admin.ch%2Fapi%2Fkml%2Ffiles%2FvQu__IOfRseIXh2AKJnXUw&layers_opacity=1,1,1,0.8,0.8,1&layers_visibility=false,false,false,false,false,true&layers_timestamp=18641231,,,,,&E=2695948.96&N=1261419.92&zoom=10'
+            src='https://map.geo.admin.ch/embed.html?lang=de&topic=ech&bgLayer=ch.swisstopo.pixelkarte-farbe&layers=ch.bav.haltestellen-oev,KML%7C%7Chttps:%2F%2Fpublic.geo.admin.ch%2Fapi%2Fkml%2Ffiles%2FWa_orMUOTPmuGvtVdPcemw&E=2695929.64&N=1261399.28&zoom=10'
             class="w-full h-96 max-w-2xl mt-xs"></iframe>
 
         <x-page-subtitle>

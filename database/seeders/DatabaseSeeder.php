@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Database\Seeder;
@@ -28,7 +27,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         SportType::create([
-            "name" => "Rollstuhl (mit Begleitung)",
+            "name" => "Rollstuhl",
         ]);
 
         SportType::create([
@@ -53,6 +52,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // create athletes (example data)
-        Athlete::factory(1)->create();
+        // Athlete::factory(1)->create();
     }
 }

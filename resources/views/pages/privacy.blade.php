@@ -17,7 +17,7 @@
     <ul class="list-disc m-sm">
         <li>Name</li>
         <li>Vorname</li>
-        <li>Geburtsdatum</li>
+        <li>Volljährigkeit</li>
         <li>Adresse</li>
         <li>E-Mail-Adresse</li>
         <li>Telefonnummer</li>
@@ -25,7 +25,7 @@
     </ul>
 
     <p>Bei der Anmeldung der Spender:innen wird dein Name angezeigt, sodass die Spender:innen dich auswählen können (Nur
-        Initiale des Nachnamens, z.B. Francesca A.). Die Anderen Angaben brauchen wir, damit wir dir ein Starter-Paket
+        Initiale des Nachnamens, z.B. Francesca A.). Die anderen Angaben brauchen wir, damit wir dir ein Starter-Paket
         senden können und, falls du noch nicht volljährig bist, deine Eltern über deine Anmeldung informieren können.
         Sobald der Anlass und dessen Nachbearbeitung abgeschlossen sind, werden alle personenbezogenen Daten
         gelöscht.</p>
@@ -35,11 +35,14 @@
     <ul class="list-disc m-sm">
         <li>Name</li>
         <li>Vorname</li>
+        <li>Adresse</li>
         <li>E-Mail-Adresse</li>
         <li>Telefonnummer</li>
     </ul>
 
-    <p>Die Angaben brauchen wir, damit wir dich erreichen können und dir nach dem Anlass eine Rechnung zustellen können.
+    <p> Dein Name (Nur Vorname und Initiale des Nachnamens, z.B. Francesca A.) ist für die:den Sportler:in, welche du
+        ausgewählt hast, sichtbar. Die anderen Angaben brauchen wir, damit wir dich erreichen können und dir nach dem
+        Anlass eine Rechnung zustellen können.
         Sobald der Anlass und dessen Nachbearbeitung abgeschlossen sind, werden alle personenbezogenen Daten
         gelöscht.</p>
 

@@ -36,7 +36,6 @@ return [
      */
     'environments' => [
         'production',
-        'local'
     ],
 
     /**
@@ -66,7 +65,7 @@ return [
      * a form loading and the request coming back in if you have either
      * `MinimumTimePassedCheck` or `JavascriptInputFilledCheck` enabled.
      */
-    'minimum_time_passed' => 30,
+    'minimum_time_passed' => 3,
 
     /**
      * --------------------------------------------------------------------------

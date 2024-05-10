@@ -16,7 +16,8 @@
             @endforeach
         </ul>
     @else
-        <p>Es hat sich noch niemand als Spender:in eingetragen.</p>
+        <p>Es hat sich noch niemand als Spender:in eingetragen. Du kannst den Link in der Mail jederzeit wieder
+            aufrufen, um zu sehen, wer sich schon alles für dich registriert hat.</p>
     @endif
 
 </div>
