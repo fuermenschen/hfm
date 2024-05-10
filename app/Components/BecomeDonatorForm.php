@@ -9,11 +9,13 @@ use Exception;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Lukeraymonddowning\Honey\Traits\WithHoney;
 use WireUi\Traits\Actions;
 
 class BecomeDonatorForm extends Component
 {
     use Actions;
+    use WithHoney;
 
     // Vorname
     #[Validate("required", message: "Wir benötigen deinen Vornamen.")]
@@ -117,6 +119,10 @@ class BecomeDonatorForm extends Component
 
     public function save(): void
     {
+        if (!$this->honeyPasses()) {
+            return;
+        }
+
         try {
             $this->validate();
         } catch (ValidationException $e) {

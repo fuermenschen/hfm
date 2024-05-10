@@ -1,6 +1,8 @@
 <form wire:submit="save"
       class="flex flex-col space-y-sm sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-sm mt-sm">
 
+    @csrf
+
     <x-input right-icon="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" required />
 
     <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" required />
@@ -75,6 +77,8 @@
                         class=" text-hfm-red">Was heisst das?</button>
             </span>
         </span>
+    
+    <x-honey />
 
     <span class="sm:col-span-2">
             <x-button label="Senden" type="submit" />
