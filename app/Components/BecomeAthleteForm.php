@@ -101,11 +101,11 @@ class BecomeAthleteForm extends Component
 
     public function save(): void
     {
-        if (!$this->honeyPasses()) {
-            return;
-        }
-
         try {
+            if ($this->honeyPasses()) {
+                $this->addError("Spam detected", "Spam detected.");
+            }
+
             $this->validate();
         } catch (ValidationException $e) {
 
