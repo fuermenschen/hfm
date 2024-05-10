@@ -6,6 +6,7 @@ use App\Models\Athlete;
 use App\Models\Donator;
 use App\Models\Partner;
 use Exception;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use WireUi\Traits\Actions;
@@ -116,7 +117,26 @@ class BecomeDonatorForm extends Component
 
     public function save(): void
     {
-        $this->validate();
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+
+            if ($e->validator->messages()->count() > 1) {
+                $title = "Es sind " . $e->validator->messages()->count() . " Fehler aufgetreten.";
+                $description = implode('<br>', $e->validator->messages()->all());
+            } else {
+                $title = $e->validator->messages()->first();
+                $description = "Bitte überprüfe deine Angaben.";
+            }
+
+            $this->dialog([
+                "title" => $title,
+                "description" => $description,
+                "icon" => "error",
+            ]);
+
+            return;
+        }
 
         try {
 

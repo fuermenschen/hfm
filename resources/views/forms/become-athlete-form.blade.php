@@ -1,34 +1,34 @@
 <form wire:submit="save"
       class="flex flex-col space-y-sm sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-sm mt-sm">
 
-    <x-input right-icon="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" />
+    <x-input right-icon="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" required />
 
-    <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" />
+    <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" required />
 
     <x-input right-icon="home" label="Adresse" placeholder="Zelglistrasse 41" wire:model.blur="address"
-             hint="Wir werden dir ein Starter-Kit senden." />
+             hint="Wir werden dir ein Starter-Kit senden." required />
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
                 <x-inputs.maskable mask="####" right-icon="home" label="PLZ" placeholder="8406"
                                    wire:model.number.blur="zip_code"
-                                   class="basis-1/3" />
+                                   class="basis-1/3" required />
             </span>
             <span class="grow">
                 <x-input right-icon="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"
-                         class="grow" />
+                         class="grow" required />
             </span>
         </span>
 
     <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email" />
+             wire:model.blur="email" required />
 
     <x-input right-icon="mail" label="E-Mail bestätigen " placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email_confirmation" />
+             wire:model.blur="email_confirmation" required />
 
     <x-inputs.phone right-icon="phone" label="Telefon"
                     mask="['### ### ## ##']" placeholder="079 123 45 67"
-                    wire:model.blur="phone_number" />
+                    wire:model.blur="phone_number" required />
 
     <span class="space-y-1">
         <span class="text-gray-700 text-sm font-medium">Bist du volljährig?</span>
@@ -49,7 +49,7 @@
 
     <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
                      wire:model.blur="rounds_estimated"
-                     hint="Das hilft deinen Spender:innen, den Betrag pro Runde festzulegen." />
+                     hint="Das hilft deinen Spender:innen, den Betrag pro Runde festzulegen." required />
 
     <x-native-select label="Ich möchte sammeln für" wire:model="partner_id"
                      hint="Das Geld, das du mit deinen Spender:innen sammelst, geht an diese:n Benefizpartner:in.">

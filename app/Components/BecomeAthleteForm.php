@@ -7,6 +7,7 @@ use App\Models\Partner;
 use App\Models\SportType;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -98,7 +99,27 @@ class BecomeAthleteForm extends Component
 
     public function save(): void
     {
-        $this->validate();
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+
+            if ($e->validator->messages()->count() > 1) {
+                $title = "Es sind " . $e->validator->messages()->count() . " Fehler aufgetreten.";
+                $description = implode('<br>', $e->validator->messages()->all());
+            } else {
+                $title = $e->validator->messages()->first();
+                $description = "Bitte überprüfe deine Angaben.";
+            }
+
+            $this->dialog([
+                "title" => $title,
+                "description" => $description,
+                "icon" => "error",
+            ]);
+
+            return;
+        }
+
 
         try {
 
