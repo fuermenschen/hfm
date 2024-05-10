@@ -1,6 +1,5 @@
 <?php
 
-use Lukeraymonddowning\Honey\Checks\JavascriptInputFilledCheck;
 use Lukeraymonddowning\Honey\Checks\MinimumTimePassedCheck;
 use Lukeraymonddowning\Honey\Checks\PresentButEmptyCheck;
 use Lukeraymonddowning\Honey\Checks\UserIsBlockedSpammerCheck;
@@ -53,7 +52,7 @@ return [
         UserIsBlockedSpammerCheck::class,
         PresentButEmptyCheck::class,
         MinimumTimePassedCheck::class,
-        JavascriptInputFilledCheck::class,
+        // JavascriptInputFilledCheck::class,
     ],
 
     /**
