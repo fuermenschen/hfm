@@ -20,13 +20,12 @@ Route::view("/", "home", [
     'athleteCount' => Athlete::count(),
     'donationCount' => Donation::count(),
 ])->name("home");
-Route::view("ueber-das-projekt", "pages.about")->name("about");
 Route::view("sportlerin-werden", "pages.become-athlete")->name("become-athlete");
 Route::view("spenderin-werden", "pages.become-donator")->name("become-donator");
-Route::view("informationen-zum-anlass", "pages.event-information")->name("event-information");
+Route::view("questions-and-answers", "pages.questions-and-answers")->name("questions-and-answers");
 
 // Footer Menu
-Route::view("faq", "pages.f-a-q")->name("faq");
+Route::view("login", "pages.login")->name("login");
 Route::view("kontakt", "pages.contact")->name("contact");
 Route::view("impressum", "pages.impressum")->name("impressum");
 Route::view("datenschutz", "pages.privacy")->name("privacy");

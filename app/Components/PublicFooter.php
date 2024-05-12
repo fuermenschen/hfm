@@ -8,8 +8,8 @@ class PublicFooter extends Component
 {
     public $footerItems = [
         [
-            "name" => "Häufige Fragen",
-            "route" => "faq",
+            "name" => "Login",
+            "route" => "login",
         ],
         [
             "name" => "Kontakt",
