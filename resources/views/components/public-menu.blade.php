@@ -1,4 +1,4 @@
-<header class="bg-hfm-white" x-data="{ open: false }">
+<header class="bg-hfm-white h-[5rem] sm:h-[5rem]" x-data="{ open: false }">
     <nav class="mx-auto flex items-baseline justify-between p-sm" aria-label="Global">
         <a href="/" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
