@@ -8,9 +8,9 @@
 
     <div>
         @component('components.page-title')
-            Höhenmeter für Menschen
+            Weitere informationen
         @endcomponent
-        <div class="space-y-sm">
+        <div class="space-y-sm" id="info">
             <p>
                 Mach mit beim ersten "Höhenmeter für Menschen" und werde Teil einer Gemeinschaft, die etwas bewirken
                 will!
