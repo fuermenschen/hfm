@@ -16,10 +16,11 @@
                  x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
                  x-on:mouseenter="pauseNotification(notification)"
                  x-on:mouseleave="resumeNotification(notification)">
-                <div class="bg-secondary-300 dark:bg-secondary-600 rounded-full transition-all duration-150 ease-linear absolute top-0 left-0"
-                     style="height: 2px; width: 100%;"
-                     :id="`timeout.bar.${notification.id}`"
-                     x-show="Boolean(notification.timer) && notification.progressbar !== false">
+                <div
+                    class="bg-secondary-300 dark:bg-secondary-600 rounded-full transition-all duration-150 ease-linear absolute top-0 left-0"
+                    style="height: 2px; width: 100%;"
+                    :id="`timeout.bar.${notification.id}`"
+                    x-show="Boolean(notification.timer) && notification.progressbar !== false">
                 </div>
                 <div :class="{
                         'pl-4': Boolean(notification.dense),
@@ -30,7 +31,7 @@
                         'flex items-start': !Boolean(notification.rightButtons),
                         'w-full flex': Boolean(notification.rightButtons),
                     }">
-                        <!-- notification icon|img -->
+                        <!-- notification icon|images -->
                         <template x-if="notification.icon || notification.img">
                             <div class="shrink-0" :class="{
                                     'w-6': Boolean(notification.icon),
@@ -41,7 +42,7 @@
                                 </template>
 
                                 <template x-if="notification.img">
-                                    <img class="h-10 w-10 rounded-full" :src="notification.img" />
+                                    <img class="h-10 w-10 rounded-full" :src="notification.img" alt="img" />
                                 </template>
                             </div>
                         </template>
@@ -59,7 +60,8 @@
                             </p>
 
                             <!-- actions buttons -->
-                            <template x-if="!notification.dense && !notification.rightButtons && (notification.accept || notification.reject)">
+                            <template
+                                x-if="!notification.dense && !notification.rightButtons && (notification.accept || notification.reject)">
                                 <div class="mt-3 flex gap-x-3">
                                     <button class="rounded-md text-sm font-medium focus:outline-none"
                                             :class="{
@@ -99,14 +101,15 @@
                             </button>
 
                             <!-- close button -->
-                            <button class="rounded-md inline-flex text-secondary-400 hover:text-secondary-500 focus:outline-none"
-                                    x-show="notification.closeButton"
-                                    x-on:click="closeNotification(notification)">
+                            <button
+                                class="rounded-md inline-flex text-secondary-400 hover:text-secondary-500 focus:outline-none"
+                                x-show="notification.closeButton"
+                                x-on:click="closeNotification(notification)">
                                 <span class="sr-only">Close</span>
                                 <x-dynamic-component
-                                        :component="WireUi::component('icon')"
-                                        class="h-5 w-5"
-                                        name="x"
+                                    :component="WireUi::component('icon')"
+                                    class="h-5 w-5"
+                                    name="x"
                                 />
                             </button>
                         </div>

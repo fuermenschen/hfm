@@ -1,4 +1,32 @@
 {
+  "resources/images/143_light.svg": {
+    "file": "assets/143_light-DC4-37wv.svg",
+    "src": "resources/images/143_light.svg"
+  },
+  "resources/images/bruehlgut_light.svg": {
+    "file": "assets/bruehlgut_light-D2puJ2XE.svg",
+    "src": "resources/images/bruehlgut_light.svg"
+  },
+  "resources/images/iks_light.svg": {
+    "file": "assets/iks_light-DjTVfvWq.svg",
+    "src": "resources/images/iks_light.svg"
+  },
+  "resources/images/logo_light.svg": {
+    "file": "assets/logo_light-i6Iem9mz.svg",
+    "src": "resources/images/logo_light.svg"
+  },
+  "resources/images/rt_simple_light.svg": {
+    "file": "assets/rt_simple_light-D61CfvxY.svg",
+    "src": "resources/images/rt_simple_light.svg"
+  },
+  "resources/images/running_1.jpg": {
+    "file": "assets/running_1-DH-b0g5j.jpg",
+    "src": "resources/images/running_1.jpg"
+  },
+  "resources/images/running_2.jpg": {
+    "file": "assets/running_2-DHB69Mx4.jpg",
+    "src": "resources/images/running_2.jpg"
+  },
   "resources/js/app.js": {
     "file": "assets/app-l0sNRNKZ.js",
     "name": "app",
@@ -6,7 +34,7 @@
     "isEntry": true
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-DAljK7o9.css",
+    "file": "assets/app-D03gLAKS.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }

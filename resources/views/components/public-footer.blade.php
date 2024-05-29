@@ -1,4 +1,4 @@
-<div class="my-sm">
+<div class="my-md">
     <svg width="100%" height="2" class="stroke-hfm-dark mb-5">
         <line x1="0" y1="0" x2="100%" y2="0" style="stroke-width:2" />
     </svg>
@@ -20,7 +20,6 @@
            href="https://www.rt25.ch"
            target="_blank">
             <span class="pt-12 md:pt-0 text-sm">Roundtable 25 Winterthur</span>
-            <!-- TODO: Replace with the actual logo -->
             <x-logo-roundtable class="h-12 w-12 pt-6 md:pt-0" />
         </a>
     </div>

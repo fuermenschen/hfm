@@ -1,6 +1,6 @@
 <header class="bg-hfm-white h-[5rem] sm:h-[5rem]" x-data="{ open: false }">
-    <nav class="mx-auto flex items-baseline justify-between p-sm" aria-label="Global">
-        <a href="/" wire:navigate>
+    <nav class="mx-auto flex items-baseline justify-between p-md" aria-label="Global">
+        <a href="{{ route("home") }}" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
             <x-logo class="h-10 -mb-1.5" />
         </a>
@@ -35,6 +35,18 @@
                 </a>
             @endforeach
         </div>
+        <div class="hidden lg:flex items">
+            <a href="{{ route("login") }}" wire:navigate
+               class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark font-normal flex flex-row space-x-2">
+                <span>Login</span>
+
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                     stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                </svg>
+            </a>
+        </div>
     </nav>
     <!-- Mobile menu, show/hide based on menu open state. -->
     <div
@@ -66,7 +78,7 @@
                 </button>
             </div>
             <div class="mt-6 flow-root">
-                <div class="-my-6 divide-y divide-gray-500/10">
+                <div class="-my-6">
                     <div class="space-y-2 py-6">
                         @foreach($menuItems as $item)
                             <a
@@ -83,6 +95,21 @@
                             </a>
                         @endforeach
                     </div>
+                    <a
+                        href="{{ route("login") }}"
+                        wire:navigate
+                        class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:bg-gray-50 hover:text-hfm-light text-hfm-dark flex flex-row"
+                    >
+                        <span>Login</span>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                             stroke="currentColor" class="size-6 ml-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                        </svg>
+
+                    </a>
+
                 </div>
             </div>
         </div>
