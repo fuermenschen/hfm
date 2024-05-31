@@ -8,7 +8,7 @@
             für
             lokale Benefizpartner:innen. Bist auch du am Start?</p>
         <div class="mt-4 sm:mt-8 flex items-center justify-center gap-x-6">
-            <a href="{{ route('home') }}/#info"
+            <a href="/#info"
                class="rounded-md bg-hfm-red px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-hfm-dark">Mehr
                 dazu</a>
             <a href="{{ route('become-donator') }}" wire:navigate.hover
