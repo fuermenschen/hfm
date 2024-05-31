@@ -1,4 +1,8 @@
-@php use Illuminate\Support\Facades\Vite; @endphp
+@php use Illuminate\Support\Facades\Vite;
+ $randomImgPortrait = sprintf('%02d', rand(1, 8));
+ $randomImgLandscape = sprintf('%02d', rand(1, 7));
+
+@endphp
 @props(['athleteCount', 'donationCount'])
 <div class="relative">
     <div class="mx-auto max-w-7xl lg:flex lg:justify-between lg:px-8 xl:justify-end">
@@ -7,13 +11,13 @@
             class="lg:flex lg:w-1/2 lg:shrink lg:grow-0 xl:absolute xl:inset-y-0 xl:right-1/2 xl:w-1/2 -mx-md lg:mr-md">
             <div class="hidden lg:block relative h-80 lg:-ml-8 lg:h-auto lg:w-full lg:grow xl:ml-0">
                 <img class="absolute inset-0 h-full w-full bg-gray-50 object-cover"
-                     src=" {{ Vite::asset("resources/images/running_1.jpg") }}"
-                     alt="Image of a person running">
+                     src="{{ Vite::asset('resources/images/sport_portrait_' . $randomImgPortrait . '.jpeg') }}"
+                     alt="decorative image of one or more people doing sport">
             </div>
             <div class="block lg:hidden relative h-80 lg:-ml-8 lg:h-auto lg:w-full lg:grow xl:ml-0">
                 <img class="absolute inset-0 h-full w-full bg-gray-50 object-cover"
-                     src=" {{ Vite::asset("resources/images/running_2.jpg") }}"
-                     alt="Image of a person running">
+                     src="{{ Vite::asset('resources/images/sport_landscape_' . $randomImgLandscape . '.jpeg') }}"
+                     alt="decorative image of one or more people doing sport">
             </div>
         </div>
         <div class="px-6 lg:contents">

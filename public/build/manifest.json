@@ -19,13 +19,65 @@
     "file": "assets/rt_simple_light-D61CfvxY.svg",
     "src": "resources/images/rt_simple_light.svg"
   },
-  "resources/images/running_1.jpg": {
-    "file": "assets/running_1-DH-b0g5j.jpg",
-    "src": "resources/images/running_1.jpg"
+  "resources/images/sport_landscape_01.jpeg": {
+    "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
+    "src": "resources/images/sport_landscape_02.jpeg"
   },
-  "resources/images/running_2.jpg": {
-    "file": "assets/running_2-DHB69Mx4.jpg",
-    "src": "resources/images/running_2.jpg"
+  "resources/images/sport_landscape_02.jpeg": {
+    "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
+    "src": "resources/images/sport_landscape_02.jpeg"
+  },
+  "resources/images/sport_landscape_03.jpeg": {
+    "file": "assets/sport_landscape_03-mVjRCTZE.jpeg",
+    "src": "resources/images/sport_landscape_03.jpeg"
+  },
+  "resources/images/sport_landscape_04.jpeg": {
+    "file": "assets/sport_landscape_04-BI_h3tnZ.jpeg",
+    "src": "resources/images/sport_landscape_04.jpeg"
+  },
+  "resources/images/sport_landscape_05.jpeg": {
+    "file": "assets/sport_landscape_05-COTLDp_w.jpeg",
+    "src": "resources/images/sport_landscape_05.jpeg"
+  },
+  "resources/images/sport_landscape_06.jpeg": {
+    "file": "assets/sport_landscape_06-DmRdlMLZ.jpeg",
+    "src": "resources/images/sport_landscape_06.jpeg"
+  },
+  "resources/images/sport_landscape_07.jpeg": {
+    "file": "assets/sport_landscape_07-BeZLswcd.jpeg",
+    "src": "resources/images/sport_landscape_07.jpeg"
+  },
+  "resources/images/sport_portrait_01.jpeg": {
+    "file": "assets/sport_portrait_01-YR_O1oDb.jpeg",
+    "src": "resources/images/sport_portrait_01.jpeg"
+  },
+  "resources/images/sport_portrait_02.jpeg": {
+    "file": "assets/sport_portrait_02-DTCHQxE2.jpeg",
+    "src": "resources/images/sport_portrait_02.jpeg"
+  },
+  "resources/images/sport_portrait_03.jpeg": {
+    "file": "assets/sport_portrait_03-H5JpcEFy.jpeg",
+    "src": "resources/images/sport_portrait_03.jpeg"
+  },
+  "resources/images/sport_portrait_04.jpeg": {
+    "file": "assets/sport_portrait_04-DTxsg6r-.jpeg",
+    "src": "resources/images/sport_portrait_04.jpeg"
+  },
+  "resources/images/sport_portrait_05.jpeg": {
+    "file": "assets/sport_portrait_05-BawG9tze.jpeg",
+    "src": "resources/images/sport_portrait_05.jpeg"
+  },
+  "resources/images/sport_portrait_06.jpeg": {
+    "file": "assets/sport_portrait_06-C8uEHrqv.jpeg",
+    "src": "resources/images/sport_portrait_06.jpeg"
+  },
+  "resources/images/sport_portrait_07.jpeg": {
+    "file": "assets/sport_portrait_07-BiiRkn6y.jpeg",
+    "src": "resources/images/sport_portrait_07.jpeg"
+  },
+  "resources/images/sport_portrait_08.jpeg": {
+    "file": "assets/sport_portrait_08-D4zRtDEB.jpeg",
+    "src": "resources/images/sport_portrait_08.jpeg"
   },
   "resources/js/app.js": {
     "file": "assets/app-l0sNRNKZ.js",
