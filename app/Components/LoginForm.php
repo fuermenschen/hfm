@@ -4,6 +4,7 @@ namespace App\Components;
 
 use App\Models\Athlete;
 use App\Models\Donator;
+use App\Models\User;
 use App\Notifications\NewLoginLink;
 use Exception;
 use Illuminate\Support\Facades\Notification;
@@ -60,24 +61,33 @@ class LoginForm extends Component
             $donator = Donator::where('email', $this->email)->first();
             $donator_login_token = $donator ? $donator->login_token : "";
 
+            $user = User::where('email', $this->email)->first();
+            $user_login_token = $user ? $user->login_token : "";
+
             // get the first name
             if ($athlete) {
                 $first_name = $athlete->first_name;
             } elseif ($donator) {
                 $first_name = $donator->first_name;
-            } else {
-                $first_name = "";
+            } elseif ($user) {
+                $first_name = $user->first_name;
             }
 
-            // send login link
-            $notification = new NewLoginLink(
-                first_name: $first_name,
-                athlete_login_token: $athlete_login_token,
-                donator_login_token: $donator_login_token,
-                user_login_token: "", // TODO: add user login token
-            );
+            if (!$athlete && !$donator && !$user) {
 
-            Notification::route('mail', $this->email)->notify($notification);
+                // add delay to prevent timing attacks
+                sleep(2);
+            } else {
+                // send login link
+                $notification = new NewLoginLink(
+                    first_name: $first_name,
+                    athlete_login_token: $athlete_login_token,
+                    donator_login_token: $donator_login_token,
+                    user_login_token: "", // TODO: add user login token
+                );
+
+                Notification::route('mail', $this->email)->notify($notification);
+            }
 
         } catch (Exception $e) {
 
