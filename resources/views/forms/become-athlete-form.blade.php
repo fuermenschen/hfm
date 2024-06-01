@@ -33,7 +33,7 @@
                     wire:model.blur="phone_number" required />
 
     <span class="space-y-1">
-        <span class="text-gray-700 text-sm font-medium">Bist du volljährig?</span>
+        <span class="text-gray-700 dark:text-gray-400 text-sm font-medium">Bist du volljährig?</span>
     <x-toggle wire:model.boolean="adult" left-label="Nein" label="Ja" lg />
         </span>
 
@@ -77,7 +77,7 @@
                         class=" text-hfm-red">Was heisst das?</button>
             </span>
         </span>
-    
+
     <x-honey />
 
     <span class="sm:col-span-2">

@@ -1,4 +1,4 @@
-<header class="bg-hfm-white h-[5rem] sm:h-[5rem]" x-data="{ open: false }">
+<header class="h-[5rem] sm:h-[5rem]" x-data="{ open: false }">
     <nav class="mx-auto flex items-baseline justify-between p-md" aria-label="Global">
         <a href="{{ route("home") }}" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
@@ -9,7 +9,7 @@
                 x-show="!open"
                 @click="open = true"
                 type="button"
-                class="inline-flex items-center justify-center rounded-md p-2.5 text-hfm-dark"
+                class="inline-flex items-center justify-center rounded-md p-2.5"
             >
                 <span class="sr-only">Menü öffnen</span>
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
@@ -27,8 +27,8 @@
                     wire:navigate.hover
                     @class([
                         "text-sm leading-6 grow hover:text-hfm-light",
-                        "text-hfm-dark font-normal" => !$item['active'],
-                        "text-hfm-red font-medium" => $item['active'],
+                        "text-hfm-dark dark:text-hfm-white font-normal" => !$item['active'],
+                        "text-hfm-red dark:text-hfm-lightred font-medium" => $item['active'],
                     ])
                 >
                     {{ $item['name'] }}
@@ -37,7 +37,7 @@
         </div>
         <div class="hidden lg:flex items">
             <a href="{{ route("login") }}" wire:navigate
-               class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark font-normal flex flex-row space-x-2">
+               class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2">
                 <span>Login</span>
 
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

@@ -41,7 +41,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
-<body class="h-full w-full bg-hfm-white text-hfm-dark">
+<body class="h-full w-full bg-hfm-white dark:bg-hfm-dark text-hfm-dark dark:text-hfm-white">
 <x-dialog />
 @yield('body')
 </body>

@@ -10,7 +10,7 @@
                     href="{{ route($item['route']) }}"
                     wire:key="{{ $item['name'] }}"
                     wire:navigate.hover
-                    class="text-sm hover:text-hfm-light text-hfm-dark"
+                    class="text-sm hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
                 >
                     {{ $item['name'] }}
                 </a>

@@ -46,7 +46,7 @@
 
     <x-page-subtitle id="allgemein">Allgemein</x-page-subtitle>
 
-    <dl class="space-y-6 divide-y divide-gray-900/10 mb-md">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30  mb-md">
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
@@ -83,7 +83,7 @@
     <x-page-subtitle id="sportlerinnen">Sportler:innen</x-page-subtitle>
 
 
-    <dl class="space-y-6 divide-y divide-gray-900/10 mb-md">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30  mb-md">
 
         <x-faq-question-answer>
             <x-slot:question>Wie läuft alles ab?</x-slot:question>
@@ -133,7 +133,7 @@
     </dl>
 
     <x-page-subtitle id="spenderinnen">Spender:innen</x-page-subtitle>
-    <dl class="space-y-6 divide-y divide-gray-900/10 mb-md">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30 mb-md">
 
         <x-faq-question-answer>
             <x-slot:question>Wie läuft alles ab?</x-slot:question>
@@ -195,7 +195,7 @@
     </dl>
 
     <x-page-subtitle id="hintergruende">Hintergründe</x-page-subtitle>
-    <dl class="space-y-6 divide-y divide-gray-900/10">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30 ">
 
         <x-faq-question-answer>
             <x-slot:question>Was ist der Round Table?</x-slot:question>

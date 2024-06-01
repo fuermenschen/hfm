@@ -1,11 +1,23 @@
 {
+  "resources/images/143_dark.svg": {
+    "file": "assets/143_dark-C5ZyzAxl.svg",
+    "src": "resources/images/143_dark.svg"
+  },
   "resources/images/143_light.svg": {
     "file": "assets/143_light-DC4-37wv.svg",
     "src": "resources/images/143_light.svg"
   },
+  "resources/images/bruehlgut_dark.svg": {
+    "file": "assets/bruehlgut_dark-CDrfpJhB.svg",
+    "src": "resources/images/bruehlgut_dark.svg"
+  },
   "resources/images/bruehlgut_light.svg": {
     "file": "assets/bruehlgut_light-D2puJ2XE.svg",
     "src": "resources/images/bruehlgut_light.svg"
+  },
+  "resources/images/iks_dark.svg": {
+    "file": "assets/iks_dark-6WDIUJkl.svg",
+    "src": "resources/images/iks_dark.svg"
   },
   "resources/images/iks_light.svg": {
     "file": "assets/iks_light-DjTVfvWq.svg",
@@ -18,6 +30,10 @@
   "resources/images/logo_light.svg": {
     "file": "assets/logo_light-i6Iem9mz.svg",
     "src": "resources/images/logo_light.svg"
+  },
+  "resources/images/rt_simple_dark.svg": {
+    "file": "assets/rt_simple_dark-DG0c5ffB.svg",
+    "src": "resources/images/rt_simple_dark.svg"
   },
   "resources/images/rt_simple_light.svg": {
     "file": "assets/rt_simple_light-D61CfvxY.svg",
@@ -90,7 +106,7 @@
     "isEntry": true
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-8Zcv8oK2.css",
+    "file": "assets/app-BN10NaDb.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }
