@@ -58,7 +58,7 @@
         <!-- Background backdrop, show/hide based on slide-over state. -->
         <div class="fixed inset-0 z-10"></div>
         <div
-            class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-hfm-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+            class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-hfm-white dark:bg-hfm-dark p-md sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
             <div class="flex items-center justify-between">
                 <a wire:navigate href="/" class="-m-1.5 p-1.5">
                     <span class="sr-only">Höhenmeter für Menschen</span>
@@ -68,7 +68,7 @@
                 <button
                     @click="open = false"
                     type="button"
-                    class="m-2.5 rounded-md text-hfm-dark"
+                    class="m-2.5 rounded-md text-hfm-dark dark:text-hfm-light"
                 > <!-- TODO: check positions of buttons -->
                     <span class="sr-only">Menü schliessen</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
@@ -86,9 +86,9 @@
                                 wire:key="{{ $item['name'] }}"
                                 wire:navigate.hover
                                 @class([
-                                    "-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:bg-gray-50 hover:text-hfm-light",
-                                    "text-hfm-red" => $item['active'],
-                                    "text-hfm-dark" => !$item['active'],
+                                    "-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light",
+                                    "text-hfm-red dark:text-hfm-lightred" => $item['active'],
+                                    "text-hfm-dark dark:text-hfm-white" => !$item['active'],
                                 ])
                             >
                                 {{ $item['name'] }}
@@ -98,7 +98,7 @@
                     <a
                         href="{{ route("login") }}"
                         wire:navigate
-                        class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:bg-gray-50 hover:text-hfm-light text-hfm-dark flex flex-row"
+                        class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex flex-row"
                     >
                         <span>Login</span>
 

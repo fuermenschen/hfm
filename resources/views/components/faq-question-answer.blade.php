@@ -7,10 +7,10 @@
         <!-- Expand/collapse question button -->
         <button type="button" class="flex w-full items-start justify-between">
                         <span
-                            class="text-base font-semibold leading-7" @click="open = !open">
+                            class="text-base font-semibold leading-7 text-left" @click="open = !open">
                             {{ $question }}
                         </span>
-            <span class="ml-6 flex h-7 items-center">
+            <span class="ml-6 flex h-7 items-center text-left">
                 <!--
                   Icon when question is collapsed.
 
