@@ -2,7 +2,7 @@
     <nav class="mx-auto flex items-baseline justify-between p-md" aria-label="Global">
         <a href="{{ route("home") }}" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
-            <x-logo class="h-10 -mb-1.5" />
+            <x-logo class="h-10 -mb-1.5 ml-0.5" />
         </a>
         <div class=" flex lg:hidden items">
             <button

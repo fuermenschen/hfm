@@ -1,5 +1,5 @@
 <div class="my-md">
-    <svg width="100%" height="2" class="stroke-hfm-dark mb-5">
+    <svg class="relative left-0 stroke-slate-300 mb-6 mx-auto w-full h-1">
         <line x1="0" y1="0" x2="100%" y2="0" style="stroke-width:2" />
     </svg>
     <div class="md:flex md:justify-between md:items-baseline px-sm">
@@ -19,7 +19,7 @@
         <a class="items-center flex-col-reverse flex md:flex-row md:items-baseline md:space-x-4"
            href="https://www.rt25.ch"
            target="_blank">
-            <span class="pt-12 md:pt-0 text-sm">Roundtable 25 Winterthur</span>
+            <span class="pt-12 md:pt-0 text-sm">Round Table 25 Winterthur</span>
             <x-logo-roundtable class="h-12 w-12 pt-6 md:pt-0" />
         </a>
     </div>

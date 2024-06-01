@@ -22,7 +22,7 @@ Route::view("/", "home", [
 ])->name("home");
 Route::view("sportlerin-werden", "pages.become-athlete")->name("become-athlete");
 Route::view("spenderin-werden", "pages.become-donator")->name("become-donator");
-Route::view("questions-and-answers", "pages.questions-and-answers")->name("questions-and-answers");
+Route::view("fragen-und-antworten", "pages.questions-and-answers")->name("questions-and-answers");
 
 // Footer Menu
 Route::view("login", "pages.login")->name("login");

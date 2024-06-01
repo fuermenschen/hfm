@@ -5,7 +5,9 @@ namespace App\Components;
 use App\Models\Athlete;
 use App\Models\Donator;
 use App\Models\Partner;
+use App\Notifications\AdminSomeoneRegistered;
 use Exception;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -152,6 +154,12 @@ class BecomeDonatorForm extends Component
             // if the donator does not exist, create a new one
             if (!$donator) {
                 $donator = Donator::create($this->all());
+
+                // send notification to admin
+                if (config("app.send_notification_on_registration")) {
+                    $notification = new AdminSomeoneRegistered();
+                    Notification::route('mail', "hfm@rt25.ch")->notify($notification);
+                }
             }
 
             // check if this donator already has a donation for this athlete

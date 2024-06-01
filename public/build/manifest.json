@@ -11,6 +11,10 @@
     "file": "assets/iks_light-DjTVfvWq.svg",
     "src": "resources/images/iks_light.svg"
   },
+  "resources/images/logo_dark.svg": {
+    "file": "assets/logo_dark-Bamc-luC.svg",
+    "src": "resources/images/logo_dark.svg"
+  },
   "resources/images/logo_light.svg": {
     "file": "assets/logo_light-i6Iem9mz.svg",
     "src": "resources/images/logo_light.svg"
@@ -21,11 +25,11 @@
   },
   "resources/images/sport_landscape_01.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_02.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_03.jpeg": {
     "file": "assets/sport_landscape_03-mVjRCTZE.jpeg",
@@ -86,7 +90,7 @@
     "isEntry": true
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-C468gs1h.css",
+    "file": "assets/app-ByhlX87e.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }

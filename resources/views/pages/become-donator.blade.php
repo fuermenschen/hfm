@@ -5,14 +5,18 @@
         @component('components.page-title')
             Spender:in werden
         @endcomponent
-        Wir laden dich herzlich ein, Teil von "Höhenmeter für Menschen" zu werden. Du kannst deine gewünschte
-        Sportler:in mit einem Geldbetrag pro Runde unterstützen. Die Sportlerin kann zwischen drei Benefizpartnern
-        wählen: Brühlgut Stiftung, Kinderseele Schweiz, die Dargebotene Hand. Welche Wahl deine Sportler:in getroffen
-        hat, siehst du im Anmeldeformular.
+        <div
+            class="w-full max-w-2xl mx-auto text-left sm:text-center">Du lässt lieber andere schwitzen und möchtest als
+            Spender:in einen Beitrag für Winterthurer Benefizpartner:innen leisten? Hier bist du goldrichtig zur
+            Anmeldung.
+        </div>
 
-        <p></p>
-        Deine Spende wird zu 100% an die jeweiligen Benefizpartner weitergegeben. Der Round Table 25 Winterthur wird die
-        Abwicklung durchführen. Du erhältst eine Rechnung mit einem Spendenausweis nach der Veranstaltung am 21.9.2024.
+        <div
+            class="w-full max-w-2xl mx-auto text-left sm:text-center mt-lg">Bist du noch nicht ganz sicher, wie das
+            alles funktioniert oder hast du Fragen? Schau bei den
+            <x-inline-link href=" {{ route('questions-and-answers') }}">Fragen und Antworten</x-inline-link>
+            vorbei.
+        </div>
 
         <x-page-subtitle>
             Anmeldeformular

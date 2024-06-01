@@ -15,6 +15,11 @@ class PublicMenu extends Component
             "active" => false,
         ],
         [
+            "name" => "Fragen und Antworten",
+            "route" => "questions-and-answers",
+            "active" => false,
+        ],
+        [
             "name" => "Sportler:in werden",
             "route" => "become-athlete",
             "active" => false,
@@ -22,11 +27,6 @@ class PublicMenu extends Component
         [
             "name" => "Spender:in werden",
             "route" => "become-donator",
-            "active" => false,
-        ],
-        [
-            "name" => "Fragen und Antworten",
-            "route" => "questions-and-answers",
             "active" => false,
         ],
     ];

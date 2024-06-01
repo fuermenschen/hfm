@@ -43,6 +43,9 @@ class AthleteDetails extends Component
         $this->donations = $donations->map(function ($donation) {
             return [
                 'donator' => $donation->donator->privacy_name,
+                'amount_per_round' => $donation->amount_per_round,
+                'amount_min' => $donation->amount_min,
+                'amount_max' => $donation->amount_max,
                 'verified' => $donation->verified,
             ];
         });

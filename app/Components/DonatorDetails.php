@@ -48,6 +48,10 @@ class DonatorDetails extends Component
             return [
                 'athlete' => $donation->athlete->privacy_name,
                 'public_id' => $donation->athlete->public_id_string,
+                'amount_per_round' => $donation->amount_per_round,
+                'amount_min' => $donation->amount_min,
+                'amount_max' => $donation->amount_max,
+                'rounds_estimated' => $donation->athlete->rounds_estimated
             ];
         });
     }

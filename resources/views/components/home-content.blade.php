@@ -9,12 +9,12 @@
         <div
             id="info"
             class="lg:flex lg:w-1/2 lg:shrink lg:grow-0 xl:absolute xl:inset-y-0 xl:right-1/2 xl:w-1/2 -mx-md lg:mr-md">
-            <div class="hidden lg:block relative h-80 lg:-ml-8 lg:h-auto lg:w-full lg:grow xl:ml-0">
+            <div class="hidden lg:block relative h-80 lg:-ml-48 lg:h-auto lg:w-full lg:grow">
                 <img class="absolute inset-0 h-full w-full bg-gray-50 object-cover"
                      src="{{ Vite::asset('resources/images/sport_portrait_' . $randomImgPortrait . '.jpeg') }}"
                      alt="decorative image of one or more people doing sport">
             </div>
-            <div class="block lg:hidden relative h-80 lg:-ml-8 lg:h-auto lg:w-full lg:grow xl:ml-0">
+            <div class="block lg:hidden relative h-80">
                 <img class="absolute inset-0 h-full w-full bg-gray-50 object-cover"
                      src="{{ Vite::asset('resources/images/sport_landscape_' . $randomImgLandscape . '.jpeg') }}"
                      alt="decorative image of one or more people doing sport">

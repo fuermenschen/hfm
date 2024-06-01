@@ -5,8 +5,10 @@ namespace App\Components;
 use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
+use App\Notifications\AdminSomeoneRegistered;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -130,6 +132,12 @@ class BecomeAthleteForm extends Component
         try {
 
             Athlete::create($this->all());
+
+            // send notification to admin
+            if (config("app.send_notification_on_registration")) {
+                $notification = new AdminSomeoneRegistered();
+                Notification::route('mail', "hfm@rt25.ch")->notify($notification);
+            }
 
             $this->reset();
 

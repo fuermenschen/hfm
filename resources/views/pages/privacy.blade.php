@@ -47,10 +47,11 @@
         gelöscht.</p>
 
     <x-page-subtitle>Verantwortliche:r für die Datenverarbeitung</x-page-subtitle>
-    <p>Verantwortlich für die Datenverarbeitung ist der Verein <strong>Roundtable 25 Winterthur</strong>. Bei Fragen zur
+    <p>Verantwortlich für die Datenverarbeitung ist der Verein <strong>Round Table 25 Winterthur</strong>. Bei Fragen
+        zur
         Datenverarbeitung kannst du dich an folgende Adresse wenden:</p>
     <div class="m-sm">
-        Roundtable 25 Winterthur<br>
+        Round Table 25 Winterthur<br>
         c/o Simon Moser<br>
         <a href="mailto:webmaster@rt25.ch">webmaster@rt25.ch</a>
     </div>
