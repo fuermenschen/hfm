@@ -45,6 +45,7 @@ class ContactFormMessage extends Notification
             $message->line('Deine Nachricht:');
             $message->line($this->message);
         } else {
+            $message->replyTo($this->email, $this->name);
             $message->subject('Neue Kontaktanfrage');
             $message->greeting('Hallo,');
             $message->line('Es wurde eine neue Kontaktanfrage gestellt.');
