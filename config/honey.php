@@ -1,6 +1,5 @@
 <?php
 
-use Lukeraymonddowning\Honey\Checks\JavascriptInputFilledCheck;
 use Lukeraymonddowning\Honey\Checks\MinimumTimePassedCheck;
 use Lukeraymonddowning\Honey\Checks\PresentButEmptyCheck;
 use Lukeraymonddowning\Honey\Checks\UserIsBlockedSpammerCheck;
@@ -53,7 +52,7 @@ return [
         UserIsBlockedSpammerCheck::class,
         PresentButEmptyCheck::class,
         MinimumTimePassedCheck::class,
-        JavascriptInputFilledCheck::class,
+        //JavascriptInputFilledCheck::class,
     ],
 
     /**
@@ -65,7 +64,7 @@ return [
      * a form loading and the request coming back in if you have either
      * `MinimumTimePassedCheck` or `JavascriptInputFilledCheck` enabled.
      */
-    'minimum_time_passed' => 3,
+    'minimum_time_passed' => 1,
 
     /**
      * --------------------------------------------------------------------------
