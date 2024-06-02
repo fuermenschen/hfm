@@ -11,12 +11,12 @@
     <div class="w-full max-w-xl mx-auto">
         <x-page-subtitle>Spender:innen</x-page-subtitle>
         @if ($donations->count() > 0)
-            <ul role="list" class="divide-y divide-gray-900/10">
+            <ul role="list" class="divide-y divide-gray-900/10 dark:divide-gray-100/30">
                 @foreach ($donations as $donation)
                     <li class="flex justify-between gap-x-6 py-5">
                         <div class="flex min-w-0 gap-x-4">
                             <div class="min-w-0 flex-auto">
-                                <p class="text-sm font-semibold leading-6 text-gray-900">{{ $donation['donator'] }}</p>
+                                <p class="text-sm font-semibold leading-6">{{ $donation['donator'] }}</p>
                                 @if (!$donation['verified'])
                                     <p class="mt-1 truncate text-xs leading-5 text-hfm-red">nicht verifiziert</p>
                                 @else
@@ -25,7 +25,7 @@
                             </div>
                         </div>
                         <div class="flex flex-col items-end">
-                            <p class="text-sm leading-6 text-gray-900">
+                            <p class="text-sm leading-6">
                                 Fr. {{ sprintf('%1.2f',$donation['amount_per_round']) }} pro Runde</p>
                             <p class="mt-1 text-xs leading-5 text-gray-500">
                                 Fr. {{ sprintf('%1.2f',$donation['amount_min']) }} bis

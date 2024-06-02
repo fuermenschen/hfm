@@ -8,7 +8,7 @@
     <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" required />
 
     <x-input right-icon="home" label="Adresse" placeholder="Zelglistrasse 41" wire:model.blur="address"
-             hint="Wir werden dir ein Starter-Kit senden." required />
+             required />
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
@@ -49,9 +49,12 @@
         @endif
     </x-native-select>
 
-    <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
-                     wire:model.blur="rounds_estimated"
-                     hint="Das hilft deinen Spender:innen, den Betrag pro Runde festzulegen." required />
+    <span>
+        <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
+                         wire:model.blur="rounds_estimated" required />
+        <button type="button" wire:click="showNumRoundsInfo"
+                class="text-xs underline">Mehr Informationen zu den Runden</button>
+    </span>
 
     <x-native-select label="Ich möchte sammeln für" wire:model="partner_id"
                      hint="Das Geld, das du mit deinen Spender:innen sammelst, geht an diese:n Benefizpartner:in.">
@@ -74,7 +77,7 @@
             <span class="text-md">
                 Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.
                 <button type="button" wire:click="showPrivacyInfo"
-                        class=" text-hfm-red">Was heisst das?</button>
+                        class="text-hfm-red dark:text-hfm-lightred underline">Was heisst das?</button>
             </span>
         </span>
 

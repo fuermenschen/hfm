@@ -169,6 +169,20 @@ class BecomeAthleteForm extends Component
         ]);
     }
 
+    public function showNumRoundsInfo(): void
+    {
+        $message =
+            "Die Strecke liegt im Brühlberg-Quartier in Winterthur. Sie ist ca. <strong>2&nbsp;km</strong> lang und hat <strong>70&nbsp;Höhenmeter</strong>. Weitere Details zur Strecke findest du in den <a href='" . route("questions-and-answers") . "#sportlerinnen' target='_blank' class='underline text-hfm-red'>Fragen und Antworten.</a>";
+
+        $message .= "<br><br>Die geschätzte Anzahl Runden hilft deinen Spender:innen, den Betrag pro Runden festzulegen. Aber keine Angst, du musst nicht so viele Runden zurücklegen, wie du schätzt. Du kannst auch mehr oder weniger Runden laufen.";
+
+        $this->dialog([
+            "title" => "Strecke",
+            "description" => $message,
+            "icon" => "light-bulb",
+        ]);
+    }
+
     public function mount(): void
     {
         $this->sport_types = SportType::all();

@@ -41,11 +41,11 @@
   },
   "resources/images/sport_landscape_01.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_02.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_03.jpeg": {
     "file": "assets/sport_landscape_03-mVjRCTZE.jpeg",
@@ -106,7 +106,7 @@
     "isEntry": true
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-O4sM2a_4.css",
+    "file": "assets/app-DIw0esdB.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }

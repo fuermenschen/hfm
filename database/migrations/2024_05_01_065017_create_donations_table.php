@@ -17,8 +17,8 @@ return new class extends Migration {
             $table->foreignIdFor(Donator::class)->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignIdFor(Athlete::class)->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->float("amount_per_round");
-            $table->float("amount_max");
-            $table->float("amount_min");
+            $table->float("amount_max")->nullable();
+            $table->float("amount_min")->nullable();
             $table->text("comment")->nullable();
             $table->boolean("verified")->default(false);
             $table->timestamps();

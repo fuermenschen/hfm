@@ -59,23 +59,26 @@
             <span
                 class="text-xs"><strong> {{ $currentAthlete }} </strong> hat angegeben, ungefähr <strong>{{ $currentRounds }} </strong> Runden zu absolvieren.
                 </span>
+        @else
+            <button type="button" wire:click="showAmountInfo"
+                    class="text-xs underline">Wie funktioniert das?</button>
         @endif
         </span>
 
     <span>
         <x-inputs.currency
-            label="Dein minimaler Beitrag"
+            label="Dein minimaler Beitrag (optional)"
             placeholder="50" wire:model.number.blur="amount_min" prefix="Fr." />
             <button type="button" wire:click="showAmountInfo"
-                    class="text-xs text-hfm-dark">Wie funktioniert das?</button>
+                    class="text-xs underline">Wie funktioniert das?</button>
         </span>
 
     <span>
             <x-inputs.currency
-                label="Dein maximaler Beitrag"
+                label="Dein maximaler Beitrag (optional)"
                 placeholder="500" wire:model.number.blur="amount_max" prefix="Fr." />
             <button type="button" wire:click="showAmountInfo"
-                    class="text-xs text-hfm-dark">Wie funktioniert das?</button>
+                    class="text-xs underline">Wie funktioniert das?</button>
         </span>
 
     <x-textarea label="Kommentar"
@@ -87,7 +90,7 @@
             <span class="text-md">
                 Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.
                 <button type="button" wire:click="showPrivacyInfo"
-                        class=" text-hfm-red">Was heisst das?</button>
+                        class="text-hfm-red dark:text-hfm-lightred underline">Was heisst das?</button>
             </span>
         </span>
 
