@@ -59,9 +59,6 @@
             <span
                 class="text-xs"><strong> {{ $currentAthlete }} </strong> hat angegeben, ungefähr <strong>{{ $currentRounds }} </strong> Runden zu absolvieren.
                 </span>
-        @else
-            <button type="button" wire:click="showAmountInfo"
-                    class="text-xs underline">Wie funktioniert das?</button>
         @endif
         </span>
 
