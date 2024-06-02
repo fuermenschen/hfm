@@ -28,8 +28,10 @@ class LoginForm extends Component
     public function save(): void
     {
         try {
-            if ($this->honeyPasses()) {
-                $this->addError("Spam detected", "Spam detected.");
+            if (!$this->honeyPasses()) {
+                throw ValidationException::withMessages([
+                    'spam' => ['Spam detected'],
+                ]);
             }
 
             $this->validate();
