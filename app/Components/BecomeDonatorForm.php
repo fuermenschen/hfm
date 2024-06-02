@@ -89,7 +89,7 @@ class BecomeDonatorForm extends Component
     #[Validate("nullable")]
     #[Validate("numeric", message: "Der Betrag muss eine Zahl sein.")]
     #[Validate("min:1.00", message: "Der Betrag muss mindestens Fr. 1.- sein.")]
-    #[Validate("gt:amount_min", message: "Der Betrag muss grösser als der Minimalbetrag sein.")]
+    #[Validate("gte:amount_per_round", message: "Der Betrag muss grösser oder gleich dem Betrag pro Runde sein.")]
     public ?float $amount_max = null;
 
     // Minimalbetrag
@@ -122,8 +122,20 @@ class BecomeDonatorForm extends Component
     public function save(): void
     {
         try {
-            if ($this->honeyPasses()) {
-                $this->addError("Spam detected", "Spam detected.");
+            if (!$this->honeyPasses()) {
+                throw ValidationException::withMessages([
+                    'spam' => ['Spam detected'],
+                ]);
+            }
+
+            // check if the maximum amount is bigger than the minimum amount if they are both set
+            if ($this->amount_max && $this->amount_min && $this->amount_max < $this->amount_min) {
+                $this->addRulesFromOutside([
+                    "amount_max" => "gte:amount_min",
+                ]);
+                $this->addMessagesFromOutside([
+                    "amount_max.gte" => "Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.",
+                ]);
             }
 
             $this->validate();
