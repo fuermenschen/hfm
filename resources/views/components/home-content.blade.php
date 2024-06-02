@@ -87,7 +87,7 @@
                         </li>
                         <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold"> Dargebotene Hand Winterthur</strong> Die Dargebotene ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
+                                <strong class="font-semibold"> Dargebotene Hand Winterthur</strong> Die Dargebotene Hand ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
                                 <x-inline-link href="https://www.143.ch"
                                                target="_blank">Website der Dargebotenen Hand</x-inline-link>
                             </span>

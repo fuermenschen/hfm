@@ -179,7 +179,7 @@
                     </x-inline-link>
                 </li>
                 <li>
-                    <x-inline-link href="https://143.ch" target="_blank">Dargebotene Hand Winterthur und Schaffhausen
+                    <x-inline-link href="https://143.ch" target="_blank">Dargebotene Hand (Regionalstelle Winterthur)
                     </x-inline-link>
                 </li>
             </ul>
@@ -227,7 +227,7 @@
                     </x-inline-link>
                 </li>
                 <li>
-                    <x-inline-link href="https://143.ch" target="_blank">Dargebotene Hand Winterthur und Schaffhausen
+                    <x-inline-link href="https://143.ch" target="_blank">Dargebotene Hand (Regionalstelle Winterthur)
                     </x-inline-link>
                 </li>
             </ul>
