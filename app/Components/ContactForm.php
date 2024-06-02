@@ -94,7 +94,7 @@ class ContactForm extends Component
 
         $this->dialog([
             "title" => "E-Mail versendet",
-            "description" => "Falls die angegebene E-Mail-Adresse bekannt ist, wurde ein Login-Link versendet. Bitte überprüfe dein Postfach.",
+            "description" => "Danke für deine Nachricht. Wir melden uns bald bei dir.",
             "icon" => "success",
         ]);
 
