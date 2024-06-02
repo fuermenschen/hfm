@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Notifications\ContactFormMessage;
+use Exception;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
@@ -98,7 +99,11 @@ class ContactForm extends Component
             "icon" => "success",
         ]);
 
-        $this->reset('email');
+        $this->reset([
+            'email',
+            'name',
+            'message',
+        ]);
     }
 
     public function render()
