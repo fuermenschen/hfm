@@ -5,6 +5,4 @@
     @else
         wire:navigate.hover
     @endif
->
-    {{ $slot }}
-</a>
+>{{ $slot }}</a>

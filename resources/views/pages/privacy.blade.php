@@ -5,7 +5,8 @@
         Datenschutz
     @endcomponent
 
-    <p>Deine Daten sind uns wichtig. Und das ist keine Floskel, sondern meinen wir ernst. Wir versuchen, nur Daten zu
+    <p>Der Schutz deiner Daten ist uns wichtig. Und das ist keine Floskel, sondern meinen wir ernst. Wir versuchen, nur
+        Daten zu
         erfassen, die wir für die Organisation des Anlasses benötigen. Das sind die folgenden:</p>
 
     <x-page-subtitle>Allgemeine:r Websitenbenutzer:in</x-page-subtitle>

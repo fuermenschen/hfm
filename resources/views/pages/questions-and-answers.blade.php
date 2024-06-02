@@ -74,7 +74,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Gibt es Verpflegung vor Ort?</x-slot:question>
-            Es wird Getränke und Snacks geben. Für die Sportler:innen gibt es zudem eine Verpflegungsstation bei dem
+            Es wird Getränke und Snacks geben. Für die Sportler:innen gibt es zudem eine Verpflegungsstation beim
             Start/Ziel des Rundkurses.
         </x-faq-question-answer>
 
@@ -187,8 +187,8 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie viel soll ich spenden?</x-slot:question>
-            Das ist dir überlassen, jeder Betrag ist willkommen. Du kannst pro Runde einen Betrag festlegen und auch
-            Mindest- oder Maximalbeträge festlegen, damit du nicht überrascht wirst. Viele Spender:innen geben 5-10
+            Das ist dir überlassen, jeder Betrag ist willkommen. Du kannst einen Betrag pro Runde und auch
+            Mindest- oder Maximalbeträge festlegen. Viele Spender:innen geben 5-10
             Franken pro Runde.
         </x-faq-question-answer>
 

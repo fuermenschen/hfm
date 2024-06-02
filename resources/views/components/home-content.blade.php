@@ -30,7 +30,7 @@
                 <div class="mt-10 max-w-xl text-base leading-7 lg:max-w-none">
                     <p>Der Spendenlauf ist ähnlich organisiert wie ein klassischer «Sponsorenlauf». Nur wird nicht für
                         einen Verein gesammelt, sondern für Kinder psychisch kranker Eltern, für Menschen mit
-                        Behinderung und für Menschen in schwierigen Lebenssituationen.</p>
+                        Beeinträchtigung und für Menschen in schwierigen Lebenssituationen.</p>
                     <ul role="list" class="mt-8 space-y-8">
                         <li class="flex gap-x-3 items-start">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -69,29 +69,27 @@
                     </p>
 
                     <h2 class="mt-16 text-2xl font-bold tracking-tight">Wer profitiert?</h2>
-                    <p class="mt-6">Wenn du als Sportner:in mitmachst, kannst du wählen, welche:r der drei
+                    <p class="mt-6">Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der drei
                         Benefizpartner:innen von deinem Einsatz profitiert.</p>
                     <ul role="list" class="mt-8 space-y-8">
                         <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold"> Brühlgut Stiftung </strong> Die Brühlgut Stiftung
-                                unterstützt Menschen mit Behinderung in ihrem Alltag und bietet ihnen ein Zuhause.
-                                <x-inline-link href="https://www.bruehlgut.ch" target="_blank">Website der Brühlgut Stiftung</x-inline-link>.
+                                <strong class="font-semibold"> Brühlgut Stiftung </strong> Die Brühlgut Stiftung begleitet und fördert Menschen mit Beeinträchtigung.
+                                <x-inline-link href="https://www.bruehlgut.ch" target="_blank">Website der Brühlgut Stiftung</x-inline-link>
                             </span>
                         </li>
                         <li class="flex gap-x-3">
                             <span>
                                 <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> Das Institut
                                 Kinderseele Schweiz unterstützt Kinder psychisch kranker Eltern.
-                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Website des Instituts Kinderseele Schweiz</x-inline-link>.
+                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Website des Instituts Kinderseele Schweiz</x-inline-link>
                             </span>
                         </li>
                         <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold"> Dargebotene Hand Winterthur </strong> Die Dargebotene Hand
-                                Winterthur bietet Menschen in schwierigen Lebenssituationen ein offenes Ohr.
+                                <strong class="font-semibold"> Dargebotene Hand Winterthur</strong> Die Dargebotene ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
                                 <x-inline-link href="https://www.143.ch"
-                                               target="_blank">Website der Dargebotenen Hand</x-inline-link>.
+                                               target="_blank">Website der Dargebotenen Hand</x-inline-link>
                             </span>
                         </li>
                     </ul>
