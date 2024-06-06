@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\GenericMessage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,6 +14,25 @@ class Donator extends Model
     protected $appends = [
         "privacy_name",
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function ($donator) {
+
+            // delete all donations of the donator
+            $donator->donations()->delete();
+
+            // notify the donator that their account has been deleted
+            $donator->notify(new GenericMessage(
+                message: "Du wurdest als Spender:in gelöscht.",
+                subject: "Dein Account wurde gelöscht",
+                first_name: $donator->first_name,
+            ));
+
+        });
+    }
 
     public function generateLoginToken(): void
     {

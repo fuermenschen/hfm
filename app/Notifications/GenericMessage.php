@@ -7,14 +7,18 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AdminSomeoneRegistered extends Notification implements ShouldQueue
+class GenericMessage extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct(
+        public readonly string $message,
+        public readonly string $subject = "",
+        public readonly string $first_name = "",
+    )
     {
         //
     }
@@ -34,9 +38,23 @@ class AdminSomeoneRegistered extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-            ->subject("Neue Registrierung")
-            ->line("Es hat sich soeben ein:e neue:r Sportler:in oder Spender:in registriert.");
+        $msg = new MailMessage();
+
+        if ($this->subject !== "") {
+            $msg->subject($this->subject);
+        } else {
+            $msg->subject("Nachricht von Höhenmeter für Menschen");
+        }
+
+        if ($this->first_name !== "") {
+            $msg->greeting("Hallo " . $this->first_name);
+        } else {
+            $msg->greeting("Hallo");
+        }
+
+        $msg->line($this->message);
+
+        return $msg;
     }
 
     /**

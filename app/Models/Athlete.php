@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\AthleteRegistered;
+use App\Notifications\GenericMessage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,6 +69,20 @@ class Athlete extends Model
                 $athlete->public_id_string,
                 $athlete->login_token
             ));
+        });
+
+        static::deleting(function ($athlete) {
+
+            // delete all donations of the athlete
+            $athlete->donations()->delete();
+
+            // notify the athlete that their account has been deleted
+            $athlete->notify(new GenericMessage(
+                message: "Du wurdest als Sportler:in gelöscht.",
+                subject: "Dein Account wurde gelöscht",
+                first_name: $athlete->first_name,
+            ));
+
         });
     }
 

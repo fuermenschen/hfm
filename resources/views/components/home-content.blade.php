@@ -75,21 +75,21 @@
                         <li class="flex gap-x-3">
                             <span>
                                 <strong class="font-semibold"> Brühlgut Stiftung </strong> Die Brühlgut Stiftung begleitet und fördert Menschen mit Beeinträchtigung.
-                                <x-inline-link href="https://www.bruehlgut.ch" target="_blank">Website der Brühlgut Stiftung</x-inline-link>
+                                <x-inline-link href="https://www.xn--brhlgut-o2a.ch/"
+                                               target="_blank">Brühlgut Stiftung</x-inline-link>
                             </span>
                         </li>
                         <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> Das Institut
-                                Kinderseele Schweiz unterstützt Kinder psychisch kranker Eltern.
-                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Website des Instituts Kinderseele Schweiz</x-inline-link>
+                                <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> Das Institut Kinderseele Schweiz unterstützt Familien mit psychisch kranken Eltern mit Beratungen und weiteren Angeboten.
+                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Institut Kinderseele Schweiz</x-inline-link>
                             </span>
                         </li>
                         <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold"> Dargebotene Hand Winterthur</strong> Die Dargebotene Hand ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
+                                <strong class="font-semibold">Tel. 143 &ndash; Die Dargebotene Hand</strong> Die Dargebotene Hand ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
                                 <x-inline-link href="https://www.143.ch"
-                                               target="_blank">Website der Dargebotenen Hand</x-inline-link>
+                                               target="_blank">Tel. 143 &ndash; Die Dargebotene Hand</x-inline-link>
                             </span>
                         </li>
                     </ul>

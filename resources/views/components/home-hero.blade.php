@@ -26,20 +26,20 @@
 
         <x-home-hero-partner assetUrl="resources/images/bruehlgut_light.svg"
                              assetUrlDark="resources/images/bruehlgut_dark.svg"
-                             imgAlt="Brühlgut Stiftung"
+                             imgAlt="Logo Brühlgut Stiftung"
                              beneficiaryName="Brühlgut Stiftung"
-                             beneficiaryUrl="https://bruehlgut.ch" />
+                             beneficiaryUrl="https://www.xn--brhlgut-o2a.ch/" />
 
         <x-home-hero-partner assetUrl="resources/images/iks_light.svg"
                              assetUrlDark="resources/images/iks_dark.svg"
-                             imgAlt="Institut Kinderseele"
+                             imgAlt="Logo Institut Kinderseele Schweiz"
                              beneficiaryName="Institut Kinderseele Schweiz"
                              beneficiaryUrl="https://kinderseele.ch" />
 
         <x-home-hero-partner assetUrl="resources/images/143_light.svg"
                              assetUrlDark="resources/images/143_dark.svg"
-                             imgAlt="Dargebotene Hand"
-                             beneficiaryName="Dargebotene Hand Winterthur"
+                             imgAlt="Logo Tel. 143 &ndash; Die Dargebotene Hand"
+                             beneficiaryName="Tel. 143 &ndash; Die Dargebotene Hand"
                              beneficiaryUrl="https://143.ch" />
     </div>
 </div>

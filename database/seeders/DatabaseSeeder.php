@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Partner::create([
-            "name" => "Dargebotene Hand (Tel 143)",
+            "name" => "Tel. 143 - Die Dargebotene Hand",
         ]);
 
         // create athletes (example data)

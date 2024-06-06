@@ -69,13 +69,28 @@
         <x-faq-question-answer>
             <x-slot:question>Wie kann man am besten anreisen?</x-slot:question>
             Am besten reist du mit dem öffentlichen Verkehr an. Die Brühlgut Stiftung ist mit dem Bus gut erreichbar
-            (Haltestelle Winterthur, Loki). Wenn du mit dem Auto anreist, gibt es das nahegelegene Parkhaus Lokwerk.
+            (Haltestelle Winterthur, Loki). Wenn du mit dem Auto anreist, gibt es das nahegelegene Parkhaus Lokwerk. Bei
+            der Brühlgut Stiftung hat es keine Parkplätze.
         </x-faq-question-answer>
 
         <x-faq-question-answer>
             <x-slot:question>Gibt es Verpflegung vor Ort?</x-slot:question>
             Es wird Getränke und Snacks geben. Für die Sportler:innen gibt es zudem eine Verpflegungsstation beim
             Start/Ziel des Rundkurses.
+        </x-faq-question-answer>
+
+        <x-faq-question-answer>
+            <x-slot:question>Was passiert bei schlechtem Wetter?</x-slot:question>
+            Der Anlass findet bei jedem Wetter statt. Sollte es regnen, empfehlen wir, entsprechende Kleidung
+            mitzunehmen. Bei Gewitter oder Sturm kann der Anlass abgesagt werden. Wir informieren dich in diesem Fall
+            rechtzeitig.
+        </x-faq-question-answer>
+
+        <x-faq-question-answer>
+            <x-slot:question>Ich brauche für die Teilnahme weitere Unterstützung. An wen kann ich mich wenden?
+            </x-slot:question>
+            <span>Wir geben unser Bestes, dass alle einen Teil von Höhenmeter für Menschen sein können. Sei es, dass du eine Allergie hast, Unterstützung zur Teilnahme als Sportler:in benötigst oder sonstige Fragen hast. <x-inline-link
+                    href="{{ route('contact') }}">Melde dich bei uns</x-inline-link>, wir finden eine Lösung.</span>
         </x-faq-question-answer>
 
     </dl>
@@ -170,19 +185,35 @@
         <x-faq-question-answer>
             <x-slot:question>An wen gehen die Spenden?</x-slot:question>
             Die Spenden gehen an die drei Benefizpartner:innen. Diese sind:
-            <ul class="list-disc text-sm mt-sm list-inside space-y-xs">
-                <li>
-                    <x-inline-link href="https://bruehlgut.ch" target="_blank">Brühlgut Stiftung</x-inline-link>
+            <ul role="list" class="mt-8 space-y-8 text-sm">
+                <li class="flex gap-x-3">
+                            <span>
+                                <strong class="font-semibold"> Brühlgut Stiftung </strong> <br> Die Brühlgut Stiftung begleitet und fördert Menschen mit Beeinträchtigung.
+                                <x-inline-link href="https://www.xn--brhlgut-o2a.ch/"
+                                               target="_blank">Brühlgut Stiftung</x-inline-link>
+                            </span>
                 </li>
-                <li>
-                    <x-inline-link href="https://kinderseele.ch" target="_blank">Institut Kinderseele Schweiz
-                    </x-inline-link>
+                <li class="flex gap-x-3">
+                            <span>
+                                <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> <br> Das Institut Kinderseele Schweiz unterstützt Familien mit psychisch kranken Eltern mit Beratungen und weiteren Angeboten.
+                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Institut Kinderseele Schweiz</x-inline-link>
+                            </span>
                 </li>
-                <li>
-                    <x-inline-link href="https://143.ch" target="_blank">Dargebotene Hand (Regionalstelle Winterthur)
-                    </x-inline-link>
+                <li class="flex gap-x-3">
+                            <span>
+                                <strong class="font-semibold">Tel. 143 &ndash; Die Dargebotene Hand</strong> <br> Die Dargebotene Hand ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
+                                <x-inline-link href="https://www.143.ch"
+                                               target="_blank">Tel. 143 &ndash; Die Dargebotene Hand</x-inline-link>
+                            </span>
                 </li>
             </ul>
+        </x-faq-question-answer>
+
+        <x-faq-question-answer>
+            <x-slot:question>Wie viel von meiner Spende kommt bei den Benefizpartner:innen an?</x-slot:question>
+            <span><strong>100% deiner Spende kommt bei den Benefizpartner:innen an.</strong> Der Round Table 25 Winterthur übernimmt die
+            gesamten
+            Kosten des Anlasses und wird die Spenden sogar noch aufrunden.</span>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -220,14 +251,15 @@
             Menschen einsetzen. Die drei Benefizpartner:innen sind:
             <ul class="list-disc text-sm mt-sm list-inside space-y-xs">
                 <li>
-                    <x-inline-link href="https://bruehlgut.ch" target="_blank">Brühlgut Stiftung</x-inline-link>
+                    <x-inline-link href="https://www.xn--brhlgut-o2a.ch/" target="_blank">Brühlgut Stiftung
+                    </x-inline-link>
                 </li>
                 <li>
                     <x-inline-link href="https://kinderseele.ch" target="_blank">Institut Kinderseele Schweiz
                     </x-inline-link>
                 </li>
                 <li>
-                    <x-inline-link href="https://143.ch" target="_blank">Dargebotene Hand (Regionalstelle Winterthur)
+                    <x-inline-link href="https://143.ch" target="_blank">Tel. 143 &ndash; Die Dargebotene Hand
                     </x-inline-link>
                 </li>
             </ul>
