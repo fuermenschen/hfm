@@ -10,6 +10,34 @@
         <title>{{ config('app.name') }}</title>
     @endif
 
+    <!-- SEO Information -->
+    <meta name="description"
+          content="Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am 21. September 2024. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.">
+    <meta name="keywords"
+          content="Höhenmeter für Menschen, fundraising, charity event, Wohltätigkeit, Winterthur, sponsored run, Sponsorenlauf, Spendenlauf, Brühlgut Stiftung, Institut Kinderseele Schweiz, Tel 143, Dargebotene Hand, Roundtable, Round Table">
+    <meta name="author" content="Round Table 25 Winterthur">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="1 day">
+    <meta name="language" content="de">
+    <meta name="distribution" content="global">
+    <meta name="rating" content="general">
+    <meta name="googlebot" content="index, follow">
+    <meta name="bingbot" content="index, follow">
+    <meta name="yandex" content="noindex, nofollow">
+    <meta name="msnbot" content="index, follow">
+    <meta name="alexabot" content="index, follow">
+    <meta name="slurp" content="index, follow">
+    <meta name="teoma" content="index, follow">
+    <meta name="baiduspider" content="noindex, nofollow">
+    <meta name="apple-mobile-web-app-title" content="Höhenmeter für Menschen">
+    <meta name="og:title" content="Höhenmeter für Menschen">
+    <meta name="og:description"
+          content="Ein Spendenlauf in Winterthur für Winterthur am 21. September 2024.">
+    <meta name="og:image" content="{{ Vite::asset("resources/images/logo_light.svg") }}">
+    <meta name="og:url" content="https://hfm.rt25.ch">
+    <meta name="og:type" content="website">
+    <meta name="og:site_name" content="Höhenmeter für Menschen">
+
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="{{ url(asset('icons/apple-icon-57x57.png')) }}">
     <link rel="apple-touch-icon" sizes="60x60" href="{{ url(asset('icons/apple-icon-60x60.png')) }}">
