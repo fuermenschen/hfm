@@ -43,7 +43,7 @@ class AthleteNewDonation extends Notification implements ShouldQueue
             ->line("Soeben hat sich $this->donator_name als Spender:in für dich registriert.")
             ->line("Wenn du dich einloggst, siehst du, wer alles für dich spenden wird.")
             ->action('Login', route('show-athlete', $this->login_token))
-            ->line('Vielen Dank, dass du so fleissig mithilfst, spenden zu sammeln! Wir freuen uns schon auf den:die nächste:n Spender:in von dir!')
+            ->line('Vielen Dank, dass du so fleissig mithilfst, spenden zu sammeln! Wir freuen uns schon auf deine nächste:n Spender:innen von dir!')
             ->line("Vergiss nicht, deinen Code zu teilen: " . $this->public_id_string);
     }
 
