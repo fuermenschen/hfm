@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @method static create($all)
@@ -69,6 +70,12 @@ class Athlete extends Model
                 $athlete->public_id_string,
                 $athlete->login_token
             ));
+
+            // add log entry
+            Log::info("Athlete created", [
+                "athlete" => $athlete->toArray(),
+            ]);
+
         });
 
         static::deleting(function ($athlete) {
@@ -82,6 +89,11 @@ class Athlete extends Model
                 subject: "Dein Account wurde gelöscht",
                 first_name: $athlete->first_name,
             ));
+
+            // add log entry
+            Log::info("Athlete deleted", [
+                "athlete" => $athlete->toArray(),
+            ]);
 
         });
     }

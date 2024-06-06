@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Notifications\GenericMessage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
 class Donator extends Model
 {
@@ -19,6 +20,14 @@ class Donator extends Model
     {
         parent::boot();
 
+        static::created(function ($donator) {
+
+            // add log entry
+            Log::info("Donator registered", [
+                "donator" => $donator->toArray(),
+            ]);
+        });
+
         static::deleting(function ($donator) {
 
             // delete all donations of the donator
@@ -30,6 +39,11 @@ class Donator extends Model
                 subject: "Dein Account wurde gelöscht",
                 first_name: $donator->first_name,
             ));
+
+            // add log entry
+            Log::info("Donator deleted", [
+                "donator" => $donator->toArray(),
+            ]);
 
         });
     }
