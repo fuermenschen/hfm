@@ -15,5 +15,6 @@ export default defineConfig({
                 height: 3000
             }
         })
-    ]
+    ],
+    assetsInclude: ["**/*.gpx"]
 });

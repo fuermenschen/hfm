@@ -1,5 +1,5 @@
 @extends('layouts.public')
-
+@php use Illuminate\Support\Facades\Vite; @endphp
 @section('content')
 
     <div>
@@ -89,8 +89,9 @@
         <x-faq-question-answer>
             <x-slot:question>Ich brauche für die Teilnahme weitere Unterstützung. An wen kann ich mich wenden?
             </x-slot:question>
-            <span>Wir geben unser Bestes, dass alle einen Teil von Höhenmeter für Menschen sein können. Sei es, dass du eine Allergie hast, Unterstützung zur Teilnahme als Sportler:in benötigst oder sonstige Fragen hast. <x-inline-link
-                    href="{{ route('contact') }}">Melde dich bei uns</x-inline-link>, wir finden eine Lösung.</span>
+            <span>Wir geben unser Bestes, dass alle einen Teil von Höhenmeter für Menschen sein können. Sei es, dass du Unterstützung bei der Teilnahme als Sportler:in hast, dass du eine Unverträglichkeit hast und Fragen zum Essen hast oder sonstige Anliegen hast.</span>
+            <span>Bitte <x-inline-link
+                    href="{{ route('contact') }}">melde dich</x-inline-link> bei uns, wir finden eine Lösung.</span>
         </x-faq-question-answer>
 
     </dl>
@@ -122,7 +123,19 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie verläuft der Rundkurs?</x-slot:question>
-            <x-todo>Kai, bitte liefere hier Eckdaten, Karte und GPX-Datei.</x-todo>
+            <span>
+            Der Rundkurs verläuft durch das Brühlberg-Quartier in Winterthur. Die Strecke ist
+            <strong>1.75&nbsp;km</strong> lang, hat <strong>50 Höhenmeter</strong> und ist komplett geteert. Der Anstieg
+            hat eine <strong>Steigung von 11%</strong>. Start und Ziel sind bei der Brühlgut Stiftung, dann geht die Strecke im Uhrzeigersinn durch das Quartier.
+            </span>
+            <span>
+                Du kannst die Strecke auch <x-inline-link href="https://s.geo.admin.ch/yb9swnrqvtal"
+                                                          target="_blank">online ansehen</x-inline-link>, <x-inline-link
+                    href="{{ Vite::asset('resources/files/hfm_strecke.pdf') }}"
+                    download target="_blank">als PDF herunterladen</x-inline-link> oder <x-inline-link
+                    href="{{ Vite::asset('resources/files/hfm_strecke.gpx') }}"
+                    download target="_blank">als GPX-Datei herunterladen</x-inline-link>.
+            </span>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -179,7 +192,7 @@
             <x-slot:question>Wie kann ich meine Spende von den Steuern abziehen?</x-slot:question>
             Wenn du deine Spende von den Steuern abziehen möchtest, gib uns bitte Bescheid. Wir senden dir dann eine
             Spendenbestätigung zu.
-            <x-todo>Beni, bitte prüfen, ob wir bedingungen erfüllen.</x-todo>
+            <x-todo>Beni, bitte Details ergänzen.</x-todo>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -240,7 +253,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Weshalb heisst der Anlass Höhenmeter für Menschen?</x-slot:question>
-            <x-todo>Kai, bitte liefern.</x-todo>
+            <x-todo>Kai, bitte Text liefern.</x-todo>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
