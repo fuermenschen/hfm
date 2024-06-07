@@ -34,11 +34,13 @@
 
     <span class="space-y-1">
         <span class="text-gray-700 dark:text-gray-400 text-sm font-medium">Bist du volljährig?</span>
-    <x-toggle wire:model.boolean="adult" left-label="Nein" label="Ja" lg />
+            <span class="flex flex-row space-x-4">
+            <x-radio label="Nein" value="false" wire:model.boolean="adult" />
+            <x-radio label="Ja" value="true" wire:model.boolean="adult" />
+            </span>
         </span>
 
-    <x-native-select label="Sportart" wire:model="sport_type_id"
-                     hint="Das hilft uns bei der Organisation der Helfer:innen.">
+    <x-native-select label="Sportart" wire:model="sport_type_id">
         <option disabled value="0">Bitte auswählen</option>
         @if (!$sport_types || $sport_types->isEmpty())
             <option disabled value="0">Keine Sportarten verfügbar</option>
@@ -53,20 +55,23 @@
         <x-inputs.number right-icon="fire" label="Geschätzte Anzahl Runden" placeholder="11"
                          wire:model.blur="rounds_estimated" required />
         <button type="button" wire:click="showNumRoundsInfo"
-                class="text-xs underline">Mehr Informationen zu den Runden</button>
+                class="text-xs underline mt-xs">Informationen zur Strecke</button>
     </span>
 
-    <x-native-select label="Ich möchte sammeln für" wire:model="partner_id"
-                     hint="Das Geld, das du mit deinen Spender:innen sammelst, geht an diese:n Benefizpartner:in.">
-        <option disabled value="0">Bitte auswählen</option>
-        @if (!$partners || $partners->isEmpty())
-            <option disabled value="0">Keine Partner:innen verfügbar</option>
-        @else
-            @foreach ($partners as $partner)
-                <option value="{{ $partner->id }}">{{ $partner->name }}</option>
-            @endforeach
-        @endif
-    </x-native-select>
+    <span>
+        <x-native-select label="Ich möchte sammeln für" wire:model="partner_id">
+            <option disabled value="0">Bitte auswählen</option>
+            @if (!$partners || $partners->isEmpty())
+                <option disabled value="0">Keine Partner:innen verfügbar</option>
+            @else
+                @foreach ($partners as $partner)
+                    <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                @endforeach
+            @endif
+        </x-native-select>
+        <button type="button" wire:click="showDistributionInfo"
+                class="text-xs underline mt-xs">Informationen zur Verteilung der Spenden</button>
+    </span>
 
     <x-textarea label="Kommentar"
                 placeholder="Ich freu mich druf. Bin zwar nöd mega sportlich, aber das isch ja egal. Hauptsach es chunnt e gueti Summe zäme!"
