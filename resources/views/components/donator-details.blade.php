@@ -26,8 +26,18 @@
                             <p class="text-sm leading-6">
                                 Fr. {{ sprintf('%1.2f',$donation['amount_per_round']) }} pro Runde</p>
                             <p class="mt-1 text-xs leading-5 text-gray-500">
-                                Fr. {{ sprintf('%1.2f',$donation['amount_min']) }} bis
-                                Fr. {{ sprintf('%1.2f',$donation['amount_max']) }}
+                                @php
+                                    if ($donation['amount_min'] && $donation['amount_max']) {
+                                        $min_max_text = "Fr. " . sprintf('%1.2f',$donation['amount_min']) . " bis Fr. " . sprintf('%1.2f',$donation['amount_max']);
+                                    } elseif ($donation['amount_min']) {
+                                        $min_max_text = "mindestens Fr. " . sprintf('%1.2f',$donation['amount_min']);
+                                    } elseif ($donation['amount_max']) {
+                                        $min_max_text = "maximal Fr. " . sprintf('%1.2f',$donation['amount_max']);
+                                    } else {
+                                        $min_max_text = "unbegrenzt";
+                                    }
+                                @endphp
+                                {{ $min_max_text }}
                             </p>
                         </div>
                     </li>
