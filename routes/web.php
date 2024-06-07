@@ -50,3 +50,19 @@ Route::get("spenderinnen/{login_token}/{donation_id}", function ($login_token, $
         'donation_id' => $donation_id,
     ]);
 })->name("verify-donation");
+
+/*
+Route::get('/preview-email', function () {
+
+    $user = User::factory()->create();
+
+    $notification = new App\Notifications\AthleteRegistered(
+        first_name: "Max",
+        public_id_string: "123456",
+        login_token: "123456"
+    );
+
+    return $notification->toMail($user)->render();
+
+});
+*/

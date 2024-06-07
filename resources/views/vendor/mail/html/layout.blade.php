@@ -24,6 +24,31 @@ width: 100% !important;
 width: 100% !important;
 }
 }
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+
+body, .body, .inner-body
+ {
+background-color: #1b2e47 !important;
+color: #f8fafc !important;
+}
+
+.wrapper {
+background-color: #1b2e47 !important;
+}
+
+a#logo-dark {
+display: inline-block !important;
+visibility: visible !important;
+}
+
+a#logo-light {
+display: none !important;
+visibility: hidden !important;
+}
+}
+
 </style>
 </head>
 <body>

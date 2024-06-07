@@ -1,4 +1,12 @@
 {
+  "resources/files/hfm_strecke.gpx": {
+    "file": "assets/hfm_strecke-V8dYlPPQ.gpx",
+    "src": "resources/files/hfm_strecke.gpx"
+  },
+  "resources/files/hfm_strecke.pdf": {
+    "file": "assets/hfm_strecke-BCpo0ZHa.pdf",
+    "src": "resources/files/hfm_strecke.pdf"
+  },
   "resources/images/143_dark.svg": {
     "file": "assets/143_dark-C5ZyzAxl.svg",
     "src": "resources/images/143_dark.svg"
@@ -106,7 +114,7 @@
     "isEntry": true
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-DIw0esdB.css",
+    "file": "assets/app-Bf84aBrz.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }
