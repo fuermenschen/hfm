@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Partner;
 use App\Models\SportType;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -15,7 +16,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // create users
+        User::create([
+            "name" => "Simon",
+            "email" => "simon.moser@mailbox.org",
+        ]);
 
         // create sport types
         SportType::create([

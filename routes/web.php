@@ -2,6 +2,7 @@
 
 use App\Models\Athlete;
 use App\Models\Donation;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,6 +30,24 @@ Route::view("login", "pages.login")->name("login");
 Route::view("kontakt", "pages.contact")->name("contact");
 Route::view("impressum", "pages.impressum")->name("impressum");
 Route::view("datenschutz", "pages.privacy")->name("privacy");
+
+// User Login
+Route::get("login/{uuid}", function ($uuid) {
+
+    // Get user by UUID
+    $user = User::where("uuid", $uuid)->firstOrFail();
+
+    // Login user
+    auth()->login($user, true);
+
+    // new session
+    request()->session()->regenerate();
+
+    // dump and die the auth status
+    dd(auth()->check());
+
+
+})->name("login-uuid")->middleware("signed");
 
 // Athlete
 Route::get("sportlerinnen/{login_token}", function ($login_token) {

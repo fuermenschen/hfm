@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\NewLoginLink;
 use Exception;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -64,7 +65,10 @@ class LoginForm extends Component
             $donator_login_token = $donator ? $donator->login_token : "";
 
             $user = User::where('email', $this->email)->first();
-            $user_login_token = $user ? $user->login_token : "";
+            if ($user) {
+                $user_uuid = $user->uuid;
+                $user_url = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $user_uuid]);
+            }
 
             // get the first name
             if ($athlete) {
@@ -72,20 +76,21 @@ class LoginForm extends Component
             } elseif ($donator) {
                 $first_name = $donator->first_name;
             } elseif ($user) {
-                $first_name = $user->first_name;
+                $first_name = $user->name;
             }
 
             if (!$athlete && !$donator && !$user) {
 
-                // add delay to prevent timing attacks
-                sleep(2);
+                // add random delay to prevent timing attacks
+                $random_delay = rand(1, 4);
+                sleep($random_delay);
             } else {
                 // send login link
                 $notification = new NewLoginLink(
                     first_name: $first_name,
                     athlete_login_token: $athlete_login_token,
                     donator_login_token: $donator_login_token,
-                    user_login_token: "", // TODO: add user login token
+                    user_login_url: $user_url,
                 );
 
                 Notification::route('mail', $this->email)->notify($notification);
