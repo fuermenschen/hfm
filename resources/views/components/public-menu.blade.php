@@ -34,18 +34,34 @@
                     {{ $item['name'] }}
                 </a>
             @endforeach
+            @auth
+                <a
+                    href="{{ route("admin.dashboard") }}"
+                    wire:navigate
+                    class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal"
+                >
+                    Dashboard
+                </a>
+            @endauth
         </div>
         <div class="hidden lg:flex items">
-            <a href="{{ route("login") }}" wire:navigate
-               class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2">
-                <span>Login</span>
-
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                     stroke="currentColor" class="size-6">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
-                </svg>
-            </a>
+            @guest
+                <a href="{{ route("login") }}" wire:navigate
+                   class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2">
+                    <span>Login</span>
+                </a>
+            @endguest
+            @auth
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2"
+                    >
+                        Logout
+                    </button>
+                </form>
+            @endauth
         </div>
     </nav>
     <!-- Mobile menu, show/hide based on menu open state. -->
@@ -94,21 +110,37 @@
                                 {{ $item['name'] }}
                             </a>
                         @endforeach
+                        @auth
+                            <a
+                                href="{{ route("admin.dashboard") }}"
+                                wire:navigate
+                                class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
+                            >
+                                Dashboard
+                            </a>
+                        @endauth
                     </div>
-                    <a
-                        href="{{ route("login") }}"
-                        wire:navigate
-                        class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex flex-row"
-                    >
-                        <span>Login</span>
+                    @guest
+                        <a
+                            href="{{ route("login") }}"
+                            wire:navigate
+                            class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex flex-row"
+                        >
+                            <span>Login</span>
 
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                             stroke="currentColor" class="size-6 ml-5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
-                        </svg>
-
-                    </a>
+                        </a>
+                    @endguest
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button
+                                type="submit"
+                                class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark
+                                :text-hfm-white flex flex-row"
+                            >Logout
+                            </button>
+                        </form>
+                    @endauth
 
                 </div>
             </div>

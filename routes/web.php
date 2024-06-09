@@ -43,8 +43,8 @@ Route::get("login/{uuid}", function ($uuid) {
     // new session
     request()->session()->regenerate();
 
-    // dump and die the auth status
-    dd(auth()->check());
+    // redirect to dashboard
+    return redirect()->route("admin.dashboard");
 
 
 })->name("login-uuid")->middleware("signed");
@@ -70,18 +70,16 @@ Route::get("spenderinnen/{login_token}/{donation_id}", function ($login_token, $
     ]);
 })->name("verify-donation");
 
-/*
-Route::get('/preview-email', function () {
+// Authenticated Routes
+Route::middleware("auth")->group(function () {
+    Route::view("admin", "pages.admin.dashboard")->name("admin.dashboard");
+    Route::view("admin/sportlerinnen", "pages.admin.athletes")->name("admin.athletes.index");
 
-    $user = User::factory()->create();
 
-    $notification = new App\Notifications\AthleteRegistered(
-        first_name: "Max",
-        public_id_string: "123456",
-        login_token: "123456"
-    );
-
-    return $notification->toMail($user)->render();
-
+    Route::post("logout", function () {
+        auth()->logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+        return redirect()->route("home");
+    })->name("logout");
 });
-*/
