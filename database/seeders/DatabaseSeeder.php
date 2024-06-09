@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Models\User;
@@ -21,6 +20,10 @@ class DatabaseSeeder extends Seeder
         User::create([
             "name" => "Simon",
             "email" => "simon.moser@mailbox.org",
+        ]);
+        User::create([
+            "name" => "Kai",
+            "email" => "kaifrehner@gmail.com",
         ]);
 
         // create sport types
@@ -58,6 +61,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // create athletes (example data)
-        Athlete::factory(10)->create();
+        //Athlete::factory(10)->create();
     }
 }
