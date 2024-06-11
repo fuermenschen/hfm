@@ -4,7 +4,8 @@
     @csrf
 
     <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email" />
+             wire:model.blur="email" type="email" autocomplete="email"
+    />
 
     <x-honey />
 
