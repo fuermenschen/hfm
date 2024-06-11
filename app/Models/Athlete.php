@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Notifications\AthleteRegistered;
+use App\Notifications\GenericMessage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * @method static create($all)
@@ -81,6 +83,18 @@ class Athlete extends Model
 
             // delete all donations of the athlete
             $athlete->donations()->delete();
+
+            // notify the athlete that their account has been deleted
+            // directly use the email address because the athlete is beeing deleted
+            $email = $athlete->email;
+            $message = "Du wurdest als Sportler:in gelöscht.";
+            $subject = "Deine Registrierung wurde gelöscht";
+            $first_name = $athlete->first_name;
+            Notification::route("mail", $email)->notify(new GenericMessage(
+                    $message,
+                    $subject,
+                    $first_name)
+            );
 
             // add log entry
             Log::info("Athlete deleted", [

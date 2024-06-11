@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Notifications\GenericMessage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class Donator extends Model
 {
@@ -31,6 +33,18 @@ class Donator extends Model
 
             // delete all donations of the donator
             $donator->donations()->delete();
+
+            // notify the donator that their account has been deleted
+            // directly use the email address because the donator is beeing deleted
+            $email = $donator->email;
+            $message = "Du wurdest als Spender:in gelöscht.";
+            $subject = "Deine Registrierung wurde gelöscht";
+            $first_name = $donator->first_name;
+            Notification::route("mail", $email)->notify(new GenericMessage(
+                    $message,
+                    $subject,
+                    $first_name)
+            );
 
             // add log entry
             Log::info("Donator deleted", [
