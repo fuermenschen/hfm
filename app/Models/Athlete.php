@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * @method static create($all)
@@ -84,11 +85,16 @@ class Athlete extends Model
             $athlete->donations()->delete();
 
             // notify the athlete that their account has been deleted
-            $athlete->notify(new GenericMessage(
-                message: "Du wurdest als Sportler:in gelöscht.",
-                subject: "Dein Account wurde gelöscht",
-                first_name: $athlete->first_name,
-            ));
+            // directly use the email address because the athlete is beeing deleted
+            $email = $athlete->email;
+            $message = "Du wurdest als Sportler:in gelöscht.";
+            $subject = "Deine Registrierung wurde gelöscht";
+            $first_name = $athlete->first_name;
+            Notification::route("mail", $email)->notify(new GenericMessage(
+                    $message,
+                    $subject,
+                    $first_name)
+            );
 
             // add log entry
             Log::info("Athlete deleted", [
