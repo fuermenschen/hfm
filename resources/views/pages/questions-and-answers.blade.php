@@ -68,9 +68,14 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie kann man am besten anreisen?</x-slot:question>
-            Am besten reist du mit dem öffentlichen Verkehr an. Die Brühlgut Stiftung ist mit dem Bus gut erreichbar
-            (Haltestelle Winterthur, Loki). Wenn du mit dem Auto anreist, gibt es das nahegelegene Parkhaus Lokwerk. Bei
-            der Brühlgut Stiftung hat es keine Parkplätze.
+            <span>Am besten reist du mit dem öffentlichen Verkehr an. Die Brühlgut Stiftung ist mit dem Bus gut erreichbar
+            (
+            <x-inline-link
+                href="https://www.sbb.ch/de?stops=[{%22label%22%3A%22%22%2C%22type%22%3A%22ID%22%2C%22value%22%3A%22%22}%2C{%22value%22%3A%228576180%22%2C%22type%22%3A%22ID%22%2C%22label%22%3A%22Winterthur%2C%20Loki%22}]"
+                target="_blank">Zum Fahrplan
+            </x-inline-link>
+            ). Wenn du mit dem Auto anreist, gibt es das nahegelegene Parkhaus Lokwerk. Bei
+            der Brühlgut Stiftung hat es keine Parkplätze.</span>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -192,7 +197,6 @@
             <x-slot:question>Wie kann ich meine Spende von den Steuern abziehen?</x-slot:question>
             Wenn du deine Spende von den Steuern abziehen möchtest, gib uns bitte Bescheid. Wir senden dir dann eine
             Spendenbestätigung zu.
-            <x-todo>Beni, bitte Details ergänzen.</x-todo>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -253,7 +257,16 @@
 
         <x-faq-question-answer>
             <x-slot:question>Weshalb heisst der Anlass Höhenmeter für Menschen?</x-slot:question>
-            <x-todo>Kai, bitte Text liefern.</x-todo>
+            <p>
+                Für manche Menschen fühlt sich jeder einzelne Tag an, als müssten sie Berge erklimmen. Mit dem Anlass
+                „Höhenmeter für Menschen” möchten wir versuchen, dieses Gefühl nachvollziehen und dabei Geld für
+                Organisationen sammeln, welche diese Menschen unterstützen und begleiten.
+            </p>
+
+            <p>
+                Wir erklimmen Höhenmeter, um die täglichen Anstrengungen und Hindernisse zu symbolisieren, die viele
+                Menschen überwinden müssen. Gemeinsam setzen wir ein Zeichen der Solidarität und Unterstützung.
+            </p>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
