@@ -257,16 +257,16 @@
 
         <x-faq-question-answer>
             <x-slot:question>Weshalb heisst der Anlass Höhenmeter für Menschen?</x-slot:question>
-            <p>
+            <span>
                 Für manche Menschen fühlt sich jeder einzelne Tag an, als müssten sie Berge erklimmen. Mit dem Anlass
                 „Höhenmeter für Menschen” möchten wir versuchen, dieses Gefühl nachvollziehen und dabei Geld für
                 Organisationen sammeln, welche diese Menschen unterstützen und begleiten.
-            </p>
+            </span>
 
-            <p>
+            <span>
                 Wir erklimmen Höhenmeter, um die täglichen Anstrengungen und Hindernisse zu symbolisieren, die viele
                 Menschen überwinden müssen. Gemeinsam setzen wir ein Zeichen der Solidarität und Unterstützung.
-            </p>
+            </span>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
