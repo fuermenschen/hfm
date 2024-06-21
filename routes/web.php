@@ -83,3 +83,14 @@ Route::middleware("auth")->group(function () {
         return redirect()->route("home");
     })->name("logout");
 });
+
+/*// Preview Email
+Route::get('/preview-email', function () {
+    $user = User::factory()->create();
+    $notification = new App\Notifications\AthleteRegistered(
+        first_name: "Max",
+        public_id_string: "123456",
+        login_token: "123456"
+    );
+    return $notification->toMail($user)->render();
+});*/

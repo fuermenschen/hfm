@@ -36,6 +36,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         SportType::create([
+            "name" => "Inlineskaten",
+        ]);
+
+        SportType::create([
             "name" => "Rollstuhl",
         ]);
 

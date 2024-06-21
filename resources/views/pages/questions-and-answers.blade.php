@@ -146,8 +146,7 @@
         <x-faq-question-answer>
             <x-slot:question>Welche Sportarten sind geeignet?</x-slot:question>
             <span>Am besten geeignet sind wohl Laufen und Velofahren. Aber es ist grundsätzlich alles erlaubt. Bitte beachte,
-            dass
-            es steile Abschnitte und Kieswege entlang der Strecke hat.</span>
+            dass es Steigungen von bis zu 11% hat.</span>
             <span>Wer die Strecke aus eigener Kraft zurücklegen kann, soll dies auch tun. Wer dazu nicht in der Lage ist und Hilfsmittel oder Hilfspersonen benötigt, darf dies.</span>
         </x-faq-question-answer>
 
