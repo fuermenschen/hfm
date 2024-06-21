@@ -65,6 +65,7 @@ class LoginForm extends Component
             $donator_login_token = $donator ? $donator->login_token : "";
 
             $user = User::where('email', $this->email)->first();
+            $user_url = "";
             if ($user) {
                 $user_uuid = $user->uuid;
                 $user_url = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $user_uuid]);
@@ -82,7 +83,7 @@ class LoginForm extends Component
             if (!$athlete && !$donator && !$user) {
 
                 // add random delay to prevent timing attacks
-                $random_delay = rand(1, 4);
+                $random_delay = rand(0, 3);
                 sleep($random_delay);
             } else {
                 // send login link

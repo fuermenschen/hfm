@@ -2,9 +2,12 @@
 
 namespace App\Components;
 
+require './../vendor/autoload.php';
+
 use App\Models\Athlete;
 use App\Models\Donation;
 use Illuminate\Support\Collection;
+use Intervention\Image\ImageManager;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use WireUi\Traits\Actions;
@@ -38,6 +41,8 @@ class AthleteDetails extends Component
 
         $this->athlete = [
             'first_name' => $athlete->first_name,
+            'privacy_name' => $athlete->privacy_name,
+            'public_id_string' => $athlete->public_id_string,
         ];
         $donations = Donation::where('athlete_id', $athlete->id)->with('donator')->get();
         $this->donations = $donations->map(function ($donation) {
@@ -54,6 +59,35 @@ class AthleteDetails extends Component
     public function render()
     {
         return view('components.athlete-details');
+    }
+
+    public function downloadPersonalizedImage()
+    {
+        $image = ImageManager::gd()->read('./../resources/image_templates/templ1.jpg');
+
+        // define the position and text
+        $x = 539;
+        $y = 1561;
+        $text = $this->athlete['privacy_name'] . " (" . $this->athlete['public_id_string'] . ")";
+
+        // add the text to the image
+        $image->text($text, $x, $y, function ($font) {
+            $font->file('./../resources/fonts/darkmode_on_medium.otf');
+            $font->size(55);
+            $font->color('#f8fafc');
+            $font->align('center');
+            $font->valign('middle');
+        });
+
+        // create filename
+        $filename = $this->athlete['public_id_string'] . '.jpg';
+
+        $filepath = './../public/temp/' . $filename;
+
+        $image->save($filepath);
+
+        return response()->download($filepath)->deleteFileAfterSend(true);
+
     }
 
 }

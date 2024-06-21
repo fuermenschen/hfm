@@ -2,13 +2,21 @@
     <x-page-title>Hallo {{ $athlete['first_name'] }}</x-page-title>
 
     <div
-        class="w-full max-w-2xl mx-auto text-left sm:text-center">Auf dieser Seite siehst du, wer sich schon alles als
-        Spender:in für dich eingetragen hat. Du kannst den Link in der Mail jederzeit wieder aufrufen, um zu sehen, wer
-        sich schon alles für dich registriert hat.
+        class="w-full max-w-2xl mx-auto text-left sm:text-center space-y-md">
+        <p>Auf dieser Seite siehst du, wer sich schon
+            alles als
+            Spender:in für dich eingetragen hat. Du kannst den Link in der Mail jederzeit wieder aufrufen, um zu sehen,
+            wer
+            sich schon alles für dich registriert hat.</p>
+        <p>
+            Zudem kannst du personalisierte Bilder herunterladen, die du auf deinen Social-Media-Kanälen teilen kannst.
+        </p>
     </div>
 
 
     <div class="w-full max-w-xl mx-auto">
+        <x-page-subtitle>Spender:innen</x-page-subtitle>
+        <x-button wire:click="downloadPersonalizedImage" class="mt-4">Personalisiertes Bild herunterladen</x-button>
         <x-page-subtitle>Spender:innen</x-page-subtitle>
         @if ($donations->count() > 0)
             <ul role="list" class="divide-y divide-gray-900/10 dark:divide-gray-100/30">
