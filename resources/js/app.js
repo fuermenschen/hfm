@@ -1,3 +1,3 @@
 import "./bootstrap";
 
-import.meta.glob(["../(images|files)/**"]);
+import.meta.glob(["../(images|files|image_templates)/**"]);

@@ -7,6 +7,14 @@
     "file": "assets/hfm_strecke-BCpo0ZHa.pdf",
     "src": "resources/files/hfm_strecke.pdf"
   },
+  "resources/image_templates/story_single_dark.jpg": {
+    "file": "assets/story_single_dark-Djcrhpm5.jpg",
+    "src": "resources/image_templates/story_single_dark.jpg"
+  },
+  "resources/image_templates/story_single_light.jpg": {
+    "file": "assets/story_single_light-CJw1ZOHY.jpg",
+    "src": "resources/image_templates/story_single_light.jpg"
+  },
   "resources/images/143_dark.svg": {
     "file": "assets/143_dark-C5ZyzAxl.svg",
     "src": "resources/images/143_dark.svg"
@@ -49,11 +57,11 @@
   },
   "resources/images/sport_landscape_01.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_02.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_03.jpeg": {
     "file": "assets/sport_landscape_03-mVjRCTZE.jpeg",
@@ -114,7 +122,7 @@
     "isEntry": true
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-DBME9H4g.css",
+    "file": "assets/app-DMdgq3Jh.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }

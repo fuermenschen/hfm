@@ -7,6 +7,7 @@ require './../vendor/autoload.php';
 use App\Models\Athlete;
 use App\Models\Donation;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -61,9 +62,9 @@ class AthleteDetails extends Component
         return view('components.athlete-details');
     }
 
-    public function downloadPersonalizedImage()
+    public function downloadStorySingleDark()
     {
-        $image = ImageManager::gd()->read('./../resources/image_templates/templ1.jpg');
+        $image = ImageManager::gd()->read('./../resources/image_templates/story_single_dark.jpg');
 
         // define the position and text
         $x = 539;
@@ -80,14 +81,44 @@ class AthleteDetails extends Component
         });
 
         // create filename
-        $filename = $this->athlete['public_id_string'] . '.jpg';
+        $filename = "story_single_dark_" . $this->athlete['public_id_string'] . "_" . Str::random(5) . '.jpg';
 
-        $filepath = './../public/temp/' . $filename;
+        $filepath = './../storage/temp/' . $filename;
 
         $image->save($filepath);
 
         return response()->download($filepath)->deleteFileAfterSend(true);
 
     }
+
+    public function downloadStorySingleLight()
+    {
+        $image = ImageManager::gd()->read('./../resources/image_templates/story_single_light.jpg');
+
+        // define the position and text
+        $x = 539;
+        $y = 1561;
+        $text = $this->athlete['privacy_name'] . " (" . $this->athlete['public_id_string'] . ")";
+
+        // add the text to the image
+        $image->text($text, $x, $y, function ($font) {
+            $font->file('./../resources/fonts/darkmode_on_medium.otf');
+            $font->size(55);
+            $font->color('#f8fafc');
+            $font->align('center');
+            $font->valign('middle');
+        });
+
+        // create filename
+        $filename = "story_single_light_" . $this->athlete['public_id_string'] . "_" . Str::random(5) . '.jpg';
+
+        $filepath = './../storage/temp/' . $filename;
+
+        $image->save($filepath);
+
+        return response()->download($filepath)->deleteFileAfterSend(true);
+
+    }
+
 
 }

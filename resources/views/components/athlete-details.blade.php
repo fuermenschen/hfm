@@ -15,8 +15,27 @@
 
 
     <div class="w-full max-w-xl mx-auto">
-        <x-page-subtitle>Spender:innen</x-page-subtitle>
-        <x-button wire:click="downloadPersonalizedImage" class="mt-4">Personalisiertes Bild herunterladen</x-button>
+        <x-page-subtitle>Bilder für Social Media</x-page-subtitle>
+        <p class="">Hier kannst du personalisierte Bilder herunterladen, die du auf deinen Social-Media-Kanälen
+            teilen kannst.</p>
+
+        <x-page-subsubtitle>Für Insta- und Whatsapp-Storys</x-page-subsubtitle>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+            <div class="flex flex-col gap-y-2 items-center">
+                <img src="{{ Vite::asset('resources/image_templates/story_single_light.jpg') }}" alt="Athlete Light"
+                     class="w-32 object-contain border-2">
+                <x-button wire:click="downloadStorySingleLight" spinner="downloadStorySingleLight" xs>Herunterladen
+                </x-button>
+            </div>
+            <div class="flex flex-col gap-y-2 items-center">
+                <img src="{{ Vite::asset('resources/image_templates/story_single_dark.jpg') }}" alt="Athlete Light"
+                     class="w-32 object-contain border-2">
+                <x-button wire:click="downloadStorySingleDark" spinner="downloadStorySingleDark" xs>Herunterladen
+                </x-button>
+            </div>
+
+        </div>
+
         <x-page-subtitle>Spender:innen</x-page-subtitle>
         @if ($donations->count() > 0)
             <ul role="list" class="divide-y divide-gray-900/10 dark:divide-gray-100/30">
