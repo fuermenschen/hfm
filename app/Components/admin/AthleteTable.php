@@ -3,6 +3,7 @@
 namespace App\Components\admin;
 
 use App\Models\Athlete;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
@@ -104,20 +105,25 @@ final class AthleteTable extends PowerGridComponent
         ];
     }
 
-    #[On('edit')]
-    public function edit($rowId): void
+    #[On('downloadWelcomeLetter')]
+    public function downloadWelcomeLetter($athlete_id)
     {
-        $this->js('alert(' . $rowId . ')');
+        $athlete = Athlete::findOrfail($athlete_id);
+        $pdf = Pdf::loadView('printables.athlete_welcome_letter', $athlete->toArray(), [], "UTF-8");
+        //return $pdf->download('aaa.pdf');
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, 'aaa.pdf');
     }
 
     public function actions(Athlete $row): array
     {
         return [
             Button::add('edit')
-                ->slot('Edit: ' . $row->id)
+                ->slot('Brief')
                 ->id()
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('edit', ['rowId' => $row->id])
+                ->dispatch('downloadWelcomeLetter', ['athlete_id' => $row->id])
         ];
     }
 

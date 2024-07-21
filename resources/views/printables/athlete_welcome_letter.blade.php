@@ -1,7 +1,11 @@
 @extends('layouts.base')
 
+// @props(['athlete'])
+
 @php
     use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+    $athlete = \App\Models\Athlete::find(1);
 
     $qrCode = QrCode::format('svg')
         ->margin(0)
@@ -10,9 +14,21 @@
         ->size(100)
         ->generate(route('show-athlete', $athlete->login_token));
 
-@endphp
+    $partnerName = "";
 
-@props(['athlete'])
+    if (str_contains($athlete->partner->name, "alle")) {
+        $partnerName = "alle drei Benefizpartner:innen zu gleichen Teilen";
+    } elseif (str_contains($athlete->partner->name, "Brühlgut")) {
+        $partnerName = "die Brühlgut Stiftung";
+    } elseif (str_contains($athlete->partner->name, "Kinderseele")) {
+        $partnerName = "das Institut Kinderseele Schweiz";
+    } elseif (str_contains($athlete->partner->name, "143")) {
+        $partnerName = "die Dargebotene Hand (Tel 143)";
+    } else {
+        throw new Exception("Unknown partner name: " . $athlete->partner->name);
+    }
+
+@endphp
 
 @section('body')
     <style>
@@ -170,9 +186,15 @@
                 Vielen Dank, dass du beim Anlass Höhenmeter für Menschen mitmachst!
             </p>
             <p>
+                Du hast bei deiner Anmeldung angegeben, dass du ungefähr
+                <strong>{{ $athlete->rounds_estimated }} Runden</strong>
+                zurücklegen möchtest ({{ $athlete->sportType->name }}). Die Spenden deiner Spender:innen gehen dann
+                an <strong>{{ $partnerName }}</strong>.
+            </p>
+            <p>
                 Wir möchten dir das Suchen von
                 Spender:innen so einfach wie möglich machen.
-                Deshalb erhältst du anbei einige personalisierte Flyer, um die Spender:innen-Suche zu vereinfachen.
+                Deshalb erhältst du anbei einige personalisierte Flyer.
                 Zudem findest du in deinem persönlichen Bereich auf der Webseite personalisierte Bilder, die du auf
                 Social Media teilen kannst.
             </p>
@@ -180,7 +202,8 @@
                 Wenn du mehr Flyer benötigst oder sonst etwas von uns brauchst, melde ich jederzeit bei uns.
             </p>
             <p>
-                Am Anlass selbst hast du dann von 13&nbsp;Uhr bis 18&nbsp;Uhr Zeit, um so viele Runden wie möglich
+                Am Anlass selbst, am <strong>21. September 2024</strong> hast du dann von 13&nbsp;Uhr bis 18&nbsp;Uhr
+                Zeit, um so viele Runden wie möglich
                 zurückzulegen. Alles weitere, etwa das Eintreiben der Spenden, erledigen wir für dich.
             </p>
             <p>
