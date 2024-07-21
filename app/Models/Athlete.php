@@ -137,29 +137,29 @@ class Athlete extends Model
         return Athlete::where("login_token", $token)->exists();
     }
 
+    public function donations(): HasMany
+    {
+        return $this->hasMany(Donation::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return "$this->first_name $this->last_name";
     }
+
+    // make a string in the format ###-###
 
     public function getPrivacyNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name[0]}.";
     }
 
-    // make a string in the format ###-###
     public function getPublicIdStringAttribute(): string
     {
         // convert the public_id to a string with six digits
         $publicId = str_pad($this->public_id, 6, "0", STR_PAD_LEFT);
         // return the formatted string
         return substr($publicId, 0, 3) . "-" . substr($publicId, 3);
-    }
-
-    public function markEmailAsVerified(): void
-    {
-        $this->email_verified_at = now();
-        $this->save();
     }
 
     public function sportType(): BelongsTo
@@ -170,11 +170,6 @@ class Athlete extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
-    }
-
-    public function donations(): HasMany
-    {
-        return $this->hasMany(Donation::class);
     }
 
 }

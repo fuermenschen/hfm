@@ -48,6 +48,9 @@ module.exports = {
         "./vendor/wireui/wireui/resources/**/*.blade.php",
         "./vendor/wireui/wireui/ts/**/*.ts",
         "./vendor/wireui/wireui/src/View/**/*.php",
+        "./app/Livewire/**/*Table.php",
+        "./vendor/power-components/livewire-powergrid/resources/views/**/*.php",
+        "./vendor/power-components/livewire-powergrid/src/Themes/HfmGrid.php",
     ],
     plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
 };
