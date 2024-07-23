@@ -1,0 +1,49 @@
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_thin.otf') format('opentype');
+    font-weight: 100;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_xlight.otf') format('opentype');
+    font-weight: 200;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_light.otf') format('opentype');
+    font-weight: 300;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_regular.otf') format('opentype');
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_medium.otf') format('opentype');
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_bold.otf') format('opentype');
+    font-weight: 700;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    src: url('../fonts/darkmode_on_xbold.otf') format('opentype');
+    font-weight: 800;
+}
+
+@font-face {
+    font-family: "darkmode-on";
+    font-weight: 900;
+    font-style: normal;
+    font-variant: normal;
+    src: url('../fonts/darkmode_on_black.ttf') format('truetype');
+}

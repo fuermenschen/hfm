@@ -1,4 +1,9 @@
 {
+  "resources/css/darkmode_on.css": {
+    "file": "assets/darkmode_on-PLzmhI_H.css",
+    "src": "resources/css/darkmode_on.css",
+    "isEntry": true
+  },
   "resources/files/hfm_strecke.gpx": {
     "file": "assets/hfm_strecke-V8dYlPPQ.gpx",
     "src": "resources/files/hfm_strecke.gpx"
@@ -6,6 +11,38 @@
   "resources/files/hfm_strecke.pdf": {
     "file": "assets/hfm_strecke-BCpo0ZHa.pdf",
     "src": "resources/files/hfm_strecke.pdf"
+  },
+  "resources/fonts/darkmode_on_black.ttf": {
+    "file": "assets/darkmode_on_black-DBkoIOUf.ttf",
+    "src": "resources/fonts/darkmode_on_black.ttf"
+  },
+  "resources/fonts/darkmode_on_bold.otf": {
+    "file": "assets/darkmode_on_bold-BY1u92g8.otf",
+    "src": "resources/fonts/darkmode_on_bold.otf"
+  },
+  "resources/fonts/darkmode_on_light.otf": {
+    "file": "assets/darkmode_on_light-C8JIkMFE.otf",
+    "src": "resources/fonts/darkmode_on_light.otf"
+  },
+  "resources/fonts/darkmode_on_medium.otf": {
+    "file": "assets/darkmode_on_medium-BUX6wxeV.otf",
+    "src": "resources/fonts/darkmode_on_medium.otf"
+  },
+  "resources/fonts/darkmode_on_regular.otf": {
+    "file": "assets/darkmode_on_regular-DvmLTEc4.otf",
+    "src": "resources/fonts/darkmode_on_regular.otf"
+  },
+  "resources/fonts/darkmode_on_thin.otf": {
+    "file": "assets/darkmode_on_thin-D1tAAD5f.otf",
+    "src": "resources/fonts/darkmode_on_thin.otf"
+  },
+  "resources/fonts/darkmode_on_xbold.otf": {
+    "file": "assets/darkmode_on_xbold-DRGUOREq.otf",
+    "src": "resources/fonts/darkmode_on_xbold.otf"
+  },
+  "resources/fonts/darkmode_on_xlight.otf": {
+    "file": "assets/darkmode_on_xlight-Cw2lOpNy.otf",
+    "src": "resources/fonts/darkmode_on_xlight.otf"
   },
   "resources/image_templates/story_single_dark.jpg": {
     "file": "assets/story_single_dark-Djcrhpm5.jpg",
@@ -57,11 +94,11 @@
   },
   "resources/images/sport_landscape_01.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_02.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_03.jpeg": {
     "file": "assets/sport_landscape_03-mVjRCTZE.jpeg",

@@ -5,7 +5,11 @@ import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
 export default defineConfig({
     plugins: [
         laravel({
-            input: ["resources/sass/app.scss", "resources/js/app.js"],
+            input: [
+                "resources/sass/app.scss",
+                "resources/js/app.js",
+                "resources/css/darkmode_on.css"
+            ],
             refresh: true
         }),
         ViteImageOptimizer({
@@ -16,5 +20,7 @@ export default defineConfig({
             }
         })
     ],
-    assetsInclude: ["**/*.gpx"]
+    assetsInclude: [
+        "**/*.gpx"
+    ]
 });

@@ -109,11 +109,11 @@ final class AthleteTable extends PowerGridComponent
     public function downloadWelcomeLetter($athlete_id)
     {
         $athlete = Athlete::findOrfail($athlete_id);
-        $pdf = Pdf::loadView('printables.athlete_welcome_letter', $athlete->toArray(), [], "UTF-8");
-        //return $pdf->download('aaa.pdf');
+        $pdf = Pdf::loadView('printables.athlete_welcome_letter', compact('athlete'))
+            ->setPaper('a4', 'portrait');
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->stream();
-        }, 'aaa.pdf');
+        }, 'name.pdf');
     }
 
     public function actions(Athlete $row): array
