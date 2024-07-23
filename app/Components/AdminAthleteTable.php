@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Components\admin;
+namespace App\Components;
 
 use App\Models\Athlete;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,7 +18,7 @@ use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
-final class AthleteTable extends PowerGridComponent
+final class AdminAthleteTable extends PowerGridComponent
 {
     use WithExport;
 

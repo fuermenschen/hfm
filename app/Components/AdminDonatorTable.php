@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Components\admin;
+namespace App\Components;
 
 use App\Models\Donator;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +16,7 @@ use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
-final class DonatorTable extends PowerGridComponent
+final class AdminDonatorTable extends PowerGridComponent
 {
     use WithExport;
 

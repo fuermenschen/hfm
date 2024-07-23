@@ -9,7 +9,7 @@
 
     @section('content')
 
-        @livewire('admin.donator-table')
+        @livewire('admin-donator-table')
 
     @endsection
 
