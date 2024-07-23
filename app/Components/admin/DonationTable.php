@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Components\admin;
+
+use App\Models\Donation;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
+use PowerComponents\LivewirePowerGrid\Column;
+use PowerComponents\LivewirePowerGrid\Exportable;
+use PowerComponents\LivewirePowerGrid\Footer;
+use PowerComponents\LivewirePowerGrid\Header;
+use PowerComponents\LivewirePowerGrid\PowerGrid;
+use PowerComponents\LivewirePowerGrid\PowerGridComponent;
+use PowerComponents\LivewirePowerGrid\PowerGridFields;
+use PowerComponents\LivewirePowerGrid\Responsive;
+use PowerComponents\LivewirePowerGrid\Traits\WithExport;
+
+final class DonationTable extends PowerGridComponent
+{
+    use WithExport;
+
+    public function setUp(): array
+    {
+        $this->showCheckBox();
+
+        return [
+            Responsive::make(),
+            Exportable::make('donation')
+                ->striped()
+                ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
+            Header::make()
+                ->showSearchInput()
+                ->showToggleColumns(),
+            Footer::make(),
+        ];
+    }
+
+    public function datasource(): Builder
+    {
+        return Donation::query()->with('athlete', 'donator');
+    }
+
+    public function relationSearch(): array
+    {
+        return [];
+    }
+
+    public function fields(): PowerGridFields
+    {
+        return PowerGrid::fields()
+            ->add('athlete', function (Donation $donation) {
+                return $donation->athlete->privacy_name;
+            })
+            ->add('donator', function (Donation $donation) {
+                return $donation->donator->privacy_name;
+            })
+            ->add('verified', function (Donation $donation) {
+                return $donation->verified ? 'Ja' : 'Nein';
+            })
+            ->add('amount_per_round', function (Donation $donation) {
+                return "Fr. " . number_format($donation->amount_per_round, 2, ".", "'");
+            })
+            ->add('estimated_amount', function (Donation $donation) {
+                return "Fr. " . number_format($donation->amount_per_round * $donation->athlete->rounds_estimated, 2, ".", "'");
+            })
+            ->add('max_amount', function (Donation $donation) {
+
+                if ($donation->max_amount) {
+                    return "Fr. " . number_format($donation->max_amount, 2, ".", "'");
+                } else {
+                    return "unbegrenzt";
+                }
+            })
+            ->add('created_at_formatted', fn($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'));
+    }
+
+    public function columns(): array
+    {
+        return [
+
+            Column::make('Spender:in', 'donator')
+                ->sortable()
+                ->searchable()
+                ->fixedOnResponsive(),
+
+            Column::make('Sportler:in', 'athlete')
+                ->sortable()
+                ->searchable()
+                ->fixedOnResponsive(),
+
+            Column::make('Bestätigt', 'verified')
+                ->sortable()
+                ->searchable(),
+
+            Column::make('Betrag pro Runde', 'amount_per_round')
+                ->sortable(),
+
+            Column::make('Geschätzter Betrag', 'estimated_amount')
+                ->sortable()
+                ->fixedOnResponsive(),
+
+            Column::make('Maximaler Betrag', 'max_amount')
+                ->sortable(),
+
+            Column::make('Erstellt am', 'created_at_formatted')
+                ->sortable(),
+
+            Column::make('Kommentar', 'comment')
+                ->sortable()
+                ->searchable()
+                ->fixedOnResponsive(),
+
+        ];
+    }
+
+    public function filters(): array
+    {
+        return [
+        ];
+    }
+
+
+}

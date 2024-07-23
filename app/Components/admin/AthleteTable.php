@@ -98,6 +98,28 @@ final class AthleteTable extends PowerGridComponent
             Column::make('Erwachsen', 'adult')
                 ->sortable(),
 
+            Column::make('Telefon', 'phone_number')
+                ->sortable(),
+
+            Column::make('E-Mail', 'email')
+                ->sortable(),
+
+            Column::make('Adresse', 'address')
+                ->sortable()
+                ->searchable(),
+
+            Column::make('PLZ', 'zip_code')
+                ->sortable()
+                ->searchable(),
+
+            Column::make('Ort', 'city')
+                ->sortable()
+                ->searchable(),
+
+            Column::make('Kommentar', 'comment')
+                ->sortable()
+                ->searchable(),
+
             Column::action('Aktionen')
                 ->fixedOnResponsive()
         ];

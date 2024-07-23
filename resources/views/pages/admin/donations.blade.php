@@ -5,11 +5,11 @@
 
 @endphp
 
-@component('layouts.admin', ['title' => "Sportler:innen"])
+@component('layouts.admin', ['title' => "Spenden"])
 
     @section('content')
 
-        @livewire('admin.athlete-table')
+        @livewire('admin.donation-table')
 
     @endsection
 

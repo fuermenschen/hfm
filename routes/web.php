@@ -74,6 +74,8 @@ Route::get("spenderinnen/{login_token}/{donation_id}", function ($login_token, $
 Route::middleware("auth")->group(function () {
     Route::view("admin", "pages.admin.dashboard")->name("admin.dashboard");
     Route::view("admin/sportlerinnen", "pages.admin.athletes")->name("admin.athletes.index");
+    Route::view("admin/spenderinnen", "pages.admin.donators")->name("admin.donators.index");
+    Route::view("admin/spenden", "pages.admin.donations")->name("admin.donations.index");
 
 
     Route::post("logout", function () {
