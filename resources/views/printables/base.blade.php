@@ -10,6 +10,7 @@
         }
 
         body {
+            font-family: sans-serif;
             font-weight: normal;
             font-size: 12px;
             margin: 0;

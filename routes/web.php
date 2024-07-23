@@ -16,10 +16,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/letter-test', 'printables.athlete_welcome_letter', [
-    'athlete' => Athlete::first(),
-])->name('letter-test');
-
 // Main Menu
 Route::view("/", "home", [
     'athleteCount' => Athlete::count(),

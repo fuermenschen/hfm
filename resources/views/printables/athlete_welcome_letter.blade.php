@@ -6,8 +6,6 @@
     use Illuminate\Support\Facades\Vite;
     use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
-    $athlete = \App\Models\Athlete::find(1);
-
     $qrCode = QrCode::format('svg')
         ->margin(0)
         ->errorCorrection('L')
@@ -30,8 +28,8 @@
         throw new Exception("Unknown partner name: " . $athlete->partner->name);
     }
 
-    $logo = Vite::asset("resources/images/logo_light.svg");
-    $logoData = base64_encode(file_get_contents($logo));
+    $letterhead = Vite::asset("resources/images/letterhead.svg");
+    $letterheadData = base64_encode(file_get_contents($letterhead));
 
 
 @endphp
@@ -47,14 +45,7 @@
 
         .logo-and-sender img {
             width: 100px;
-            margin-left: 2px;
-        }
-
-        .logo-and-sender h1 {
-            font-size: 20px;
-            line-height: 25px;
-            margin-top: 1rem;
-            font-weight: bolder;
+            margin-left: -1px;
         }
 
         .logo-and-sender div {
@@ -67,12 +58,19 @@
         {{-- recipient --}}
         .recipient {
             position: absolute;
-            top: 6cm;
-            left: 11cm;
+            top: 5.3cm;
+            left: 11.5cm;
             width: 5cm;
             height: 3cm;
-            border: solid 1px #1B2E47;
             font-size: 12px;
+        }
+
+        .recipient p.sender {
+            position: absolute;
+            top: -0.3cm;
+            font-size: 9px;
+            text-decoration: underline;
+            font-style: italic;
         }
 
         {{-- city and date --}}
@@ -134,9 +132,7 @@
 
     <!-- Logo and Sender -->
     <div class="logo-and-sender">
-        <img src="data:image/svg+xml;base64,{{ $logoData }}" alt="Logo" />
-
-        <h1>Höhenmeter<br>für Menschen</h1>
+        <img src="data:image/svg+xml;base64,{{ $letterheadData }}" alt="Logo" />
 
         <div>
             <p>
@@ -151,6 +147,7 @@
 
     <!-- Recipient -->
     <div class="recipient">
+        <p class="sender">Höhenmeter für Menschen, www.hfm.rt25.ch</p>
         <p>
             @if ($athlete->adult == 0)
                 An die Eltern von
@@ -194,7 +191,7 @@
             Social Media teilen kannst.
         </p>
         <p>
-            Wenn du mehr Flyer benötigst oder sonst etwas von uns brauchst, melde ich jederzeit bei uns.
+            Wenn du mehr Flyer benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
         </p>
         <p>
             Am Anlass selbst, am <strong>21. September 2024</strong> hast du dann von 13&nbsp;Uhr bis 18&nbsp;Uhr
