@@ -40,36 +40,43 @@
         @if ($donations->count() > 0)
             <ul role="list" class="divide-y divide-gray-900/10 dark:divide-gray-100/30">
                 @foreach ($donations as $donation)
-                    <li class="flex justify-between gap-x-6 py-5">
-                        <div class="flex min-w-0 gap-x-4">
-                            <div class="min-w-0 flex-auto">
-                                <p class="text-sm font-semibold leading-6">{{ $donation['donator'] }}</p>
-                                @if (!$donation['verified'])
-                                    <p class="mt-1 truncate text-xs leading-5 text-hfm-red">nicht verifiziert</p>
-                                @else
-                                    <p class="mt-1 truncate text-xs leading-5 text-gray-500">verifiziert</p>
-                                @endif
+                    <li class="flex flex-col gap-x-6 py-5">
+                        <div class="flex justify-between">
+                            <div class="flex min-w-0 gap-x-4">
+                                <div class="min-w-0 flex-auto">
+                                    <p class="text-sm font-semibold leading-6">{{ $donation['donator'] }}</p>
+                                    @if (!$donation['verified'])
+                                        <p class="mt-1 truncate text-xs leading-5 text-hfm-red">nicht verifiziert</p>
+                                    @else
+                                        <p class="mt-1 truncate text-xs leading-5 text-gray-500">verifiziert</p>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <p class="text-sm leading-6">
+                                    Fr. {{ sprintf('%1.2f',$donation['amount_per_round']) }} pro Runde</p>
+                                <p class="mt-1 text-xs leading-5 text-gray-500">
+
+                                    @php
+                                        if ($donation['amount_min'] && $donation['amount_max']) {
+                                            $min_max_text = "Fr. " . sprintf('%1.2f',$donation['amount_min']) . " bis Fr. " . sprintf('%1.2f',$donation['amount_max']);
+                                        } elseif ($donation['amount_min']) {
+                                            $min_max_text = "mindestens Fr. " . sprintf('%1.2f',$donation['amount_min']);
+                                        } elseif ($donation['amount_max']) {
+                                            $min_max_text = "maximal Fr. " . sprintf('%1.2f',$donation['amount_max']);
+                                        }else {
+                                            $min_max_text = "unbegrenzt";
+                                        }
+                                    @endphp
+                                    {{ $min_max_text }}
+                                </p>
                             </div>
                         </div>
-                        <div class="flex flex-col items-end">
-                            <p class="text-sm leading-6">
-                                Fr. {{ sprintf('%1.2f',$donation['amount_per_round']) }} pro Runde</p>
-                            <p class="mt-1 text-xs leading-5 text-gray-500">
-
-                                @php
-                                    if ($donation['amount_min'] && $donation['amount_max']) {
-                                        $min_max_text = "Fr. " . sprintf('%1.2f',$donation['amount_min']) . " bis Fr. " . sprintf('%1.2f',$donation['amount_max']);
-                                    } elseif ($donation['amount_min']) {
-                                        $min_max_text = "mindestens Fr. " . sprintf('%1.2f',$donation['amount_min']);
-                                    } elseif ($donation['amount_max']) {
-                                        $min_max_text = "maximal Fr. " . sprintf('%1.2f',$donation['amount_max']);
-                                    }else {
-                                        $min_max_text = "unbegrenzt";
-                                    }
-                                @endphp
-                                {{ $min_max_text }}
-                            </p>
-                        </div>
+                        @if ($donation['comment'])
+                            <div class="text-xs text-gray-500 pt-xs">
+                                <span class="font-semibold">Kommentar:</span> {{ $donation['comment'] }}
+                            </div>
+                        @endif
                     </li>
                 @endforeach
             </ul>

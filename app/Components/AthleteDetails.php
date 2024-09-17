@@ -53,6 +53,7 @@ class AthleteDetails extends Component
                 'amount_min' => $donation->amount_min,
                 'amount_max' => $donation->amount_max,
                 'verified' => $donation->verified,
+                'comment' => $donation->comment,
             ];
         });
     }

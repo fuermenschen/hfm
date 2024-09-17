@@ -43,9 +43,10 @@
     $meanDonationAmount = $donationCount > 0 ? $donations->sum('amount_per_round') / $donationCount : 0;
     $expectedDonationAmount = 0;
     foreach ($athletes as $athlete) {
-        $expectedDonationAmount += $athlete->rounds_estimated * $meanDonationAmount;
+        foreach ($athlete->donations as $donation) {
+            $expectedDonationAmount += $donation->amount_per_round * $athlete->rounds_estimated;
+        }
     }
-    $minDonationAmount = $donations->sum('amount_min');
 
 
 @endphp
@@ -99,11 +100,6 @@
             <x-admin.stat-card
                 title="Erwartete Spenden"
                 :value="'Fr. '.round($expectedDonationAmount, 2)"
-                route="admin.donations.index"
-            />
-            <x-admin.stat-card
-                title="Minimaler Spendenbetrag"
-                :value="'Fr. '.round($minDonationAmount, 2)"
                 route="admin.donations.index"
             />
         </x-stats>
