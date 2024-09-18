@@ -3,8 +3,10 @@
 namespace App\Components;
 
 use App\Models\Donator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Exportable;
@@ -143,9 +145,28 @@ final class AdminDonatorTable extends PowerGridComponent
         ];
     }
 
+    // Actions
+    #[On('downloadInvoice')]
+    public function downloadWelcomeLetter($donator_id)
+    {
+        $donator = Donator::findOrfail($donator_id);
+        $donations = $donator->donations()->with(['athlete', 'athlete.partner'])->get();
+        $filename = $donator->first_name . '_' . $donator->last_name . '_Rechnung.pdf';
+        $pdf = Pdf::loadView('printables.donator_invoice', ['donator' => $donator, 'donations' => $donations])
+            ->setPaper('a4', 'portrait');
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->stream();
+        }, $filename);
+    }
+
     public function actions(Donator $row): array
     {
         return [
+            Button::add('Rechnung')
+                ->slot('PDF Rechnung')
+                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
+                ->dispatch('downloadInvoice', ['donator_id' => $row->id])
+                ->tooltip('Rechnung herunterladen'),
             Button::add('loginAsDonator')
                 ->slot('Login')
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
