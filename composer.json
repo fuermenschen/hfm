@@ -20,7 +20,8 @@
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^5.10",
         "simplesoftwareio/simple-qrcode": "^4.2",
-        "wireui/wireui": "^1.19"
+        "wireui/wireui": "^1.19",
+        "ext-zip": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

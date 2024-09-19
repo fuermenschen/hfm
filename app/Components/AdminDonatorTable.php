@@ -27,6 +27,11 @@ final class AdminDonatorTable extends PowerGridComponent
     public function header(): array
     {
         return [
+            Button::add('download')
+                ->slot('Download')
+                ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
+                ->dispatch('batchDownload', [])
+                ->tooltip('Rechnung für ausgewählte Spender:innen herunterladen'),
             Button::add('gesendet')
                 ->slot('gesendet')
                 ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
@@ -267,17 +272,42 @@ final class AdminDonatorTable extends PowerGridComponent
 
     }
 
+    #[On('batchDownload')]
+    public function batchDownload()
+    {
+        // create a zip file with all invoices
+        $zip = new \ZipArchive();
+
+        $filename = 'Rechnungen_' . Carbon::now()->format('Y-m-d') . '.zip';
+
+        if ($zip->open(storage_path('app/' . $filename), \ZipArchive::CREATE) === TRUE) {
+            if ($this->checkboxValues) {
+                foreach ($this->checkboxValues as $id) {
+                    $this_invoice = $this->downloadInvoice($id, false);
+                    $zip->addFromString($this_invoice['filename'], $this_invoice['pdf']->output());
+                }
+            }
+            $zip->close();
+        }
+
+        return response()->download(storage_path('app/' . $filename))->deleteFileAfterSend(true);
+    }
+
     #[On('downloadInvoice')]
-    public function downloadWelcomeLetter($donator_id)
+    public function downloadInvoice($donator_id, $download = true)
     {
         $donator = Donator::findOrfail($donator_id);
         $donations = $donator->donations()->with(['athlete', 'athlete.partner'])->get();
         $filename = $donator->first_name . '_' . $donator->last_name . '_Rechnung.pdf';
         $pdf = Pdf::loadView('printables.donator_invoice', ['donator' => $donator, 'donations' => $donations])
             ->setPaper('a4', 'portrait');
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->stream();
-        }, $filename);
+        if ($download) {
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->stream();
+            }, $filename);
+        } else {
+            return array('pdf' => $pdf, 'filename' => $filename);
+        }
     }
 
     public function actions(Donator $row): array
