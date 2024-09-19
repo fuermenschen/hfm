@@ -91,6 +91,7 @@ final class AdminAthleteTable extends PowerGridComponent
 
             Column::make('Runden gemacht', 'rounds_done')
                 ->sortable()
+                ->fixedOnResponsive()
                 ->editOnClick(
                     hasPermission: true,
                     fallback: 0
