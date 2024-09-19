@@ -226,7 +226,14 @@ final class AdminDonatorTable extends PowerGridComponent
     {
         if ($this->checkboxValues) {
             foreach ($this->checkboxValues as $id) {
-                $this->onUpdatedToggleable($id, 'invoice_sent', $sent);
+                $donator = Donator::findOrfail($id);
+                $donator->invoice_sent = $sent;
+                if ($sent) {
+                    $donator->invoice_sent_at = Carbon::now();
+                } else {
+                    $donator->invoice_sent_at = null;
+                }
+                $donator->save();
             }
             $this->notification()->success('Rechnungen als gesendet markiert (Seite muss aktualisiert werden)');
         } else {
@@ -242,7 +249,14 @@ final class AdminDonatorTable extends PowerGridComponent
     {
         if ($this->checkboxValues) {
             foreach ($this->checkboxValues as $id) {
-                $this->onUpdatedToggleable($id, 'invoice_paid', $paid);
+                $donator = Donator::findOrfail($id);
+                $donator->invoice_paid = $paid;
+                if ($paid) {
+                    $donator->invoice_paid_at = Carbon::now();
+                } else {
+                    $donator->invoice_paid_at = null;
+                }
+                $donator->save();
             }
             $this->notification()->success('Rechnungen als bezahlt markiert (Seite muss aktualisiert werden)');
         } else {
