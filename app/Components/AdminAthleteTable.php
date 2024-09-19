@@ -17,10 +17,12 @@ use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
+use WireUi\Traits\Actions;
 
 final class AdminAthleteTable extends PowerGridComponent
 {
     use WithExport;
+    use Actions;
 
     public function setUp(): array
     {
@@ -84,9 +86,15 @@ final class AdminAthleteTable extends PowerGridComponent
             Column::make('Partner', 'partner.name')
                 ->sortable(),
 
-            Column::make('Runden', 'rounds_estimated')
+            Column::make('Runden geschätzt', 'rounds_estimated')
+                ->sortable(),
+
+            Column::make('Runden gemacht', 'rounds_done')
                 ->sortable()
-                ->fixedOnResponsive(),
+                ->editOnClick(
+                    hasPermission: true,
+                    fallback: 0
+                ),
 
             Column::make('Spenden', 'number_of_donations')
                 ->sortable()
@@ -132,6 +140,20 @@ final class AdminAthleteTable extends PowerGridComponent
     }
 
     // Actions
+    public function onUpdatedEditable(string|int $id, string $field, string $value): void
+    {
+        try {
+            $athlete = Athlete::findOrFail($id);
+            $athlete->$field = $value;
+            $athlete->save();
+        } catch (\Exception $e) {
+            $this->notification()->error('Fehler beim Speichern');
+            return;
+        }
+        $this->notification()->success('Erfolgreich gespeichert');
+    }
+
+
     #[On('downloadWelcomeLetter')]
     public function downloadWelcomeLetter($athlete_id)
     {

@@ -1,8 +1,8 @@
 <?php
 
-use App\Themes\Powergrid\HfmGrid;
 use PowerComponents\LivewirePowerGrid\Components\Exports\OpenSpout\v3\ExportToCsv;
 use PowerComponents\LivewirePowerGrid\Components\Exports\OpenSpout\v3\ExportToXLS;
+use PowerComponents\LivewirePowerGrid\Themes\Tailwind;
 
 return [
 
@@ -15,8 +15,8 @@ return [
     | Configure here the theme of your choice.
     */
 
-    'theme' => HfmGrid::class,
-    //'theme' => \PowerComponents\LivewirePowerGrid\Themes\Bootstrap5::class,
+    //'theme' => HfmGrid::class,
+    'theme' => Tailwind::class,
 
     /*
     |--------------------------------------------------------------------------

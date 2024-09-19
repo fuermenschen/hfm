@@ -8,7 +8,7 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ["darkmode-on", ...defaultTheme.fontFamily.sans],
+                sans: ["darkmode-on", ...defaultTheme.fontFamily.sans]
             },
             colors: {
                 hfm: {
@@ -17,23 +17,25 @@ module.exports = {
                     dark: "#1B2E47",
                     light: "#97C9E6",
                     white: "#f8fafc",
-                    black: "#020617",
+                    black: "#020617"
                 },
-                primary: colors.slate,
-                // TODO: Add Colors to wireui
+                primary: colors.red,
+                secondary: colors.blue,
+                "pg-primary": colors.slate,
+                "pg-secondary": colors.slate
             },
             spacing: {
                 xs: "0.75rem",
                 sm: "1.5rem",
                 md: "2.25rem",
-                lg: "3rem",
-            },
-        },
+                lg: "3rem"
+            }
+        }
     },
     variants: {
         extend: {
-            backgroundColor: ["active"],
-        },
+            backgroundColor: ["active"]
+        }
     },
     content: [
         "./app/**/*.php",
@@ -49,8 +51,9 @@ module.exports = {
         "./vendor/wireui/wireui/ts/**/*.ts",
         "./vendor/wireui/wireui/src/View/**/*.php",
         "./app/Livewire/**/*Table.php",
+        "./app/Themes/**/*.php",
         "./vendor/power-components/livewire-powergrid/resources/views/**/*.php",
-        "./vendor/power-components/livewire-powergrid/src/Themes/HfmGrid.php",
+        "./vendor/power-components/livewire-powergrid/src/Themes/HfmGrid.php"
     ],
-    plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],
+    plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")]
 };

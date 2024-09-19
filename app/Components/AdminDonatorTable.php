@@ -17,10 +17,38 @@ use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
+use WireUi\Traits\Actions;
 
 final class AdminDonatorTable extends PowerGridComponent
 {
     use WithExport;
+    use Actions;
+
+    public function header(): array
+    {
+        return [
+            Button::add('gesendet')
+                ->slot('gesendet')
+                ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
+                ->dispatch('invoiceSent', ['sent' => true])
+                ->tooltip('Rechnungen als gesendet markieren'),
+            Button::add('nicht gesendet')
+                ->slot('nicht gesendet')
+                ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
+                ->dispatch('invoiceSent', ['sent' => false])
+                ->tooltip('Rechnungen als nicht gesendet markieren'),
+            Button::add('bezahlt')
+                ->slot('bezahlt')
+                ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
+                ->dispatch('invoicePaid', ['paid' => true])
+                ->tooltip('Rechnungen als bezahlt markieren'),
+            Button::add('nicht bezahlt')
+                ->slot('nicht bezahlt')
+                ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
+                ->dispatch('invoicePaid', ['paid' => false])
+                ->tooltip('Rechnungen als nicht bezahlt markieren'),
+        ];
+    }
 
     public function setUp(): array
     {
@@ -40,7 +68,7 @@ final class AdminDonatorTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        return Donator::query()->with(['donations', 'donations.athlete']);
+        return Donator::query()->with(['donations', 'donations.athlete', 'donations.athlete.partner']);
     }
 
     public function relationSearch(): array
@@ -54,34 +82,27 @@ final class AdminDonatorTable extends PowerGridComponent
             ->add('numOfDonations', function (Donator $donator) {
                 return $donator->donations->count();
             })
-            ->add('expectedDonation', function (Donator $donator) {
-                $sum = 0;
+            ->add('donations_sum', function (Donator $donator) {
+                $this_sum = 0;
                 foreach ($donator->donations as $donation) {
-                    $sum += $donation->amount_per_round * $donation->athlete->rounds_estimated;
+                    $athlete_sum = $donation->athlete->rounds_done * $donation->amount_per_round;
+                    if ($donation->amount_min) {
+                        if ($athlete_sum < $donation->amount_min) {
+                            $athlete_sum = $donation->amount_min;
+                        }
+                    }
+                    if ($donation->amount_max) {
+                        if ($athlete_sum > $donation->amount_max) {
+                            $athlete_sum = $donation->amount_max;
+                        }
+                    }
+                    $this_sum += $athlete_sum;
                 }
-                return "Fr. " . number_format($sum, 2, ".", "'");
+                return "Fr. " . number_format($this_sum, 2, '.', "'");
             })
-            ->add('minDonation', function (Donator $donator) {
-                $sum = 0;
-                foreach ($donator->donations as $donation) {
-                    $sum += $donation->amount_min;
-                }
-
-                return "Fr. " . number_format($sum, 2, ".", "'");
-            })
-            ->add('maxDonation', function (Donator $donator) {
-                $sum = 0;
-                foreach ($donator->donations as $donation) {
-                    $sum += $donation->amount_max;
-                }
-
-                if ($sum > 0) {
-                    return "Fr. " . number_format($sum, 2, ".", "'");
-                } else {
-                    return "unbegrenzt";
-                }
-            })
-            ->add('created_at_formatted', fn($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'));
+            ->add('created_at_formatted', fn($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'))
+            ->add('invoice_sent_at_formatted', fn($donator) => $donator->invoice_sent_at ? Carbon::parse($donator->invoice_sent_at)->format('d.m.Y') : null)
+            ->add('invoice_paid_at_formatted', fn($donator) => $donator->invoice_paid_at ? Carbon::parse($donator->invoice_paid_at)->format('d.m.Y') : null);
     }
 
     public function columns(): array
@@ -102,15 +123,9 @@ final class AdminDonatorTable extends PowerGridComponent
                 ->sortable()
                 ->fixedOnResponsive(),
 
-            Column::make('Erwartete Spende', 'expectedDonation')
+            Column::make('Rechnungsbetrag', 'donations_sum')
                 ->sortable()
-                ->fixedOnResponsive(),
-
-            Column::make('Min. Spende', 'minDonation')
-                ->sortable(),
-
-            Column::make('Max. Spende', 'maxDonation')
-                ->sortable(),
+                ->searchable(),
 
             Column::make('Anmeldung', 'created_at_formatted', 'created_at')
                 ->sortable(),
@@ -133,6 +148,22 @@ final class AdminDonatorTable extends PowerGridComponent
                 ->sortable()
                 ->searchable(),
 
+            Column::make('Rechnung gesendet', 'invoice_sent')
+                ->sortable()
+                ->toggleable()
+                ->fixedOnResponsive(),
+
+            Column::make('Rechnung gesendet am', 'invoice_sent_at_formatted', 'invoice_sent_at')
+                ->sortable(),
+
+            Column::make('Rechnung bezahlt', 'invoice_paid')
+                ->sortable()
+                ->toggleable()
+                ->fixedOnResponsive(),
+
+            Column::make('Rechnung bezahlt am', 'invoice_paid_at_formatted', 'invoice_paid_at')
+                ->sortable(),
+
             Column::action('Aktionen')
                 ->fixedOnResponsive()
 
@@ -146,6 +177,82 @@ final class AdminDonatorTable extends PowerGridComponent
     }
 
     // Actions
+    public function onUpdatedToggleable(string|int $id, string $field, string $value): void
+    {
+        $worked = false;
+
+        try {
+
+            $donator = Donator::findOrFail($id);
+
+            switch ($field) {
+                case 'invoice_sent':
+                    $donator->invoice_sent = $value;
+                    if ($value) {
+                        $donator->invoice_sent_at = Carbon::now();
+                    } else {
+                        $donator->invoice_sent_at = null;
+                    }
+                    $donator->save();
+                    $worked = true;
+                    break;
+
+                case 'invoice_paid':
+                    $donator->invoice_paid = $value;
+                    if ($value) {
+                        $donator->invoice_paid_at = Carbon::now();
+                    } else {
+                        $donator->invoice_paid_at = null;
+                    }
+                    $donator->save();
+                    $worked = true;
+                    break;
+            }
+
+            $this->skipRender();
+        } catch (\Exception $e) {
+            $worked = false;
+        }
+
+        if ($worked) {
+            $this->notification()->success('Erfolgreich gespeichert.');
+        } else {
+            $this->notification()->error('Fehler beim Speichern.');
+        }
+    }
+
+    #[On('invoiceSent')]
+    public function invoiceSent(bool $sent)
+    {
+        if ($this->checkboxValues) {
+            foreach ($this->checkboxValues as $id) {
+                $this->onUpdatedToggleable($id, 'invoice_sent', $sent);
+            }
+            $this->notification()->success('Rechnungen als gesendet markiert (Seite muss aktualisiert werden)');
+        } else {
+            $this->notification()->error('Keine Spender:innen ausgewählt.');
+        }
+
+        $this->checkboxValues = [];
+
+    }
+
+    #[On('invoicePaid')]
+    public function invoicePaid(bool $paid)
+    {
+        if ($this->checkboxValues) {
+            foreach ($this->checkboxValues as $id) {
+                $this->onUpdatedToggleable($id, 'invoice_paid', $paid);
+            }
+            $this->notification()->success('Rechnungen als bezahlt markiert (Seite muss aktualisiert werden)');
+        } else {
+            $this->notification()->error('Keine Spender:innen ausgewählt.');
+        }
+
+        $this->checkboxValues = [];
+
+    }
+
     #[On('downloadInvoice')]
     public function downloadWelcomeLetter($donator_id)
     {

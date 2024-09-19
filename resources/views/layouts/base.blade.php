@@ -71,6 +71,7 @@
 
 <body class="h-full w-full bg-hfm-white dark:bg-hfm-dark text-hfm-dark dark:text-hfm-white">
 <x-dialog />
+<x-notifications />
 @yield('body')
 </body>
 </html>
