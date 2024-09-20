@@ -24,6 +24,8 @@ final class AdminAthleteTable extends PowerGridComponent
     use WithExport;
     use Actions;
 
+    public string $sortField = 'first_name';
+
     public function setUp(): array
     {
         $this->showCheckBox();
@@ -36,7 +38,9 @@ final class AdminAthleteTable extends PowerGridComponent
             Header::make()
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make(),
+            Footer::make()
+                ->showPerPage(10, [10, 25, 50, 100, 200])
+                ->showRecordCount(mode: 'short'),
         ];
     }
 
@@ -80,10 +84,10 @@ final class AdminAthleteTable extends PowerGridComponent
             Column::make('Bestätigt', 'verified')
                 ->sortable(),
 
-            Column::make('Sportart', 'sportType.name')
+            Column::make('Sportart', 'sportType.name', 'sport_type_id')
                 ->sortable(),
 
-            Column::make('Partner', 'partner.name')
+            Column::make('Partner', 'partner.name', 'partner_id')
                 ->sortable(),
 
             Column::make('Runden geschätzt', 'rounds_estimated')
@@ -98,7 +102,6 @@ final class AdminAthleteTable extends PowerGridComponent
                 ),
 
             Column::make('Spenden', 'number_of_donations')
-                ->sortable()
                 ->fixedOnResponsive(),
 
             Column::make('Anmeldung', 'created_at_formatted', 'created_at')

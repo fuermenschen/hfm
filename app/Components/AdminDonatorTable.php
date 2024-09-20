@@ -24,6 +24,8 @@ final class AdminDonatorTable extends PowerGridComponent
     use WithExport;
     use Actions;
 
+    public string $sortField = 'first_name';
+
     public function header(): array
     {
         return [
@@ -67,7 +69,9 @@ final class AdminDonatorTable extends PowerGridComponent
             Header::make()
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make(),
+            Footer::make()
+                ->showPerPage(10, [10, 25, 50, 100, 200])
+                ->showRecordCount(mode: 'short'),
         ];
     }
 
@@ -125,11 +129,9 @@ final class AdminDonatorTable extends PowerGridComponent
                 ->fixedOnResponsive(),
 
             Column::make('Anzahl Spenden', 'numOfDonations')
-                ->sortable()
                 ->fixedOnResponsive(),
 
             Column::make('Rechnungsbetrag', 'donations_sum')
-                ->sortable()
                 ->searchable(),
 
             Column::make('Anmeldung', 'created_at_formatted', 'created_at')

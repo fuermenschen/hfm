@@ -19,6 +19,8 @@ final class AdminDonationTable extends PowerGridComponent
 {
     use WithExport;
 
+    public string $sortField = 'created_at';
+
     public function setUp(): array
     {
         $this->showCheckBox();
@@ -31,7 +33,9 @@ final class AdminDonationTable extends PowerGridComponent
             Header::make()
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make(),
+            Footer::make()
+                ->showPerPage(10, [10, 25, 50, 100, 200])
+                ->showRecordCount(mode: 'short'),
         ];
     }
 
@@ -63,6 +67,14 @@ final class AdminDonationTable extends PowerGridComponent
             ->add('estimated_amount', function (Donation $donation) {
                 return "Fr. " . number_format($donation->amount_per_round * $donation->athlete->rounds_estimated, 2, ".", "'");
             })
+            ->add('min_amount', function (Donation $donation) {
+
+                if ($donation->min_amount) {
+                    return "Fr. " . number_format($donation->min_amount, 2, ".", "'");
+                } else {
+                    return "unbegrenzt";
+                }
+            })
             ->add('max_amount', function (Donation $donation) {
 
                 if ($donation->max_amount) {
@@ -78,29 +90,28 @@ final class AdminDonationTable extends PowerGridComponent
     {
         return [
 
-            Column::make('Spender:in', 'donator')
+            Column::make('Spender:in', 'donator', 'donator_id')
                 ->sortable()
                 ->searchable()
                 ->fixedOnResponsive(),
 
-            Column::make('Sportler:in', 'athlete')
+            Column::make('Sportler:in', 'athlete', 'athlete_id')
                 ->sortable()
                 ->searchable()
                 ->fixedOnResponsive(),
 
             Column::make('Bestätigt', 'verified')
-                ->sortable()
-                ->searchable(),
+                ->sortable(),
 
             Column::make('Betrag pro Runde', 'amount_per_round')
                 ->sortable(),
 
             Column::make('Geschätzter Betrag', 'estimated_amount')
-                ->sortable()
                 ->fixedOnResponsive(),
 
-            Column::make('Maximaler Betrag', 'max_amount')
-                ->sortable(),
+            Column::make('Maximaler Betrag', 'min_amount'),
+
+            Column::make('Maximaler Betrag', 'max_amount'),
 
             Column::make('Erstellt am', 'created_at_formatted')
                 ->sortable(),
