@@ -80,6 +80,78 @@
     $actualTotalAmount = array_sum($actualAmounts);
     $expectedDonationAmount = array_sum($estimatedAmounts);
 
+    // most recent activity
+    // most recent athlete activity
+    $mostRecentAthletes = $athletes->sortByDesc('created_at')->take(30);
+
+    // most recent donator activity
+    $mostRecentDonators = $donators->sortByDesc('created_at')->take(30);
+
+    // most recent donation activity
+    $mostRecentDonations = $donations->sortByDesc('created_at')->take(30);
+
+    // most recent payments
+    $mostRecentPayments = $donators->sortByDesc('invoice_paid_at')->take(30);
+
+    // remove entries older than 7 days
+    $sevenDaysAgo = now()->subDays(7);
+    $mostRecentAthletes = $mostRecentAthletes->filter(function ($value, $key) use ($sevenDaysAgo) {
+        return $value->created_at > $sevenDaysAgo;
+    });
+    $mostRecentDonators = $mostRecentDonators->filter(function ($value, $key) use ($sevenDaysAgo) {
+        return $value->created_at > $sevenDaysAgo;
+    });
+    $mostRecentDonations = $mostRecentDonations->filter(function ($value, $key) use ($sevenDaysAgo) {
+        return $value->created_at > $sevenDaysAgo;
+    });
+    $mostRecentPayments = $mostRecentPayments->filter(function ($value, $key) use ($sevenDaysAgo) {
+        return $value->invoice_paid_at > $sevenDaysAgo;
+    });
+
+    // create an array with the most recent activities
+    $mostRecentActivities = array();
+    foreach ($mostRecentAthletes as $athlete) {
+        $mostRecentActivities[] = [
+            'type' => 'athlete',
+            'name' => $athlete->privacy_name,
+            'created_at' => $athlete->created_at,
+        ];
+    }
+    foreach ($mostRecentDonators as $donator) {
+        $mostRecentActivities[] = [
+            'type' => 'donator',
+            'name' => $donator->privacy_name,
+            'created_at' => $donator->created_at,
+        ];
+    }
+    foreach ($mostRecentDonations as $donation) {
+        $mostRecentActivities[] = [
+            'type' => 'donation',
+            'name' => $donation->donator->privacy_name,
+            'name2' => $donation->athlete->privacy_name,
+            'created_at' => $donation->created_at,
+        ];
+    }
+    foreach ($mostRecentPayments as $payment) {
+        $mostRecentActivities[] = [
+            'type' => 'payment',
+            'name' => $payment->privacy_name,
+            'created_at' => $payment->invoice_paid_at,
+        ];
+    }
+
+    // sort the array by created_at
+    usort($mostRecentActivities, function ($a, $b) {
+        return $a['created_at'] <=> $b['created_at'];
+    });
+
+    // get the last 10 entries
+    $mostRecentActivities = array_slice($mostRecentActivities, -10);
+
+    // reverse the array
+    $mostRecentActivities = array_reverse($mostRecentActivities);
+
+    dump($mostRecentActivities);
 
 @endphp
 
@@ -161,6 +233,9 @@
                 route="admin.donators.index"
             />
         </x-stats>
+
+        <!-- Recent Activities -->
+        <x-admin.activity-list title="Letzte Aktivitäten" :activities="$mostRecentActivities" />
 
     @endsection
 
