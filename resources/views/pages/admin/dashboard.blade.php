@@ -42,38 +42,43 @@
 
     // donation specific
     $meanDonationAmount = $donationCount > 0 ? $donations->sum('amount_per_round') / $donationCount : 0;
-    $expectedDonationAmount = 0;
-    foreach ($athletes as $athlete) {
-        foreach ($athlete->donations as $donation) {
-            $expectedDonationAmount += $donation->amount_per_round * $athlete->rounds_estimated;
-        }
-    }
 
     // actual amount based on actual rounds
     $actualAmounts = array();
+    $estimatedAmounts = array();
 
     foreach ($partners as $partner) {
         $actualAmounts[$partner->id] = 0;
+        $estimatedAmounts[$partner->id] = 0;
     }
 
     foreach ($donations as $donation) {
         $this_partner_id = $donation->athlete->partner->id;
         $this_amount = $donation->amount_per_round * $donation->athlete->rounds_done;
+        $this_estimated = $donation->amount_per_round * $donation->athlete->rounds_estimated;
         if ($donation->amount_min) {
             if ($this_amount < $donation->amount_min) {
                 $this_amount = $donation->amount_min;
             }
+            if ($this_estimated < $donation->amount_min) {
+                $this_estimated = $donation->amount_min;
             }
+        }
         if ($donation->amount_max) {
             if ($this_amount > $donation->amount_max) {
                 $this_amount = $donation->amount_max;
             }
+            if ($this_estimated > $donation->amount_max) {
+                $this_estimated = $donation->amount_max;
+            }
         }
 
         $actualAmounts[$this_partner_id] += $this_amount;
+        $estimatedAmounts[$this_partner_id] += $this_estimated;
     }
 
     $actualTotalAmount = array_sum($actualAmounts);
+    $expectedDonationAmount = array_sum($estimatedAmounts);
 
 
 @endphp
