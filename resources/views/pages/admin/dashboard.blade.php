@@ -151,8 +151,6 @@
     // reverse the array
     $mostRecentActivities = array_reverse($mostRecentActivities);
 
-    dump($mostRecentActivities);
-
 @endphp
 
 
