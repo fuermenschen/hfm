@@ -88,6 +88,9 @@ final class AdminDonatorTable extends PowerGridComponent
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
+            ->add('don_id', function (Donator $donator) {
+                return 'DON-' . sprintf('24%04d', $donator->id);
+            })
             ->add('numOfDonations', function (Donator $donator) {
                 return $donator->donations->count();
             })
@@ -117,6 +120,11 @@ final class AdminDonatorTable extends PowerGridComponent
     public function columns(): array
     {
         return [
+
+            Column::make('DON-ID', 'don_id', 'id')
+                ->sortable()
+                ->searchable()
+                ->fixedOnResponsive(),
 
             Column::make('Vorname', 'first_name')
                 ->sortable()

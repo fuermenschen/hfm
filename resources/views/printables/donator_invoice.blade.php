@@ -130,6 +130,7 @@
             position: absolute;
             top: 18.5cm;
             left: 0cm;
+            font-size: 10px;
         }
 
         #qr-bill-currency {
@@ -281,15 +282,15 @@
         $qrBill->setCreditor(
             QrBill\DataGroup\Element\CombinedAddress::create(
                 'Round Table 25 Winterthur',
-                'Adresse 1',
-                '8400 Winterthur',
+                '',
+                '8406 Winterthur',
                 'CH'
             )
         );
 
         $qrBill->setCreditorInformation(
             QrBill\DataGroup\Element\CreditorInformation::create(
-                'CH9300762011623852957' // This is a classic iban. QR-IBANs will not be valid in this minmal setup.
+                'CH2500700110007300575' // This is a classic iban. QR-IBANs will not be valid in this minmal setup.
             )
         );
 
@@ -318,7 +319,8 @@
 
         $qrBill->setAdditionalInformation(
             QrBill\DataGroup\Element\AdditionalInformation::create(
-                'Spendenzahlung, Höhenmeter für Menschen'
+                'Spendenzahlung, Höhenmeter für Menschen
+                (DON-' . sprintf('24%04d', $donator->id) . ', ' . date('Ymd') . ')'
             )
         );
 
