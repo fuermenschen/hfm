@@ -109,7 +109,7 @@ final class AdminDonationTable extends PowerGridComponent
             Column::make('Geschätzter Betrag', 'estimated_amount')
                 ->fixedOnResponsive(),
 
-            Column::make('Maximaler Betrag', 'min_amount'),
+            Column::make('Minimaler Betrag', 'min_amount'),
 
             Column::make('Maximaler Betrag', 'max_amount'),
 
