@@ -301,6 +301,9 @@ final class AdminDonatorTable extends PowerGridComponent
         $filename = $donator->first_name . '_' . $donator->last_name . '_Rechnung.pdf';
         $pdf = Pdf::loadView('printables.donator_invoice', ['donator' => $donator, 'donations' => $donations])
             ->setPaper('a4', 'portrait');
+
+        //dd($pdf);
+
         if ($download) {
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->stream();

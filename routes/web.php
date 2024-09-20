@@ -96,3 +96,14 @@ Route::get('/preview-email', function () {
     );
     return $notification->toMail($user)->render();
 });*/
+
+/*// Preview Invoice
+Route::get('/preview-invoice', function () {
+    $donator = Donator::get()->first();
+    $donations = $donator->donations()->with(['athlete', 'athlete.partner'])->get();
+
+    return view("printables.donator_invoice", [
+        'donator' => $donator,
+        'donations' => $donations,
+    ]);
+}); */

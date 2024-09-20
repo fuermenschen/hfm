@@ -54,7 +54,7 @@
         {{-- city and date --}}
         .city-and-date {
             position: absolute;
-            top: 10cm;
+            top: 8cm;
             left: 2cm;
             font-size: 12px;
         }
@@ -62,7 +62,7 @@
         {{-- subject --}}
         .subject {
             position: absolute;
-            top: 10.5cm;
+            top: 8.5cm;
             left: 2cm;
             font-size: 18px;
             font-weight: bolder;
@@ -71,10 +71,11 @@
         {{-- body --}}
         .body {
             position: absolute;
-            top: 12cm;
+            top: 10cm;
             left: 2cm;
             right: 2cm;
             font-size: 12px;
+            page-break-after: always;
         }
 
         .body p {
@@ -122,6 +123,22 @@
 
         table td:first-child {
             text-align: left;
+        }
+
+        {{-- qr-bill --}}
+        .qr-bill {
+            position: absolute;
+            top: 18.5cm;
+            left: 0cm;
+        }
+
+        #qr-bill-currency {
+            float: none !important;
+            display: inline-block;
+        }
+
+        #qr-bill-amount {
+            display: inline-block;
         }
 
     </style>
@@ -251,6 +268,67 @@
             Das Team von Höhenmeter für Menschen
         </p>
 
+    </div>
+
+    @php
+        // QR Bill generation
+        // FIXME: The QR Bill generation should be moved to a separate controller
+
+        use Sprain\SwissQrBill as QrBill;
+
+        $qrBill = QrBill\QrBill::create();
+
+        $qrBill->setCreditor(
+            QrBill\DataGroup\Element\CombinedAddress::create(
+                'Round Table 25 Winterthur',
+                'Adresse 1',
+                '8400 Winterthur',
+                'CH'
+            )
+        );
+
+        $qrBill->setCreditorInformation(
+            QrBill\DataGroup\Element\CreditorInformation::create(
+                'CH9300762011623852957' // This is a classic iban. QR-IBANs will not be valid in this minmal setup.
+            )
+        );
+
+        // The currency must be defined.
+        $qrBill->setPaymentAmountInformation(
+            QrBill\DataGroup\Element\PaymentAmountInformation::create(
+                'CHF'
+            )
+        );
+
+        $qrBill->setUltimateDebtor(
+            QrBill\DataGroup\Element\CombinedAddress::create(
+                $donator->first_name . ' ' . $donator->last_name,
+                $donator->address,
+                $donator->zip_code . ' ' . $donator->city,
+                'CH'
+            )
+        );
+
+        // Explicitly define that no reference number will be used by setting TYPE_NON.
+        $qrBill->setPaymentReference(
+            QrBill\DataGroup\Element\PaymentReference::create(
+                QrBill\DataGroup\Element\PaymentReference::TYPE_NON
+            )
+        );
+
+        $qrBill->setAdditionalInformation(
+            QrBill\DataGroup\Element\AdditionalInformation::create(
+                'Spendenzahlung, Höhenmeter für Menschen'
+            )
+        );
+
+        $output = new QrBill\PaymentPart\Output\HtmlOutput\HtmlOutput($qrBill, 'de');
+
+        $html = $output->setPrintable(false)->getPaymentPart();
+
+    @endphp
+    <div class="qr-bill">
+        {!! $html !!}
     </div>
 
 @endsection

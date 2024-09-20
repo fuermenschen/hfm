@@ -194,8 +194,8 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie kann ich meine Spende von den Steuern abziehen?</x-slot:question>
-            Wenn du deine Spende von den Steuern abziehen möchtest, gib uns bitte Bescheid. Wir senden dir dann eine
-            Spendenbestätigung zu.
+            Da der Round Table 25 eine gemeinnützige Organisation ist, kannst du deine Spende von den Steuern abziehen.
+            Die Beilage der Rechnung sollte dafür reichen.
         </x-faq-question-answer>
 
         <x-faq-question-answer>
