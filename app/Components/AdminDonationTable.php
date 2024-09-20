@@ -69,16 +69,16 @@ final class AdminDonationTable extends PowerGridComponent
             })
             ->add('min_amount', function (Donation $donation) {
 
-                if ($donation->min_amount) {
-                    return "Fr. " . number_format($donation->min_amount, 2, ".", "'");
+                if ($donation->amount_min) {
+                    return "Fr. " . number_format($donation->amount_min, 2, ".", "'");
                 } else {
                     return "unbegrenzt";
                 }
             })
             ->add('max_amount', function (Donation $donation) {
 
-                if ($donation->max_amount) {
-                    return "Fr. " . number_format($donation->max_amount, 2, ".", "'");
+                if ($donation->amount_max) {
+                    return "Fr. " . number_format($donation->amount_max, 2, ".", "'");
                 } else {
                     return "unbegrenzt";
                 }
