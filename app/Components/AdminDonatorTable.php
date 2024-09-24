@@ -308,7 +308,7 @@ final class AdminDonatorTable extends PowerGridComponent
     {
         $donator = Donator::findOrfail($donator_id);
         $donations = $donator->donations()->with(['athlete', 'athlete.partner'])->get();
-        $filename = $donator->first_name . '_' . $donator->last_name . '_Rechnung.pdf';
+        $filename = sprintf('DON-24%04d_', $donator_id) . $donator->first_name . '_' . $donator->last_name . '_Rechnung.pdf';
         $pdf = Pdf::loadView('printables.donator_invoice', ['donator' => $donator, 'donations' => $donations])
             ->setPaper('a4', 'portrait');
 

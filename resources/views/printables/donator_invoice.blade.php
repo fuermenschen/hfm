@@ -259,7 +259,8 @@
         </table>
 
         <p>Bitte verwende zur Einzahlung den beiliegenden Einzahlungsschein. Die Zahlung des Betrags von mindestens
-            Fr. {{ number_format($totalAmount, 2) }} ist fällig innerhalb von 20 Tagen ab Erhalt der Rechnung.</p>
+            Fr.&nbsp;{{ number_format($totalAmount, 2) }} ist fällig innerhalb von 20&nbsp;Tagen ab Erhalt der
+            Rechnung.</p>
 
         <p>Nach Eingang aller Spenden werden wir eine gemeinsame Überweisung an die drei Benefizpartner:innen
             vornehmen. Wir werden dich informieren, wann wir welche Beträge überweisen durften.</p>
