@@ -17,10 +17,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Main Menu
-Route::view("/", "home", [
-    'athleteCount' => Athlete::count(),
-    'donationCount' => Donation::count(),
-])->name("home");
+Route::get("/", function () {
+    $athleteCount = Schema::hasTable('athletes') ? \App\Models\Athlete::count() : 0;
+    $donationCount = Schema::hasTable('donations') ? \App\Models\Donation::count() : 0;
+
+    return view("home", compact('athleteCount', 'donationCount'));
+})->name("home");
 Route::view("sportlerin-werden", "pages.become-athlete")->name("become-athlete");
 Route::view("spenderin-werden", "pages.become-donator")->name("become-donator");
 Route::view("fragen-und-antworten", "pages.questions-and-answers")->name("questions-and-answers");
