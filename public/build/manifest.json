@@ -61,11 +61,11 @@
   },
   "resources/images/sport_landscape_01.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_02.jpeg": {
     "file": "assets/sport_landscape_01-BUU9oF6F.jpeg",
-    "src": "resources/images/sport_landscape_02.jpeg"
+    "src": "resources/images/sport_landscape_01.jpeg"
   },
   "resources/images/sport_landscape_03.jpeg": {
     "file": "assets/sport_landscape_03-mVjRCTZE.jpeg",
@@ -120,16 +120,16 @@
     "src": "resources/images/sport_portrait_08.jpeg"
   },
   "resources/js/app.js": {
-    "file": "assets/app-DezSx9Lr.js",
+    "file": "assets/app-DGaYKqoK.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-C70klKM_.css"
+      "assets/app-B4465dZ9.css"
     ]
   },
   "resources/sass/app.scss": {
-    "file": "assets/app-DapezZO9.css",
+    "file": "assets/app-JBW6pcYH.css",
     "src": "resources/sass/app.scss",
     "isEntry": true
   }
