@@ -23,6 +23,7 @@ Homestead.json
 .phpunit.result.cache
 /git_token.txt
 /.env.remote
+/.env.production
 
 .idea
 .DS_Store
