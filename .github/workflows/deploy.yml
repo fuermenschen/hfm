@@ -1,0 +1,109 @@
+name: Deploy and Seed Laravel App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install PHP and Composer dependencies
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          tools: composer:v2
+          coverage: none # No need for code coverage in deployment
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+
+      # Install Node.js and build assets
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm clean-install
+
+      - name: Build assets
+        run: npm run build
+
+      # Deploy built assets and PHP dependencies to the server
+      - name: Deploy application files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
+          username: ${{ secrets.INFOMANIAK_SSH_USER }}
+          password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
+          source: |
+            public/build
+          target: '/home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch'
+
+      # SSH into the server and finalize the deployment
+      - name: Run Laravel deployment commands on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
+          username: ${{ secrets.INFOMANIAK_SSH_USER }}
+          password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
+          script: |
+            set -e  # Exit immediately if any command fails
+
+            echo "Starting Deployment"
+
+            PHP_BIN="/opt/php8.2/bin/php"
+            COMPOSER_BIN="/opt/php8.2/bin/composer"
+
+            cd /home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch
+
+            if $PHP_BIN artisan down; then
+              echo "Application in maintenance mode."
+            else
+              echo "Failed to put application in maintenance mode. Continuing deployment..."
+            fi
+
+            echo "Pulling latest changes from the repository..."
+            git reset --hard
+            git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
+
+            echo "Decrypting environment file..."
+            $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY }} --force || { echo "Environment decryption failed! Exiting."; exit 1; }
+
+            echo "Installing PHP dependencies on the server..."
+            $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
+
+            echo "Running database migrations..."
+            $PHP_BIN artisan migrate:fresh --seed --force || { echo "Migrations failed! Exiting."; exit 1; }
+
+            echo "Optimizing application..."
+            $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
+
+            echo "Generating Ziggy routes..."
+            $PHP_BIN artisan ziggy:generate || { echo "Ziggy generation failed! Exiting."; exit 1; }
+
+      - name: Bring the application back online
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.INFOMANIAK_SSH_SERVER }}
+          username: ${{ secrets.INFOMANIAK_SSH_USER }}
+          password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
+          script: |
+            set -e  # Exit immediately if any command fails
+
+            cd /home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch
+
+            echo "Bringing application back online..."
+            /opt/php8.2/bin/php artisan up
+
+            echo "Deployment complete!"
