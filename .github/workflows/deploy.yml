@@ -89,9 +89,6 @@ jobs:
             echo "Optimizing application..."
             $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
 
-            echo "Generating Ziggy routes..."
-            $PHP_BIN artisan ziggy:generate || { echo "Ziggy generation failed! Exiting."; exit 1; }
-
       - name: Bring the application back online
         uses: appleboy/ssh-action@master
         with:
