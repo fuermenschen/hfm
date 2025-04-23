@@ -34,7 +34,7 @@
     <meta name="og:description"
           content="Ein Spendenlauf in Winterthur für Winterthur am 13. September 2025.">
     <meta name="og:image" content="{{ Vite::asset("resources/images/logo_light.svg") }}">
-    <meta name="og:url" content="https://hfm.rt25.ch">
+    <meta name="og:url" content="https://fuer-menschen.ch">
     <meta name="og:type" content="website">
     <meta name="og:site_name" content="Höhenmeter für Menschen">
 

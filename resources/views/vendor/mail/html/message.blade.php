@@ -21,7 +21,7 @@
 {{-- Footer --}}
 <x-slot:footer>
 <x-mail::footer>
-Höhenmeter für Menschen - Ein Projekt des <a href="https://rt25.ch">Round Table 25 Winterthur</a>
+Höhenmeter für Menschen - Ein Projekt des <a href="https://fuer-menschen.ch/verein">Verein für Menschen</a>
 </x-mail::footer>
 </x-slot:footer>
 </x-mail::layout>

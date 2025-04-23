@@ -136,18 +136,18 @@
 
         <div>
             <p>
-                RoundTable 25 Winterthur<br>
-                c/o Simon Moser<br>
-                Kirchplatz 1<br>
+                Verein für Menschen<br>
+                c/o Kai Frehner<br>
+                Nelkenstrasse 6<br>
                 8400 Winterthur
             </p>
-            <p>hfm@rt25.ch</p>
+            <p>info@fuer-menschen.ch</p>
         </div>
     </div>
 
     <!-- Recipient -->
     <div class="recipient">
-        <p class="sender">Höhenmeter für Menschen, www.hfm.rt25.ch</p>
+        <p class="sender">Höhenmeter für Menschen, fuer-menschen.ch</p>
         <p>
             @if ($athlete->adult == 0)
                 An die Eltern von

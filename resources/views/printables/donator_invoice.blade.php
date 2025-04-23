@@ -150,18 +150,18 @@
 
         <div>
             <p>
-                RoundTable 25 Winterthur<br>
-                c/o Benjamin Wiederkehr<br>
-                Wasserfuristrasse 78<br>
-                8542 Wiesendangen
+                Verein für Menschen<br>
+                c/o Felix Moser<br>
+                Mühleweg 8<br>
+                8413 Neftenbach
             </p>
-            <p>hfm@rt25.ch</p>
+            <p>info@fuer-menschen.ch</p>
         </div>
     </div>
 
     <!-- Recipient -->
     <div class="recipient">
-        <p class="sender">Höhenmeter für Menschen, www.hfm.rt25.ch</p>
+        <p class="sender">Höhenmeter für Menschen, fuer-menschen.ch</p>
         <p>
             {{ $donator->first_name }} {{ $donator->last_name }}<br>
             {{ $donator->address }}<br>
@@ -282,9 +282,9 @@
 
         $qrBill->setCreditor(
             QrBill\DataGroup\Element\CombinedAddress::create(
-                'Round Table 25 Winterthur',
+                'Verein für Menschen',
                 '',
-                '8406 Winterthur',
+                '8400 Winterthur',
                 'CH'
             )
         );
@@ -321,7 +321,7 @@
         $qrBill->setAdditionalInformation(
             QrBill\DataGroup\Element\AdditionalInformation::create(
                 'Spendenzahlung, Höhenmeter für Menschen
-                (DON-' . sprintf('24%04d', $donator->id) . ', ' . date('Ymd') . ')'
+                (DON-' . sprintf('25%04d', $donator->id) . ', ' . date('Ymd') . ')'
             )
         );
 
