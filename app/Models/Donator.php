@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\GenericMessage;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Notification;
 
 class Donator extends Model
 {
-
+    use HasFactory;
     use Notifiable;
 
     protected $appends = [
@@ -22,6 +23,9 @@ class Donator extends Model
         parent::boot();
 
         static::created(function ($donator) {
+
+            // create login token
+            $donator->generateLoginToken();
 
             // add log entry
             Log::info("Donator registered", [

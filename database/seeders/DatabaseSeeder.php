@@ -2,15 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\Athlete;
+use App\Models\Donation;
+use App\Models\Donator;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-
 class DatabaseSeeder extends Seeder
 {
+
     /**
      * Seed the application's database.
      */
@@ -19,11 +21,16 @@ class DatabaseSeeder extends Seeder
         // create users
         User::create([
             "name" => "Simon",
-            "email" => "simon.moser@mailbox.org",
+            "email" => "simon.moser@mailbox.org"
         ]);
         User::create([
             "name" => "Kai",
-            "email" => "kaifrehner@gmail.com",
+            "email" => "kaifrehner@gmail.com"
+        ]);
+
+        User::create([
+            "name" => "Felix",
+            "email" => "felix.moser@mailbox.org"
         ]);
 
         // create sport types
@@ -64,7 +71,11 @@ class DatabaseSeeder extends Seeder
             "name" => "Tel. 143 - Die Dargebotene Hand",
         ]);
 
-        // create athletes (example data)
-        //Athlete::factory(10)->create();
+        // create example data
+        if (config('app.env') === 'local') {
+            Athlete::factory(10)->create();
+            Donator::factory(10)->create();
+            Donation::factory(10)->create();
+        }
     }
 }

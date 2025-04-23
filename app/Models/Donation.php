@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Notifications\AthleteNewDonation;
 use App\Notifications\DonationRegistered;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
 class Donation extends Model
 {
+    use HasFactory;
 
     protected static function boot(): void
     {

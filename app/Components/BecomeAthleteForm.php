@@ -138,7 +138,7 @@ class BecomeAthleteForm extends Component
             // send notification to admin
             if (config("app.send_notification_on_registration")) {
                 $notification = new AdminSomeoneRegistered();
-                Notification::route('mail', "hfm@rt25.ch")->notify($notification);
+                Notification::route('mail', "info@fuer-menschen.ch")->notify($notification);
             }
 
             $this->reset();

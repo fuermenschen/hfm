@@ -50,7 +50,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
-            <span>Der Spendenlauf findet am <strong>Samstag, 21. September 2024 in Winterthur</strong> statt. Der Anlass
+            <span>Der Spendenlauf findet am <strong>Samstag, 13. September 2025 in Winterthur</strong> statt. Der Anlass
             dauert von <strong>13 Uhr bis 18 Uhr</strong>. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung
             (Brühlbergstrasse 6).</span>
             <div x-data="{ pointerEvents: false, timeout: null }" @click.outside="pointerEvents = false"
@@ -178,7 +178,7 @@
                     <x-inline-link href="{{ route('become-donator') }}">Spendenformular</x-inline-link>
                     aus.
                 </li>
-                <li>Du feuerst die Sportler:innen kräftig an am 21. September 2024.</li>
+                <li>Du feuerst die Sportler:innen kräftig an am 13. September 2025.</li>
                 <li>Wir senden dir eine Rechnung mit einem Einzahlungsschein zu.</li>
                 <li>Fertig! Vielen Dank für deine Unterstützung.</li>
             </ol>
@@ -194,7 +194,8 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie kann ich meine Spende von den Steuern abziehen?</x-slot:question>
-            Da der Round Table 25 eine gemeinnützige Organisation ist, kannst du deine Spende von den Steuern abziehen.
+            Da der Verein für Menschen eine gemeinnützige Organisation ist, kannst du deine Spende von den Steuern
+            abziehen.
             Die Beilage der Rechnung sollte dafür reichen.
         </x-faq-question-answer>
 
@@ -227,9 +228,9 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie viel von meiner Spende kommt bei den Benefizpartner:innen an?</x-slot:question>
-            <span><strong>100% deiner Spende kommt bei den Benefizpartner:innen an.</strong> Der Round Table 25 Winterthur übernimmt die
+            <span><strong>100% deiner Spende kommt bei den Benefizpartner:innen an.</strong> Der Verein für Menschen übernimmt die
             gesamten
-            Kosten des Anlasses und wird die Spenden sogar noch aufrunden.</span>
+            Kosten des Anlasses.</span>
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -243,16 +244,6 @@
 
     <x-page-subtitle id="hintergruende">Hintergründe</x-page-subtitle>
     <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30 ">
-
-        <x-faq-question-answer>
-            <x-slot:question>Was ist der Round Table?</x-slot:question>
-            <span>Round Table ist eine internationale Bewegung, die in einzelnen &laquo;Tischen&raquo; (=Vereine) organisiert
-            sind. Der <strong> Round Table 25 Winterthur </strong> ist Teil dieser Organisation. Round Table hat zum
-            Ziel, lokale und internationale Freundschaften zu fördern, einen Austausch über verschiedene Begrufsgruppen hinweg zu fördern und sich sozial zu engagieren.</span>
-            <span>Der Round Table 25 Winterthur besteht seit über 50 Jahren und hat sich in dieser Zeit auf verschiedenste Art und Weise sozial engagieren dürfen. Mit dem Anlass Höhenmeter für Menschen soll ein neues, langjähriges Projekt entstehen.</span>
-            <span>Weitere Informationen zum Round Table 25 Winterthur findest du auf <x-inline-link
-                    href="https://rt25.ch" target="_blank">auf der Website des RT25 Winterthur</x-inline-link>.</span>
-        </x-faq-question-answer>
 
         <x-faq-question-answer>
             <x-slot:question>Weshalb heisst der Anlass Höhenmeter für Menschen?</x-slot:question>

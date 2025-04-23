@@ -32,6 +32,7 @@ Route::view("login", "pages.login")->name("login");
 Route::view("kontakt", "pages.contact")->name("contact");
 Route::view("impressum", "pages.impressum")->name("impressum");
 Route::view("datenschutz", "pages.privacy")->name("privacy");
+Route::view("verein", "pages.association")->name("association");
 
 // User Login
 Route::get("login/{uuid}", function ($uuid) {

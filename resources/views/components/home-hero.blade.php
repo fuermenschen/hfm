@@ -1,6 +1,6 @@
 <div class="w-full max-w-[600px] h-[calc(100vh-5rem)] min-h-[600px] flex flex-col justify-evenly text-center mx-auto">
     <div class="overflow-clip">
-        <p class="text-sm sm:text-base">Samstag, 21. September 2024 in Winterthur</p>
+        <p class="text-sm sm:text-base">Samstag, 13. September 2025 in Winterthur</p>
         <h1 class="text-4xl font-extrabold sm:text-5xl lg:text-6xl mt-4 sm:mt-6">Höhenmeter
             für&nbsp;Menschen</h1>
         <p class="mt-4 sm:mt-6 text-sm sm:text-lg leading-8">Ein Spendenlauf für Winterthur. Wir

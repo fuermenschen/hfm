@@ -19,6 +19,10 @@ class PublicFooter extends Component
             "name" => "Datenschutz",
             "route" => "privacy",
         ],
+        [
+            "name" => "Verein",
+            "route" => "association",
+        ]
     ];
 
     public function render()

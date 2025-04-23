@@ -63,9 +63,7 @@
                     <p class="mt-8"><strong class="font-semibold"> Sämtliche Spenden gehen zu 100% an die
                             Benefizpartner:innen. </strong> Die ganze Organisation und die damit verbundenen Kosten
                         übernimmt der
-                        <x-inline-link href="https://rt25.ch" target="_blank">
-                            Round Table 25 Winterthur.
-                        </x-inline-link>
+                        <x-inline-link href="{{ route('association') }}">Verein für Menschen.</x-inline-link>
                     </p>
 
                     <h2 class="mt-16 text-2xl font-bold tracking-tight">Wer profitiert?</h2>

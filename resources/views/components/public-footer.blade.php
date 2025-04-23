@@ -15,19 +15,11 @@
                     {{ $item['name'] }}
                 </a>
             @endforeach
-            <a
-                href="https://www.instagram.com/roundtable25winterthur/"
-                class="text-sm hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
-                target="_blank"
-            >
-                Instagram
-            </a>
         </div>
         <a class="items-center flex-col-reverse flex md:flex-row md:items-baseline md:space-x-4"
-           href="https://www.rt25.ch"
-           target="_blank">
-            <span class="pt-12 md:pt-0 text-sm">Round Table 25 Winterthur</span>
-            <x-logo-roundtable class="h-12 w-12 pt-6 md:pt-0" />
+           href="{{ route('association') }}"
+           wire:navigate.hover>
+            <span class="pt-12 md:pt-0 text-sm">Verein für Menschen</span>
         </a>
     </div>
 </div>

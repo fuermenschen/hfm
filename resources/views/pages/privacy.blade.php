@@ -52,9 +52,8 @@
         zur
         Datenverarbeitung kannst du dich an folgende Adresse wenden:</p>
     <div class="m-sm">
-        Round Table 25 Winterthur<br>
-        c/o Simon Moser<br>
-        <a href="mailto:webmaster@rt25.ch">webmaster@rt25.ch</a>
+        Verein für Menschen<br>
+        <a href="mailto:info@fuer-menschen.ch">info@fuer-menschen.ch</a>
     </div>
 
 @endsection

@@ -12,7 +12,7 @@
 
     <!-- SEO Information -->
     <meta name="description"
-          content="Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am 21. September 2024. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.">
+          content="Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am 13. September 2025. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.">
     <meta name="keywords"
           content="Höhenmeter für Menschen, fundraising, charity event, Wohltätigkeit, Winterthur, sponsored run, Sponsorenlauf, Spendenlauf, Brühlgut Stiftung, Institut Kinderseele Schweiz, Tel 143, Dargebotene Hand, Roundtable, Round Table">
     <meta name="author" content="Round Table 25 Winterthur">
@@ -32,9 +32,9 @@
     <meta name="apple-mobile-web-app-title" content="Höhenmeter für Menschen">
     <meta name="og:title" content="Höhenmeter für Menschen">
     <meta name="og:description"
-          content="Ein Spendenlauf in Winterthur für Winterthur am 21. September 2024.">
+          content="Ein Spendenlauf in Winterthur für Winterthur am 13. September 2025.">
     <meta name="og:image" content="{{ Vite::asset("resources/images/logo_light.svg") }}">
-    <meta name="og:url" content="https://hfm.rt25.ch">
+    <meta name="og:url" content="https://fuer-menschen.ch">
     <meta name="og:type" content="website">
     <meta name="og:site_name" content="Höhenmeter für Menschen">
 
