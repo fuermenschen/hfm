@@ -1,5 +1,3 @@
-AddHandler application/x-httpd-php83 .php
-
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -21,6 +19,3 @@ AddHandler application/x-httpd-php83 .php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
-
-#@__HCP_END__@#
-# Anything after the comment above is left alone
