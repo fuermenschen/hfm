@@ -291,7 +291,7 @@
 
         $qrBill->setCreditorInformation(
             QrBill\DataGroup\Element\CreditorInformation::create(
-                'CH2500700110007300575' // This is a classic iban. QR-IBANs will not be valid in this minmal setup.
+                'CH9500700114903053924' // This is a classic iban. QR-IBANs will not be valid in this minmal setup.
             )
         );
 
