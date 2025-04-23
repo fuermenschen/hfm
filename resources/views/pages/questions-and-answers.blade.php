@@ -50,7 +50,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
-            <span>Der Spendenlauf findet am <strong>Samstag, 21. September 2024 in Winterthur</strong> statt. Der Anlass
+            <span>Der Spendenlauf findet am <strong>Samstag, 13. September 2025 in Winterthur</strong> statt. Der Anlass
             dauert von <strong>13 Uhr bis 18 Uhr</strong>. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung
             (Brühlbergstrasse 6).</span>
             <div x-data="{ pointerEvents: false, timeout: null }" @click.outside="pointerEvents = false"
@@ -178,7 +178,7 @@
                     <x-inline-link href="{{ route('become-donator') }}">Spendenformular</x-inline-link>
                     aus.
                 </li>
-                <li>Du feuerst die Sportler:innen kräftig an am 21. September 2024.</li>
+                <li>Du feuerst die Sportler:innen kräftig an am 13. September 2025.</li>
                 <li>Wir senden dir eine Rechnung mit einem Einzahlungsschein zu.</li>
                 <li>Fertig! Vielen Dank für deine Unterstützung.</li>
             </ol>

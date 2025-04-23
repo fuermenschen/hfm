@@ -194,7 +194,7 @@
             Wenn du mehr Flyer benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
         </p>
         <p>
-            Am Anlass selbst, am <strong>21. September 2024</strong> hast du dann von 13&nbsp;Uhr bis 18&nbsp;Uhr
+            Am Anlass selbst, am <strong>13. September 2025</strong> hast du dann von 13&nbsp;Uhr bis 18&nbsp;Uhr
             Zeit, um so viele Runden wie möglich
             zurückzulegen. Alles weitere, etwa das Eintreiben der Spenden, erledigen wir für dich.
         </p>
