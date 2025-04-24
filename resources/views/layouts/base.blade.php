@@ -73,5 +73,6 @@
 <x-dialog />
 <x-notifications />
 @yield('body')
+@fluxScripts
 </body>
 </html>
