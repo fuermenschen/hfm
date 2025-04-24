@@ -48,7 +48,7 @@
         gelöscht.</p>
 
     <x-page-subtitle>Verantwortliche:r für die Datenverarbeitung</x-page-subtitle>
-    <p>Verantwortlich für die Datenverarbeitung ist der Verein <strong>Round Table 25 Winterthur</strong>. Bei Fragen
+    <p>Verantwortlich für die Datenverarbeitung ist der <strong>Verein für Menschen</strong>. Bei Fragen
         zur
         Datenverarbeitung kannst du dich an folgende Adresse wenden:</p>
     <div class="m-sm">

@@ -6,8 +6,8 @@
     @endcomponent
 
     <p>Diese Website ist ein Projekt von:</p>
-    <p>Verein Round Table 25 Winterthur</p>
-    <p>c/o Simon Moser</p>
-    <p>Kirchplatz 1</p>
+    <p>Verein für Menschen</p>
+    <p>c/o Kai Frehner</p>
+    <p>Nelkenstrasse 6</p>
     <p>8400 Winterthur</p>
 @endsection
