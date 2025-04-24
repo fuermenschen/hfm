@@ -29,6 +29,11 @@ class PublicMenu extends Component
             "route" => "become-donator",
             "active" => false,
         ],
+        [
+            "name" => "Vereinsmitglied werden",
+            "route" => "association",
+            "active" => false,
+        ],
     ];
 
     public function mount(): void
