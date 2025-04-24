@@ -34,6 +34,12 @@
                     {{ $item['name'] }}
                 </a>
             @endforeach
+            @guest
+                <a href="{{ route("association") }}" wire:navigate
+                   class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2">
+                    <span>Vereinsmitglied werden</span>
+                </a>
+            @endguest
             @auth
                 <a
                     href="{{ route("admin.dashboard") }}"
@@ -125,6 +131,15 @@
                                 {{ $item['name'] }}
                             </a>
                         @endforeach
+                        @guest
+                            <a
+                                href="{{ route("association") }}"
+                                wire:navigate
+                                class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
+                            >
+                                Vereinsmitglied werden
+                            </a>
+                        @endguest
                         @auth
                             <a
                                 href="{{ route("admin.dashboard") }}"
