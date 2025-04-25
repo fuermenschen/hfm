@@ -21,18 +21,18 @@ class DonatorDetails extends Component
     public function mount($login_token, $donation_id = null)
     {
         // try to find the corresponding donator
-        $this->donator = Donator::query()->where('login_token', $login_token)->with('donations.athlete')->first();
+        $this->donator = Donator::query()->where('login_token', $login_token)->with('donations.athlete')->firstOrFail();
 
         // check if the donation is not verified yet
         if ($donation_id) {
             $donation = $this->donator->donations->where('id', $donation_id)->first();
-            if (! $donation) {
+            if (!$donation) {
                 // show an error message
                 $this->dialog()->error(
                     $title = 'Spende nicht gefunden!',
                     $message = 'Die Spende konnte nicht gefunden werden. Bitte überprüfe den Link.'
                 );
-            } elseif (! $donation->verified) {
+            } elseif (!$donation->verified) {
                 // mark the donation as verified
                 $donation->verified = true;
                 $donation->save();
@@ -40,7 +40,7 @@ class DonatorDetails extends Component
                 // show a success message
                 $this->dialog()->success(
                     $title = 'Spende bestätigt!',
-                    $message = 'Deine Spende für '.$donation->athlete->privacy_name.' wurde bestätigt. Vielen Dank!'
+                    $message = 'Deine Spende für ' . $donation->athlete->privacy_name . ' wurde bestätigt. Vielen Dank!'
                 );
             }
         }
