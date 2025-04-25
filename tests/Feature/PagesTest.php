@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Athlete;
-use App\Models\Donation;
 use App\Models\Donator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -12,7 +11,7 @@ test('all public routes are accessible', function () {
 
     foreach ($routes as $route) {
         // Skip routes that are not GET requests
-        if (!in_array('GET', $route->methods())) {
+        if (! in_array('GET', $route->methods())) {
             continue;
         }
 
@@ -47,12 +46,12 @@ test('authenticated routes are protected', function () {
 
     foreach ($routes as $route) {
         // Skip routes that are not GET requests
-        if (!in_array('GET', $route->methods())) {
+        if (! in_array('GET', $route->methods())) {
             continue;
         }
 
         // Only test routes with auth middleware
-        if (!in_array('auth', $route->middleware())) {
+        if (! in_array('auth', $route->middleware())) {
             continue;
         }
 

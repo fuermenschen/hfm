@@ -20,7 +20,7 @@ module.exports = {
                     black: "#020617",
                 },
                 primary: colors.red,
-                secondary: colors.blue,
+                secondary: colors.neutral,
                 "pg-primary": colors.slate,
                 "pg-secondary": colors.slate,
             },
