@@ -19,10 +19,10 @@ use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use WireUi\Traits\Actions;
 
-final class AdminDonatorTable extends PowerGridComponent
+class AdminDonatorTable extends PowerGridComponent
 {
-    use WithExport;
     use Actions;
+    use WithExport;
 
     public string $sortField = 'first_name';
 
@@ -89,7 +89,7 @@ final class AdminDonatorTable extends PowerGridComponent
     {
         return PowerGrid::fields()
             ->add('don_id', function (Donator $donator) {
-                return 'DON-' . sprintf('25%04d', $donator->id);
+                return 'DON-'.sprintf('25%04d', $donator->id);
             })
             ->add('numOfDonations', function (Donator $donator) {
                 return $donator->donations->count();
@@ -110,11 +110,12 @@ final class AdminDonatorTable extends PowerGridComponent
                     }
                     $this_sum += $athlete_sum;
                 }
-                return "Fr. " . number_format($this_sum, 2, '.', "'");
+
+                return 'Fr. '.number_format($this_sum, 2, '.', "'");
             })
-            ->add('created_at_formatted', fn($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'))
-            ->add('invoice_sent_at_formatted', fn($donator) => $donator->invoice_sent_at ? Carbon::parse($donator->invoice_sent_at)->format('d.m.Y') : null)
-            ->add('invoice_paid_at_formatted', fn($donator) => $donator->invoice_paid_at ? Carbon::parse($donator->invoice_paid_at)->format('d.m.Y') : null);
+            ->add('created_at_formatted', fn ($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'))
+            ->add('invoice_sent_at_formatted', fn ($donator) => $donator->invoice_sent_at ? Carbon::parse($donator->invoice_sent_at)->format('d.m.Y') : null)
+            ->add('invoice_paid_at_formatted', fn ($donator) => $donator->invoice_paid_at ? Carbon::parse($donator->invoice_paid_at)->format('d.m.Y') : null);
     }
 
     public function columns(): array
@@ -180,7 +181,7 @@ final class AdminDonatorTable extends PowerGridComponent
                 ->sortable(),
 
             Column::action('Aktionen')
-                ->fixedOnResponsive()
+                ->fixedOnResponsive(),
 
         ];
     }
@@ -202,7 +203,7 @@ final class AdminDonatorTable extends PowerGridComponent
 
             switch ($field) {
                 case 'invoice_sent':
-                    $donator->invoice_sent = $value;
+                    $donator->invoice_sent = (bool) $value;
                     if ($value) {
                         $donator->invoice_sent_at = Carbon::now();
                     } else {
@@ -213,7 +214,7 @@ final class AdminDonatorTable extends PowerGridComponent
                     break;
 
                 case 'invoice_paid':
-                    $donator->invoice_paid = $value;
+                    $donator->invoice_paid = (bool) $value;
                     if ($value) {
                         $donator->invoice_paid_at = Carbon::now();
                     } else {
@@ -286,11 +287,11 @@ final class AdminDonatorTable extends PowerGridComponent
     public function batchDownload()
     {
         // create a zip file with all invoices
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
 
-        $filename = 'Rechnungen_' . Carbon::now()->format('Y-m-d') . '.zip';
+        $filename = 'Rechnungen_'.Carbon::now()->format('Y-m-d').'.zip';
 
-        if ($zip->open(storage_path('app/' . $filename), \ZipArchive::CREATE) === TRUE) {
+        if ($zip->open(storage_path('app/'.$filename), \ZipArchive::CREATE) === true) {
             if ($this->checkboxValues) {
                 foreach ($this->checkboxValues as $id) {
                     $this_invoice = $this->downloadInvoice($id, false);
@@ -300,7 +301,7 @@ final class AdminDonatorTable extends PowerGridComponent
             $zip->close();
         }
 
-        return response()->download(storage_path('app/' . $filename))->deleteFileAfterSend(true);
+        return response()->download(storage_path('app/'.$filename))->deleteFileAfterSend(true);
     }
 
     #[On('downloadInvoice')]
@@ -308,18 +309,18 @@ final class AdminDonatorTable extends PowerGridComponent
     {
         $donator = Donator::findOrfail($donator_id);
         $donations = $donator->donations()->with(['athlete', 'athlete.partner'])->get();
-        $filename = sprintf('DON-24%04d_', $donator_id) . $donator->first_name . '_' . $donator->last_name . '_Rechnung.pdf';
+        $filename = sprintf('DON-24%04d_', $donator_id).$donator->first_name.'_'.$donator->last_name.'_Rechnung.pdf';
         $pdf = Pdf::loadView('printables.donator_invoice', ['donator' => $donator, 'donations' => $donations])
             ->setPaper('a4', 'portrait');
 
-        //dd($pdf);
+        // dd($pdf);
 
         if ($download) {
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->stream();
             }, $filename);
         } else {
-            return array('pdf' => $pdf, 'filename' => $filename);
+            return ['pdf' => $pdf, 'filename' => $filename];
         }
     }
 
@@ -336,7 +337,7 @@ final class AdminDonatorTable extends PowerGridComponent
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
                 ->route('show-donator', ['login_token' => $row->login_token])
                 ->target('_blank')
-                ->tooltip('Als Spender einloggen')
+                ->tooltip('Als Spender einloggen'),
         ];
     }
 }

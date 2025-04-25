@@ -17,13 +17,13 @@ class DonatorFactory extends Factory
     public function definition(): array
     {
         return [
-            "first_name" => fake()->firstName(),
-            "last_name" => fake()->lastName(),
-            "address" => fake()->address(),
-            "zip_code" => fake()->postcode(),
-            "city" => fake()->city(),
-            "phone_number" => fake()->phoneNumber(),
-            "email" => fake()->unique()->safeEmail(),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
+            'address' => fake()->address(),
+            'zip_code' => fake()->postcode(),
+            'city' => fake()->city(),
+            'phone_number' => fake()->phoneNumber(),
+            'email' => fake()->unique()->safeEmail(),
         ];
     }
 }

@@ -22,13 +22,13 @@ class DonationFactory extends Factory
         $donators = Donator::all();
 
         return [
-            "donator_id" => $donators->random()->id,
-            "athlete_id" => $verified_athletes->random()->id,
-            "amount_per_round" => fake()->randomFloat(2, 0, 100),
-            "amount_max" => fake()->randomFloat(2, 0, 100),
-            "amount_min" => fake()->randomFloat(2, 0, 100),
-            "comment" => fake()->text(100),
-            "verified" => fake()->boolean(),
+            'donator_id' => $donators->random()->id,
+            'athlete_id' => $verified_athletes->random()->id,
+            'amount_per_round' => fake()->randomFloat(2, 0, 100),
+            'amount_max' => fake()->randomFloat(2, 0, 100),
+            'amount_min' => fake()->randomFloat(2, 0, 100),
+            'comment' => fake()->text(100),
+            'verified' => fake()->boolean(),
         ];
     }
 }

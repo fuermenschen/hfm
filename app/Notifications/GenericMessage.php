@@ -16,10 +16,9 @@ class GenericMessage extends Notification implements ShouldQueue
      */
     public function __construct(
         public readonly string $message,
-        public readonly string $subject = "",
-        public readonly string $first_name = "",
-    )
-    {
+        public readonly string $subject = '',
+        public readonly string $first_name = '',
+    ) {
         //
     }
 
@@ -38,18 +37,18 @@ class GenericMessage extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $msg = new MailMessage();
+        $msg = new MailMessage;
 
-        if ($this->subject !== "") {
+        if ($this->subject !== '') {
             $msg->subject($this->subject);
         } else {
-            $msg->subject("Nachricht von Höhenmeter für Menschen");
+            $msg->subject('Nachricht von Höhenmeter für Menschen');
         }
 
-        if ($this->first_name !== "") {
-            $msg->greeting("Hallo " . $this->first_name);
+        if ($this->first_name !== '') {
+            $msg->greeting('Hallo '.$this->first_name);
         } else {
-            $msg->greeting("Hallo");
+            $msg->greeting('Hallo');
         }
 
         $msg->line($this->message);

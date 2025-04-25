@@ -15,9 +15,9 @@ class ContactFormMessage extends Notification implements ShouldQueue
      * Create a new notification instance.
      */
     public function __construct(public readonly string $email,
-                                public readonly string $name,
-                                public readonly string $message,
-                                public readonly bool   $confirmation_to_sender = false,)
+        public readonly string $name,
+        public readonly string $message,
+        public readonly bool $confirmation_to_sender = false, )
     {
         //
     }
@@ -37,11 +37,11 @@ class ContactFormMessage extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $message = new MailMessage();
+        $message = new MailMessage;
 
         if ($this->confirmation_to_sender) {
             $message->subject('Deine Kontaktanfrage');
-            $message->greeting('Hallo ' . $this->name . ',');
+            $message->greeting('Hallo '.$this->name.',');
             $message->line('Vielen Dank für deine Nachricht. Wir werden uns so schnell wie möglich bei dir melden.');
             $message->line('Deine Nachricht:');
             $message->line($this->message);
@@ -50,8 +50,8 @@ class ContactFormMessage extends Notification implements ShouldQueue
             $message->subject('Neue Kontaktanfrage');
             $message->greeting('Hallo,');
             $message->line('Es wurde eine neue Kontaktanfrage gestellt.');
-            $message->line('Name: ' . $this->name);
-            $message->line('E-Mail: ' . $this->email);
+            $message->line('Name: '.$this->name);
+            $message->line('E-Mail: '.$this->email);
             $message->line('Nachricht:');
             $message->line($this->message);
         }

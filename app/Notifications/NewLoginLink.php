@@ -15,9 +15,9 @@ class NewLoginLink extends Notification implements ShouldQueue
      * Create a new notification instance.
      */
     public function __construct(public readonly string $first_name,
-                                public readonly string $athlete_login_token = "",
-                                public readonly string $donator_login_token = "",
-                                public readonly string $user_login_url = "",)
+        public readonly string $athlete_login_token = '',
+        public readonly string $donator_login_token = '',
+        public readonly string $user_login_url = '', )
     {
         //
     }
@@ -39,30 +39,30 @@ class NewLoginLink extends Notification implements ShouldQueue
     {
 
         $message = (new MailMessage)
-            ->subject("Neuer Anmelde-Link")
-            ->greeting("Hallo " . $this->first_name);
+            ->subject('Neuer Anmelde-Link')
+            ->greeting('Hallo '.$this->first_name);
 
-        if (!$this->hasMultipleLoginTokens()) {
+        if (! $this->hasMultipleLoginTokens()) {
             $message->line('Du hast deinen Anmelde-Link angefordert. Bitte klicke auf den unten stehenden Button, um dich anzumelden.');
-            if ($this->athlete_login_token !== "") {
+            if ($this->athlete_login_token !== '') {
                 $message->action('Login', route('show-athlete', $this->athlete_login_token));
             }
-            if ($this->donator_login_token !== "") {
+            if ($this->donator_login_token !== '') {
                 $message->action('Login', route('show-donator', $this->donator_login_token));
             }
-            if ($this->user_login_url !== "") {
+            if ($this->user_login_url !== '') {
                 $message->action('Login', $this->user_login_url);
             }
         } else {
             $message->line('Du hast mehrere Rollen. Bitte klicke unten auf den entsprechenden Link, um dich anzumelden.');
-            if ($this->athlete_login_token !== "") {
-                $message->line('Anmelden als Sportler:in: ' . route('show-athlete', $this->athlete_login_token));
+            if ($this->athlete_login_token !== '') {
+                $message->line('Anmelden als Sportler:in: '.route('show-athlete', $this->athlete_login_token));
             }
-            if ($this->donator_login_token !== "") {
-                $message->line('Anmelden als Spender:in: ' . route('show-donator', $this->donator_login_token));
+            if ($this->donator_login_token !== '') {
+                $message->line('Anmelden als Spender:in: '.route('show-donator', $this->donator_login_token));
             }
-            if ($this->user_login_url !== "") {
-                $message->line('Anmelden als Benutzer:in: ' . $this->user_login_url);
+            if ($this->user_login_url !== '') {
+                $message->line('Anmelden als Benutzer:in: '.$this->user_login_url);
             }
         }
 
@@ -89,13 +89,13 @@ class NewLoginLink extends Notification implements ShouldQueue
     public function hasMultipleLoginTokens(): bool
     {
         $num_tokens = 0;
-        if ($this->athlete_login_token !== "") {
+        if ($this->athlete_login_token !== '') {
             $num_tokens++;
         }
-        if ($this->donator_login_token !== "") {
+        if ($this->donator_login_token !== '') {
             $num_tokens++;
         }
-        if ($this->user_login_url !== "") {
+        if ($this->user_login_url !== '') {
             $num_tokens++;
         }
 

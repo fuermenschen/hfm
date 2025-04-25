@@ -15,7 +15,7 @@ return [
     | Configure here the theme of your choice.
     */
 
-    //'theme' => HfmGrid::class,
+    // 'theme' => HfmGrid::class,
     'theme' => Tailwind::class,
 
     /*

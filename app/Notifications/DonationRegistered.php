@@ -15,9 +15,9 @@ class DonationRegistered extends Notification implements ShouldQueue
      * Create a new notification instance.
      */
     public function __construct(public readonly string $first_name,
-                                public readonly string $athlete_name,
-                                public readonly string $donation_id,
-                                public readonly string $login_token)
+        public readonly string $athlete_name,
+        public readonly string $donation_id,
+        public readonly string $login_token)
     {
         //
     }
@@ -39,9 +39,9 @@ class DonationRegistered extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject("Anmeldung als Spender:in für $this->athlete_name")
-            ->greeting("Hallo " . $this->first_name)
+            ->greeting('Hallo '.$this->first_name)
             ->line("Du hast dich als Spender:in für $this->athlete_name angemeldet.")
-            ->line("Bitte bestätige deine Anmeldung, indem du auf den folgenden Link klickst:")
+            ->line('Bitte bestätige deine Anmeldung, indem du auf den folgenden Link klickst:')
             ->action('Spende bestätigen', route('verify-donation', [
                 'login_token' => $this->login_token,
                 'donation_id' => $this->donation_id,

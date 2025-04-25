@@ -35,8 +35,8 @@ class AdminSomeoneRegistered extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Neue Registrierung")
-            ->line("Es hat sich soeben ein:e neue:r Sportler:in oder Spender:in registriert.");
+            ->subject('Neue Registrierung')
+            ->line('Es hat sich soeben ein:e neue:r Sportler:in oder Spender:in registriert.');
     }
 
     /**
