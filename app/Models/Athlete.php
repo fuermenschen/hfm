@@ -162,7 +162,7 @@ class Athlete extends Model
     public function getPublicIdStringAttribute(): string
     {
         // convert the public_id to a string with six digits
-        $publicId = str_pad($this->public_id, 6, '0', STR_PAD_LEFT);
+        $publicId = str_pad((string)$this->public_id, 6, '0', STR_PAD_LEFT);
 
         // return the formatted string
         return substr($publicId, 0, 3) . '-' . substr($publicId, 3);

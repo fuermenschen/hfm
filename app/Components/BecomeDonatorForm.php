@@ -261,8 +261,9 @@ class BecomeDonatorForm extends Component
             ->toArray();
 
         // fetch all partners
-        $this->partners = Partner::all()
-            ->select(['id', 'name'])
+        $this->partners = Partner::query()
+            ->orderBy('name')
+            ->get(['id', 'name'])
             ->toArray();
     }
 
