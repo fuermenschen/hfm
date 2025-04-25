@@ -87,14 +87,12 @@
                    placeholder="Ich freu mich druf. Bin zwar nöd mega sportlich, aber das isch ja egal. Hauptsach es chunnt e gueti Summe zäme!"
                    wire:model.blur="comment" autocomplete="off" />
 
-    <span class="sm:col-span-2 flex flex-row space-x-sm items-center">
-            <flux:checkbox wire:model.bool="privacy" autocomplete="off" />
-            <span class="text-md">
-                Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.
+    <span class="sm:col-span-2">
+            <x-toggle wire:model.bool.live="privacy"
+                      label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
                 <button type="button" wire:click="showPrivacyInfo"
-                        class="text-hfm-red dark:text-hfm-lightred underline">Was heisst das?</button>
-            </span>
-        </span>
+                        class="text-xs underline mt-xs">Was heisst das?</button>
+    </span>
 
     <x-honey />
     <flux:button
