@@ -38,6 +38,7 @@
     />
 
     <flux:input icon-trailing="phone" label="Telefon"
+                mask="999 999 99 99"
                 placeholder="079 123 45 67"
                 wire:model.blur="phone_number" required type="tel" autocomplete="tel"
     />
