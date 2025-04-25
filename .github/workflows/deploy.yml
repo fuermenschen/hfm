@@ -23,6 +23,9 @@ jobs:
           tools: composer:v2
           coverage: none # No need for code coverage in deployment
 
+      - name: Add Flux Credentials Loaded From ENV
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+
       - name: Install PHP dependencies
         run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
 
@@ -79,6 +82,9 @@ jobs:
 
             echo "Decrypting environment file..."
             $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY }} --force --filename=.env || { echo "Environment decryption failed! Exiting."; exit 1; }
+
+            echo "Flux credentials loaded from ENV"
+            $COMPOSER_BIN config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
             echo "Installing PHP dependencies on the server..."
             $COMPOSER_BIN install --no-dev --optimize-autoloader || { echo "Composer install failed! Exiting."; exit 1; }
