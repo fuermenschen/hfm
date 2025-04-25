@@ -17,22 +17,22 @@ class ContactForm extends Component
     use WithHoney;
 
     // E-Mail
-    #[Validate("required", message: "Wir benötigen deine E-Mail-Adresse.")]
-    #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
+    #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
+    #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
     public ?string $email = null;
 
     // Name
-    #[Validate("required", message: "Wir benötigen deinen Namen.")]
+    #[Validate('required', message: 'Wir benötigen deinen Namen.')]
     public ?string $name = null;
 
     // Message
-    #[Validate("required", message: "Wir benötigen eine Nachricht.")]
+    #[Validate('required', message: 'Wir benötigen eine Nachricht.')]
     public ?string $message = null;
 
     public function save(): void
     {
         try {
-            if (!$this->honeyPasses()) {
+            if (! $this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -42,17 +42,17 @@ class ContactForm extends Component
         } catch (ValidationException $e) {
 
             if ($e->validator->messages()->count() > 1) {
-                $title = "Es sind " . $e->validator->messages()->count() . " Fehler aufgetreten.";
+                $title = 'Es sind '.$e->validator->messages()->count().' Fehler aufgetreten.';
                 $description = implode('<br>', $e->validator->messages()->all());
             } else {
                 $title = $e->validator->messages()->first();
-                $description = "Bitte überprüfe deine Angaben.";
+                $description = 'Bitte überprüfe deine Angaben.';
             }
 
             $this->dialog([
-                "title" => $title,
-                "description" => $description,
-                "icon" => "error",
+                'title' => $title,
+                'description' => $description,
+                'icon' => 'error',
             ]);
 
             return;
@@ -83,9 +83,9 @@ class ContactForm extends Component
         } catch (Exception $e) {
 
             $this->dialog([
-                "title" => "Fehler",
-                "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
-                "icon" => "error",
+                'title' => 'Fehler',
+                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
+                'icon' => 'error',
             ]);
 
             $this->reset('email');
@@ -94,9 +94,9 @@ class ContactForm extends Component
         }
 
         $this->dialog([
-            "title" => "E-Mail versendet",
-            "description" => "Danke für deine Nachricht. Wir melden uns bald bei dir.",
-            "icon" => "success",
+            'title' => 'E-Mail versendet',
+            'description' => 'Danke für deine Nachricht. Wir melden uns bald bei dir.',
+            'icon' => 'success',
         ]);
 
         $this->reset([

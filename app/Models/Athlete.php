@@ -21,38 +21,38 @@ class Athlete extends Model
     use Notifiable;
 
     protected $fillable = [
-        "first_name",
-        "last_name",
-        "address",
-        "zip_code",
-        "city",
-        "phone_number",
-        "email",
-        "adult",
-        "sport_type_id",
-        "rounds_estimated",
-        "partner_id",
-        "comment",
+        'first_name',
+        'last_name',
+        'address',
+        'zip_code',
+        'city',
+        'phone_number',
+        'email',
+        'adult',
+        'sport_type_id',
+        'rounds_estimated',
+        'partner_id',
+        'comment',
     ];
 
     protected $casts = [
-        "public_id" => "integer",
-        "rounds_estimated" => "integer",
-        "rounds_done" => "integer",
+        'public_id' => 'integer',
+        'rounds_estimated' => 'integer',
+        'rounds_done' => 'integer',
     ];
 
     protected $hidden = [
-        "login_token",
-        "login_token_expires_at",
-        "email_verified_at",
-        "created_at",
-        "updated_at",
+        'login_token',
+        'login_token_expires_at',
+        'email_verified_at',
+        'created_at',
+        'updated_at',
     ];
 
     protected $appends = [
-        "full_name",
-        "privacy_name",
-        "public_id_string",
+        'full_name',
+        'privacy_name',
+        'public_id_string',
     ];
 
     protected static function boot(): void
@@ -73,8 +73,8 @@ class Athlete extends Model
             ));
 
             // add log entry
-            Log::info("Athlete created", [
-                "athlete" => $athlete->toArray(),
+            Log::info('Athlete created', [
+                'athlete' => $athlete->toArray(),
             ]);
 
         });
@@ -87,18 +87,18 @@ class Athlete extends Model
             // notify the athlete that their account has been deleted
             // directly use the email address because the athlete is beeing deleted
             $email = $athlete->email;
-            $message = "Du wurdest als Sportler:in gelöscht.";
-            $subject = "Deine Registrierung wurde gelöscht";
+            $message = 'Du wurdest als Sportler:in gelöscht.';
+            $subject = 'Deine Registrierung wurde gelöscht';
             $first_name = $athlete->first_name;
-            Notification::route("mail", $email)->notify(new GenericMessage(
-                    $message,
-                    $subject,
-                    $first_name)
+            Notification::route('mail', $email)->notify(new GenericMessage(
+                $message,
+                $subject,
+                $first_name)
             );
 
             // add log entry
-            Log::info("Athlete deleted", [
-                "athlete" => $athlete->toArray(),
+            Log::info('Athlete deleted', [
+                'athlete' => $athlete->toArray(),
             ]);
 
         });
@@ -117,7 +117,7 @@ class Athlete extends Model
 
     private function idExists(int $token): bool
     {
-        return Athlete::where("public_id", $token)->exists();
+        return Athlete::where('public_id', $token)->exists();
     }
 
     private function generateLoginToken(): void
@@ -134,7 +134,7 @@ class Athlete extends Model
 
     private function tokenExists(string $token): bool
     {
-        return Athlete::where("login_token", $token)->exists();
+        return Athlete::where('login_token', $token)->exists();
     }
 
     public function donations(): HasMany
@@ -157,9 +157,10 @@ class Athlete extends Model
     public function getPublicIdStringAttribute(): string
     {
         // convert the public_id to a string with six digits
-        $publicId = str_pad($this->public_id, 6, "0", STR_PAD_LEFT);
+        $publicId = str_pad($this->public_id, 6, '0', STR_PAD_LEFT);
+
         // return the formatted string
-        return substr($publicId, 0, 3) . "-" . substr($publicId, 3);
+        return substr($publicId, 0, 3).'-'.substr($publicId, 3);
     }
 
     public function sportType(): BelongsTo
@@ -171,5 +172,4 @@ class Athlete extends Model
     {
         return $this->belongsTo(Partner::class);
     }
-
 }

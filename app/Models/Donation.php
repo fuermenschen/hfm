@@ -35,25 +35,25 @@ class Donation extends Model
             ));
 
             // add log entry
-            Log::info("Donation registered", [
-                "donator" => $donation->donator->privacy_name,
-                "athlete" => $donation->athlete->privacy_name,
-                "amount_per_round" => $donation->amount_per_round,
-                "amount_max" => $donation->amount_max,
-                "amount_min" => $donation->amount_min,
-                "comment" => $donation->comment,
+            Log::info('Donation registered', [
+                'donator' => $donation->donator->privacy_name,
+                'athlete' => $donation->athlete->privacy_name,
+                'amount_per_round' => $donation->amount_per_round,
+                'amount_max' => $donation->amount_max,
+                'amount_min' => $donation->amount_min,
+                'comment' => $donation->comment,
             ]);
         });
 
         static::deleting(function ($donation) {
             // add log entry
-            Log::info("Donation deleted", [
-                "donator" => $donation->donator->privacy_name,
-                "athlete" => $donation->athlete->privacy_name,
-                "amount_per_round" => $donation->amount_per_round,
-                "amount_max" => $donation->amount_max,
-                "amount_min" => $donation->amount_min,
-                "comment" => $donation->comment,
+            Log::info('Donation deleted', [
+                'donator' => $donation->donator->privacy_name,
+                'athlete' => $donation->athlete->privacy_name,
+                'amount_per_round' => $donation->amount_per_round,
+                'amount_max' => $donation->amount_max,
+                'amount_min' => $donation->amount_min,
+                'comment' => $donation->comment,
             ]);
         });
     }
@@ -69,11 +69,11 @@ class Donation extends Model
     }
 
     protected $fillable = [
-        "donator_id",
-        "athlete_id",
-        "amount_per_round",
-        "amount_max",
-        "amount_min",
-        "comment",
+        'donator_id',
+        'athlete_id',
+        'amount_per_round',
+        'amount_max',
+        'amount_min',
+        'comment',
     ];
 }

@@ -22,14 +22,14 @@ class LoginForm extends Component
     use WithHoney;
 
     // E-Mail
-    #[Validate("required", message: "Wir benötigen deine E-Mail-Adresse.")]
-    #[Validate("email", message: "Bitte gib eine gültige E-Mail-Adresse ein.")]
+    #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
+    #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
     public ?string $email = null;
 
     public function save(): void
     {
         try {
-            if (!$this->honeyPasses()) {
+            if (! $this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -39,17 +39,17 @@ class LoginForm extends Component
         } catch (ValidationException $e) {
 
             if ($e->validator->messages()->count() > 1) {
-                $title = "Es sind " . $e->validator->messages()->count() . " Fehler aufgetreten.";
+                $title = 'Es sind '.$e->validator->messages()->count().' Fehler aufgetreten.';
                 $description = implode('<br>', $e->validator->messages()->all());
             } else {
                 $title = $e->validator->messages()->first();
-                $description = "Bitte überprüfe deine Angaben.";
+                $description = 'Bitte überprüfe deine Angaben.';
             }
 
             $this->dialog([
-                "title" => $title,
-                "description" => $description,
-                "icon" => "error",
+                'title' => $title,
+                'description' => $description,
+                'icon' => 'error',
             ]);
 
             return;
@@ -59,13 +59,13 @@ class LoginForm extends Component
 
             // get all login tokens
             $athlete = Athlete::where('email', $this->email)->first();
-            $athlete_login_token = $athlete ? $athlete->login_token : "";
+            $athlete_login_token = $athlete ? $athlete->login_token : '';
 
             $donator = Donator::where('email', $this->email)->first();
-            $donator_login_token = $donator ? $donator->login_token : "";
+            $donator_login_token = $donator ? $donator->login_token : '';
 
             $user = User::where('email', $this->email)->first();
-            $user_url = "";
+            $user_url = '';
             if ($user) {
                 $user_uuid = $user->uuid;
                 $user_url = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $user_uuid]);
@@ -80,7 +80,7 @@ class LoginForm extends Component
                 $first_name = $user->name;
             }
 
-            if (!$athlete && !$donator && !$user) {
+            if (! $athlete && ! $donator && ! $user) {
 
                 // add random delay to prevent timing attacks
                 $random_delay = rand(0, 3);
@@ -100,9 +100,9 @@ class LoginForm extends Component
         } catch (Exception $e) {
 
             $this->dialog([
-                "title" => "Fehler",
-                "description" => "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
-                "icon" => "error",
+                'title' => 'Fehler',
+                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
+                'icon' => 'error',
             ]);
 
             $this->reset('email');
@@ -111,9 +111,9 @@ class LoginForm extends Component
         }
 
         $this->dialog([
-            "title" => "E-Mail versendet",
-            "description" => "Falls die angegebene E-Mail-Adresse bekannt ist, wurde ein Login-Link versendet. Bitte überprüfe dein Postfach.",
-            "icon" => "success",
+            'title' => 'E-Mail versendet',
+            'description' => 'Falls die angegebene E-Mail-Adresse bekannt ist, wurde ein Login-Link versendet. Bitte überprüfe dein Postfach.',
+            'icon' => 'success',
         ]);
 
         $this->reset('email');

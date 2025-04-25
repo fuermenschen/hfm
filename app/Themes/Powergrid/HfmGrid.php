@@ -2,20 +2,20 @@
 
 namespace App\Themes\Powergrid;
 
-use PowerComponents\LivewirePowerGrid\Themes\Components\{Actions,
-    Checkbox,
-    Cols,
-    Editable,
-    FilterBoolean,
-    FilterDatePicker,
-    FilterInputText,
-    FilterMultiSelect,
-    FilterNumber,
-    FilterSelect,
-    Footer,
-    Radio,
-    SearchBox,
-    Table};
+use PowerComponents\LivewirePowerGrid\Themes\Components\Actions;
+use PowerComponents\LivewirePowerGrid\Themes\Components\Checkbox;
+use PowerComponents\LivewirePowerGrid\Themes\Components\Cols;
+use PowerComponents\LivewirePowerGrid\Themes\Components\Editable;
+use PowerComponents\LivewirePowerGrid\Themes\Components\FilterBoolean;
+use PowerComponents\LivewirePowerGrid\Themes\Components\FilterDatePicker;
+use PowerComponents\LivewirePowerGrid\Themes\Components\FilterInputText;
+use PowerComponents\LivewirePowerGrid\Themes\Components\FilterMultiSelect;
+use PowerComponents\LivewirePowerGrid\Themes\Components\FilterNumber;
+use PowerComponents\LivewirePowerGrid\Themes\Components\FilterSelect;
+use PowerComponents\LivewirePowerGrid\Themes\Components\Footer;
+use PowerComponents\LivewirePowerGrid\Themes\Components\Radio;
+use PowerComponents\LivewirePowerGrid\Themes\Components\SearchBox;
+use PowerComponents\LivewirePowerGrid\Themes\Components\Table;
 use PowerComponents\LivewirePowerGrid\Themes\Tailwind;
 use PowerComponents\LivewirePowerGrid\Themes\Theme;
 
@@ -46,7 +46,7 @@ class HfmGrid extends Tailwind
     public function footer(): Footer
     {
         return Theme::footer()
-            ->view($this->root() . '.footer')
+            ->view($this->root().'.footer')
             ->select('appearance-none !bg-none focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-hfm-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-1.5 px-4 pr-7 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto');
     }
 
@@ -67,7 +67,7 @@ class HfmGrid extends Tailwind
     public function editable(): Editable
     {
         return Theme::editable()
-            ->view($this->root() . '.editable')
+            ->view($this->root().'.editable')
             ->span('flex justify-between')
             ->input('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 w-full rounded-md border-0 bg-transparent py-1.5 px-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-full');
     }
@@ -91,7 +91,7 @@ class HfmGrid extends Tailwind
     public function filterBoolean(): FilterBoolean
     {
         return Theme::filterBoolean()
-            ->view($this->root() . '.filters.boolean')
+            ->view($this->root().'.filters.boolean')
             ->base('min-w-[5rem]')
             ->select('appearance-none !bg-none focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 w-full rounded-md border-0 bg-transparent py-1.5 px-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-full');
     }
@@ -100,7 +100,7 @@ class HfmGrid extends Tailwind
     {
         return Theme::filterDatePicker()
             ->base()
-            ->view($this->root() . '.filters.date-picker')
+            ->view($this->root().'.filters.date-picker')
             ->input('flatpickr flatpickr-input focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 w-full rounded-md border-0 bg-transparent py-1.5 px-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto');
     }
 
@@ -109,20 +109,20 @@ class HfmGrid extends Tailwind
         return Theme::filterMultiSelect()
             ->base('inline-block relative w-full')
             ->select('mt-1')
-            ->view($this->root() . '.filters.multi-select');
+            ->view($this->root().'.filters.multi-select');
     }
 
     public function filterNumber(): FilterNumber
     {
         return Theme::filterNumber()
-            ->view($this->root() . '.filters.number')
+            ->view($this->root().'.filters.number')
             ->input('w-full min-w-[5rem] block focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-1.5 pl-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6');
     }
 
     public function filterSelect(): FilterSelect
     {
         return Theme::filterSelect()
-            ->view($this->root() . '.filters.select')
+            ->view($this->root().'.filters.select')
             ->base('min-w-[9.5rem]')
             ->select('appearance-none !bg-none focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-1.5 px-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-full');
     }
@@ -130,7 +130,7 @@ class HfmGrid extends Tailwind
     public function filterInputText(): FilterInputText
     {
         return Theme::filterInputText()
-            ->view($this->root() . '.filters.input-text')
+            ->view($this->root().'.filters.input-text')
             ->base('min-w-[9.5rem]')
             ->select('appearance-none !bg-none focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 w-full rounded-md border-0 bg-transparent py-1.5 px-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-full')
             ->input('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 w-full rounded-md border-0 bg-transparent py-1.5 px-2 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-full');

@@ -12,14 +12,14 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     // the attributes that are mass assignable.
-    protected $fillable = ["name", "email", "uuid"];
+    protected $fillable = ['name', 'email', 'uuid'];
 
     // The attributes that should be hidden for serialization.
-    protected $hidden = ["remember_token"];
+    protected $hidden = ['remember_token'];
 
     // The attributes that should be cast to native types.
     protected $casts = [
-        "uuid" => "string",
+        'uuid' => 'string',
     ];
 
     // boot method
@@ -28,7 +28,7 @@ class User extends Authenticatable
         parent::boot();
 
         static::creating(function ($user) {
-            $user->uuid = (string)Str::uuid();
+            $user->uuid = (string) Str::uuid();
         });
     }
 }

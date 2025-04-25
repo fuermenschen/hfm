@@ -26,7 +26,7 @@ class DonatorDetails extends Component
         // check if the donation is not verified yet
         if ($donation_id) {
             $donation = $donator->donations()->where('id', $donation_id)->firstOrFail();
-            if (!$donation->verified) {
+            if (! $donation->verified) {
                 // mark the donation as verified
                 $donation->verified = true;
                 $donation->save();
@@ -34,7 +34,7 @@ class DonatorDetails extends Component
                 // show a success message
                 $this->dialog()->success(
                     $title = 'Spende bestätigt!',
-                    $message = 'Deine Spende für ' . $donation->athlete->privacy_name . ' wurde bestätigt. Vielen Dank!'
+                    $message = 'Deine Spende für '.$donation->athlete->privacy_name.' wurde bestätigt. Vielen Dank!'
                 );
             }
         }
@@ -51,7 +51,7 @@ class DonatorDetails extends Component
                 'amount_per_round' => $donation->amount_per_round,
                 'amount_min' => $donation->amount_min,
                 'amount_max' => $donation->amount_max,
-                'rounds_estimated' => $donation->athlete->rounds_estimated
+                'rounds_estimated' => $donation->athlete->rounds_estimated,
             ];
         });
     }
@@ -60,5 +60,4 @@ class DonatorDetails extends Component
     {
         return view('components.donator-details');
     }
-
 }

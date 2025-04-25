@@ -62,28 +62,28 @@ final class AdminDonationTable extends PowerGridComponent
                 return $donation->verified ? 'Ja' : 'Nein';
             })
             ->add('amount_per_round', function (Donation $donation) {
-                return "Fr. " . number_format($donation->amount_per_round, 2, ".", "'");
+                return 'Fr. '.number_format($donation->amount_per_round, 2, '.', "'");
             })
             ->add('estimated_amount', function (Donation $donation) {
-                return "Fr. " . number_format($donation->amount_per_round * $donation->athlete->rounds_estimated, 2, ".", "'");
+                return 'Fr. '.number_format($donation->amount_per_round * $donation->athlete->rounds_estimated, 2, '.', "'");
             })
             ->add('min_amount', function (Donation $donation) {
 
                 if ($donation->amount_min) {
-                    return "Fr. " . number_format($donation->amount_min, 2, ".", "'");
+                    return 'Fr. '.number_format($donation->amount_min, 2, '.', "'");
                 } else {
-                    return "unbegrenzt";
+                    return 'unbegrenzt';
                 }
             })
             ->add('max_amount', function (Donation $donation) {
 
                 if ($donation->amount_max) {
-                    return "Fr. " . number_format($donation->amount_max, 2, ".", "'");
+                    return 'Fr. '.number_format($donation->amount_max, 2, '.', "'");
                 } else {
-                    return "unbegrenzt";
+                    return 'unbegrenzt';
                 }
             })
-            ->add('created_at_formatted', fn($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'));
+            ->add('created_at_formatted', fn ($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'));
     }
 
     public function columns(): array
@@ -129,6 +129,4 @@ final class AdminDonationTable extends PowerGridComponent
         return [
         ];
     }
-
-
 }
