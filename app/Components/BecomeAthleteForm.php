@@ -63,9 +63,10 @@ class BecomeAthleteForm extends Component
     public ?string $email_confirmation = null;
 
     // Telefonnummer
-    #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('string', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('size:10', message: 'Die Telefonnummer besteht aus 10 Zahlen.')]
+
+    #[Validate("required", message: "Wir benötigen deine Telefonnummer.")]
+    #[Validate("string", message: "Wir benötigen deine Telefonnummer.")]
+    #[Validate("regex:/^0\d{2}(?:\d{7}|\s\d{3}\s\d{2}\s\d{2})$/", message: "Die Telefonnummer ist ungültig.")]
     public ?string $phone_number = null;
 
     // Volljährig?

@@ -16,6 +16,8 @@
         "laravel-frontend-presets/tall": "^8.0",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.9",
+        "livewire/flux": "^1.0",
+        "livewire/flux-pro": "^1.0",
         "livewire/livewire": "^3.4",
         "lukeraymonddowning/honey": "^1.0",
         "openspout/openspout": "^4.24",
@@ -78,5 +80,11 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": {
+        "flux-pro": {
+            "type": "composer",
+            "url": "https://composer.fluxui.dev"
+        }
+    }
 }

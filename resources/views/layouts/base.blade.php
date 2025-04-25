@@ -64,7 +64,7 @@
     @livewireStyles
     @livewireScripts
     @wireUiScripts
-
+    @fluxStyles
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -73,5 +73,6 @@
 <x-dialog />
 <x-notifications />
 @yield('body')
+@fluxScripts
 </body>
 </html>

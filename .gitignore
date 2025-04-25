@@ -28,3 +28,4 @@ Homestead.json
 .idea
 .DS_Store
 /public/build/
+/auth.json
