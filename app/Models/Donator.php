@@ -53,9 +53,9 @@ class Donator extends Model
             $subject = 'Deine Registrierung wurde gelöscht';
             $first_name = $donator->first_name;
             Notification::route('mail', $email)->notify(new GenericMessage(
-                    $message,
-                    $subject,
-                    $first_name)
+                $message,
+                $subject,
+                $first_name)
             );
 
             // add log entry
@@ -78,7 +78,7 @@ class Donator extends Model
         $this->save();
     }
 
-    function tokenExists(string $token): bool
+    public function tokenExists(string $token): bool
     {
         return Athlete::where('login_token', $token)->exists();
     }

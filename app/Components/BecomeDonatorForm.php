@@ -125,7 +125,7 @@ class BecomeDonatorForm extends Component
     public function save(): void
     {
         try {
-            if (!$this->honeyPasses()) {
+            if (! $this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -145,7 +145,7 @@ class BecomeDonatorForm extends Component
         } catch (ValidationException $e) {
 
             if ($e->validator->errors()->count() > 1) {
-                $title = 'Es sind ' . $e->validator->errors()->count() . ' Fehler aufgetreten.';
+                $title = 'Es sind '.$e->validator->errors()->count().' Fehler aufgetreten.';
                 $description = implode('<br>', $e->validator->errors()->all());
             } else {
                 $title = $e->validator->errors()->first();
@@ -167,7 +167,7 @@ class BecomeDonatorForm extends Component
             $donator = Donator::where('email', $this->email)->first();
 
             // if the donator does not exist, create a new one
-            if (!$donator) {
+            if (! $donator) {
                 $donator = Donator::create($this->all());
 
                 // send notification to admin
@@ -235,12 +235,12 @@ class BecomeDonatorForm extends Component
         $athlete = $this->currentAthlete;
         $partner = $this->currentPartner;
         $message =
-            'Der Betrag, den du pro Runde spenden möchtest, wird mit der Anzahl Runden multipliziert, die ' .
-            $athlete .
-            ' absolviert.<br><br>Falls ' .
-            $athlete .
-            ' sehr viele oder sehr wenige Runden absolviert, wird der Betrag auf das Minimum oder Maximum angepasst. Der Betrag wird nie unter das Minimum oder über das Maximum gehen.<br><br>Nach dem Anlass stellen wir dir eine Rechnung. Der Betrag geht dann zu <strong>100%</strong> an ' .
-            $partner .
+            'Der Betrag, den du pro Runde spenden möchtest, wird mit der Anzahl Runden multipliziert, die '.
+            $athlete.
+            ' absolviert.<br><br>Falls '.
+            $athlete.
+            ' sehr viele oder sehr wenige Runden absolviert, wird der Betrag auf das Minimum oder Maximum angepasst. Der Betrag wird nie unter das Minimum oder über das Maximum gehen.<br><br>Nach dem Anlass stellen wir dir eine Rechnung. Der Betrag geht dann zu <strong>100%</strong> an '.
+            $partner.
             '.';
 
         $this->dialog([

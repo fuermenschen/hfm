@@ -32,7 +32,7 @@ class ContactForm extends Component
     public function save(): void
     {
         try {
-            if (!$this->honeyPasses()) {
+            if (! $this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -42,7 +42,7 @@ class ContactForm extends Component
         } catch (ValidationException $e) {
 
             if ($e->validator->errors()->count() > 1) {
-                $title = 'Es sind ' . $e->validator->errors()->count() . ' Fehler aufgetreten.';
+                $title = 'Es sind '.$e->validator->errors()->count().' Fehler aufgetreten.';
                 $description = implode('<br>', $e->validator->errors()->all());
             } else {
                 $title = $e->validator->errors()->first();
