@@ -19,7 +19,7 @@ use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use WireUi\Traits\Actions;
 
-final class AdminDonatorTable extends PowerGridComponent
+class AdminDonatorTable extends PowerGridComponent
 {
     use Actions;
     use WithExport;

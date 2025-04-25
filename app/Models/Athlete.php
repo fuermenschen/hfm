@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Random\RandomException;
 
 /**
  * @property Donation[] $donations
@@ -109,9 +110,9 @@ class Athlete extends Model
         });
     }
 
-    private function generatePublicId(): int
+    function generatePublicId(): int
     {
-        $token = mt_rand(100000, 999999);
+        $token = random_int(100000, 999999);
 
         if ($this->idExists($token)) {
             return $this->generatePublicId();
@@ -120,12 +121,12 @@ class Athlete extends Model
         return $token;
     }
 
-    private function idExists(int $token): bool
+    function idExists(int $token): bool
     {
         return Athlete::where('public_id', $token)->exists();
     }
 
-    private function generateLoginToken(): void
+    function generateLoginToken(): void
     {
         $token = bin2hex(random_bytes(32));
 
@@ -137,7 +138,7 @@ class Athlete extends Model
         $this->save();
     }
 
-    private function tokenExists(string $token): bool
+    function tokenExists(string $token): bool
     {
         return Athlete::where('login_token', $token)->exists();
     }

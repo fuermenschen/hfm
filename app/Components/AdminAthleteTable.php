@@ -19,7 +19,7 @@ use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use WireUi\Traits\Actions;
 
-final class AdminAthleteTable extends PowerGridComponent
+class AdminAthleteTable extends PowerGridComponent
 {
     use Actions;
     use WithExport;

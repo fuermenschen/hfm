@@ -85,7 +85,7 @@ class LoginForm extends Component
             if (!$athlete && !$donator && !$user) {
 
                 // add random delay to prevent timing attacks
-                $random_delay = rand(0, 3);
+                $random_delay = random_int(0, 3);
                 sleep($random_delay);
             } else {
                 // send login link

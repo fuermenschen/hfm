@@ -78,7 +78,7 @@ class Donator extends Model
         $this->save();
     }
 
-    private function tokenExists(string $token): bool
+    function tokenExists(string $token): bool
     {
         return Athlete::where('login_token', $token)->exists();
     }
