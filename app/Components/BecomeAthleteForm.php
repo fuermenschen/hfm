@@ -104,7 +104,7 @@ class BecomeAthleteForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
+            if (!$this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -113,11 +113,11 @@ class BecomeAthleteForm extends Component
             $this->validate();
         } catch (ValidationException $e) {
 
-            if ($e->validator->messages()->count() > 1) {
-                $title = 'Es sind '.$e->validator->messages()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->messages()->all());
+            if ($e->validator->errors()->count() > 1) {
+                $title = 'Es sind ' . $e->validator->errors()->count() . ' Fehler aufgetreten.';
+                $description = implode('<br>', $e->validator->errors()->all());
             } else {
-                $title = $e->validator->messages()->first();
+                $title = $e->validator->errors()->first();
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
@@ -172,7 +172,7 @@ class BecomeAthleteForm extends Component
     public function showNumRoundsInfo(): void
     {
         $message =
-            "Die Strecke liegt im Brühlberg-Quartier in Winterthur. Sie ist ca. <strong>1.75&nbsp;km</strong> lang, hat <strong>50&nbsp;Höhenmeter</strong> und ist komplett geteert. Weitere Details zur Strecke findest du in den <a href='".route('questions-and-answers')."#sportlerinnen' target='_blank' class='underline text-hfm-red'>Fragen und Antworten.</a>";
+            "Die Strecke liegt im Brühlberg-Quartier in Winterthur. Sie ist ca. <strong>1.75&nbsp;km</strong> lang, hat <strong>50&nbsp;Höhenmeter</strong> und ist komplett geteert. Weitere Details zur Strecke findest du in den <a href='" . route('questions-and-answers') . "#sportlerinnen' target='_blank' class='underline text-hfm-red'>Fragen und Antworten.</a>";
 
         $message .= '<br><br>Die geschätzte Anzahl Runden hilft deinen Spender:innen, den Betrag pro Runden festzulegen. Aber keine Angst, du musst nicht so viele Runden zurücklegen, wie du schätzt. Du kannst auch mehr oder weniger Runden laufen.';
 

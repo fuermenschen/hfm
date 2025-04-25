@@ -5,10 +5,18 @@ namespace App\Models;
 use App\Notifications\GenericMessage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
+/**
+ * @property Collection|Donation[] $donations
+ * @property string $privacy_name
+ * @property string $full_name
+ * @property string $public_id_string
+ */
 class Donator extends Model
 {
     use HasFactory;
@@ -45,9 +53,9 @@ class Donator extends Model
             $subject = 'Deine Registrierung wurde gelöscht';
             $first_name = $donator->first_name;
             Notification::route('mail', $email)->notify(new GenericMessage(
-                $message,
-                $subject,
-                $first_name)
+                    $message,
+                    $subject,
+                    $first_name)
             );
 
             // add log entry
@@ -80,7 +88,7 @@ class Donator extends Model
         return "{$this->first_name} {$this->last_name[0]}.";
     }
 
-    public function donations()
+    public function donations(): HasMany
     {
         return $this->hasMany(Donation::class);
     }

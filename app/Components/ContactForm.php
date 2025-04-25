@@ -32,7 +32,7 @@ class ContactForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
+            if (!$this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -41,11 +41,11 @@ class ContactForm extends Component
             $this->validate();
         } catch (ValidationException $e) {
 
-            if ($e->validator->messages()->count() > 1) {
-                $title = 'Es sind '.$e->validator->messages()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->messages()->all());
+            if ($e->validator->errors()->count() > 1) {
+                $title = 'Es sind ' . $e->validator->errors()->count() . ' Fehler aufgetreten.';
+                $description = implode('<br>', $e->validator->errors()->all());
             } else {
-                $title = $e->validator->messages()->first();
+                $title = $e->validator->errors()->first();
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 

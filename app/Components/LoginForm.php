@@ -29,7 +29,7 @@ class LoginForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
+            if (!$this->honeyPasses()) {
                 throw ValidationException::withMessages([
                     'spam' => ['Spam detected'],
                 ]);
@@ -38,11 +38,11 @@ class LoginForm extends Component
             $this->validate();
         } catch (ValidationException $e) {
 
-            if ($e->validator->messages()->count() > 1) {
-                $title = 'Es sind '.$e->validator->messages()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->messages()->all());
+            if ($e->validator->errors()->count() > 1) {
+                $title = 'Es sind ' . $e->validator->errors()->count() . ' Fehler aufgetreten.';
+                $description = implode('<br>', $e->validator->errors()->all());
             } else {
-                $title = $e->validator->messages()->first();
+                $title = $e->validator->errors()->all();
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
@@ -78,9 +78,11 @@ class LoginForm extends Component
                 $first_name = $donator->first_name;
             } elseif ($user) {
                 $first_name = $user->name;
+            } else {
+                $first_name = '';
             }
 
-            if (! $athlete && ! $donator && ! $user) {
+            if (!$athlete && !$donator && !$user) {
 
                 // add random delay to prevent timing attacks
                 $random_delay = rand(0, 3);

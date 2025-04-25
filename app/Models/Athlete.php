@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * @method static create($all)
+ * @property Donation[] $donations
+ * @property SportType $sportType
+ * @property Partner $partner
+ * @property string $privacy_name
+ * @property string $full_name
+ * @property string $public_id_string
  */
 class Athlete extends Model
 {
@@ -91,9 +96,9 @@ class Athlete extends Model
             $subject = 'Deine Registrierung wurde gelöscht';
             $first_name = $athlete->first_name;
             Notification::route('mail', $email)->notify(new GenericMessage(
-                $message,
-                $subject,
-                $first_name)
+                    $message,
+                    $subject,
+                    $first_name)
             );
 
             // add log entry
@@ -160,7 +165,7 @@ class Athlete extends Model
         $publicId = str_pad($this->public_id, 6, '0', STR_PAD_LEFT);
 
         // return the formatted string
-        return substr($publicId, 0, 3).'-'.substr($publicId, 3);
+        return substr($publicId, 0, 3) . '-' . substr($publicId, 3);
     }
 
     public function sportType(): BelongsTo

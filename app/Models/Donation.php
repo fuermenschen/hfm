@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @property Donator $donator
+ * @property Athlete $athlete
+ */
 class Donation extends Model
 {
     use HasFactory;
