@@ -6,7 +6,6 @@ use Livewire\Component;
 
 class BecomeMemberForm extends Component
 {
-
     public string $test = '';
 
     public function render()
