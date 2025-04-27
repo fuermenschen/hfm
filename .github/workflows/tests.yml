@@ -51,5 +51,8 @@ jobs:
       - name: Build Assets
         run: npm run build
 
+      - name: Run SCAN
+        run: ./vendor/bin/phpstan analyse
+
       - name: Run Tests
         run: php artisan test --parallel
