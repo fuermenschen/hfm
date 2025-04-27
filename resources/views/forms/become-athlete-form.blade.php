@@ -17,7 +17,7 @@
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
-                <flux:input icon-trailing="home" label="PLZ" placeholder="8406"
+                <flux:input icon-trailing="home" label="PLZ" placeholder="8406" mask="9999"
                             wire:model.blur="zip_code"
                             class="basis-1/3" required type="text" autocomplete="postal-code"
                 />
@@ -38,6 +38,7 @@
     />
 
     <flux:input icon-trailing="phone" label="Telefon"
+                mask="999 999 99 99"
                 placeholder="079 123 45 67"
                 wire:model.blur="phone_number" required type="tel" autocomplete="tel"
     />
