@@ -7,7 +7,7 @@
 
     <div class="w-full max-w-2xl mx-auto text-left sm:text-center flex flex-col space-y-sm">
         <span>Der <strong>Verein für Menschen</strong> ist der Trägerverein des Spendenanlasses <strong>Höhenmeter für
-            Menschen</strong>. Er nach der ersten Durchführung des Anlasses <strong>Höhenmeter für
+            Menschen</strong>. Er wurde nach der ersten Durchführung des Anlasses <strong>Höhenmeter für
             Menschen</strong> in Winterthur gegründet.</span>
         <span>Auf dieser Seite findest du alle Informationen zu unserem Verein, unsere Statuten und ein <strong>Formular, um
             Mitglied zu werden</strong>.</span>
@@ -51,7 +51,7 @@
                 Spenden wurden an die Organisation <strong>Stiftung Kinderseele Schweiz</strong>, <strong>Brühlgut Stiftung Winterthur</strong> und an <strong>Tel. 143 - Die Dargebotene Hand</strong> gespendet.
             </span>
             <span>
-                Die Durchführung 2024 wurde durch den Verein <x-inline-link href="www.rt25.ch" target="_blank">RoundTable 25 Winterthur</x-inline-link> organisiert und finanziert. Dies als eines mehrer Sozialprojekte des RoundTable, welcher sich in Winterthur vielfältig sozial engagiert.
+                Die Durchführung 2024 wurde durch den Verein <x-inline-link href="www.rt25.ch" target="_blank">RoundTable 25 Winterthur</x-inline-link> organisiert und finanziert. Dies als eines mehrer Sozialprojekte des RoundTable, welcher sich in Winterthur  und Umgebung vielfältig sozial engagiert.
             </span>
         </div>
         <div class="flex flex-col space-y-sm">
