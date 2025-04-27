@@ -12,12 +12,17 @@ permissions:
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
+    secrets: inherit
 
   tests:
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
 
   deploy:
     name: Deploy to Server
+    needs:
+      - lint
+      - tests
     runs-on: ubuntu-latest
     environment: Production
 
