@@ -14,6 +14,7 @@ class BecomeMemberForm extends Component
     use Actions;
 
     // Name der Firma (optional)
+    #[Validate('nullable')]
     #[Validate('string', message: 'Der Name der Firma muss ein Text sein.')]
     #[Validate('max:255', message: 'Der Name der Firma darf nicht länger als 255 Zeichen sein.')]
     public ?string $company_name = null;
