@@ -66,7 +66,7 @@ class BecomeAthleteForm extends Component
 
     #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
     #[Validate('string', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate("regex:/^0\d{2}(?:\d{7}|\s\d{3}\s\d{2}\s\d{2})$/", message: 'Die Telefonnummer ist ungültig.')]
+    #[Validate("regex:/^0\d{2}\s\d{3}\s\d{2}\s\d{2}/", message: 'Die Telefonnummer ist ungültig.')]
     public ?string $phone_number = null;
 
     // Volljährig?
@@ -84,6 +84,7 @@ class BecomeAthleteForm extends Component
     #[Validate('required', message: 'Wir benötigen die Anzahl der geschätzten Runden.')]
     #[Validate('integer', message: 'Die Anzahl der geschätzten Runden muss eine Zahl sein.')]
     #[Validate('min:1', message: 'Die Anzahl der geschätzten Runden muss mindestens 1 sein.')]
+
     public ?int $rounds_estimated = null;
 
     // Partner
