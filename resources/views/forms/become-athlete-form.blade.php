@@ -17,7 +17,7 @@
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
-                <flux:input icon-trailing="home" label="PLZ" placeholder="8406"
+                <flux:input icon-trailing="home" label="PLZ" placeholder="8406" mask="9999"
                             wire:model.blur="zip_code"
                             class="basis-1/3" required type="text" autocomplete="postal-code"
                 />
