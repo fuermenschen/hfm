@@ -28,9 +28,7 @@
         autocomplete="organization"
     />
 
-    <span class="hidden sm:block">
-        <!-- Placeholder for layout purposes -->
-    </span>
+    <flux:separator class="sm:col-span-2" />
 
     <flux:input
         icon-trailing="home"
@@ -97,11 +95,20 @@
         autocomplete="tel"
     />
 
-    <span>
-        <!-- Placeholder for layout purposes -->
+    <flux:separator class="sm:col-span-2" />
+
+    <flux:textarea
+        label="Kommentar"
+        badge="optional"
+        placeholder="Super sach! Das Jahr tueni mithelfe und nächst Jahr chumi in Vorstand :-)."
+        wire:model.blur="comment" autocomplete="off" />
+
+    <span class="sm:col-span-2">
+        <x-toggle
+            wire:model.bool.live="statutes_read"
+            label="Ich habe die Statuten gelesen." />
     </span>
 
-    <flux:separator class="sm:col-span-2" />
 
     <flux:button
         type="submit"
