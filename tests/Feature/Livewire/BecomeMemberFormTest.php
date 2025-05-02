@@ -9,7 +9,7 @@ it('renders successfully', function () {
         ->assertStatus(200);
 });
 
-it('can be filled with inputs', function () {
+it('can be filled with all inputs', function () {
     Livewire::test(BecomeMemberForm::class)
         ->set('company_name', 'Test Company')
         ->set('first_name', 'John')
@@ -27,6 +27,35 @@ it('can be filled with inputs', function () {
 
     $this->assertDatabaseHas('association_members', [
         'company_name' => 'Test Company',
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'address' => '123 Test Street',
+        'zip_code' => 1234,
+        'city' => 'Test City',
+        'email' => 'john.doe@example.com',
+        'phone_number' => '0791234567',
+        'comment' => 'Looking forward to joining!',
+    ]);
+});
+
+it('can be set without a company name', function () {
+    Livewire::test(BecomeMemberForm::class)
+        ->set('company_name', '')
+        ->set('first_name', 'John')
+        ->set('last_name', 'Doe')
+        ->set('address', '123 Test Street')
+        ->set('zip_code', 1234)
+        ->set('city', 'Test City')
+        ->set('email', 'john.doe@example.com')
+        ->set('email_confirmation', 'john.doe@example.com')
+        ->set('phone_number', '0791234567')
+        ->set('comment', 'Looking forward to joining!')
+        ->set('statutes_read', true)
+        ->call('submit')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('association_members', [
+        'company_name' => '',
         'first_name' => 'John',
         'last_name' => 'Doe',
         'address' => '123 Test Street',
