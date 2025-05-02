@@ -115,6 +115,6 @@
         label="Absenden"
         variant="filled"
         icon="paper-airplane"
-    >Senden
+    >Mitglied werden
     </flux:button>
 </form>

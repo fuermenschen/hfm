@@ -86,7 +86,9 @@
         </flux:button>
     </div>
 
-    <x-page-subtitle id="mitglied-werden">Anmeldeformular</x-page-subtitle>
+    <x-page-subtitle id="mitglied-werden">Anmeldeformular Mitgliedschaft</x-page-subtitle>
+    Du möchtest Mitglied beim <strong>Verein für
+        Menschen</strong> werden? Mega! Du kannst dich hier anmelden und dich dann auf die Art engangieren, die du möchtest. Oder du bleibst nur im Hintergrund und unterstützt uns mit deinem Jahresbeitrag. Jede Art ist sehr willkommen. Wir freuen uns!
 
     @livewire('become-member-form')
 
