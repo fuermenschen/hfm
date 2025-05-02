@@ -29,7 +29,15 @@
             variant="filled"
             class="grow sm:max-w-[200px] w-full"
         >
-            Mitglied werden
+            Mitglied Werden
+        </flux:button>
+        <flux:button
+            href="#direkt-spenden"
+            icon="banknotes"
+            variant="filled"
+            class="grow sm:max-w-[200px] w-full"
+        >
+            Direkt Spenden
         </flux:button>
         <flux:button
             href="#dokumente"
@@ -91,5 +99,15 @@
         Menschen</strong> werden? Mega! Du kannst dich hier anmelden und dich dann auf die Art engangieren, die du möchtest. Oder du bleibst nur im Hintergrund und unterstützt uns mit deinem Jahresbeitrag. Jede Art ist sehr willkommen. Wir freuen uns!
 
     @livewire('become-member-form')
+
+    <x-page-subtitle id="direkt-spenden">Direkt Spenden</x-page-subtitle>
+    <div>Du möchtest uns direkt unterstützen? Du kannst jederzeit sehr gerne direkt spenden. Unsere IBAN lautet:
+        <strong>CH95&nbsp;0070&nbsp;0114&nbsp;9030&nbsp;5392&nbsp;4</strong>.
+    </div>
+    <div class="mt-xs">Wenn du von uns eine Rechnung und Ende Jahr eine <strong>Spendenbestätigung</strong> haben
+        möchtest, fülle das untenstehende Formular aus.
+    </div>
+
+    @livewire('association-donation-form')
 
 @endsection
