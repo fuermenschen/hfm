@@ -85,29 +85,15 @@
         autocomplete="off"
     />
 
-    <flux:input
-        icon-trailing="phone"
-        label="Telefon"
-        placeholder="079 123 45 67"
-        wire:model.blur="phone_number"
-        required
-        type="tel"
-        autocomplete="tel"
-    />
-
     <flux:separator class="sm:col-span-2" />
 
+    <span class="sm:col-span-2">
     <flux:textarea
         label="Kommentar"
         badge="optional"
-        placeholder="Super sach! Das Jahr tueni mithelfe und nächst Jahr chumi in Vorstand :-)."
+        placeholder="Hoffe, ihr hend so bitz meh finanzielli Luft für d Organisation."
         wire:model.blur="comment" autocomplete="off" />
-
-    <span class="sm:col-span-2">
-        <x-toggle
-            wire:model.bool.live="statutes_read"
-            label="Ich habe die Statuten gelesen." />
-    </span>
+        </span>
 
 
     <flux:button
@@ -115,6 +101,6 @@
         label="Absenden"
         variant="filled"
         icon="paper-airplane"
-    >Mitglied werden
+    >Spendenrechnung erhalten
     </flux:button>
 </form>
