@@ -77,7 +77,7 @@ Route::middleware('auth')->group(function () {
     Route::view('admin/sportlerinnen', 'pages.admin.athletes')->name('admin.athletes.index');
     Route::view('admin/spenderinnen', 'pages.admin.donators')->name('admin.donators.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
-
+    Route::view('admin/mitglieder', 'pages.admin.association-members')->name('admin.association-members.index');
     Route::post('logout', function () {
         auth()->logout();
         request()->session()->invalidate();
