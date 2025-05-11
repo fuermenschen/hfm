@@ -2,6 +2,8 @@
 
 use App\Components\BecomeMemberForm;
 use App\Models\AssociationMember;
+use App\Notifications\AssociationMemberRegistered;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 it('renders successfully', function () {
@@ -10,6 +12,9 @@ it('renders successfully', function () {
 });
 
 it('can be filled with all inputs', function () {
+
+    Notification::fake();
+
     Livewire::test(BecomeMemberForm::class)
         ->set('company_name', 'Test Company')
         ->set('first_name', 'John')
@@ -36,9 +41,18 @@ it('can be filled with all inputs', function () {
         'phone_number' => '0791234567',
         'comment' => 'Looking forward to joining!',
     ]);
+
+    $newMember = AssociationMember::where('email', 'john.doe@example.com')->first();
+
+    Notification::assertCount(1);
+    Notification::assertSentTo($newMember, AssociationMemberRegistered::class);
+
 });
 
 it('can be set without a company name', function () {
+
+    Notification::fake();
+
     Livewire::test(BecomeMemberForm::class)
         ->set('company_name', '')
         ->set('first_name', 'John')
@@ -65,6 +79,10 @@ it('can be set without a company name', function () {
         'phone_number' => '0791234567',
         'comment' => 'Looking forward to joining!',
     ]);
+
+    $newMember = AssociationMember::where('email', 'john.doe@example.com')->first();
+    Notification::assertCount(1);
+    Notification::assertSentTo($newMember, AssociationMemberRegistered::class);
 });
 
 it('cannot be submitted empty', function () {
@@ -75,6 +93,9 @@ it('cannot be submitted empty', function () {
 });
 
 it('cannot be submitted with existing email', function () {
+
+    Notification::fake();
+
     AssociationMember::factory()->create([
         'email' => 'jon@doe.com',
     ]);
@@ -95,4 +116,6 @@ it('cannot be submitted with existing email', function () {
         ->assertHasErrors([
             'email',
         ]);
+
+    Notification::assertNothingSent();
 });

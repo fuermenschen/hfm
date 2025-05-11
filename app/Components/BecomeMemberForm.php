@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Models\AssociationMember;
+use App\Notifications\AssociationMemberRegistered;
 use Exception;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
@@ -105,7 +106,7 @@ class BecomeMemberForm extends Component
 
         try {
 
-            AssociationMember::create([
+            $member = AssociationMember::create([
                 'company_name' => $this->company_name,
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
@@ -118,6 +119,8 @@ class BecomeMemberForm extends Component
             ]);
 
             $this->reset();
+
+            $member->notify(new AssociationMemberRegistered($member->first_name));
 
             $this->dialog([
                 'title' => 'Danke!',
