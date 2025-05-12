@@ -59,7 +59,7 @@
                 Spenden wurden an die Organisation <strong>Stiftung Kinderseele Schweiz</strong>, <strong>Brühlgut Stiftung Winterthur</strong> und an <strong>Tel. 143 - Die Dargebotene Hand</strong> gespendet.
             </span>
             <span>
-                Die Durchführung 2024 wurde durch den Verein <x-inline-link href="www.rt25.ch" target="_blank">RoundTable 25 Winterthur</x-inline-link> organisiert und finanziert. Dies als eines mehrer Sozialprojekte des RoundTable, welcher sich in Winterthur  und Umgebung vielfältig sozial engagiert.
+                Die Durchführung 2024 wurde durch den Verein <x-inline-link href="https://www.rt25.ch" target="_blank">RoundTable 25 Winterthur</x-inline-link> organisiert und finanziert. Dies als eines mehrer Sozialprojekte des RoundTable, welcher sich in Winterthur  und Umgebung vielfältig sozial engagiert.
             </span>
         </div>
         <div class="flex flex-col space-y-sm">
