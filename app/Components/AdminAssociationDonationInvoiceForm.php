@@ -97,8 +97,6 @@ class AdminAssociationDonationInvoiceForm extends Component
 
         } catch (Exception $e) {
 
-            dump($e);
-
             Flux::toast(variant: 'danger', heading: 'Fehler', text: 'Es gab einen Fehler beim Erstellen der Rechnung. Bitte versuche es später erneut.');
 
             return $response;

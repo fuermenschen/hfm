@@ -28,6 +28,17 @@
         autocomplete="organization"
     />
 
+    <flux:input
+        icon-trailing="banknotes"
+        label="Betrag"
+        wire:model.blur="amount"
+        placeholder="100.00"
+        badge="optional"
+        type="number"
+        step="0.05"
+        min="0.05"
+    />
+
     <flux:separator class="sm:col-span-2" />
 
     <flux:input

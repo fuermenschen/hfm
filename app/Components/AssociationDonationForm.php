@@ -2,6 +2,7 @@
 
 namespace App\Components;
 
+use App\Actions\CreateAssociationDonationInvoice;
 use App\Notifications\AssociationDonationMessage;
 use Exception;
 use Illuminate\Support\Facades\Notification;
@@ -66,6 +67,12 @@ class AssociationDonationForm extends Component
     #[Validate('max:2000', message: 'Der Kommentar darf nicht länger als 2000 Zeichen sein.')]
     public ?string $comment = null;
 
+    // Betrag
+    #[Validate('nullable')]
+    #[Validate('numeric', message: 'Der Betrag muss eine Zahl sein.')]
+    #[Validate('min:0', message: 'Der Betrag muss positiv sein.')]
+    public ?float $amount = null;
+
     public function render()
     {
         return view('forms.association-donation-form');
@@ -96,36 +103,21 @@ class AssociationDonationForm extends Component
 
         try {
 
-            $details = [
-                "Vorname: $this->first_name",
-                "Nachname: $this->last_name",
-                "Adresse: $this->address",
-                "PLZ: $this->zip_code",
-                "Ort: $this->city",
-                "E-Mail: $this->email",
-                "Kommentar: $this->comment",
-            ];
-
-            if ($this->company_name) {
-                array_unshift($details, "Firma: $this->company_name");
-            }
+            $invoice = CreateAssociationDonationInvoice::run(
+                first_name: $this->first_name,
+                last_name: $this->last_name,
+                company_name: $this->company_name,
+                address: $this->address,
+                zip_code: $this->zip_code,
+                city: $this->city,
+                amount: $this->amount,
+            );
 
             // send contact form message
             $notification = new AssociationDonationMessage(
-                email: $this->email,
                 name: $this->first_name,
-                details: $details,
-                confirmation_to_sender: false,
-            );
-
-            Notification::route('mail', config('mail.from.address'))->notify($notification);
-
-            // send confirmation to sender
-            $notification = new AssociationDonationMessage(
-                email: $this->email,
-                name: $this->first_name,
-                details: $details,
-                confirmation_to_sender: true,
+                pdf: base64_encode($invoice['pdf']->output()),
+                filename: $invoice['filename'],
             );
 
             Notification::route('mail', $this->email)->notify($notification);
