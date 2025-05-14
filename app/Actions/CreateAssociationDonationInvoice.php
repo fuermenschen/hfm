@@ -13,7 +13,7 @@ class CreateAssociationDonationInvoice
         string $first_name,
         string $last_name,
         string $address,
-        string $zip_code,
+        int $zip_code,
         string $city,
         ?string $company_name = null,
         ?float $amount = null
