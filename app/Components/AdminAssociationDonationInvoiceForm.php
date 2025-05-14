@@ -63,18 +63,21 @@ class AdminAssociationDonationInvoiceForm extends Component
 
     public function submit()
     {
+
+        $response = response();
+
         try {
             $this->validate();
         } catch (ValidationException $e) {
 
             Flux::toast(variant: 'danger', heading: 'Fehler', text: 'Bitte überprüfe deine Eingaben.');
 
-            return;
+            return $response;
         }
 
         try {
 
-            CreateAssociationDonationInvoice::run(
+            $invoice = CreateAssociationDonationInvoice::run(
                 first_name: $this->first_name,
                 last_name: $this->last_name,
                 address: $this->address,
@@ -84,17 +87,29 @@ class AdminAssociationDonationInvoiceForm extends Component
                 amount: $this->amount
             );
 
+            // download the invoice
+            $pdf = $invoice['pdf'];
+            $filename = $invoice['filename'];
+
+            $response = response()->streamDownload(function () use ($pdf) {
+                echo $pdf->stream();
+            }, $filename);
+
         } catch (Exception $e) {
+
+            dump($e);
 
             Flux::toast(variant: 'danger', heading: 'Fehler', text: 'Es gab einen Fehler beim Erstellen der Rechnung. Bitte versuche es später erneut.');
 
-            return;
+            return $response;
         }
 
         Flux::toast(variant: 'success', heading: 'Erfolg', text: 'Die Rechnung wurde erfolgreich erstellt.');
         Flux::modal('create-association-donation-invoice')->close();
 
         $this->reset();
+
+        return $response;
     }
 
     public function redirectHelper(): void

@@ -28,7 +28,7 @@
         throw new Exception("Unknown partner name: " . $athlete->partner->name);
     }
 
-    $letterhead = Vite::asset("resources/images/letterhead.svg");
+    $letterhead = Vite::asset("resources/images/letterhead_hfm.svg");
     $letterheadData = base64_encode(file_get_contents($letterhead));
 
 
