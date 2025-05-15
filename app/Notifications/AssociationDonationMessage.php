@@ -38,12 +38,12 @@ class AssociationDonationMessage extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $message = new MailMessage;
-        $message->subject('Deine Spendenrechnung');
-        $message->greeting('Hallo '.$this->name.',');
-        $message->line('Vielen Dank, dass du uns unterstützen möchtest!');
-        $message->line('Im Anhang findest du eine Spendenrechung.');
-        $message->attachData(base64_decode($this->pdf), $this->filename);
-        $message->bcc(config('mail.from.address'));
+        $message->subject('Deine Spendenrechnung')
+            ->greeting('Hallo '.$this->name.',')
+            ->line('Danke, dass du den Verein für Menschen finanziell unterstützen möchtest. Dank Spenden wie deiner können wir die Organisation von Spendenanlässen finanzieren. Herzlichen Dank.')
+            ->line('Im Anhang findest du eine Spendenrechung.')
+            ->attachData(base64_decode($this->pdf), $this->filename)
+            ->bcc(config('mail.from.address'));
 
         return $message;
     }
