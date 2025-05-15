@@ -64,7 +64,7 @@ class BecomeMemberForm extends Component
     // Telefonnummer
     #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
     #[Validate('string', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('digits:10', message: 'Die Telefonnummer ist ungültig.')]
+    #[Validate('regex:/^0\d{2}\s\d{3}\s\d{2}\s\d{2}/', message: 'Die Telefonnummer ist ungültig.')]
     public ?string $phone_number = null;
 
     // Kommentar

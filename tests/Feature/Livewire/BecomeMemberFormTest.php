@@ -24,7 +24,7 @@ it('can be filled with all inputs', function () {
         ->set('city', 'Test City')
         ->set('email', 'john.doe@example.com')
         ->set('email_confirmation', 'john.doe@example.com')
-        ->set('phone_number', '0791234567')
+        ->set('phone_number', '079 123 45 67')
         ->set('comment', 'Looking forward to joining!')
         ->set('statutes_read', true)
         ->call('submit')
@@ -38,7 +38,7 @@ it('can be filled with all inputs', function () {
         'zip_code' => 1234,
         'city' => 'Test City',
         'email' => 'john.doe@example.com',
-        'phone_number' => '0791234567',
+        'phone_number' => '079 123 45 67',
         'comment' => 'Looking forward to joining!',
     ]);
 
@@ -62,7 +62,7 @@ it('can be set without a company name', function () {
         ->set('city', 'Test City')
         ->set('email', 'john.doe@example.com')
         ->set('email_confirmation', 'john.doe@example.com')
-        ->set('phone_number', '0791234567')
+        ->set('phone_number', '079 123 45 67')
         ->set('comment', 'Looking forward to joining!')
         ->set('statutes_read', true)
         ->call('submit')
@@ -76,7 +76,7 @@ it('can be set without a company name', function () {
         'zip_code' => 1234,
         'city' => 'Test City',
         'email' => 'john.doe@example.com',
-        'phone_number' => '0791234567',
+        'phone_number' => '079 123 45 67',
         'comment' => 'Looking forward to joining!',
     ]);
 
@@ -109,7 +109,7 @@ it('cannot be submitted with existing email', function () {
         ->set('city', 'Test City')
         ->set('email', 'jon@doe.com')
         ->set('email_confirmation', 'jon@doe.com')
-        ->set('phone_number', '0791234567')
+        ->set('phone_number', '079 123 45 67')
         ->set('comment', 'Looking forward to joining!')
         ->set('statutes_read', true)
         ->call('submit')
