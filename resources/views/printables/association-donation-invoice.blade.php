@@ -1,16 +1,6 @@
 @extends('printables.base')
 
-@props(['donator', 'donations'])
-
-@php
-    use Illuminate\Support\Facades\Vite;
-
-    $letterhead = Vite::asset("resources/images/letterhead_hfm.svg");
-    $letterheadData = base64_encode(file_get_contents($letterhead));
-
-    $totalAmount = 0;
-
-@endphp
+@props(['first_name', 'last_name', 'address', 'zip_code', 'city', 'company_name' => '', 'amount' => null])
 
 @section('body')
     <style>
@@ -75,7 +65,7 @@
             left: 2cm;
             right: 2cm;
             font-size: 12px;
-            page-break-after: always;
+            /*page-break-after: always;*/
         }
 
         .body p {
@@ -146,8 +136,6 @@
 
     <!-- Logo and Sender -->
     <div class="logo-and-sender">
-        <img src="data:image/svg+xml;base64,{{ $letterheadData }}" alt="Logo" />
-
         <div>
             <p>
                 Verein für Menschen<br>
@@ -161,11 +149,14 @@
 
     <!-- Recipient -->
     <div class="recipient">
-        <p class="sender">Höhenmeter für Menschen, fuer-menschen.ch</p>
+        <p class="sender">Verein für Menschen, fuer-menschen.ch</p>
         <p>
-            {{ $donator->first_name }} {{ $donator->last_name }}<br>
-            {{ $donator->address }}<br>
-            {{ $donator->zip_code }} {{ $donator->city }}
+            @if( $company_name )
+                {{ $company_name }}<br>
+            @endif
+            {{ $first_name }} {{ $last_name }}<br>
+            {{ $address }}<br>
+            {{ $zip_code }} {{ $city }}
         </p>
     </div>
 
@@ -176,115 +167,39 @@
 
     <!-- Subject -->
     <div class="subject">
-        <p>Spendenrechnung Höhenmeter für Menschen</p>
+        <p>Spendenrechnung Verein für Menschen</p>
     </div>
 
     <!-- Body -->
     <div class="body">
         <p>
-            Liebe:r {{ $donator->first_name }}
+            Liebe:r {{ $first_name }}
         </p>
         <p>
-            Wir schätzen dein Engagement sehr und möchten dir herzlich danken.
+            Danke, dass du den Verein für Menschen finanziell unterstützen möchtest. Dank Spenden wie deiner
+            können wir Spendenanlässe wie <i>Höhenmeter für Menschen</i> durchführen. Herzlichen Dank.
         </p>
-        <p>
-            Untenstehend findest du eine Übersicht über deine Spenden an
-            Höhenmeter für
-            Menschen.
-        </p>
-
-        <!-- Donation list using table for better formatting -->
-        <table>
-            <thead>
-            <tr>
-                <th>Sportler:in</th>
-                <th>Benefizpartner:in</th>
-                <th>Runden</th>
-                <th>Pro Runde</th>
-                <th>Subtotal</th>
-                <th>Min.</th>
-                <th>Max.</th>
-                <th>Total</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach($donations as $donation)
-                @php
-                    $this_total = $donation->athlete->rounds_done * $donation->amount_per_round;
-                    $this_subtotal = $this_total;
-
-                    if ($donation->amount_min) {
-                        if ($this_total < $donation->amount_min) {
-                            $this_total = $donation->amount_min;
-                        }
-                    }
-                    if ($donation->amount_max) {
-                        if ($this_total > $donation->amount_max) {
-                            $this_total = $donation->amount_max;
-                        }
-                    }
-
-                    $totalAmount += $this_total;
-                @endphp
-                <tr>
-                    <td>{{ $donation->athlete->privacy_name }}</td>
-                    <td>{{ $donation->athlete->partner->name}}</td>
-                    <td>{{ $donation->athlete->rounds_done }}</td>
-                    <td>Fr. {{ number_format($donation->amount_per_round, 2) }}</td>
-                    <td>Fr. {{ number_format($this_subtotal, 2) }}</td>
-                    <td>
-                        @if ($donation->amount_min)
-                            Fr. {{ number_format($donation->amount_min, 2) }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td>
-                        @if ($donation->amount_max)
-                            Fr. {{ number_format($donation->amount_max, 2) }}
-                        @else
-                            -
-                        @endif
-                    </td>
-                    <td>Fr. {{ number_format($this_total, 2) }}</td>
-                </tr>
-            @endforeach
-            </tbody>
-            <tfoot>
-            <tr>
-                <td colspan="7" style="text-align: right;">Gesamtbetrag:</td>
-                <td>Fr. {{ number_format($totalAmount, 2) }}</td>
-            </tr>
-            </tfoot>
-        </table>
-
-        <p>Bitte verwende zur Einzahlung den beiliegenden Einzahlungsschein. Die Zahlung des Betrags von mindestens
-            Fr.&nbsp;{{ number_format($totalAmount, 2) }} ist fällig innerhalb von 20&nbsp;Tagen ab Erhalt der
-            Rechnung.</p>
-
-        <p>Nach Eingang aller Spenden werden wir eine gemeinsame Überweisung an die drei Benefizpartner:innen
-            vornehmen. Wir werden dich informieren, wann wir welche Beträge überweisen durften.</p>
-
         <p>
             Herzliche Grüsse<br>
-            Das Team von Höhenmeter für Menschen
+            Das Team vom Verein für Menschen
         </p>
 
     </div>
 
     @php
         // QR Bill generation
-        // FIXME: The QR Bill generation should be moved to a separate controller
 
         use Sprain\SwissQrBill as QrBill;
 
         $qrBill = QrBill\QrBill::create();
 
         $qrBill->setCreditor(
-            QrBill\DataGroup\Element\CombinedAddress::create(
+            QrBill\DataGroup\Element\StructuredAddress::createWithStreet(
                 'Verein für Menschen',
-                '',
-                '8400 Winterthur',
+                'Nelkenstrasse',
+                '6',
+                '8400',
+                'Winterthur',
                 'CH'
             )
         );
@@ -298,15 +213,18 @@
         // The currency must be defined.
         $qrBill->setPaymentAmountInformation(
             QrBill\DataGroup\Element\PaymentAmountInformation::create(
-                'CHF'
+                'CHF',
+                $amount
             )
         );
 
         $qrBill->setUltimateDebtor(
-            QrBill\DataGroup\Element\CombinedAddress::create(
-                $donator->first_name . ' ' . $donator->last_name,
-                $donator->address,
-                $donator->zip_code . ' ' . $donator->city,
+            QrBill\DataGroup\Element\StructuredAddress::createWithStreet(
+                $company_name ? $company_name : $first_name . ' ' . $last_name,
+                $address,
+                null,
+                $zip_code,
+                $city,
                 'CH'
             )
         );
@@ -320,8 +238,7 @@
 
         $qrBill->setAdditionalInformation(
             QrBill\DataGroup\Element\AdditionalInformation::create(
-                'Spendenzahlung, Höhenmeter für Menschen
-                (DON-' . sprintf('25%04d', $donator->id) . ', ' . date('Ymd') . ')'
+                'Spendenzahlung, Verein für Menschen'
             )
         );
 

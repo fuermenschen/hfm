@@ -19,6 +19,7 @@
         "livewire/flux": "^1.0",
         "livewire/flux-pro": "^1.0",
         "livewire/livewire": "^3.6",
+        "lorisleiva/laravel-actions": "^2.9",
         "lukeraymonddowning/honey": "^1.0",
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^5.10",

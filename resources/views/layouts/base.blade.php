@@ -74,5 +74,8 @@
 <x-notifications />
 @yield('body')
 @fluxScripts
+@persist('toast')
+<flux:toast />
+@endpersist
 </body>
 </html>

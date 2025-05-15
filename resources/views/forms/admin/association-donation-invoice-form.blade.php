@@ -1,8 +1,7 @@
 <form wire:submit="submit"
-      class="flex flex-col space-y-sm sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-sm mt-sm">
+      class="flex flex-col space-y-sm md:grid md:grid-cols-2 max-w-full md:space-y-0 md:gap-sm mt-sm">
 
     <flux:input
-        icon-trailing="user"
         label="Vorname"
         wire:model.blur="first_name"
         placeholder="Francesca"
@@ -11,7 +10,6 @@
     />
 
     <flux:input
-        icon-trailing="user"
         label="Nachname"
         wire:model.blur="last_name"
         placeholder="Arslan"
@@ -20,7 +18,6 @@
     />
 
     <flux:input
-        icon-trailing="building-office"
         label="Firma"
         wire:model.blur="company_name"
         placeholder="Zukunft GmbH"
@@ -29,20 +26,15 @@
     />
 
     <flux:input
-        icon-trailing="banknotes"
         label="Betrag"
         wire:model.blur="amount"
         placeholder="100.00"
-        badge="optional"
         type="number"
-        step="0.05"
-        min="0.05"
-    />
+        badge="optional" />
 
     <flux:separator class="sm:col-span-2" />
 
     <flux:input
-        icon-trailing="home"
         label="Adresse"
         placeholder="Zelglistrasse 41"
         wire:model.blur="address"
@@ -53,7 +45,6 @@
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
                 <flux:input
-                    icon-trailing="home"
                     label="PLZ"
                     placeholder="8406"
                     wire:model.blur="zip_code"
@@ -65,36 +56,14 @@
             </span>
             <span class="grow">
                 <flux:input
-                    icon-trailing="home"
                     label="Ort"
                     placeholder="Winterthur"
                     wire:model.blur="city"
                     class="grow"
-                    required
                     autocomplete="address-level2"
                 />
             </span>
         </span>
-
-    <flux:input
-        icon-trailing="envelope"
-        label="E-Mail"
-        placeholder="francesca.arslan@posteo.ch"
-        wire:model.blur="email"
-        required
-        type="email"
-        autocomplete="email"
-    />
-
-    <flux:input
-        icon-trailing="envelope"
-        label="E-Mail bestätigen"
-        placeholder="francesca.arslan@posteo.ch"
-        wire:model.blur="email_confirmation"
-        required
-        type="email"
-        autocomplete="off"
-    />
 
 
     <flux:button
@@ -102,6 +71,6 @@
         label="Absenden"
         variant="filled"
         icon="paper-airplane"
-    >Spendenrechnung erhalten
+    >Spendenrechnung erstellen
     </flux:button>
 </form>

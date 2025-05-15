@@ -14,11 +14,11 @@ class AssociationDonationMessage extends Notification implements ShouldQueue
     /**
      * Create a new notification instance.
      */
-    public function __construct(public readonly string $email,
+    public function __construct(
         public readonly string $name,
-        public readonly array $details,
-        public readonly bool $confirmation_to_sender = false, )
-    {
+        public readonly string $pdf,
+        public readonly string $filename,
+    ) {
         //
     }
 
@@ -38,24 +38,12 @@ class AssociationDonationMessage extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $message = new MailMessage;
-
-        if ($this->confirmation_to_sender) {
-            $message->subject('Deine Spende');
-            $message->greeting('Hallo '.$this->name.',');
-            $message->line('Vielen Dank, dass du uns unterstützen möchtest!');
-            $message->line('Wir stellen dir demnächst eine Spendenrechnung per E-Mail zu.');
-            $message->line('Hier sind die Angaben, die du uns übermittelt hast:');
-            $message->lines($this->details);
-        } else {
-            $message->replyTo($this->email, $this->name);
-            $message->subject('Neue Spendenanfrage');
-            $message->greeting('Hallo,');
-            $message->line('Es wurde eine neue Spendenanfrage gestellt.');
-            $message->line('Name: '.$this->name);
-            $message->line('E-Mail: '.$this->email);
-            $message->line('Angaben zur Rechnung:');
-            $message->lines($this->details);
-        }
+        $message->subject('Deine Spendenrechnung')
+            ->greeting('Hallo '.$this->name.',')
+            ->line('Danke, dass du den Verein für Menschen finanziell unterstützen möchtest. Dank Spenden wie deiner können wir die Organisation von Spendenanlässen finanzieren. Herzlichen Dank.')
+            ->line('Im Anhang findest du eine Spendenrechung.')
+            ->attachData(base64_decode($this->pdf), $this->filename)
+            ->bcc(config('mail.from.address'));
 
         return $message;
     }
