@@ -96,16 +96,6 @@
         autocomplete="off"
     />
 
-    <flux:separator class="sm:col-span-2" />
-
-    <span class="sm:col-span-2">
-    <flux:textarea
-        label="Kommentar"
-        badge="optional"
-        placeholder="Hoffe, ihr hend so bitz meh finanzielli Luft für d Organisation."
-        wire:model.blur="comment" autocomplete="off" />
-        </span>
-
 
     <flux:button
         type="submit"

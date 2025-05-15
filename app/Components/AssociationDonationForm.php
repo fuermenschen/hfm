@@ -62,11 +62,6 @@ class AssociationDonationForm extends Component
     #[Validate('same:email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
     public ?string $email_confirmation = null;
 
-    // Kommentar
-    #[Validate('nullable')]
-    #[Validate('max:2000', message: 'Der Kommentar darf nicht länger als 2000 Zeichen sein.')]
-    public ?string $comment = null;
-
     // Betrag
     #[Validate('nullable')]
     #[Validate('numeric', message: 'Der Betrag muss eine Zahl sein.')]
