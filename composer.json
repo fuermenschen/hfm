@@ -21,6 +21,7 @@
         "livewire/livewire": "^3.6",
         "lorisleiva/laravel-actions": "^2.9",
         "lukeraymonddowning/honey": "^1.0",
+        "mews/purifier": "^3.4",
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^5.10",
         "simplesoftwareio/simple-qrcode": "^4.2",
