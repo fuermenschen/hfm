@@ -11,6 +11,8 @@
 
         @livewire('admin-association-member-table')
 
+        @livewire('admin-association-member-message')
+
     @endsection
 
 @endcomponent

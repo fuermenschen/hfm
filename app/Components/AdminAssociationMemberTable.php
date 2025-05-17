@@ -4,6 +4,8 @@ namespace App\Components;
 
 use App\Models\AssociationMember;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\On;
+use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Exportable;
 use PowerComponents\LivewirePowerGrid\Footer;
@@ -93,12 +95,27 @@ class AdminAssociationMemberTable extends PowerGridComponent
             Column::make('Kommentar', 'comment')
                 ->sortable()
                 ->searchable(),
+
+            Column::action('Aktionen')
+                ->fixedOnResponsive(),
         ];
     }
 
-    public function filters(): array
+    #[On('sendMail')]
+    public function sendMail($member_id)
+    {
+
+        $this->dispatch('openMemberMessageModal', member_id: $member_id)->to('admin-association-member-message');
+    }
+
+    public function actions(AssociationMember $row): array
     {
         return [
+            Button::add('Nachricht')
+                ->slot('Nachricht')
+                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
+                ->dispatch('sendMail', ['member_id' => $row->id])
+                ->tooltip('E-Mail-Nachricht versenden'),
         ];
     }
 }
