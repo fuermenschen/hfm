@@ -93,5 +93,5 @@ Route::get('queue-worker', function () {
 
     Artisan::call('queue:work --stop-when-empty --tries=3 --max-time=20');
 
-    return 'Queue worker runned:<br><br>'.nl2br(Artisan::output());
+    return 'Queue worker ran:<br><br>'.nl2br(Artisan::output());
 })->middleware('api-key')->name('queue-worker');
