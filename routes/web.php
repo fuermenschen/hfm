@@ -2,6 +2,7 @@
 
 use App\Models\Athlete;
 use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -88,24 +89,9 @@ Route::middleware('auth')->group(function () {
     })->name('logout');
 });
 
-/*// Preview Email
-Route::get('/preview-email', function () {
-    $user = User::factory()->create();
-    $notification = new App\Notifications\AthleteRegistered(
-        first_name: "Max",
-        public_id_string: "123456",
-        login_token: "123456"
-    );
-    return $notification->toMail($user)->render();
-});*/
+Route::get('queue-worker', function () {
 
-/*// Preview Invoice
-Route::get('/preview-invoice', function () {
-    $donator = Donator::get()->first();
-    $donations = $donator->donations()->with(['athlete', 'athlete.partner'])->get();
+    Artisan::call('queue:work --stop-when-empty --tries=3 --max-time=20');
 
-    return view("printables.donator_invoice", [
-        'donator' => $donator,
-        'donations' => $donations,
-    ]);
-}); */
+    return 'Queue worker ran:<br><br>'.nl2br(Artisan::output());
+})->middleware('api-key')->name('queue-worker');

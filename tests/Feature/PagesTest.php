@@ -25,6 +25,11 @@ test('all public routes are accessible', function () {
             continue;
         }
 
+        // Skip routes with API key middleware
+        if (in_array('api-key', $route->middleware())) {
+            continue;
+        }
+
         // Skip debug routes
         if (str_starts_with($route->uri, '_ignition') ||
             str_starts_with($route->uri, '_debugbar') ||
@@ -77,4 +82,23 @@ test('parameterized routes can be accessed with valid parameters', function () {
     $response = $this->get(route('show-donator', ['login_token' => $donator->login_token]));
     $response->assertSuccessful();
 
+});
+
+test('api-key middleware works', function () {
+
+    // Test without API key
+    $response = $this->get(route('queue-worker'));
+    $response->assertStatus(401);
+
+    // Test with invalid API key
+    $response = $this->withHeaders([
+        'X-API-Key' => 'invalid-key',
+    ])->get(route('queue-worker'));
+    $response->assertStatus(403);
+
+    // Test with valid API key
+    $response = $this->withHeaders([
+        'X-API-Key' => config('app.api_key'),
+    ])->get(route('queue-worker'));
+    $response->assertSuccessful();
 });

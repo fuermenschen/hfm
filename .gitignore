@@ -29,3 +29,5 @@ Homestead.json
 .DS_Store
 /public/build/
 /auth.json
+
+env-production-secret.txt
