@@ -94,3 +94,25 @@ it('handles unknown member gracefully', function () {
         ->call('openAndPrepareSendMailModal', 999)
         ->assertSet('member', null);
 });
+
+it('replaces placeholders in subject and message', function () {
+    Mail::fake();
+
+    $member = AssociationMember::factory()->create([
+        'first_name' => 'Max',
+        'last_name' => 'Mustermann',
+    ]);
+
+    Livewire::test(\App\Components\AdminAssociationMemberMessage::class)
+        ->set('member', $member)
+        ->set('subject', 'Hallo [!first_name] [!last_name]')
+        ->set('message', 'Willkommen, [!first_name]!')
+        ->call('sendMessage');
+
+    Mail::assertQueued(GenericMailMessage::class, function ($mail) use ($member) {
+        return
+            str_contains($mail->subject, $member->first_name) &&
+            str_contains($mail->subject, $member->last_name) &&
+            str_contains($mail->html, $member->first_name);
+    });
+});
