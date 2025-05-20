@@ -94,6 +94,10 @@ class AdminAssociationMemberMessage extends Component
         }
 
         try {
+            // replace placeholders
+            $this->subject = $this->insertPlaceholders($this->subject);
+            $this->message = $this->insertPlaceholders($this->message);
+
             // remove dangerous html tags
             $this->message = clean($this->message);
 
@@ -132,9 +136,27 @@ class AdminAssociationMemberMessage extends Component
 
             return;
         }
-        $this->message = 'Hallo '.$this->member->first_name.'<br><br><i>DEINE NACHRICHT HIER</i><br><br>Herzliche Grüsse<br>'.auth()->user()->name;
+        $this->subject = 'Hey [!first_name], es gibt News!';
+        $this->message = '<p>Hallo [!first_name]</p><p><i>NACHRICHT HIER</i></p><p>Herzliche Grüsse<br>'.auth()->user()->name.'</p>';
 
         Flux::modal('association-member-message-editor')->show();
 
+    }
+
+    public function getMemberAttributesProperty()
+    {
+        return (new AssociationMember)->getFillable();
+    }
+
+    public function insertPlaceholders(string $text): string
+    {
+        $modelProperties = array_keys($this->member->getAttributes());
+
+        $placeholders = [];
+        foreach ($modelProperties as $property) {
+            $placeholders['[!'.$property.']'] = $this->member->{$property};
+        }
+
+        return str_replace(array_keys($placeholders), array_values($placeholders), $text);
     }
 }

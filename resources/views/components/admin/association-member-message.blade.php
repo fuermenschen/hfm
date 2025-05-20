@@ -17,7 +17,7 @@
         />
 
         <flux:editor wire:model.live.debounce="message"
-                     toolbar="bold italic underline | bullet ordered | link" />
+                     toolbar="bold italic underline | bullet ordered | link ~ placeholders" />
         <flux:error name="message" />
 
         @if($attachments)
