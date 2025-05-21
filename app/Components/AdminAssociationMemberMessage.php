@@ -6,6 +6,7 @@ use App\Mail\GenericMailMessage;
 use App\Models\AssociationMember;
 use Exception;
 use Flux\Flux;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -17,7 +18,15 @@ class AdminAssociationMemberMessage extends Component
 {
     use WithFileUploads;
 
-    public ?AssociationMember $member = null;
+    /**
+     * @var Collection<int, AssociationMember>
+     */
+    public Collection $all_members;
+
+    #[Validate('array')]
+    #[Validate('min:1', message: 'Bitte wähle mindestens ein Mitglied aus.')]
+    #[Validate('exists:association_members,id', message: 'Die Mitglieder existieren nicht.')]
+    public array $selected_members = [];
 
     #[Validate('required', message: 'Wir benötigen einen Betreff.')]
     #[Validate('string', message: 'Der Betreff muss ein Text sein.')]
@@ -36,9 +45,18 @@ class AdminAssociationMemberMessage extends Component
     #[Validate('max:5120', message: 'Die Datei darf maximal 5 MB groß sein.')]
     public ?TemporaryUploadedFile $currentAttachment = null;
 
+    public function mount(): void
+    {
+        // get all members from the database
+        $this->all_members = AssociationMember::all(['id', 'first_name', 'last_name', 'email'])->sortBy('first_name');
+    }
+
     public function render()
     {
-        return view('components.admin.association-member-message');
+        return view('components.admin.association-member-message',
+            [
+                'all_members' => $this->all_members,
+            ]);
     }
 
     #[On('livewire-upload-finish')]
@@ -87,60 +105,61 @@ class AdminAssociationMemberMessage extends Component
     {
         $this->validate();
 
-        if (! $this->member) {
-            Flux::toast(text: 'Mitglied unbekannt.', heading: 'Fehler', variant: 'danger');
+        if ($this->selected_members === []) {
+            Flux::toast(text: 'Keine Mitglieder gewählt!', heading: 'Fehler', variant: 'danger');
 
             return;
         }
 
         try {
-            // replace placeholders
-            $this->subject = $this->insertPlaceholders($this->subject);
-            $this->message = $this->insertPlaceholders($this->message);
 
-            // remove dangerous html tags
-            $this->message = clean($this->message);
+            foreach ($this->selected_members as $member_id) {
 
-            // send a message
-            Mail::to($this->member)->send(new GenericMailMessage(
-                subject: $this->subject,
-                html: $this->message,
-                diskAttachments: $this->attachments
-            ));
+                $member = $this->all_members->firstWhere('id', $member_id);
+
+                // check if the member is valid
+                if (! $member instanceof AssociationMember) {
+                    continue;
+                }
+
+                $subject = $this->insertPlaceholders($this->subject, $member);
+                $message = $this->insertPlaceholders($this->message, $member);
+
+                // remove dangerous html tags
+                $subject = clean($subject);
+                $message = clean($message);
+
+                // send a message
+                Mail::to($member)->send(new GenericMailMessage(
+                    subject: $subject,
+                    html: $message,
+                    diskAttachments: $this->attachments
+                ));
+
+            }
 
             // close and reset everything
             Flux::modal('association-member-message-editor')->close();
             $this->reset();
+            $this->mount();
         } catch (Exception $e) {
-
             Flux::toast(text: 'Fehler beim Senden der Nachricht', heading: 'Fehler', variant: 'danger');
 
             return;
         }
 
         Flux::toast(text: 'Nachricht erfolgreich gesendet.', heading: 'Erfolg', variant: 'success');
-
     }
 
-    #[On('sendMail')]
-    public function openAndPrepareSendMailModal($member_id): void
+    #[On('openMemberMessageModal')]
+    public function openAndPrepareSendMailModal($member_ids): void
     {
-        // make sure to reset everything
-        $this->reset();
+        $this->selected_members = $member_ids;
 
-        $this->member = AssociationMember::find($member_id);
-
-        if (! $this->member) {
-
-            Flux::toast(text: 'Mitglied unbekannt.', heading: 'Fehler', variant: 'danger');
-
-            return;
-        }
         $this->subject = 'Hey [!first_name], es gibt News!';
         $this->message = '<p>Hallo [!first_name]</p><p><i>NACHRICHT HIER</i></p><p>Herzliche Grüsse<br>'.auth()->user()->name.'</p>';
 
         Flux::modal('association-member-message-editor')->show();
-
     }
 
     public function getMemberAttributesProperty()
@@ -148,13 +167,23 @@ class AdminAssociationMemberMessage extends Component
         return (new AssociationMember)->getFillable();
     }
 
-    public function insertPlaceholders(string $text): string
+    /**
+     * Insert placeholders for a given member.
+     * In the future, this can be extended to handle multiple members.
+     */
+    public function insertPlaceholders(string $text, ?AssociationMember $member = null): string
     {
-        $modelProperties = array_keys($this->member->getAttributes());
+        $member = $member ?? $this->members->first();
+
+        if (! $member) {
+            return $text;
+        }
+
+        $modelProperties = array_keys($member->getAttributes());
 
         $placeholders = [];
         foreach ($modelProperties as $property) {
-            $placeholders['[!'.$property.']'] = $this->member->{$property};
+            $placeholders['[!'.$property.']'] = $member->{$property};
         }
 
         return str_replace(array_keys($placeholders), array_values($placeholders), $text);
