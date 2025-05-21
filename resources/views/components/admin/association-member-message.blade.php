@@ -88,23 +88,18 @@
             <flux:accordion.item>
                 <flux:accordion.heading>Raw HTML</flux:accordion.heading>
                 <flux:accordion.content class="space-y-3">
-                    <flux:textarea
-                        wire:model.live.debounce="message_preview_html"
-                        rows="10"
-                        class="font-mono"
-                        readonly
-                    />
+                    <pre class="font-mono whitespace-pre-wrap">{{ $this->message_preview_html }}</pre>
                 </flux:accordion.content>
             </flux:accordion.item>
         </flux:accordion>
         <flux:button.group>
             <flux:button
                 icon="arrow-left"
-                wire:click="showMessagePreview( {{ $this->message_preview_id - 1 }})"
+                wire:click="showMessagePreview({{ $this->message_preview_id - 1 }})"
                 :disabled="$this->message_preview_id < 1">
                 Zurück
             </flux:button>
-            <flux:button icon="arrow-right" wire:click="showMessagePreview( {{ $this->message_preview_id + 1 }})"
+            <flux:button icon="arrow-right" wire:click="showMessagePreview({{ $this->message_preview_id + 1 }})"
                          :disabled="$this->message_preview_id >= count($this->selected_members) - 1">
                 Weiter
             </flux:button>

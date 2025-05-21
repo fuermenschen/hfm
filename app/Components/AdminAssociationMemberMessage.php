@@ -112,6 +112,13 @@ class AdminAssociationMemberMessage extends Component
         // validate the form
         $this->validate();
 
+        // Validate that $arr_id exists in $this->selected_members
+        if (! array_key_exists($arr_id, $this->selected_members)) {
+            Flux::toast(text: 'Es ist ein Fehler aufgetreten.', heading: 'Fehler', variant: 'danger');
+
+            return;
+        }
+
         $this->message_preview_id = $arr_id;
 
         // get the $arr_id member from the array
