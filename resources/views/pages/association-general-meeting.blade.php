@@ -68,6 +68,13 @@
             <flux:heading size="xl" class="mb-6">Dokumente</flux:heading>
             <div class="flex flex-col sm:flex-row gap-4 flex-wrap">
                 <flux:button
+                    href="{{ Vite::asset('resources/files/mv2025_traktanden.pdf') }}"
+                    target="_blank"
+                    variant="filled"
+                    icon-trailing="document-arrow-down"
+                >Traktanden
+                </flux:button>
+                <flux:button
                     href="{{ Vite::asset('resources/files/statuten.pdf') }}"
                     target="_blank"
                     variant="filled"
