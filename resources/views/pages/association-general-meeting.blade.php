@@ -21,7 +21,7 @@
                         <flux:icon.calendar class="w-6 h-6" />
                         <dt class="w-24 font-semibold">Datum</dt>
                     </div>
-                    <dd class="flex-1">16. Mai 2025</dd>
+                    <dd class="flex-1">16. Juni 2025</dd>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
                     <div class="flex gap-4">
