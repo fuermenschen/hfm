@@ -126,7 +126,6 @@ class AdminAssociationMemberMessage extends Component
                 $message = $this->insertPlaceholders($this->message, $member);
 
                 // remove dangerous html tags
-                $subject = clean($subject);
                 $message = clean($message);
 
                 // send a message
