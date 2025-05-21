@@ -9,13 +9,10 @@ use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Exportable;
-use PowerComponents\LivewirePowerGrid\Footer;
-use PowerComponents\LivewirePowerGrid\Header;
-use PowerComponents\LivewirePowerGrid\PowerGrid;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
-use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use WireUi\Traits\Actions;
 
@@ -26,19 +23,21 @@ class AdminAthleteTable extends PowerGridComponent
 
     public string $sortField = 'first_name';
 
+    public string $tableName = 'admin-athlete-table';
+
     public function setUp(): array
     {
         $this->showCheckBox();
 
         return [
-            Responsive::make(),
-            Exportable::make('athlete')
+            PowerGrid::responsive(),
+            PowerGrid::exportable('athlete')
                 ->striped()
                 ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            Header::make()
+            PowerGrid::header()
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make()
+            PowerGrid::footer()
                 ->showPerPage(10, [10, 25, 50, 100, 200])
                 ->showRecordCount(mode: 'short'),
         ];
@@ -200,8 +199,7 @@ class AdminAthleteTable extends PowerGridComponent
             Button::add('loginAsAthlete')
                 ->slot('Login')
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->route('show-athlete', ['login_token' => $row->login_token])
-                ->target('_blank')
+                ->route('show-athlete', ['login_token' => $row->login_token], '_blank')
                 ->tooltip('Als Sportlerin einloggen'),
         ];
     }
