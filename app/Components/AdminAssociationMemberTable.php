@@ -24,6 +24,17 @@ class AdminAssociationMemberTable extends PowerGridComponent
 
     public string $sortField = 'first_name';
 
+    public function header(): array
+    {
+        return [
+            Button::add('batchMessage')
+                ->slot('Nachricht Senden')
+                ->class('focus:ring-primary-600 focus-within:focus:ring-primary-600 focus-within:ring-primary-600 dark:focus-within:ring-primary-600 flex rounded-md ring-1 transition focus-within:ring-2 dark:ring-pg-primary-600 dark:text-pg-primary-300 text-gray-600 ring-gray-300 dark:bg-pg-primary-800 bg-white dark:placeholder-pg-primary-400 rounded-md border-0 bg-transparent py-2 px-3 ring-0 placeholder:text-gray-400 focus:outline-none sm:text-sm sm:leading-6 w-auto')
+                ->dispatch('sendBatchMail', [])
+                ->tooltip('Nachricht an ausgewählte Mitglieder senden'),
+        ];
+    }
+
     public function setUp(): array
     {
         $this->showCheckBox();
@@ -102,10 +113,15 @@ class AdminAssociationMemberTable extends PowerGridComponent
     }
 
     #[On('sendMail')]
-    public function sendMail($member_id)
+    public function sendMail($member_ids)
     {
+        $this->dispatch('openMemberMessageModal', member_ids: $member_ids)->to('admin-association-member-message');
+    }
 
-        $this->dispatch('openMemberMessageModal', member_id: $member_id)->to('admin-association-member-message');
+    #[On('sendBatchMail')]
+    public function sendBatchMail()
+    {
+        $this->dispatch('openMemberMessageModal', member_ids: $this->checkboxValues)->to('admin-association-member-message');
     }
 
     public function actions(AssociationMember $row): array
@@ -114,7 +130,7 @@ class AdminAssociationMemberTable extends PowerGridComponent
             Button::add('Nachricht')
                 ->slot('Nachricht')
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('sendMail', ['member_id' => $row->id])
+                ->dispatch('sendMail', ['member_ids' => [$row->id]])
                 ->tooltip('E-Mail-Nachricht versenden'),
         ];
     }
