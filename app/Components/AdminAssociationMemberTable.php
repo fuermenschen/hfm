@@ -8,13 +8,10 @@ use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Exportable;
-use PowerComponents\LivewirePowerGrid\Footer;
-use PowerComponents\LivewirePowerGrid\Header;
-use PowerComponents\LivewirePowerGrid\PowerGrid;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
-use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use WireUi\Traits\Actions;
 
@@ -22,6 +19,8 @@ class AdminAssociationMemberTable extends PowerGridComponent
 {
     use Actions;
     use WithExport;
+
+    public string $tableName = 'admin-association-member-table';
 
     public string $sortField = 'first_name';
 
@@ -41,14 +40,14 @@ class AdminAssociationMemberTable extends PowerGridComponent
         $this->showCheckBox();
 
         return [
-            Responsive::make(),
-            Exportable::make('member')
+            PowerGrid::responsive(),
+            PowerGrid::exportable('member')
                 ->striped()
                 ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            Header::make()
+            PowerGrid::header()
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make()
+            PowerGrid::footer()
                 ->showPerPage(10, [10, 25, 50, 100, 200])
                 ->showRecordCount(mode: 'short'),
         ];
