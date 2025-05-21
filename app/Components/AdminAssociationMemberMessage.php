@@ -171,14 +171,8 @@ class AdminAssociationMemberMessage extends Component
      * Insert placeholders for a given member.
      * In the future, this can be extended to handle multiple members.
      */
-    public function insertPlaceholders(string $text, ?AssociationMember $member = null): string
+    public function insertPlaceholders(string $text, AssociationMember $member): string
     {
-        $member = $member ?? $this->members->first();
-
-        if (! $member) {
-            return $text;
-        }
-
         $modelProperties = array_keys($member->getAttributes());
 
         $placeholders = [];
