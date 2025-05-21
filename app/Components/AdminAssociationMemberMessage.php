@@ -156,7 +156,7 @@ class AdminAssociationMemberMessage extends Component
         $this->selected_members = $member_ids;
 
         $this->subject = 'Hey [!first_name], es gibt News!';
-        $this->message = '<p>Hallo [!first_name]</p><p><i>NACHRICHT HIER</i></p><p>Herzliche Grüsse<br>'.auth()->user()->name.'</p>';
+        $this->message = '<p>Liebe:r [!first_name]</p><p><i>NACHRICHT HIER</i></p><p>Herzliche Grüsse<br>'.auth()->user()->name.'</p>';
 
         Flux::modal('association-member-message-editor')->show();
     }
