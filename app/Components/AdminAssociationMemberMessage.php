@@ -101,6 +101,20 @@ class AdminAssociationMemberMessage extends Component
         $this->attachments = array_filter($this->attachments, fn ($attachment) => $attachment['name'] !== $name);
     }
 
+    public function sendMessageRequest(): void
+    {
+        // validate the form
+        $this->validate();
+
+        // if more than one member is selected, show the modal
+        if (count($this->selected_members) > 1) {
+            Flux::modal('send-association-member-message-confirmation')->show();
+        } else {
+            // if only one member is selected, send the message directly
+            $this->sendMessage();
+        }
+    }
+
     public function sendMessage(): void
     {
         $this->validate();

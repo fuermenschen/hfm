@@ -62,10 +62,30 @@
         </div>
 
         <flux:button
-            wire:click="sendMessage"
+            wire:click="sendMessageRequest"
             icon-trailing="paper-airplane"
         >Nachricht senden
         </flux:button>
 
     </flux:modal>
+
+    <flux:modal name="send-association-member-message-confirmation" class="min-w-[22rem]">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Nachricht senden?</flux:heading>
+                <flux:text class="mt-2"><p>
+                        Die Nachricht wird an {{ count($selected_members) }} Mitglieder gesendet.
+                    </p></flux:text>
+            </div>
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:modal.close>
+                    <flux:button variant="ghost">Nei, doch nöd</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="danger" wire:click="sendMessage">Nachricht senden</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+
 </div>
