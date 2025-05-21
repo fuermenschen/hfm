@@ -6,13 +6,10 @@ use App\Models\Donation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Exportable;
-use PowerComponents\LivewirePowerGrid\Footer;
-use PowerComponents\LivewirePowerGrid\Header;
-use PowerComponents\LivewirePowerGrid\PowerGrid;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
-use PowerComponents\LivewirePowerGrid\Responsive;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 class AdminDonationTable extends PowerGridComponent
@@ -21,19 +18,21 @@ class AdminDonationTable extends PowerGridComponent
 
     public string $sortField = 'created_at';
 
+    public string $tableName = 'admin-donation-table';
+
     public function setUp(): array
     {
         $this->showCheckBox();
 
         return [
-            Responsive::make(),
-            Exportable::make('donation')
+            PowerGrid::responsive(),
+            PowerGrid::exportable('donation')
                 ->striped()
                 ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            Header::make()
+            PowerGrid::header()
                 ->showSearchInput()
                 ->showToggleColumns(),
-            Footer::make()
+            PowerGrid::footer()
                 ->showPerPage(10, [10, 25, 50, 100, 200])
                 ->showRecordCount(mode: 'short'),
         ];
