@@ -256,7 +256,7 @@ class BecomeDonatorForm extends Component
         $this->athletes = Athlete::query()
             ->where('verified', true)
             ->orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name', 'partner_id']) // fetch real columns only
+            ->get(['id', 'first_name', 'last_name', 'partner_id', 'public_id']) // fetch real columns only
             ->each->append(['privacy_name', 'public_id_string'])  // append computed attributes
             ->toArray();
 

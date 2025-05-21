@@ -4,6 +4,7 @@ namespace App\Components;
 
 use App\Models\AssociationMember;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
@@ -65,7 +66,8 @@ class AdminAssociationMemberTable extends PowerGridComponent
 
     public function fields(): PowerGridFields
     {
-        return PowerGrid::fields();
+        return PowerGrid::fields()
+            ->add('created_at_formatted', fn ($athlete) => Carbon::parse($athlete->created_at)->format('d.m.Y'));
     }
 
     public function columns(): array
