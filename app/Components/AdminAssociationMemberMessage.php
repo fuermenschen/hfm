@@ -37,6 +37,12 @@ class AdminAssociationMemberMessage extends Component
     #[Validate('string', message: 'Die Nachricht muss ein Text sein.')]
     public ?string $message = null;
 
+    // this variable is used to store the message preview
+    public ?string $message_preview_html = null;
+
+    // if multiple members are given, this variable is used to store the selected member for the preview
+    public int $message_preview_id = 0;
+
     #[Validate('nullable')]
     public array $attachments = [];
 
@@ -99,6 +105,44 @@ class AdminAssociationMemberMessage extends Component
 
         // remove the attachment from the array
         $this->attachments = array_filter($this->attachments, fn ($attachment) => $attachment['name'] !== $name);
+    }
+
+    public function showMessagePreview($arr_id): void
+    {
+        // validate the form
+        $this->validate();
+
+        // Validate that $arr_id exists in $this->selected_members
+        if (! array_key_exists($arr_id, $this->selected_members)) {
+            Flux::toast(text: 'Es ist ein Fehler aufgetreten.', heading: 'Fehler', variant: 'danger');
+
+            return;
+        }
+
+        $this->message_preview_id = $arr_id;
+
+        // get the $arr_id member from the array
+        $member = $this->all_members->firstWhere('id', $this->selected_members[$arr_id]);
+
+        // replace the placeholders and remove dangerous html tags
+        $this->message_preview_html = $this->insertPlaceholders($this->message, $member);
+        $this->message_preview_html = clean($this->message_preview_html);
+
+        Flux::modal('association-member-message-preview')->show();
+    }
+
+    public function sendMessageRequest(): void
+    {
+        // validate the form
+        $this->validate();
+
+        // if more than one member is selected, show the modal
+        if (count($this->selected_members) > 1) {
+            Flux::modal('send-association-member-message-confirmation')->show();
+        } else {
+            // if only one member is selected, send the message directly
+            $this->sendMessage();
+        }
     }
 
     public function sendMessage(): void
