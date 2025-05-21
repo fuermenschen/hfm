@@ -37,6 +37,12 @@ class AdminAssociationMemberMessage extends Component
     #[Validate('string', message: 'Die Nachricht muss ein Text sein.')]
     public ?string $message = null;
 
+    // this variable is used to store the message preview
+    public ?string $message_preview_html = null;
+
+    // if multiple members are given, this variable is used to store the selected member for the preview
+    public int $message_preview_id = 0;
+
     #[Validate('nullable')]
     public array $attachments = [];
 
@@ -99,6 +105,23 @@ class AdminAssociationMemberMessage extends Component
 
         // remove the attachment from the array
         $this->attachments = array_filter($this->attachments, fn ($attachment) => $attachment['name'] !== $name);
+    }
+
+    public function showMessagePreview($arr_id): void
+    {
+        // validate the form
+        $this->validate();
+
+        $this->message_preview_id = $arr_id;
+
+        // get the $arr_id member from the array
+        $member = $this->all_members->firstWhere('id', $this->selected_members[$arr_id]);
+
+        // replace the placeholders and remove dangerous html tags
+        $this->message_preview_html = $this->insertPlaceholders($this->message, $member);
+        $this->message_preview_html = clean($this->message_preview_html);
+
+        Flux::modal('association-member-message-preview')->show();
     }
 
     public function sendMessageRequest(): void
