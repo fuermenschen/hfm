@@ -225,7 +225,7 @@ class BecomeDonatorForm extends Component
     {
         $this->dialog([
             'title' => 'Datenschutz',
-            'description' => "Wir benutzen deine Daten nur für Zwecke, die für die Organisation zwingend sind. Nach dem Anlass werden deine Daten gelöscht. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.<br><br><a href='/datenschutz' target='_blank' class='underline'>Datenschutzerklärung</a>",
+            'description' => "Wir benutzen deine Daten nur für die Organisation des Anlasses Höhenmeter für Menschen. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.<br><br><a href='/datenschutz' target='_blank' class='underline'>Datenschutzerklärung</a>",
             'icon' => 'info',
         ]);
     }
