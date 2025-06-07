@@ -151,6 +151,13 @@
         </x-faq-question-answer>
 
         <x-faq-question-answer>
+            <x-slot:question>Kann ich etwas gewinnen?</x-slot:question>
+            <span>Ja, es gibt verschiedene Preise zu gewinnen, die wir von unseren <x-inline-link
+                    href=" {{ route('home').'#sponsors' }} ">Sponsor:innen</x-inline-link> haben. Diese werden an die Sportler:innen vergeben, welche am meisten Spenden sammeln konnten.
+            </span>
+        </x-faq-question-answer>
+
+        <x-faq-question-answer>
             <x-slot:question>Darf ich mit dem Elektrovelo oder Elektroscooter kommen?</x-slot:question>
             Nein, grundsätzlich soll die Strecke aus eigener Kraft zurückgelegt werden. Ausgenommen hiervon sind
             Sportler:innen, denen es nicht möglich ist, die Strecke ohne Hilfsmittel oder Begleitpersonen zurückzulegen.
