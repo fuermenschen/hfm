@@ -14,7 +14,7 @@ Currently, the app includes modules for athlete registration, donation managemen
 
 ## 🌐 Hosted at
 
-[https://fuer-menschen.ch](https://fuer-menschen.ch)
+[https://hfm-winti.ch](https://hfm-winti.ch)
 
 ## 🛠 Installation
 
