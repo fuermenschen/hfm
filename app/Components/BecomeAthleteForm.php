@@ -173,7 +173,8 @@ class BecomeAthleteForm extends Component
     public function showNumRoundsInfo(): void
     {
         $message =
-            "Die Strecke liegt im Brühlberg-Quartier in Winterthur. Sie ist ca. <strong>1.75&nbsp;km</strong> lang, hat <strong>50&nbsp;Höhenmeter</strong> und ist komplett geteert. Weitere Details zur Strecke findest du in den <a href='".route('questions-and-answers')."#sportlerinnen' target='_blank' class='underline text-hfm-red'>Fragen und Antworten.</a>";
+            "Der Rundkurs führt durch das Brühlberg-Quartier in Winterthur. Die Strecke ist
+            <strong>1.75&nbsp;km</strong> lang, weist <strong>50 Höhenmeter</strong> auf und ist – bis auf ein kurzes Stück durch den Brühlgutpark – vollständig asphaltiert. Weitere Details zur Strecke findest du in den <a href='".route('questions-and-answers')."#sportlerinnen' target='_blank' class='underline text-hfm-red'>Fragen und Antworten.</a>";
 
         $message .= '<br><br>Die geschätzte Anzahl Runden hilft deinen Spender:innen, den Betrag pro Runden festzulegen. Aber keine Angst, du musst nicht so viele Runden zurücklegen, wie du schätzt. Du kannst auch mehr oder weniger Runden laufen.';
 

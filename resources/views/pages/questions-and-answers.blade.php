@@ -129,9 +129,10 @@
         <x-faq-question-answer>
             <x-slot:question>Wie verläuft der Rundkurs?</x-slot:question>
             <span>
-            Der Rundkurs verläuft durch das Brühlberg-Quartier in Winterthur. Die Strecke ist
-            <strong>1.75&nbsp;km</strong> lang, hat <strong>50 Höhenmeter</strong> und ist komplett geteert. Der Anstieg
-            hat eine <strong>Steigung von 11%</strong>. Start und Ziel sind bei der Brühlgut Stiftung, dann geht die Strecke im Uhrzeigersinn durch das Quartier.
+                Der Rundkurs führt durch das Brühlberg-Quartier in Winterthur. Die Strecke ist
+            <strong>1.75&nbsp;km</strong> lang, weist <strong>50 Höhenmeter</strong> auf und ist – bis auf ein kurzes Stück durch den Brühlgutpark – vollständig asphaltiert.
+                Das unbefestigte Teilstück kann bei Bedarf über die Waldhofstrasse, Zürcherstrasse und zurück zur Brühlbergstrasse umfahren werden.
+                Der Anstieg hat eine <strong>Steigung von bis zu 11%</strong>. Start und Ziel sind bei der Brühlgut Stiftung; von dort verläuft die Strecke im Uhrzeigersinn durch das Quartier.
             </span>
             <span>
                 Du kannst die Strecke auch <x-inline-link href="https://s.geo.admin.ch/yb9swnrqvtal"
