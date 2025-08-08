@@ -210,6 +210,11 @@
             Herzliche Grüsse<br>
             Das Team von Höhenmeter für Menschen
         </p>
+        <p>
+        P.S.: Dieses Jahr dürfen sich die Sportler:innen, die am meisten Spendengelder sammeln, auf attraktive Preise freuen!
+        </p>
+
+
 
     </div>
 
