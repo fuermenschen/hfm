@@ -2,3 +2,125 @@
 @import '../../vendor/livewire/flux/dist/flux.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+    .full-bleed {
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        width: 100vw;
+    }
+}
+
+@layer components {
+    .hfm-hero {
+        --nav-h: 116px;
+        --slope: clamp(8px, 2.4vw, 40px);
+        --overlay-from: 248 250 252; /* light scrim RGB */
+        --overlay-alpha: 0.35; /* top scrim strength (light) */
+        --overlay-bottom-alpha: 0.9; /* bottom scrim strength (light) */
+        container-type: size;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .hfm-hero {
+            --overlay-from: 27 46 71; /* dark scrim RGB */
+            --overlay-alpha: 0.45; /* top scrim strength (dark) */
+            --overlay-bottom-alpha: 0.95; /* bottom scrim strength (dark) */
+        }
+    }
+
+    .hfm-hero__visual {
+        clip-path: polygon(0 var(--slope), 100% 0, 100% 100%, 0 100%);
+    }
+
+    .hfm-hero__overlay {
+        /* Single persistent gradient scrim: never reaches 0% opacity */
+        background: linear-gradient(
+            to bottom,
+            rgba(var(--overlay-from) / var(--overlay-alpha)) 0%,
+            rgba(var(--overlay-from) / var(--overlay-bottom-alpha)) 100%
+        );
+        clip-path: polygon(0 var(--slope), 100% 0, 100% 100%, 0 100%);
+    }
+
+    @supports not (clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%)) {
+        .hfm-hero__overlay {
+            clip-path: none;
+        }
+    }
+
+    .hfm-hero__content {
+        color: inherit;
+    }
+
+    .hfm-hero__badge {
+        top: var(--nav-h);
+    }
+
+    .hfm-hero__badgeCircle {
+        width: clamp(7rem, 14vh, 12rem);
+        height: clamp(7rem, 14vh, 12rem);
+        transform: rotate(-8deg);
+        transform-origin: center;
+    }
+
+    @container (max-height: 36rem) {
+        .hfm-hero__badge {
+            display: none !important;
+        }
+    }
+
+    /* Portrait or square: stack image then content; limit image height to avoid dominance */
+    @media (max-aspect-ratio: 1/1) {
+        .hfm-hero__visual {
+            position: relative;
+            height: min(55vh, 90vw);
+        }
+
+        /* Keep the overlay enabled in portrait to maintain contrast */
+    }
+    @media (min-aspect-ratio: 5/3) {
+        .hfm-hero__img {
+            object-position: center 50%;
+        }
+    }
+
+    .partner-logo {
+        max-height: clamp(28px, 5vh, 48px);
+        width: auto;
+        object-fit: contain;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hfm-hero__badgeCircle {
+        transform: none;
+    }
+}
+
+@layer components {
+    .hfm-hero__titleRadial {
+        height: 140%;
+        width: 140%;
+        max-width: min(90vw, 80ch);
+        border-radius: 9999px; /* rounded-full */
+        filter: blur(32px); /* ~ blur-2xl */
+        opacity: 0.5;
+        background: radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.35) 35%, rgba(255, 255, 255, 0) 70%);
+    }
+
+    @media (min-width: 768px) {
+        /* md: */
+        .hfm-hero__titleRadial {
+            opacity: 0.6;
+        }
+    }
+    @media (prefers-color-scheme: dark) {
+        .hfm-hero__titleRadial {
+            background: radial-gradient(50% 50% at 50% 50%, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.25) 35%, rgba(0, 0, 0, 0) 70%);
+        }
+    }
+}

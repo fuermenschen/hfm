@@ -65,6 +65,7 @@
     @livewireScripts
     @wireUiScripts
     @fluxStyles
+    @stack('head')
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -77,5 +78,6 @@
 @persist('toast')
 <flux:toast />
 @endpersist
+
 </body>
 </html>
