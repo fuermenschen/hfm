@@ -30,10 +30,11 @@
                 src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}"
                 width="1920" height="1080"
                 sizes="100vw"
-                decoding="async" fetchpriority="high" alt=""
+                decoding="async" fetchpriority="high" alt="" aria-hidden="true" role="presentation"
             />
         </picture>
-        <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 portrait:hidden"></div>
+        <!-- Global scrim to ensure text contrast on any image -->
+        <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 mix-blend-normal"></div>
     </div>
 
     <div class="hidden md:flex absolute left-2 sm:left-6 items-center justify-center z-10 hfm-hero__badge" aria-hidden="true">
@@ -43,17 +44,22 @@
     </div>
 
     <div class="hfm-hero__content absolute left-0 right-0 bottom-0 z-20 text-inherit px-6 text-hfm-dark dark:text-hfm-white portrait:static portrait:mt-4">
-        <div class="w-full max-w-[720px] mx-auto text-center pt-6 pb-6 sm:pb-10">
+        <div class="w-full max-w-[min(88vw,70ch)] mx-auto text-center pt-6 pb-6 sm:pb-10">
             @if (isset($kicker))
-                <p class="text-sm sm:text-lg">{{ $kicker }}</p>
+                <p class="text-[clamp(0.9rem,1.8vw,1.125rem)]">{{ $kicker }}</p>
             @endif
 
             @if (isset($title))
-                <h1 class="mt-3 sm:mt-5 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">{{ $title }}</h1>
+                <div class="relative mt-3 sm:mt-5">
+                    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+                        <div class="hfm-hero__titleRadial"></div>
+                    </div>
+                    <h1 class="text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-tight tracking-tight">{{ $title }}</h1>
+                </div>
             @endif
 
             @if (isset($copy))
-                <p class="mt-4 sm:mt-6 text-sm sm:text-lg leading-8">{{ $copy }}</p>
+                <p class="mt-4 sm:mt-6 text-[clamp(0.95rem,1.9vw,1.125rem)] leading-7 sm:leading-8">{{ $copy }}</p>
             @endif
 
             @if (isset($ctas))
@@ -63,7 +69,7 @@
             @endif
 
             @if (isset($partners))
-                <div class="mt-6 sm:mt-8 mx-auto w-full max-w-[720px]">
+                <div class="mt-6 sm:mt-8 mx-auto w-full max-w-[min(88vw,70ch)]">
                     {{ $partners }}
                 </div>
             @endif

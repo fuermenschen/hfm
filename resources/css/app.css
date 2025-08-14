@@ -18,15 +18,17 @@
     .hfm-hero {
         --nav-h: 5rem;
         --slope: clamp(8px, 2.4vw, 40px);
-        --overlay-from: 248 250 252;
-        --overlay-alpha: 0.8;
+        --overlay-from: 248 250 252; /* light scrim RGB */
+        --overlay-alpha: 0.35; /* top scrim strength (light) */
+        --overlay-bottom-alpha: 0.9; /* bottom scrim strength (light) */
         container-type: size;
     }
 
     @media (prefers-color-scheme: dark) {
         .hfm-hero {
-            --overlay-from: 27 46 71;
-            --overlay-alpha: 0.88;
+            --overlay-from: 27 46 71; /* dark scrim RGB */
+            --overlay-alpha: 0.45; /* top scrim strength (dark) */
+            --overlay-bottom-alpha: 0.95; /* bottom scrim strength (dark) */
         }
     }
 
@@ -35,9 +37,11 @@
     }
 
     .hfm-hero__overlay {
-        background: linear-gradient(to top,
-        rgba(var(--overlay-from) / var(--overlay-alpha)) 0%,
-        rgba(var(--overlay-from) / 0.0) 58%
+        /* Single persistent gradient scrim: never reaches 0% opacity */
+        background: linear-gradient(
+            to bottom,
+            rgba(var(--overlay-from) / var(--overlay-alpha)) 0%,
+            rgba(var(--overlay-from) / var(--overlay-bottom-alpha)) 100%
         );
         clip-path: polygon(0 var(--slope), 100% 0, 100% 100%, 0 100%);
     }
@@ -76,9 +80,7 @@
             height: min(55vh, 90vw);
         }
 
-        .hfm-hero__overlay {
-            display: none;
-        }
+        /* Keep the overlay enabled in portrait to maintain contrast */
     }
     @media (min-aspect-ratio: 5/3) {
         .hfm-hero__img {
@@ -96,5 +98,29 @@
 @media (prefers-reduced-motion: reduce) {
     .hfm-hero__badgeCircle {
         transform: none;
+    }
+}
+
+@layer components {
+    .hfm-hero__titleRadial {
+        height: 140%;
+        width: 140%;
+        max-width: min(90vw, 80ch);
+        border-radius: 9999px; /* rounded-full */
+        filter: blur(32px); /* ~ blur-2xl */
+        opacity: 0.5;
+        background: radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.35) 35%, rgba(255, 255, 255, 0) 70%);
+    }
+
+    @media (min-width: 768px) {
+        /* md: */
+        .hfm-hero__titleRadial {
+            opacity: 0.6;
+        }
+    }
+    @media (prefers-color-scheme: dark) {
+        .hfm-hero__titleRadial {
+            background: radial-gradient(50% 50% at 50% 50%, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.25) 35%, rgba(0, 0, 0, 0) 70%);
+        }
     }
 }

@@ -3,7 +3,17 @@ import "dotenv/config";
 
 const baseURL = process.env.APP_URL || process.env.BASE_URL || "http://localhost:8000";
 
-// Curated list of top screen sizes/aspect ratios (max 8–10)
+// Randomly select a color scheme per run (can be overridden with PW_COLOR_SCHEME)
+const selectedColorScheme =
+    process.env.PW_COLOR_SCHEME === "light" || process.env.PW_COLOR_SCHEME === "dark"
+        ? process.env.PW_COLOR_SCHEME
+        : Math.random() < 0.5
+          ? "light"
+          : "dark";
+
+console.log(`[Playwright] Using color scheme: ${selectedColorScheme}`);
+
+// Curated list of top screen sizes/aspect ratios (max 8–10) + a less-popular landscape smartphone
 const projects = [
     { name: "Desktop 1920x1080", use: { viewport: { width: 1920, height: 1080 } } },
     { name: "Desktop 1366x768", use: { viewport: { width: 1366, height: 768 } } },
@@ -14,6 +24,8 @@ const projects = [
     { name: "Mobile Small 360x800", use: { viewport: { width: 360, height: 800 }, isMobile: true } },
     { name: "Mobile Medium 390x844", use: { viewport: { width: 390, height: 844 }, isMobile: true } },
     { name: "Mobile Large 414x896", use: { viewport: { width: 414, height: 896 }, isMobile: true } },
+    // Less-popular: landscape smartphone size
+    { name: "Mobile Landscape 800x360", use: { viewport: { width: 800, height: 360 }, isMobile: true } },
 ];
 
 export default defineConfig({
@@ -28,6 +40,7 @@ export default defineConfig({
         video: "off",
         trace: "off",
         screenshot: "off",
+        colorScheme: selectedColorScheme,
     },
     projects,
 });
