@@ -16,10 +16,9 @@
             /* Gradient only on the lower part for contrast; light vs dark via media query */
             background: linear-gradient(
                 to top,
-                rgba(248, 250, 252, 0.94) 0%,      /* hfm.white */
-                rgba(248, 250, 252, 0.86) 20%,
-                rgba(248, 250, 252, 0.72) 34%,
-                rgba(248, 250, 252, 0.00) 58%
+                rgba(248, 250, 252, 0.8) 0%,      /* hfm.white */
+                rgba(248, 250, 252, 0.6) 50%,
+                rgba(248, 250, 252, 0.05) 80%
             );
             clip-path: polygon(0 var(--slope), 100% 0, 100% 100%, 0 100%);
         }
@@ -77,7 +76,7 @@
     <!-- Content on gradient (bottom for wide; stacked under image for portrait) -->
     <div class="hfm-hero__content px-6 text-hfm-dark dark:text-hfm-white">
         <div class="w-full max-w-[720px] mx-auto text-center pt-6 pb-6 sm:pb-10">
-            <p class="text-sm sm:text-base">Samstag, 13. September 2025 in Winterthur</p>
+            <p class="text-sm sm:text-lg">Samstag, 13. September 2025 in Winterthur</p>
             <h1 class="mt-3 sm:mt-5 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">Höhenmeter für&nbsp;Menschen</h1>
             <p class="mt-4 sm:mt-6 text-sm sm:text-lg leading-8">Ein Spendenlauf für Winterthur. Wir rennen, fahren, rollen – für lokale Benefizpartner:innen. Bist auch du am Start?</p>
             <div class="mt-4 sm:mt-8 flex items-center justify-center gap-x-6">
@@ -113,7 +112,7 @@
             </div>
         </div>
     </div>
-    
+
 </div>
 
 <script>

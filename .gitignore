@@ -31,3 +31,6 @@ Homestead.json
 /auth.json
 
 env-production-secret.txt
+/e2e-results/**
+/test-results/**
+/playwright-report/
