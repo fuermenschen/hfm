@@ -20,7 +20,7 @@
 <link rel="preload" as="image" imagesrcset="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}" imagesizes="100vw">
 @endpush
 
-<div class="hfm-hero relative isolate full-bleed h-[calc(100dvh-var(--nav-h))] flex flex-col"
+<div class="hfm-hero relative isolate full-bleed h-[calc(100dvh-var(--nav-h)-36px-28px)] flex flex-col"
 >
     <div class="hfm-hero__visual -z-10 absolute inset-0 h-full w-full portrait:relative portrait:inset-auto portrait:h-auto portrait:w-full portrait:z-0">
         <picture>

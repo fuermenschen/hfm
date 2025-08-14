@@ -1,4 +1,4 @@
-<header class="min-h-[var(--nav-h)]" x-data="{ open: false }" data-site-header>
+<header class="h-[var(--nav-h)]" x-data="{ open: false }" data-site-header>
     <nav class="mx-auto flex items-baseline justify-between p-md" aria-label="Global">
         <a href="{{ route("home") }}" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
