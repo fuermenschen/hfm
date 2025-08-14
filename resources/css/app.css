@@ -16,7 +16,7 @@
 
 @layer components {
     .hfm-hero {
-        --nav-h: 5rem;
+        --nav-h: 116px;
         --slope: clamp(8px, 2.4vw, 40px);
         --overlay-from: 248 250 252; /* light scrim RGB */
         --overlay-alpha: 0.35; /* top scrim strength (light) */

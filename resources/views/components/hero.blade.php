@@ -21,7 +21,7 @@
 @endpush
 
 <div
-    {{ $attributes->class(['hfm-hero','relative','isolate','full-bleed','min-h-[calc(100dvh-var(--nav-h))]','overflow-hidden','flex','flex-col']) }}
+    {{ $attributes->class(['hfm-hero','relative','isolate','full-bleed','min-h-[calc(100dvh-var(--nav-h))]','flex','flex-col']) }}
 >
     <div class="hfm-hero__visual -z-10 absolute inset-0 h-full w-full portrait:relative portrait:inset-auto portrait:h-auto portrait:w-full portrait:z-0">
         <picture>
