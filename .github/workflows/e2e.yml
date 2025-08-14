@@ -6,9 +6,19 @@ on:
       - main
   workflow_call:
 
+# Default to read-only; grant writes only where needed.
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions: { } # inherit read-only
 
     steps:
       - name: Checkout
@@ -25,14 +35,14 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
-      - name: Cache Composer dependencies
+      - name: Cache Composer downloads
         uses: actions/cache@v4
         with:
-          path: vendor
-          key: composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            composer-
+          path: ~/.composer/cache/files
+          key: composer-cache-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-cache-
 
       - name: Install Node Dependencies
         run: npm ci
@@ -41,13 +51,14 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Create SQLite Database
-        run: touch database/database.sqlite
+        run: mkdir -p database && touch database/database.sqlite
 
       - name: Add Flux Credentials Loaded From ENV
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
       - name: Install PHP Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-progress
 
       - name: Copy Environment File
         run: cp .env.example .env
@@ -58,17 +69,34 @@ jobs:
       - name: Build Assets
         run: npm run build
 
+      - name: Run fresh DB migrations with seed
+        run: php artisan migrate:fresh --seed --no-interaction --force
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+
       - name: Start Laravel and Run E2E Tests
         run: |
-          php artisan serve --port=8000 &
-          sleep 2
-          npx playwright test
+          set -euo pipefail
+          php artisan serve --host=127.0.0.1 --port=8000 &
+          npx wait-on http://127.0.0.1:8000
+          npx playwright test --reporter=html
         env:
-          APP_URL: http://localhost:8000
+          APP_URL: http://127.0.0.1:8000
           APP_ENV: testing
+          APP_DEBUG: false
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
           CI: true
+
+      - name: Upload Playwright Report (Always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload Playwright Artifacts (Always)
         if: always()
@@ -77,7 +105,82 @@ jobs:
           name: playwright-artifacts
           path: |
             e2e-results/
-            playwright-report/
             test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  publish-report:
+    name: Publish HTML report to GitHub Pages
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    needs: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write          # for gh-pages push
+      pull-requests: write     # for PR comment
+
+    steps:
+      - name: Download Playwright Report
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report
+          path: site
+
+      - name: Determine publish folder
+        id: vars
+        run: |
+          REF="${{ github.head_ref || github.ref_name }}"
+          SAFE_REF=$(echo "$REF" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#-#g')
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
+            DEST_DIR="pr-${{ github.event.pull_request.number }}"
+          else
+            DEST_DIR="branch-${SAFE_REF}"
+          fi
+          echo "dest_dir=$DEST_DIR" >> "$GITHUB_OUTPUT"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.repository }}"
+          REPO_NAME="${REPO#*/}"
+          echo "repo_name=$REPO_NAME" >> "$GITHUB_OUTPUT"
+          echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to gh-pages subfolder
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: site
+          destination_dir: ${{ steps.vars.outputs.dest_dir }}
+          keep_files: true
+          commit_message: "Publish Playwright report for ${{ steps.vars.outputs.dest_dir }} (${{ github.sha }})"
+
+      - name: Compute public URL
+        id: url
+        run: |
+          echo "url=https://${{ steps.vars.outputs.owner }}.github.io/${{ steps.vars.outputs.repo_name }}/${{ steps.vars.outputs.dest_dir }}/" >> "$GITHUB_OUTPUT"
+
+      - name: Find existing report comment
+        id: find-comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: 'Playwright report published:'
+
+      - name: Update existing report comment
+        if: ${{ steps.find-comment.outputs.comment-id != '' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            ✅ Playwright report published: **${{ steps.url.outputs.url }}**
+            _This link updates on each run for this PR. Older PRs/branches remain available under their own subfolder._
+
+      - name: Create report comment
+        if: ${{ steps.find-comment.outputs.comment-id == '' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ✅ Playwright report published: **${{ steps.url.outputs.url }}**
+            _This link updates on each run for this PR. Older PRs/branches remain available under their own subfolder._
