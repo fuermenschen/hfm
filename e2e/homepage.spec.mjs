@@ -1,11 +1,23 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 // This test runs once per device project defined in playwright.config.mjs
-// It visits the front page and, after a successful load, takes a screenshot.
+// It visits the front page and, after a successful load, attaches screenshots to the report.
 
 test("front page renders", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    // After the page has loaded successfully, take a screenshot
-    const screenshotPath = test.info().outputPath("frontpage.png");
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+
+    // 1) Visible viewport only (no scrolling)
+    const viewportScreenshot = await page.screenshot({ fullPage: false });
+    await test.info().attach("frontpage-viewport", {
+        body: viewportScreenshot,
+        contentType: "image/png",
+    });
+
+    // 2) Entire page
+    const fullPageScreenshot = await page.screenshot({ fullPage: true });
+    await test.info().attach("frontpage-full", {
+        body: fullPageScreenshot,
+        contentType: "image/png",
+    });
 });
+
