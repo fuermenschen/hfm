@@ -1,0 +1,72 @@
+@php use Illuminate\Support\Facades\Vite; @endphp
+
+@props([
+    // Base filename (without extension) for the landing image, e.g. "01", "07"
+    'img' => '01',
+])
+
+@php
+    // Normalize provided image value by stripping any extension and leading zeros
+    // Examples: "07.png" -> "7", "01" -> "1", "5" -> "5"
+    $imgBase = preg_replace('/\.(png|webp|avif)$/i', '', (string) $img);
+    $imgNum = ltrim($imgBase, '0');
+    if ($imgNum === '') { $imgNum = '1'; }
+    if (!preg_match('/^\d+$/', $imgNum)) { $imgNum = '1'; }
+    $n = (int) $imgNum;
+    if ($n < 1 || $n > 14) { $imgNum = '1'; }
+@endphp
+
+@push('head')
+<link rel="preload" as="image" imagesrcset="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}" imagesizes="100vw">
+@endpush
+
+<div
+    {{ $attributes->class(['hfm-hero','relative','isolate','full-bleed','min-h-[calc(100dvh-var(--nav-h))]','overflow-hidden','flex','flex-col']) }}
+>
+    <div class="hfm-hero__visual -z-10 absolute inset-0 h-full w-full portrait:relative portrait:inset-auto portrait:h-auto portrait:w-full portrait:z-0">
+        <picture>
+            <img
+                class="hfm-hero__img block w-full h-full object-cover object-[center_55%] portrait:h-auto portrait:max-h-[60vh]"
+                src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}"
+                width="1920" height="1080"
+                sizes="100vw"
+                decoding="async" fetchpriority="high" alt=""
+            />
+        </picture>
+        <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 portrait:hidden"></div>
+    </div>
+
+    <div class="hidden md:flex absolute left-2 sm:left-6 items-center justify-center z-10 hfm-hero__badge" aria-hidden="true">
+        <div class="rounded-full bg-hfm-red text-white p-4 flex items-center justify-center text-center shadow-lg shadow-hfm-dark/20 hfm-hero__badgeCircle">
+            <p class="text-xs sm:text-sm leading-snug font-semibold">Jetzt mitmachen und mit jeder Runde Gutes tun!</p>
+        </div>
+    </div>
+
+    <div class="hfm-hero__content absolute left-0 right-0 bottom-0 z-20 text-inherit px-6 text-hfm-dark dark:text-hfm-white portrait:static portrait:mt-4">
+        <div class="w-full max-w-[720px] mx-auto text-center pt-6 pb-6 sm:pb-10">
+            @if (isset($kicker))
+                <p class="text-sm sm:text-lg">{{ $kicker }}</p>
+            @endif
+
+            @if (isset($title))
+                <h1 class="mt-3 sm:mt-5 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">{{ $title }}</h1>
+            @endif
+
+            @if (isset($copy))
+                <p class="mt-4 sm:mt-6 text-sm sm:text-lg leading-8">{{ $copy }}</p>
+            @endif
+
+            @if (isset($ctas))
+                <div class="mt-4 sm:mt-8 flex items-center justify-center gap-x-6">
+                    {{ $ctas }}
+                </div>
+            @endif
+
+            @if (isset($partners))
+                <div class="mt-6 sm:mt-8 mx-auto w-full max-w-[720px]">
+                    {{ $partners }}
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
