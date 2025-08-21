@@ -13,19 +13,35 @@ const selectedColorScheme =
 
 console.log(`[Playwright] Using color scheme: ${selectedColorScheme}`);
 
-// Curated list of top screen sizes/aspect ratios (max 8–10) + a less-popular landscape smartphone
+// Curated list of top screen sizes/aspect ratios plus additional orientations and rare cases
 const projects = [
+    // Desktops/Laptops
     { name: "Desktop 1920x1080", use: { viewport: { width: 1920, height: 1080 } } },
+    { name: "Desktop UltraWide 3440x1440", use: { viewport: { width: 3440, height: 1440 } } },
     { name: "Desktop 1366x768", use: { viewport: { width: 1366, height: 768 } } },
-    { name: "Laptop 1440x900", use: { viewport: { width: 1440, height: 900 } } },
     { name: "Laptop 1536x864", use: { viewport: { width: 1536, height: 864 } } },
-    { name: "Tablet Portrait 768x1024", use: { viewport: { width: 768, height: 1024 } } },
-    { name: "Tablet Landscape 1024x768", use: { viewport: { width: 1024, height: 768 } } },
+    { name: "Laptop 1440x900", use: { viewport: { width: 1440, height: 900 } } },
+    { name: "Netbook 1024x600", use: { viewport: { width: 1024, height: 600 } } },
+
+    // Tablets
+    { name: "iPad Portrait 768x1024", use: { viewport: { width: 768, height: 1024 } } },
+    { name: "iPad Landscape 1024x768", use: { viewport: { width: 1024, height: 768 } } },
+    { name: "iPad Pro Portrait 1024x1366", use: { viewport: { width: 1024, height: 1366 } } },
+    { name: "iPad Pro Landscape 1366x1024", use: { viewport: { width: 1366, height: 1024 } } },
+
+    // Phones (common)
     { name: "Mobile Small 360x800", use: { viewport: { width: 360, height: 800 }, isMobile: true } },
-    { name: "Mobile Medium 390x844", use: { viewport: { width: 390, height: 844 }, isMobile: true } },
+    { name: "iPhone 14 Portrait 390x844", use: { viewport: { width: 390, height: 844 }, isMobile: true } },
+    { name: "iPhone 14 Landscape 844x390", use: { viewport: { width: 844, height: 390 }, isMobile: true } },
     { name: "Mobile Large 414x896", use: { viewport: { width: 414, height: 896 }, isMobile: true } },
-    // Less-popular: landscape smartphone size
     { name: "Mobile Landscape 800x360", use: { viewport: { width: 800, height: 360 }, isMobile: true } },
+
+    // Phones (rare/edge)
+    { name: "Legacy Small 320x480", use: { viewport: { width: 320, height: 480 }, isMobile: true } },
+    { name: "Galaxy Fold Portrait 280x653", use: { viewport: { width: 280, height: 653 }, isMobile: true } },
+    { name: "Galaxy Fold Landscape 653x280", use: { viewport: { width: 653, height: 280 }, isMobile: true } },
+    { name: "Surface Duo Portrait 540x720", use: { viewport: { width: 540, height: 720 }, isMobile: true } },
+    { name: "Surface Duo Landscape 720x540", use: { viewport: { width: 720, height: 540 }, isMobile: true } },
 ];
 
 export default defineConfig({
