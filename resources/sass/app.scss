@@ -60,6 +60,7 @@ select:invalid {
         --slope: clamp(8px, 2.4vw, 40px);
         --overlay-from: 248 250 252;
         --overlay-alpha: 0.8;
+        --overlay-mid-alpha: 0.5;
         container-type: size;
     }
 
@@ -67,6 +68,7 @@ select:invalid {
         .hfm-hero {
             --overlay-from: 27 46 71;
             --overlay-alpha: 0.88;
+            --overlay-mid-alpha: 0.7;
         }
     }
 
@@ -75,9 +77,10 @@ select:invalid {
     }
 
     .hfm-hero__overlay {
+        /* Remove fixed-percentage overlay to avoid doubling; top/bottom fades are handled by content layers */
         background: linear-gradient(to top,
-            rgba(var(--overlay-from) / var(--overlay-alpha)) 0%,
-            rgba(var(--overlay-from) / 0.0) 58%
+            rgba(var(--overlay-from) / 0) 0%,
+            rgba(var(--overlay-from) / 0) 100%
         );
         clip-path: polygon(0 var(--slope), 100% 0, 100% 100%, 0 100%);
     }
@@ -96,16 +99,36 @@ select:invalid {
     .hfm-hero__content::before {
         content: "";
         position: absolute;
-        inset: 0;
-        z-index: -1;
+        left: 0;
+        right: 0;
+        top: 0; /* Anchor exactly at the top of the content (kicker starts here) */
+        bottom: 0; /* Ends at bottom of the content so 100% aligns with content height */
         pointer-events: none;
+        z-index: -1; /* Behind the content text but within the content stacking context */
         background: linear-gradient(
-                to top,
-                rgba(var(--overlay-from) / var(--overlay-bottom-alpha, var(--overlay-alpha))) 0%,
-                rgba(var(--overlay-from) / var(--overlay-mid-alpha, var(--overlay-alpha))) 60%,
+                to bottom,
+                rgba(var(--overlay-from) / var(--overlay-mid-alpha)) 0%,
                 rgba(var(--overlay-from) / var(--overlay-alpha)) 100%
         );
     }
+
+    /* Smoothly blend from transparent (above content) to mid at the content top */
+    .hfm-hero__content::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 100%; /* Sit directly above the content block */
+        height: calc(100dvh - var(--nav-h) - 50vh); /* Leave some space fully transparent at the very top */
+        pointer-events: none;
+        z-index: -1; /* Same stacking as ::before */
+        background: linear-gradient(
+                to bottom,
+                rgba(var(--overlay-from) / 0) 0%,
+                rgba(var(--overlay-from) / var(--overlay-mid-alpha)) 100%
+        );
+    }
+
 
     .hfm-hero__badge {
         top: var(--nav-h);
@@ -130,7 +153,9 @@ select:invalid {
             position: relative;
             height: min(55vh, 90vw);
         }
-        .hfm-hero__overlay {
+        .hfm-hero__overlay,
+        .hfm-hero__content::before,
+        .hfm-hero__content::after {
             display: none;
         }
     }
@@ -165,4 +190,53 @@ select:invalid {
 
 [x-cloak] {
     display: none;
+}
+
+@layer base {
+    /* Global CSS variables sourced from Tailwind theme */
+    :root {
+        --nav-h: 116px;
+        --hero-reserve: 8px;
+        /* Tailwind theme colors (see tailwind.config.js colors.hfm) */
+        --hfm-light: theme('colors.hfm.light');
+        --hfm-dark: theme('colors.hfm.dark');
+    }
+}
+
+@layer components {
+    /* Title glow radial backdrop behind the hero heading */
+    .hfm-hero__titleRadial {
+        height: 140%;
+        width: 140%;
+        max-width: min(90vw, 80ch);
+        border-radius: 9999px; /* rounded-full */
+        filter: blur(32px); /* ~ blur-2xl */
+        opacity: 0.5;
+        /* Title glow uses brand light color with varying alpha */
+        background: radial-gradient(
+                50% 50% at 50% 50%,
+                rgb(from var(--hfm-light) r g b / 0.70) 0%,
+                rgb(from var(--hfm-light) r g b / 0.35) 35%,
+                rgb(from var(--hfm-light) r g b / 0) 70%
+        );
+    }
+
+    @media (min-width: 768px) {
+        /* md: */
+        .hfm-hero__titleRadial {
+            opacity: 0.6;
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .hfm-hero__titleRadial {
+            /* Title glow uses brand dark color in dark mode */
+            background: radial-gradient(
+                    50% 50% at 50% 50%,
+                    rgb(from var(--hfm-dark) r g b / 0.45) 0%,
+                    rgb(from var(--hfm-dark) r g b / 0.25) 35%,
+                    rgb(from var(--hfm-dark) r g b / 0) 70%
+            );
+        }
+    }
 }
