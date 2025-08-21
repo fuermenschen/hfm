@@ -36,9 +36,9 @@
         <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 mix-blend-normal"></div>
     </div>
 
-    <div class="hidden md:flex portrait:hidden absolute left-2 sm:left-6 items-center justify-center z-10 hfm-hero__badge" aria-hidden="true">
-        <div class="rounded-full bg-hfm-red text-white p-4 flex items-center justify-center text-center shadow-lg shadow-hfm-dark/20 hfm-hero__badgeCircle">
-            <p class="text-xs sm:text-sm leading-snug font-semibold">Jetzt mitmachen und mit jeder Runde Gutes tun!</p>
+    <div class="hidden md:flex portrait:hidden absolute left-2 sm:left-6 items-center justify-center z-50 hfm-hero__badge" aria-hidden="true">
+        <div class="hfm-hero__badgeCircle">
+            <img src="{{ Vite::asset('resources/images/hero_badge.svg') }}" alt="" width="170" height="170" class="block w-full h-full" decoding="async" />
         </div>
     </div>
 
@@ -68,7 +68,7 @@
             @endif
 
             @if (isset($partners))
-                <div class="mt-6 sm:mt-8 mx-auto w-full max-w-[min(88vw,70ch)]">
+                <div class="hfm-hero__partners mt-6 sm:mt-8 mx-auto w-full max-w-[min(88vw,70ch)]">
                     {{ $partners }}
                 </div>
             @endif

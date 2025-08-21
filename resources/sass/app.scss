@@ -59,16 +59,16 @@ select:invalid {
         --nav-h: 5rem;
         --slope: clamp(8px, 2.4vw, 40px);
         --overlay-from: 248 250 252;
-        --overlay-alpha: 0.8;
-        --overlay-mid-alpha: 0.5;
+        --overlay-alpha: 0.9;
+        --overlay-mid-alpha: 0.7;
         container-type: size;
     }
 
     @media (prefers-color-scheme: dark) {
         .hfm-hero {
             --overlay-from: 27 46 71;
-            --overlay-alpha: 0.88;
-            --overlay-mid-alpha: 0.7;
+            --overlay-alpha: 0.7;
+            --overlay-mid-alpha: 0.5;
         }
     }
 
@@ -131,18 +131,66 @@ select:invalid {
 
 
     .hfm-hero__badge {
+        position: relative;
+        z-index: 50;
         top: var(--nav-h);
     }
 
     .hfm-hero__badgeCircle {
-        width: clamp(7rem, 14vh, 12rem);
-        height: clamp(7rem, 14vh, 12rem);
+        /* Badge circle diameter variable controls size responsively */
+        --badge-d: clamp(7rem, 14vh, 12rem);
+        width: var(--badge-d);
+        height: var(--badge-d);
         transform: rotate(-8deg);
         transform-origin: center;
+        /* Ensure content is clipped to the circular shape */
+        overflow: hidden;
+    }
+
+    .hfm-hero__badgeCircle > svg,
+    .hfm-hero__badgeCircle > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Autoscaling text inside the hero badge circle */
+    .hfm-hero__badgeText {
+        /* Fill the circle and provide breathing room so text doesn't touch edges */
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        padding: calc(var(--badge-d) * 0.08);
+
+        /* Center content both vertically and horizontally */
+        display: grid;
+        place-items: center;
+        text-align: center;
+
+        /* Typography scaling and legibility */
+        /* Scale with the circle diameter, but ensure a minimum for small devices */
+        font-size: clamp(0.75rem, calc(var(--badge-d) * 0.14), 1.25rem);
+        line-height: 1.15;
+        font-weight: 600;
+        color: inherit; /* inherit from the circle (e.g., text-white on red bg) */
+
+        /* Wrapping and overflow handling */
+        text-wrap: balance;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    /* Remove default margins on inner elements to prevent bottom overflow */
+    .hfm-hero__badgeText > * {
+        margin: 0;
     }
 
     @container (max-height: 36rem) {
-        .hfm-hero__badge {
+        .hfm-hero__badge,
+        .hfm-hero__partners {
             display: none !important;
         }
     }
@@ -172,11 +220,6 @@ select:invalid {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .hfm-hero__badgeCircle {
-        transform: none;
-    }
-}
 
 /**
  * Here you would add any custom utilities you need that don't come out of the
@@ -198,7 +241,7 @@ select:invalid {
         --nav-h: 116px;
         --hero-reserve: 8px;
         /* Tailwind theme colors (see tailwind.config.js colors.hfm) */
-        --hfm-light: theme('colors.hfm.light');
+        --hfm-white: theme('colors.hfm.white');
         --hfm-dark: theme('colors.hfm.dark');
     }
 }
@@ -215,9 +258,9 @@ select:invalid {
         /* Title glow uses brand light color with varying alpha */
         background: radial-gradient(
                 50% 50% at 50% 50%,
-                rgb(from var(--hfm-light) r g b / 0.70) 0%,
-                rgb(from var(--hfm-light) r g b / 0.35) 35%,
-                rgb(from var(--hfm-light) r g b / 0) 70%
+                rgb(from var(--hfm-white) r g b / 0.70) 0%,
+                rgb(from var(--hfm-white) r g b / 0.35) 35%,
+                rgb(from var(--hfm-white) r g b / 0) 90%
         );
     }
 
