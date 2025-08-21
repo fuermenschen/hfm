@@ -137,14 +137,22 @@ select:invalid {
     }
 
     .hfm-hero__badgeCircle {
-        /* Badge circle diameter variable controls size responsively */
-        --badge-d: clamp(7rem, 14vh, 12rem);
+        /* Badge circle diameter scales with the hero container size (container queries)
+           Fallback: use viewport height with a higher cap so it can grow on big screens */
+        --badge-d: clamp(8rem, 22vh, 24rem);
         width: var(--badge-d);
         height: var(--badge-d);
         transform: rotate(-8deg);
         transform-origin: center;
         /* Ensure content is clipped to the circular shape */
         overflow: hidden;
+    }
+
+    /* Prefer container query units when supported for smarter sizing (considers both width and height) */
+    @supports (width: 1cqw) {
+        .hfm-hero__badgeCircle {
+            --badge-d: clamp(8rem, calc(9cqh + 6cqw), 30rem);
+        }
     }
 
     .hfm-hero__badgeCircle > svg,
@@ -195,16 +203,26 @@ select:invalid {
         }
     }
 
-    /* Portrait or square: stack image then content; limit image height to avoid dominance */
+    /* Portrait or square: stack image then content; image flexes to leave room for content */
     @media (max-aspect-ratio: 1/1) {
         .hfm-hero__visual {
             position: relative;
-            height: min(55vh, 90vw);
+            flex: 1 1 auto;
+            height: auto;
+            min-height: 24vh;
         }
         .hfm-hero__overlay,
         .hfm-hero__content::before,
         .hfm-hero__content::after {
             display: none;
+        }
+        .hfm-hero__img {
+            height: 100%;
+            max-height: none;
+            object-fit: cover;
+            object-position: center 55%;
+            width: 100%;
+            display: block;
         }
     }
     @media (min-aspect-ratio: 5/3) {
@@ -280,6 +298,49 @@ select:invalid {
                     rgb(from var(--hfm-dark) r g b / 0.25) 35%,
                     rgb(from var(--hfm-dark) r g b / 0) 70%
             );
+        }
+    }
+}
+
+
+@layer components {
+    /* Short-height (e.g., small mobile landscape) adjustments for hero */
+    @container (max-height: 30rem) {
+        .hfm-hero__inner {
+            /* Reduce vertical padding to keep content within view */
+            padding-top: 0.5rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .hfm-hero__kicker {
+            font-size: clamp(0.8rem, 1.6vw, 1rem);
+        }
+
+        .hfm-hero__title {
+            /* Slightly smaller title to avoid clipping */
+            font-size: clamp(1.75rem, 5vw, 3rem);
+            line-height: 1.15;
+        }
+
+        .hfm-hero__copy {
+            margin-top: 0.5rem;
+            font-size: clamp(0.9rem, 1.6vw, 1rem);
+            line-height: 1.4;
+        }
+    }
+
+    @container (max-height: 26rem) {
+        /* On very short heights, hide CTAs as requested and tighten spacing */
+        .hfm-hero__ctas {
+            display: none !important;
+        }
+
+        .hfm-hero__inner {
+            padding-bottom: 0.5rem;
+        }
+
+        .hfm-hero__title {
+            font-size: clamp(1.5rem, 4.2vw, 2.25rem);
         }
     }
 }
