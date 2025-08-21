@@ -1,0 +1,20 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "C:\\Users\\moss\\.config\\herd\\bin\\php82\\php.exe",
+            "args": [
+                "C:\\Users\\moss\\Code\\hfm\\artisan",
+                "boost:mcp"
+            ]
+        },
+        "herd": {
+            "command": "C:\\Users\\moss\\.config\\herd\\bin\\php82\\php.exe",
+            "args": [
+                "C:/Users/moss/.config/herd/bin/herd-mcp.phar"
+            ],
+            "env": {
+                "SITE_PATH": "C:\\Users\\moss\\Code\\hfm"
+            }
+        }
+    }
+}
