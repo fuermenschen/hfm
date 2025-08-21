@@ -6,7 +6,8 @@
             @livewire('public-menu')
 
             <div
-                class="relative m-auto p-[36px] pt-[48] sm:justify-center sm:items-center w-full">
+                class="relative m-auto p-[36px] pt-[48px] sm:justify-center sm:items-center w-full"
+                style="--content-pt:48px; --content-pb:36px;">
                 @yield('content')
             </div>
         </div>

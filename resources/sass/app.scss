@@ -90,6 +90,21 @@ select:invalid {
 
     .hfm-hero__content {
         color: inherit;
+        position: relative;
+    }
+
+    .hfm-hero__content::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background: linear-gradient(
+                to top,
+                rgba(var(--overlay-from) / var(--overlay-bottom-alpha, var(--overlay-alpha))) 0%,
+                rgba(var(--overlay-from) / var(--overlay-mid-alpha, var(--overlay-alpha))) 60%,
+                rgba(var(--overlay-from) / var(--overlay-alpha)) 100%
+        );
     }
 
     .hfm-hero__badge {

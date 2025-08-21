@@ -20,7 +20,7 @@
 <link rel="preload" as="image" imagesrcset="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}" imagesizes="100vw">
 @endpush
 
-<div class="hfm-hero relative isolate full-bleed min-h-[calc(100dvh-var(--nav-h))] flex flex-col"
+<div class="hfm-hero relative isolate full-bleed h-[calc(100dvh-var(--nav-h)-var(--content-pt,0px)-var(--content-pb,0px)+var(--hero-reserve,8px))] flex flex-col overflow-hidden"
 >
     <div class="hfm-hero__visual -z-10 absolute inset-0 h-full w-full portrait:relative portrait:inset-auto portrait:h-auto portrait:w-full portrait:z-0">
         <picture>
@@ -33,7 +33,7 @@
             />
         </picture>
         <!-- Global scrim to ensure text contrast on any image -->
-        <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 mix-blend-normal portrait:hidden"></div>
+        <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 mix-blend-normal"></div>
     </div>
 
     <div class="hidden md:flex portrait:hidden absolute left-2 sm:left-6 items-center justify-center z-10 hfm-hero__badge" aria-hidden="true">
