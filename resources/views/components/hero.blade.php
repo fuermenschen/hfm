@@ -24,13 +24,24 @@
 >
     <div class="hfm-hero__visual -z-10 absolute inset-0 h-full w-full portrait:relative portrait:inset-auto portrait:flex-1 portrait:h-auto portrait:min-h-[24vh] portrait:w-full portrait:z-0">
         <picture>
+            <!-- Low quality blurred placeholder shown immediately -->
             <img
-                class="hfm-hero__img block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none"
-                src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}"
+                class="hfm-hero__img hfm-hero__img--placeholder block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none"
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='18' viewBox='0 0 32 18'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23d9e3f0'/%3E%3Cstop offset='100%25' stop-color='%23b7c3d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='18' fill='url(%23g)'/%3E%3C/svg%3E"
+                width="32" height="18"
+                decoding="async" alt="" aria-hidden="true" role="presentation"
+            />
+            <!-- Full resolution image will be swapped in by JS when loaded -->
+            <img
+                class="hfm-hero__img hfm-hero__img--full block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none"
+                data-src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}"
                 width="1920" height="1080"
                 sizes="100vw"
                 decoding="async" fetchpriority="high" alt="" aria-hidden="true" role="presentation"
             />
+            <noscript>
+                <img class="hfm-hero__img block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none" src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}" width="1920" height="1080" sizes="100vw" alt="" />
+            </noscript>
         </picture>
         <!-- Global scrim to ensure text contrast on any image -->
         <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 mix-blend-normal"></div>
