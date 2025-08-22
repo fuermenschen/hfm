@@ -33,7 +33,7 @@
   </x-slot:ctas>
 
   <x-slot:partners>
-    <div class="grid grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4 max-h-[25vh] w-full mx-auto overflow-clip">
+    <div class="grid grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4 w-full mx-auto">
       <h3 class="col-span-3 text-xs sm:text-sm opacity-90">Unsere Benefizpartner:innen</h3>
 
       <x-home-hero-partner class="partner-logo"
