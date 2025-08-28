@@ -1,0 +1,103 @@
+name: MariaDB Migration Tests
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  mariadb-migration-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:lts
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: hfm_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          extensions: pdo_mysql
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Add Flux Credentials Loaded From ENV
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Create MariaDB Test Environment
+        run: |
+          if [ -f .env.example ]; then cp .env.example .env; else : > .env; fi
+          {
+            echo "APP_ENV=testing"
+            echo "APP_DEBUG=true"
+            echo "DB_CONNECTION=mariadb"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE=hfm_test"
+            echo "DB_USERNAME=root"
+            echo "DB_PASSWORD=password"
+          } >> .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate --no-interaction
+
+      - name: Wait for MariaDB to be ready
+        run: |
+          until php artisan db:show --database=mariadb; do
+            echo "Waiting for MariaDB to be ready..."
+            sleep 2
+          done
+
+      - name: Run Migration Tests
+        run: |
+          set -e
+          echo "Testing fresh migrations..."
+          php artisan migrate:fresh --force --database=mariadb --no-interaction
+
+          echo "Testing stepwise rollback and re-run for steps 1..10..."
+          for i in $(seq 1 10); do
+            echo "Rolling back step=$i..."
+            php artisan migrate:rollback --step=$i --database=mariadb --no-interaction || true
+            echo "Re-running migrations..."
+            php artisan migrate --force --database=mariadb --no-interaction
+          done
+
+          echo "Testing fresh migrations with seeding..."
+          php artisan migrate:fresh --seed --force --database=mariadb --no-interaction
+
+      - name: Run Basic Database Tests
+        run: |
+          ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --stop-on-failure
+        env:
+          DB_CONNECTION: mariadb
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: hfm_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
