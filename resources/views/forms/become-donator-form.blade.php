@@ -17,9 +17,22 @@
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
-                <flux:input icon-trailing="home" label="PLZ" placeholder="8406" mask="9999" wire:model.blur="zip_code"
-                            class="basis-1/3" type="text" autocomplete="postal-code" required
-                />
+                <flux:input.group label="PLZ">
+                    <flux:select wire:model.live="country_of_residence" variant="listbox" class="max-w-fit">
+                        <flux:option value="CH" selected>CH</flux:option>
+                        <flux:option value="DE">DE</flux:option>
+                        <flux:option value="AT">AT</flux:option>
+                    </flux:select>
+                    <flux:input
+                        class="grow"
+                        wire:model.blur="zip_code"
+                        type="text"
+                        autocomplete="postal-code"
+                        required
+                        :mask="$country_of_residence === 'DE' ? '99999' : '9999'"
+                        :placeholder="$country_of_residence === 'DE' ? '57123' : '8406'"
+                    />
+                </flux:input.group>
             </span>
             <span class="grow">
                 <flux:input icon-trailing="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"
