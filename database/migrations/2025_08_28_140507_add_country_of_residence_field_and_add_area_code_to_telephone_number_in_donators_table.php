@@ -17,13 +17,34 @@ return new class extends Migration
             $table->string('country_of_residence', 2)->after('city')->default('CH')->comment('ISO 3166-1 alpha-2 country code');
         });
 
-        // Update phone_number: replace leading '0' with '+41'
-        DB::table('donators')
-            ->where('phone_number', 'like', '0%')
-            ->update([
-                // SQLite: use '||' for concat and substr() for substring
-                'phone_number' => DB::raw("'+41 ' || substr(phone_number, 2)"),
-            ]);
+        // Ensure existing rows have a value
+        DB::table('donators')->whereNull('country_of_residence')->update(['country_of_residence' => 'CH']);
+
+        // Update phone_number: replace leading '0' with '+41 '
+        $driver = DB::getDriverName();
+
+        // Build a DB-agnostic expression to prepend '+41 ' and drop the leading 0
+        $expression = match ($driver) {
+            // SQLite and PostgreSQL support || and substr(text, from)
+            'sqlite', 'pgsql' => DB::raw("'+41 ' || substr(phone_number, 2)"),
+
+            // MySQL / MariaDB
+            'mysql' => DB::raw("CONCAT('+41 ', SUBSTRING(phone_number, 2))"),
+
+            // SQL Server
+            'sqlsrv' => DB::raw("'+41 ' + SUBSTRING(phone_number, 2, LEN(phone_number) - 1)"),
+
+            // Fallback to a safe no-op (won't update numbers) if unknown driver
+            default => null,
+        };
+
+        if ($expression !== null) {
+            DB::table('donators')
+                ->where('phone_number', 'like', '0%')
+                ->update([
+                    'phone_number' => $expression,
+                ]);
+        }
     }
 
     /**
