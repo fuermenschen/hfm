@@ -142,3 +142,30 @@ it('persists selected country', function () {
         'country_of_residence' => 'DE',
     ]);
 });
+
+it('shows ZIP validation message in the UI when invalid', function () {
+    $partner = Partner::query()->create(['name' => 'Test Partner']);
+    $sport = SportType::query()->create(['name' => 'Run']);
+    $athlete = Athlete::factory()->create([
+        'partner_id' => $partner->id,
+        'sport_type_id' => $sport->id,
+        'verified' => true,
+    ]);
+
+    Livewire::test(BecomeDonatorForm::class)
+        ->set('country_of_residence', 'CH')
+        ->set('zip_code', '80001') // invalid for CH
+        ->set('first_name', 'Jane')
+        ->set('last_name', 'Doe')
+        ->set('address', 'Teststrasse 1')
+        ->set('city', 'Zürich')
+        ->set('phone_number', '079 123 45 67')
+        ->set('email', 'jane.ui@example.com')
+        ->set('email_confirmation', 'jane.ui@example.com')
+        ->set('athlete_id', $athlete->id)
+        ->set('amount_per_round', 5.0)
+        ->set('privacy', true)
+        ->call('save')
+        ->assertHasErrors(['zip_code'])
+        ->assertSee('Die Postleitzahl ist ungültig.');
+});

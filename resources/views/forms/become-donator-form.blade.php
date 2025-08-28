@@ -33,6 +33,9 @@
                         :placeholder="$country_of_residence === 'DE' ? '57123' : '8406'"
                     />
                 </flux:input.group>
+                @error('zip_code')
+                    <flux:error name="zip_code" class="mt-1" />
+                @enderror
             </span>
             <span class="grow">
                 <flux:input icon-trailing="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"

@@ -145,7 +145,7 @@ class BecomeDonatorForm extends Component
     protected function messages(): array
     {
         return [
-            'zip_code.digits' => 'Die Postleitzahl ist ungültig (CH/AT: 4 Ziffern, DE: 5 Ziffern).',
+            'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
         ];
     }
 
@@ -173,7 +173,7 @@ class BecomeDonatorForm extends Component
             'zip_code' => $this->zipRule(),
         ]);
         $this->addMessagesFromOutside([
-            'zip_code.digits' => 'Die Postleitzahl ist ungültig (CH/AT: 4 Ziffern, DE: 5 Ziffern).',
+            'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
         ]);
 
         // let validation exceptions bubble to Livewire's error bag
