@@ -52,7 +52,7 @@ class BecomeDonatorForm extends Component
     // Telefonnummer
     #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
     #[Validate('string', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('size:10', message: 'Die Telefonnummer besteht aus 10 Zahlen.')]
+    #[Validate('regex:/^0\\d{2}\\s\\d{3}\\s\\d{2}\\s\\d{2}/', message: 'Die Telefonnummer ist ungültig.')]
     public ?string $phone_number = null;
 
     // E-Mail
