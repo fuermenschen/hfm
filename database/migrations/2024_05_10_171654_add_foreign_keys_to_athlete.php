@@ -27,8 +27,15 @@ return new class extends Migration
     {
         // Athletes
         Schema::table('athletes', function (Blueprint $table) {
-            $table->dropForeignIdFor(SportType::class);
-            $table->dropForeignIdFor(Partner::class);
+            if (Schema::hasColumn('athletes', 'sport_type_id')) {
+                // Drop FK first (uses conventional name athletes_sport_type_id_foreign)
+                $table->dropForeign(['sport_type_id']);
+                $table->dropColumn('sport_type_id');
+            }
+            if (Schema::hasColumn('athletes', 'partner_id')) {
+                $table->dropForeign(['partner_id']);
+                $table->dropColumn('partner_id');
+            }
         });
     }
 };

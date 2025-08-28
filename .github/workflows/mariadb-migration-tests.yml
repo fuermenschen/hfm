@@ -83,7 +83,7 @@ jobs:
           echo "Testing stepwise rollback and re-run for steps 1..10..."
           for i in $(seq 1 10); do
             echo "Rolling back step=$i..."
-            php artisan migrate:rollback --step=$i --database=mariadb --no-interaction || true
+            php artisan migrate:rollback --step=$i --database=mariadb --no-interaction
             echo "Re-running migrations..."
             php artisan migrate --force --database=mariadb --no-interaction
           done
