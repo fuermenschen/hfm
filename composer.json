@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-zip": "*",
         "barryvdh/laravel-dompdf": "^2.2",
         "calcinai/php-imagick": "^0.1.2",
@@ -36,7 +36,7 @@
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.0",
-        "pestphp/pest": "^3.7",
+        "pestphp/pest": "4.0",
         "spatie/laravel-ignition": "^2.4"
     },
     "autoload": {

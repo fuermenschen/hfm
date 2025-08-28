@@ -34,7 +34,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
           tools: composer:v2
           coverage: none # No need for code coverage in deployment
 
@@ -80,8 +80,8 @@ jobs:
 
             echo "Starting Deployment"
 
-            PHP_BIN="/opt/php8.2/bin/php"
-            COMPOSER_BIN="/opt/php8.2/bin/composer"
+            PHP_BIN="/opt/php8.3/bin/php"
+            COMPOSER_BIN="/opt/php8.3/bin/composer"
 
             cd /home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch
 

@@ -41,6 +41,9 @@ php artisan db:seed
 
 ### 1️⃣ **Local Development Environment - Herd**
 
+> [!IMPORTANT]
+> This project requires PHP 8.3. Ensure Herd is configured to use PHP 8.3 for all development and testing tasks.
+
 We use **[Herd](https://herd.laravel.com/)** as the **local dependency manager** for **PHP**, **Node.js**, and as the *
 *local web server**.
 
@@ -113,4 +116,3 @@ To ensure a productive development environment, install the following extensions
 
 - **Database:** Use SQLite locally
 - **Code Standards:** Use Prettier & ESLint for formatting
-
