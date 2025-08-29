@@ -11,13 +11,14 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
+use Propaganistas\LaravelPhone\PhoneNumber;
 use WireUi\Traits\Actions;
+
+// added for formatting phone numbers
 
 class BecomeDonatorForm extends Component
 {
     use Actions;
-    use WithHoney;
 
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
@@ -43,8 +44,6 @@ class BecomeDonatorForm extends Component
     public string $country_of_residence = 'CH';
 
     // PLZ
-    #[Validate('required', message: 'Wir benötigen deine Postleitzahl.')]
-    // removed string rule to allow `digits` validation to handle numeric string incl. leading zeros
     public ?string $zip_code = null;
 
     // Ort
@@ -53,11 +52,14 @@ class BecomeDonatorForm extends Component
     #[Validate('max:255', message: 'Der Wohnort darf nicht länger als 255 Zeichen sein.')]
     public ?string $city = null;
 
-    // Telefonnummer
+    // UI: ausgewähltes Land für Telefonnummer
+    #[Validate('required', message: 'Bitte wähle die Ländervorwahl.')]
+    #[Validate('in:CH,DE,AT', message: 'Die Ländervorwahl ist ungültig.')]
+    public string $phone_country = 'CH';
+
+    // UI: nationale Telefonnummer ohne Ländervorwahl
     #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('string', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('regex:/^0\\d{2}\\s\\d{3}\\s\\d{2}\\s\\d{2}/', message: 'Die Telefonnummer ist ungültig.')]
-    public ?string $phone_number = null;
+    public ?string $phone_national = null;
 
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
@@ -126,19 +128,27 @@ class BecomeDonatorForm extends Component
         }
     }
 
-    protected function zipRule(): string
-    {
-        // CH & AT => 4 digits, DE => 5 digits
-        return match ($this->country_of_residence) {
-            'DE' => 'digits:5',
-            default => 'digits:4',
-        };
-    }
-
     protected function rules(): array
     {
         return [
-            'zip_code' => [$this->zipRule()],
+            'zip_code' => [
+                'required',
+                function ($attr, $value, $fail) {
+                    $pattern = match ($this->country_of_residence) {
+                        'AT' => '/^\d{4}$/',
+                        'DE' => '/^\d{5}$/',
+                        'CH' => '/^[1-9]\d{3}$/',
+                        default => null,
+                    };
+                    if ($pattern && ! preg_match($pattern, (string) $value)) {
+                        $fail('Ungültige Postleitzahl');
+                    }
+                },
+            ],
+            'phone_national' => ['required', 'phone:phone_country'],
+            'amount_max' => ['nullable', 'gte:amount_min'],
+            // Ensure min boundary for amount per round is enforced
+            'amount_per_round' => ['required', 'numeric', 'min:0.05'],
         ];
     }
 
@@ -146,17 +156,13 @@ class BecomeDonatorForm extends Component
     {
         return [
             'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
+            'phone_national.phone' => 'Die Telefonnummer ist ungültig.',
+            'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
         ];
     }
 
     public function save(): void
     {
-        // spam check
-        if (! $this->honeyPasses()) {
-            throw ValidationException::withMessages([
-                'spam' => ['Spam detected'],
-            ]);
-        }
 
         // cross-field amount rule
         if ($this->amount_max && $this->amount_min && $this->amount_max < $this->amount_min) {
@@ -167,17 +173,21 @@ class BecomeDonatorForm extends Component
                 'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
             ]);
         }
-
-        // ensure dynamic ZIP rule is applied
-        $this->addRulesFromOutside([
-            'zip_code' => $this->zipRule(),
-        ]);
-        $this->addMessagesFromOutside([
-            'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
-        ]);
-
         // let validation exceptions bubble to Livewire's error bag
         $this->validate();
+
+        // After successful validation, normalize the phone to E.164 once
+        $phoneE164 = null;
+        if (! empty($this->phone_national)) {
+            try {
+                $phoneE164 = (new PhoneNumber($this->phone_national, $this->phone_country))
+                    ->formatE164();
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'phone_national' => ['Die Telefonnummer ist ungültig.'],
+                ]);
+            }
+        }
 
         try {
             // check if the donator already exists
@@ -192,7 +202,7 @@ class BecomeDonatorForm extends Component
                     'zip_code' => $this->zip_code,
                     'city' => $this->city,
                     'country_of_residence' => $this->country_of_residence,
-                    'phone_number' => $this->phone_number,
+                    'phone_number' => $phoneE164,
                     'email' => $this->email,
                 ];
                 $donator = Donator::create($donatorData);

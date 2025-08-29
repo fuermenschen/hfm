@@ -52,9 +52,27 @@
                  wire:model.blur="email_confirmation" type="email" autocomplete="off" required
     />
 
-    <flux:input icon-trailing="phone" label="Telefon" mask="999 999 99 99" placeholder="079 123 45 67"
-                 wire:model.blur="phone_number" type="tel" autocomplete="tel" required
-    />
+    <span>
+        <flux:input.group label="Telefon">
+            <flux:select wire:model.live="phone_country" variant="listbox" class="max-w-fit">
+                <flux:option value="CH">+41</flux:option>
+                <flux:option value="DE">+49</flux:option>
+                <flux:option value="AT">+43</flux:option>
+            </flux:select>
+            <flux:input
+                class="grow"
+                wire:model.blur="phone_national"
+                type="tel"
+                autocomplete="tel"
+                :placeholder="$phone_country === 'CH' ? '79 123 45 67' : ($phone_country === 'DE' ? '151 23456789' : '650 1234567')"
+                aria-describedby="phone-format"
+                required
+            />
+        </flux:input.group>
+        @error('phone_national')
+            <flux:error name="phone_national" class="mt-1" />
+        @enderror
+    </span>
 
     <span>
     <flux:select wire:model.live="athlete_id" label="Meine Unterstützung geht an" autocomplete="off" @change="$wire.updateNames()" >
@@ -106,9 +124,6 @@
                 <button type="button" wire:click="showPrivacyInfo"
                         class="text-xs underline mt-xs">Was heisst das?</button>
     </span>
-
-    <x-honey />
-
 
     <x-button label="Senden" type="submit" spinner="save" class="justify-self-start" />
 </form>
