@@ -24,6 +24,7 @@
         "mews/purifier": "^3.4",
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^6.0",
+        "propaganistas/laravel-phone": "^6.0",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "sprain/swiss-qr-bill": "^4.14",
         "wireui/wireui": "^1.19"

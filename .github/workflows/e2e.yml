@@ -1,9 +1,6 @@
 name: e2e-tests
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_call:
 
 # Default to read-only; grant writes only where needed.
