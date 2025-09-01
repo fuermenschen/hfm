@@ -35,8 +35,13 @@
                 </a>
             @endforeach
             @guest
-                <a href="{{ route("association") }}" wire:navigate
-                   class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2">
+                <a href="{{ route('association') }}" wire:navigate
+                   @class([
+                       'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
+                       'text-hfm-dark dark:text-hfm-white font-normal' => !request()->routeIs('association'),
+                       'text-hfm-red dark:text-hfm-lightred font-medium' => request()->routeIs('association'),
+                   ])
+                >
                     <span>Vereinsmitglied werden</span>
                 </a>
             @endguest
@@ -52,8 +57,13 @@
         </div>
         <div class="hidden lg:flex items">
             @guest
-                <a href="{{ route("login") }}" wire:navigate
-                   class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2">
+                <a href="{{ route('login') }}" wire:navigate
+                   @class([
+                       'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
+                       'text-hfm-dark dark:text-hfm-white font-normal' => !request()->routeIs('login'),
+                       'text-hfm-red dark:text-hfm-lightred font-medium' => request()->routeIs('login'),
+                   ])
+                >
                     <span>Login</span>
                 </a>
             @endguest
@@ -133,7 +143,7 @@
                         @endforeach
                         @guest
                             <a
-                                href="{{ route("association") }}"
+                                href="{{ route('association') }}"
                                 wire:navigate
                                 class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
                             >
