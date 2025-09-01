@@ -34,3 +34,4 @@ env-production-secret.txt
 /e2e-results/**
 /test-results/**
 /playwright-report/
+/.junie/mcp/mcp.json
