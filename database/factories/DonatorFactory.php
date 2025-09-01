@@ -16,14 +16,32 @@ class DonatorFactory extends Factory
      */
     public function definition(): array
     {
+        $country = fake()->randomElement([
+            ...array_fill(0, 9, 'CH'), // 90% CH
+            'DE', // 5% DE
+            'AT', // 5% AT
+        ]);
+
+        $phonePrefixes = [
+            'CH' => '+41',
+            'DE' => '+49',
+            'AT' => '+43',
+        ];
+
+        $postcode = $country === 'DE' ? str_pad((string) fake()->numberBetween(0, 99999), 5, '0', STR_PAD_LEFT) : str_pad((string) fake()->numberBetween(1000, 9999), 4, '0', STR_PAD_LEFT);
+
+        $phonePrefix = $phonePrefixes[$country];
+        $phoneNumber = $phonePrefix.fake()->numerify(' #########');
+
         return [
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'address' => fake()->address(),
-            'zip_code' => fake()->postcode(),
+            'zip_code' => $postcode,
             'city' => fake()->city(),
-            'phone_number' => fake()->phoneNumber(),
+            'phone_number' => $phoneNumber,
             'email' => fake()->unique()->safeEmail(),
+            'country_of_residence' => $country,
         ];
     }
 }
