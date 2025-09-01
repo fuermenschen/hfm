@@ -1,13 +1,16 @@
 name: tests
+permissions:
+  contents: read
 
 on:
   pull_request:
     branches:
       - main
   workflow_call:
+  workflow_dispatch:
 
 jobs:
-  ci:
+  pest:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,11 +30,18 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-cache-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-cache-
+
       - name: Install Node Dependencies
-        run: npm i
+        run: npm ci
 
       - name: Create SQLite Database
-        run: touch database/database.sqlite
+        run: mkdir -p database && touch database/database.sqlite
 
       - name: Add Flux Credentials Loaded From ENV
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
@@ -53,3 +63,14 @@ jobs:
 
       - name: Run Tests
         run: php artisan test --parallel
+
+  migration-tests:
+    uses: ./.github/workflows/mariadb-migration-tests.yml
+    secrets: inherit
+
+  e2e-tests:
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write

@@ -165,7 +165,7 @@
         <p>
             {{ $donator->first_name }} {{ $donator->last_name }}<br>
             {{ $donator->address }}<br>
-            {{ $donator->zip_code }} {{ $donator->city }}
+            {{ $donator->country_of_residence }}-{{ $donator->zip_code }} {{ $donator->city }}
         </p>
     </div>
 

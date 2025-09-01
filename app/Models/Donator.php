@@ -99,6 +99,7 @@ class Donator extends Model
         'address',
         'zip_code',
         'city',
+        'country_of_residence',
         'phone_number',
         'email',
     ];

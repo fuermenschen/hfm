@@ -11,13 +11,14 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
+use Propaganistas\LaravelPhone\PhoneNumber;
 use WireUi\Traits\Actions;
+
+// added for formatting phone numbers
 
 class BecomeDonatorForm extends Component
 {
     use Actions;
-    use WithHoney;
 
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
@@ -37,11 +38,14 @@ class BecomeDonatorForm extends Component
     #[Validate('max:255', message: 'Die Adresse darf nicht länger als 255 Zeichen sein.')]
     public ?string $address = null;
 
+    // Land (Wohnsitz)
+    #[Validate('required', message: 'Wir benötigen dein Land.')]
+    #[Validate('in:CH,DE,AT', message: 'Das Land ist ungültig.')]
+    public string $country_of_residence = 'CH';
+
     // PLZ
-    #[Validate('required', message: 'Wir benötigen deine Postleitzahl.')]
-    #[Validate('integer', message: 'Die Postleitzahl muss eine Zahl sein.')]
-    #[Validate('digits:4', message: 'Die Postleitzahl muss vier Ziffern haben.')]
-    public ?int $zip_code = null;
+    #[Validate]
+    public ?string $zip_code = null;
 
     // Ort
     #[Validate('required', message: 'Wir benötigen deinen Wohnort.')]
@@ -49,11 +53,14 @@ class BecomeDonatorForm extends Component
     #[Validate('max:255', message: 'Der Wohnort darf nicht länger als 255 Zeichen sein.')]
     public ?string $city = null;
 
-    // Telefonnummer
-    #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('string', message: 'Wir benötigen deine Telefonnummer.')]
-    #[Validate('size:10', message: 'Die Telefonnummer besteht aus 10 Zahlen.')]
-    public ?string $phone_number = null;
+    // UI: ausgewähltes Land für Telefonnummer
+    #[Validate('required', message: 'Bitte wähle die Ländervorwahl.')]
+    #[Validate('in:CH,DE,AT', message: 'Die Ländervorwahl ist ungültig.')]
+    public string $phone_country = 'CH';
+
+    // UI: nationale Telefonnummer ohne Ländervorwahl
+    #[Validate]
+    public ?string $phone_national = null;
 
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
@@ -122,53 +129,85 @@ class BecomeDonatorForm extends Component
         }
     }
 
+    protected function rules(): array
+    {
+        return [
+            'zip_code' => [
+                'required',
+                function ($attr, $value, $fail) {
+                    $pattern = match ($this->country_of_residence) {
+                        'AT' => '/^\d{4}$/',
+                        'DE' => '/^\d{5}$/',
+                        'CH' => '/^[1-9]\d{3}$/',
+                        default => null,
+                    };
+                    if ($pattern && ! preg_match($pattern, (string) $value)) {
+                        $fail('Ungültige Postleitzahl');
+                    }
+                },
+            ],
+            'phone_national' => ['required', 'phone:phone_country'],
+            'amount_max' => ['nullable', 'gte:amount_min'],
+            // Ensure min boundary for amount per round is enforced
+            'amount_per_round' => ['required', 'numeric', 'min:0.05'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
+            'phone_national.phone' => 'Die Telefonnummer ist ungültig.',
+            'phone_national.required' => 'Wir benötigen deine Telefonnummer.',
+            'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
+        ];
+    }
+
     public function save(): void
     {
-        try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
 
-            // check if the maximum amount is bigger than the minimum amount if they are both set
-            if ($this->amount_max && $this->amount_min && $this->amount_max < $this->amount_min) {
-                $this->addRulesFromOutside([
-                    'amount_max' => 'gte:amount_min',
-                ]);
-                $this->addMessagesFromOutside([
-                    'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
-                ]);
-            }
-
-            $this->validate();
-        } catch (ValidationException $e) {
-
-            if ($e->validator->errors()->count() > 1) {
-                $title = 'Es sind '.$e->validator->errors()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->errors()->all());
-            } else {
-                $title = $e->validator->errors()->first();
-                $description = 'Bitte überprüfe deine Angaben.';
-            }
-
-            $this->dialog([
-                'title' => $title,
-                'description' => $description,
-                'icon' => 'error',
+        // cross-field amount rule
+        if ($this->amount_max && $this->amount_min && $this->amount_max < $this->amount_min) {
+            $this->addRulesFromOutside([
+                'amount_max' => 'gte:amount_min',
             ]);
+            $this->addMessagesFromOutside([
+                'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
+            ]);
+        }
+        // let validation exceptions bubble to Livewire's error bag
+        $this->validate();
 
-            return;
+        // After successful validation, normalize the phone to E.164 once
+        $phoneE164 = null;
+        if (! empty($this->phone_national)) {
+            try {
+                $phoneE164 = (new PhoneNumber($this->phone_national, $this->phone_country))
+                    ->formatE164();
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'phone_national' => ['Die Telefonnummer ist ungültig.'],
+                ]);
+            }
         }
 
         try {
-
             // check if the donator already exists
             $donator = Donator::where('email', $this->email)->first();
 
             // if the donator does not exist, create a new one
             if (! $donator) {
-                $donator = Donator::create($this->all());
+                $donatorData = [
+                    'first_name' => $this->first_name,
+                    'last_name' => $this->last_name,
+                    'address' => $this->address,
+                    'zip_code' => $this->zip_code,
+                    'city' => $this->city,
+                    'country_of_residence' => $this->country_of_residence,
+                    'phone_number' => $phoneE164,
+                    'email' => $this->email,
+                ];
+                $donator = Donator::create($donatorData);
 
                 // send notification to admin
                 if (config('app.send_notification_on_registration')) {
@@ -193,7 +232,14 @@ class BecomeDonatorForm extends Component
             }
 
             // create a new donation
-            $donator->donations()->create($this->all());
+            $donationData = [
+                'athlete_id' => $this->athlete_id,
+                'amount_per_round' => $this->amount_per_round,
+                'amount_max' => $this->amount_max,
+                'amount_min' => $this->amount_min,
+                'comment' => $this->comment,
+            ];
+            $donator->donations()->create($donationData);
 
             $this->reset();
 

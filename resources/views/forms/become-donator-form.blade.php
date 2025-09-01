@@ -3,107 +3,127 @@
 
     @csrf
 
-    <x-input right-icon="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" type="text"
-             autocomplete="given-name" required
+    <flux:input icon-trailing="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" type="text"
+                 autocomplete="given-name" required
     />
 
-    <x-input right-icon="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" type="text"
-             autocomplete="family-name" required
+    <flux:input icon-trailing="user" label="Nachname" placeholder="Arslan" wire:model.blur="last_name" type="text"
+                 autocomplete="family-name" required
     />
 
-    <x-input right-icon="home" label="Adresse" placeholder="Zelglistrasse 41" wire:model.blur="address" type="text"
-             autocomplete="street-address" required
+    <flux:input icon-trailing="home" label="Adresse" placeholder="Zelglistrasse 41" wire:model.blur="address" type="text"
+                 autocomplete="street-address" required
     />
 
     <span class="flex flex-row space-x-4">
             <span class="basis-1/3">
-                <x-inputs.maskable mask="####" right-icon="home" label="PLZ" placeholder="8406"
-                                   wire:model.number.blur="zip_code"
-                                   class="basis-1/3" type="text" autocomplete="postal-code" required
-                />
+                <flux:input.group label="PLZ">
+                    <flux:select wire:model.live="country_of_residence" variant="listbox" class="max-w-fit">
+                        <flux:option value="CH" selected>CH</flux:option>
+                        <flux:option value="DE">DE</flux:option>
+                        <flux:option value="AT">AT</flux:option>
+                    </flux:select>
+                    <flux:input
+                        class="grow"
+                        wire:model.blur="zip_code"
+                        type="text"
+                        autocomplete="postal-code"
+                        required
+                        :mask="$country_of_residence === 'DE' ? '99999' : '9999'"
+                        :placeholder="$country_of_residence === 'DE' ? '57123' : '8406'"
+                    />
+                </flux:input.group>
+                @error('zip_code')
+                    <flux:error name="zip_code" class="mt-1" />
+                @enderror
             </span>
             <span class="grow">
-                <x-input right-icon="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"
-                         class="grow" type="text" autocomplete="address-level2" required
+                <flux:input icon-trailing="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"
+                            class="grow" type="text" autocomplete="address-level2" required
                 />
             </span>
         </span>
 
-    <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email" type="email" autocomplete="email" required
+    <flux:input icon-trailing="envelope" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
+                 wire:model.blur="email" type="email" autocomplete="email" required
     />
 
-    <x-input right-icon="mail" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email_confirmation" type="email" autocomplete="email" required
-    />
-
-    <x-inputs.phone right-icon="phone" label="Telefon"
-                    mask="['### ### ## ##']" placeholder="079 123 45 67"
-                    wire:model.blur="phone_number" type="tel" autocomplete="tel" required
+    <flux:input icon-trailing="envelope" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch"
+                 wire:model.blur="email_confirmation" type="email" autocomplete="off" required
     />
 
     <span>
-           <x-native-select label="Meine Unterstützung geht an" wire:model.live="athlete_id"
-                            @change="$wire.updateNames()" autocomplete="off">
-                <option disabled value="0">Bitte wählen</option>
-               @if (!$athletes || sizeof($athletes) === 0)
-                   <option disabled value="0">Keine Sportler:innen verfügbar</option>
-               @else
-                   @foreach ($athletes as $athlete)
-                       <option value="{{ $athlete['id'] }}">{{ $athlete['privacy_name'] }}
-                            ({{ $athlete['public_id_string'] }})
-                        </option>
-                   @endforeach
-               @endif
-            </x-native-select>
-       @if ($athlete_id)
-            <span
-                class="text-xs">Mit deiner Unterstützung für <strong> {{ $currentAthlete }} </strong> hilfst du, Spenden für <strong>{{ $currentPartner }} </strong> zu sammeln. Danke!</span>
+        <flux:input.group label="Telefon">
+            <flux:select wire:model.live="phone_country" variant="listbox" class="max-w-fit">
+                <flux:option value="CH">+41</flux:option>
+                <flux:option value="DE">+49</flux:option>
+                <flux:option value="AT">+43</flux:option>
+            </flux:select>
+            <flux:input
+                class="grow"
+                wire:model.blur="phone_national"
+                type="tel"
+                autocomplete="tel"
+                :placeholder="$phone_country === 'CH' ? '79 123 45 67' : ($phone_country === 'DE' ? '151 23456789' : '650 1234567')"
+                aria-describedby="phone-format"
+                required
+            />
+        </flux:input.group>
+        @error('phone_national')
+            <flux:error name="phone_national" class="mt-1" />
+        @enderror
+    </span>
+
+    <span>
+    <flux:select wire:model.live="athlete_id" label="Meine Unterstützung geht an" autocomplete="off" @change="$wire.updateNames()" >
+        <option disabled value="0">Bitte wählen</option>
+        @if (!$athletes || sizeof($athletes) === 0)
+            <option disabled value="0">Keine Sportler:innen verfügbar</option>
+        @else
+            @foreach ($athletes as $athlete)
+                <option value="{{ $athlete['id'] }}">{{ $athlete['privacy_name'] }} ({{ $athlete['public_id_string'] }})
+                </option>
+            @endforeach
         @endif
+    </flux:select>
+    @if ($athlete_id)
+        <span class="text-xs">Mit deiner Unterstützung für <strong>{{ $currentAthlete }}</strong> hilfst du, Spenden für
+            <strong>{{ $currentPartner }}</strong> zu sammeln. Danke!</span>
+    @endif
         </span>
 
     <span>
-            <x-inputs.currency
-                label="Dein Beitrag pro Runde"
-                placeholder="7.25" wire:model.number.blur="amount_per_round" prefix="Fr." autocomplete="off" required />
-            @if ($athlete_id)
-            <span
-                class="text-xs"><strong> {{ $currentAthlete }} </strong> hat angegeben, ungefähr <strong>{{ $currentRounds }} </strong> Runden zu absolvieren.
+    <flux:input label="Dein Beitrag pro Runde" placeholder="7.25" wire:model.number.blur="amount_per_round" prefix="Fr."
+                 type="number" step="0.01" autocomplete="off" required
+    />
+    @if ($athlete_id)
+        <span class="text-xs"><strong>{{ $currentAthlete }}</strong> hat angegeben, ungefähr <strong>{{ $currentRounds }}</strong> Runden zu absolvieren.
                 </span>
-        @endif
+    @endif
         </span>
 
     <span>
-        <x-inputs.currency
-            label="Dein minimaler Beitrag (optional)"
-            placeholder="50" wire:model.number.blur="amount_min" prefix="Fr." autocomplete="off" />
-            <button type="button" wire:click="showAmountInfo"
-                    class="text-xs underline">Wie funktioniert das?</button>
+    <flux:input label="Dein minimaler Beitrag (optional)" placeholder="50" wire:model.number.blur="amount_min" prefix="Fr."
+                 type="number" step="0.01" autocomplete="off" />
+    <button type="button" wire:click="showAmountInfo" class="text-xs underline">Wie funktioniert das?</button>
         </span>
 
     <span>
-            <x-inputs.currency
-                label="Dein maximaler Beitrag (optional)"
-                placeholder="500" wire:model.number.blur="amount_max" prefix="Fr." autocomplete="off" />
-            <button type="button" wire:click="showAmountInfo"
-                    class="text-xs underline">Wie funktioniert das?</button>
+    <flux:input label="Dein maximaler Beitrag (optional)" placeholder="500" wire:model.number.blur="amount_max" prefix="Fr."
+                 type="number" step="0.01" autocomplete="off" />
+    <button type="button" wire:click="showAmountInfo" class="text-xs underline">Wie funktioniert das?</button>
         </span>
 
-    <x-textarea label="Kommentar"
-                placeholder="Cooli Sach! Ich tuen vil lieber d Claudia unterstütze und aafüüre als selber Velofahre =)."
-                wire:model.live.debounce="comment" hint="{{ strlen($comment) }}/2000" autocomplete="off" />
+    <flux:textarea label="Kommentar"
+                   placeholder="Cooli Sach! Ich tuen vil lieber d Claudia unterstütze und aafüüre als selber Velofahre =)."
+                   wire:model.live.debounce="comment" hint="{{ strlen($comment) }}/2000" autocomplete="off" />
 
-    <span class="sm:col-span-2 flex flex-row space-x-sm items-center">
-            <x-toggle wire:model.boolean="privacy" autocomplete="off" required />
-            <span class="text-md">
-                Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.
+    <span class="sm:col-span-2">
+            <x-toggle wire:model.bool.live="privacy"
+                      label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
                 <button type="button" wire:click="showPrivacyInfo"
-                        class="text-hfm-red dark:text-hfm-lightred underline">Was heisst das?</button>
-            </span>
-        </span>
-
-    <x-honey />
-
+                        class="text-xs underline mt-xs">Was heisst das?</button>
+    </span>
 
     <x-button label="Senden" type="submit" spinner="save" class="justify-self-start" />
 </form>
