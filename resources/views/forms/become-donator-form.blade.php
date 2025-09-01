@@ -109,13 +109,13 @@
         </span>
 
     <span>
-    <flux:input label="Dein maximaler Beitrag (optional)" placeholder="50" wire:model.number.blur="amount_max" prefix="Fr."
+    <flux:input label="Dein maximaler Beitrag (optional)" placeholder="500" wire:model.number.blur="amount_max" prefix="Fr."
                  type="number" step="0.01" autocomplete="off" />
     <button type="button" wire:click="showAmountInfo" class="text-xs underline">Wie funktioniert das?</button>
         </span>
 
     <flux:textarea label="Kommentar"
-                   placeholder="Cooli Sach! Ich tuen vil lieber d Claudia unterstütze und aafüfüre als selber Velofahre =)."
+                   placeholder="Cooli Sach! Ich tuen vil lieber d Claudia unterstütze und aafüüre als selber Velofahre =)."
                    wire:model.live.debounce="comment" hint="{{ strlen($comment) }}/2000" autocomplete="off" />
 
     <span class="sm:col-span-2">

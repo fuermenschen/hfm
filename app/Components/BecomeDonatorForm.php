@@ -44,6 +44,7 @@ class BecomeDonatorForm extends Component
     public string $country_of_residence = 'CH';
 
     // PLZ
+    #[Validate]
     public ?string $zip_code = null;
 
     // Ort
@@ -58,7 +59,7 @@ class BecomeDonatorForm extends Component
     public string $phone_country = 'CH';
 
     // UI: nationale Telefonnummer ohne Ländervorwahl
-    #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
+    #[Validate]
     public ?string $phone_national = null;
 
     // E-Mail
@@ -157,6 +158,7 @@ class BecomeDonatorForm extends Component
         return [
             'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
             'phone_national.phone' => 'Die Telefonnummer ist ungültig.',
+            'phone_national.required' => 'Wir benötigen deine Telefonnummer.',
             'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
         ];
     }
