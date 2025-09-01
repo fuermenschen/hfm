@@ -114,7 +114,8 @@ class AdminDonatorTable extends PowerGridComponent
             })
             ->add('created_at_formatted', fn ($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'))
             ->add('invoice_sent_at_formatted', fn ($donator) => $donator->invoice_sent_at ? Carbon::parse($donator->invoice_sent_at)->format('d.m.Y') : null)
-            ->add('invoice_paid_at_formatted', fn ($donator) => $donator->invoice_paid_at ? Carbon::parse($donator->invoice_paid_at)->format('d.m.Y') : null);
+            ->add('invoice_paid_at_formatted', fn ($donator) => $donator->invoice_paid_at ? Carbon::parse($donator->invoice_paid_at)->format('d.m.Y') : null)
+            ->add('country_of_residence', fn ($donator) => $donator->country_of_residence);
     }
 
     public function columns(): array
@@ -149,6 +150,9 @@ class AdminDonatorTable extends PowerGridComponent
                 ->sortable(),
 
             Column::make('Telefon', 'phone_number')
+                ->sortable(),
+
+            Column::make('Land', 'country_of_residence')
                 ->sortable(),
 
             Column::make('Adresse', 'address')
