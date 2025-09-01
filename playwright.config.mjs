@@ -16,11 +16,17 @@ const needsLocalServer = /^(https?:\/\/)(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.te
 
 // Curated list of top screen sizes/aspect ratios plus additional orientations and rare cases
 const genericProjects = [
-    { name: "Desktop", use: { viewport: { width: 1280, height: 800 } }, testMatch: /.*\.spec\.mjs/ },
+    {
+        name: "Desktop",
+        use: { viewport: { width: 1280, height: 800 } },
+        testMatch: /.*\.spec\.mjs/,
+        testIgnore: /smoke\.spec\.mjs/,
+    },
     {
         name: "Mobile Portrait",
         use: { viewport: { width: 390, height: 844 }, isMobile: true },
         testMatch: /.*\.spec\.mjs/,
+        testIgnore: /smoke\.spec\.mjs/,
     },
 ];
 
@@ -114,6 +120,30 @@ const homepageProjects = [
     },
 ];
 
+// Dedicated projects for the smoke test: Desktop/Mobile in Light and Dark
+const smokeProjects = [
+    {
+        name: "Smoke Desktop Light",
+        testMatch: /smoke\.spec\.mjs/,
+        use: { viewport: { width: 1280, height: 800 }, colorScheme: "light" },
+    },
+    {
+        name: "Smoke Desktop Dark",
+        testMatch: /smoke\.spec\.mjs/,
+        use: { viewport: { width: 1280, height: 800 }, colorScheme: "dark" },
+    },
+    {
+        name: "Smoke Mobile Light",
+        testMatch: /smoke\.spec\.mjs/,
+        use: { viewport: { width: 390, height: 844 }, isMobile: true, colorScheme: "light" },
+    },
+    {
+        name: "Smoke Mobile Dark",
+        testMatch: /smoke\.spec\.mjs/,
+        use: { viewport: { width: 390, height: 844 }, isMobile: true, colorScheme: "dark" },
+    },
+];
+
 export default defineConfig({
     testDir: "e2e",
     timeout: 30_000,
@@ -139,5 +169,5 @@ export default defineConfig({
               stderr: "pipe",
           }
         : undefined,
-    projects: [...genericProjects, ...homepageProjects],
+    projects: [...genericProjects, ...homepageProjects, ...smokeProjects],
 });
