@@ -34,6 +34,7 @@ jobs:
 
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v5
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           commit_message: fix code style
           commit_options: '--no-verify'

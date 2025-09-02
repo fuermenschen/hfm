@@ -8,11 +8,14 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
     secrets: inherit
+    permissions:
+      contents: write
 
   tests:
     uses: ./.github/workflows/tests.yml
@@ -25,6 +28,9 @@ jobs:
       - tests
     runs-on: ubuntu-latest
     environment: Production
+    permissions:
+      contents: read
+      pull-requests: none
 
     steps:
       - name: Checkout repository

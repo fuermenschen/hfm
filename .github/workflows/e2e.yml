@@ -51,7 +51,6 @@ jobs:
         run: mkdir -p database && touch database/database.sqlite
 
       - name: Add Flux Credentials Loaded From ENV
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
       - name: Install PHP Dependencies
@@ -86,8 +85,8 @@ jobs:
           DB_DATABASE: database/database.sqlite
           CI: true
 
-      - name: Upload Playwright Report (Always)
-        if: always()
+      - name: Upload Playwright Report (PR only)
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
@@ -95,8 +94,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload Playwright Artifacts (Always)
-        if: always()
+      - name: Upload Playwright Artifacts (PR only)
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-artifacts
@@ -107,16 +106,16 @@ jobs:
           retention-days: 7
 
   publish-report:
-    name: Publish HTML report to GitHub Pages
-    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    if: ${{ github.event_name == 'pull_request' }}
     needs: e2e
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     permissions:
-      contents: write          # for gh-pages push
-      pull-requests: write     # for PR comment
-
+      contents: write         # push to gh-pages
+      pull-requests: write    # create/update PR comment
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download Playwright Report
         uses: actions/download-artifact@v4
         with:
