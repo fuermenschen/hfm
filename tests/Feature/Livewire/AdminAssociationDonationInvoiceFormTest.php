@@ -1,7 +1,6 @@
 <?php
 
 use App\Components\AdminAssociationDonationInvoiceForm;
-use App\Components\BecomeMemberForm;
 use Livewire\Livewire;
 
 it('renders successfully', function () {
@@ -58,7 +57,7 @@ it('can be set without an amount', function () {
 });
 
 it('cannot be submitted empty', function () {
-    Livewire::test(BecomeMemberForm::class)
+    Livewire::test(AdminAssociationDonationInvoiceForm::class)
         ->set('first_name', '')
         ->call('submit')
         ->assertHasErrors();
