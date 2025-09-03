@@ -12,14 +12,14 @@
         <span>Auf dieser Seite findest du alle Informationen zu unserem Verein, unsere Statuten und ein <strong>Formular, um
             Mitglied zu werden</strong>.</span>
     </div>
-    <div class="flex sm:flex-row flex-col gap-xs my-lg justify-center w-full items-center">
+    <div class="flex md:flex-row flex-col gap-xs my-lg justify-center w-full items-center">
         <flux:button
             href="#hintergruende"
             label="Hintergründe"
             variant="filled"
             icon="information-circle"
             size="xs"
-            class="hidden sm:inline-flex"
+            class="hidden md:inline-flex"
         >
             Hintergründe
         </flux:button>
@@ -40,11 +40,20 @@
             Direkt Spenden
         </flux:button>
         <flux:button
+            href="https://vfme.webling.ch/portal/"
+            icon="arrow-top-right-on-square"
+            variant="filled"
+            class="grow sm:max-w-[200px] w-full"
+            target="_blank"
+        >
+            Mitgliederportal
+        </flux:button>
+        <flux:button
             href="#dokumente"
             variant="filled"
             icon="document"
             size="xs"
-            class="hidden sm:inline-flex"
+            class="hidden md:inline-flex"
         >
             Dokumente
         </flux:button>
@@ -98,7 +107,17 @@
     Du möchtest Mitglied beim <strong>Verein für
         Menschen</strong> werden? Mega! Du kannst dich hier anmelden und dich dann auf die Art engangieren, die du möchtest. Oder du bleibst nur im Hintergrund und unterstützt uns mit deinem Jahresbeitrag. Jede Art ist sehr willkommen. Wir freuen uns!
 
-    @livewire('become-member-form')
+    <div class="mt-sm">
+        <flux:button
+            href="https://vfme.webling.ch/forms/memberform/d33043f696f66f3fed32"
+            target="_blank"
+            icon-trailing="arrow-top-right-on-square"
+            variant="filled"
+            class="w-full sm:max-w-[260px]"
+        >
+            Zum Anmeldeformular
+        </flux:button>
+    </div>
 
     <x-page-subtitle id="direkt-spenden">Direkt Spenden</x-page-subtitle>
     <div>Du möchtest uns direkt unterstützen? Du kannst jederzeit sehr gerne direkt spenden. Unsere IBAN lautet:

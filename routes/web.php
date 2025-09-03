@@ -33,17 +33,6 @@ Route::view('kontakt', 'pages.contact')->name('contact');
 Route::view('impressum', 'pages.impressum')->name('impressum');
 Route::view('datenschutz', 'pages.privacy')->name('privacy');
 Route::view('verein', 'pages.association')->name('association');
-Route::get('verein/mv', function () {
-    $first_name = Request::input('first_name') ?? '';
-    $last_name = Request::input('last_name') ?? '';
-    $email = Request::input('email') ?? '';
-
-    return view('pages.association-general-meeting', [
-        'first_name' => $first_name,
-        'last_name' => $last_name,
-        'email' => $email,
-    ]);
-})->name('association-general-meeting');
 
 // User Login
 Route::get('login/{uuid}', function ($uuid) {
@@ -89,7 +78,6 @@ Route::middleware('auth')->group(function () {
     Route::view('admin/sportlerinnen', 'pages.admin.athletes')->name('admin.athletes.index');
     Route::view('admin/spenderinnen', 'pages.admin.donators')->name('admin.donators.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
-    Route::view('admin/mitglieder', 'pages.admin.association-members')->name('admin.association-members.index');
     Route::view('admin/tools', 'pages.admin.tools')->name('admin.tools');
     Route::post('logout', function () {
         auth()->logout();

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\AssociationMember;
 use App\Models\Athlete;
 use App\Models\Donation;
 use App\Models\Donator;
@@ -76,7 +75,6 @@ class DatabaseSeeder extends Seeder
             Athlete::factory(10)->create();
             Donator::factory(10)->create();
             Donation::factory(10)->create();
-            AssociationMember::factory(10)->create();
         }
     }
 }

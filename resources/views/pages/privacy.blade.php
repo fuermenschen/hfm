@@ -49,7 +49,7 @@
     <p>Wir erfassen von dir personenbezogene Daten, die du uns bei der Anmeldung als Mitglied gibst.</p>
     <p>Details zum Umgang mit Daten von Vereinsmitgliedern findest du in den Statuten.</p>
 
-    <x-page-subtitle>Verantwortliche:r für die Datenverarbeitung</x-page-subtitle>
+    <x-page-subtitle>Verantwortlich für die Datenverarbeitung</x-page-subtitle>
     <p>Verantwortlich für die Datenverarbeitung ist der <strong>Verein für Menschen</strong>. Bei Fragen
         zur
         Datenverarbeitung kannst du dich an folgende Adresse wenden:</p>

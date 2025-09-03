@@ -1,7 +1,6 @@
 <?php
 
 use App\Components\AssociationDonationForm;
-use App\Components\BecomeMemberForm;
 use App\Notifications\AssociationDonationMessage;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -90,7 +89,7 @@ it('can be set without an amount', function () {
 });
 
 it('cannot be submitted empty', function () {
-    Livewire::test(BecomeMemberForm::class)
+    Livewire::test(AssociationDonationForm::class)
         ->set('first_name', '')
         ->call('submit')
         ->assertHasErrors();
