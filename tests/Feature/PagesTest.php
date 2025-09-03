@@ -2,6 +2,7 @@
 
 use App\Models\Athlete;
 use App\Models\Donator;
+use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -20,7 +21,7 @@ test('all public routes are accessible', function () {
             continue;
         }
 
-        // Skip authenticated routes
+        // Skip authenticated routes (handled in a separate test)
         if (in_array('auth', $route->middleware())) {
             continue;
         }
@@ -42,6 +43,42 @@ test('all public routes are accessible', function () {
         $response = $this->get($route->uri);
 
         // Assert the response is successful
+        $response->assertSuccessful();
+    }
+});
+
+// Ensure all authenticated routes are accessible for a signed-in user
+test('all authenticated routes are accessible when logged in', function () {
+    $routes = Route::getRoutes();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    foreach ($routes as $route) {
+        // Only GET routes
+        if (! in_array('GET', $route->methods())) {
+            continue;
+        }
+
+        // Only routes with auth middleware
+        if (! in_array('auth', $route->middleware())) {
+            continue;
+        }
+
+        // Skip parameterized routes
+        if (str_contains($route->uri, '{')) {
+            continue;
+        }
+
+        // Skip debug routes
+        if (str_starts_with($route->uri, '_ignition') ||
+            str_starts_with($route->uri, '_debugbar') ||
+            str_starts_with($route->uri, 'flux/') ||
+            str_starts_with($route->uri, 'livewire/')) {
+            continue;
+        }
+
+        $response = $this->get($route->uri);
         $response->assertSuccessful();
     }
 });

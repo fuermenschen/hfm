@@ -5,8 +5,6 @@
     use App\Models\Donator;
     use App\Models\Donation;
     use App\Models\Partner;
-    use App\Models\AssociationMember;
-
     // make greeting based on time
     $greeting = "Hallo ";
     $time = date('H');
@@ -24,7 +22,6 @@
     $donators = Donator::with(['donations', 'donations.athlete'])->get();
     $donations = Donation::with('donator', 'athlete', 'athlete.partner')->get();
     $partners = Partner::get();
-    $members = AssociationMember::get();
 
     // sum up the stats
     $athleteCount = $athletes->count();
@@ -95,8 +92,6 @@
     // most recent payments
     $mostRecentPayments = $donators->sortByDesc('invoice_paid_at')->take(30);
 
-    // most recent  member registrations
-    $mostRecentMembers = $members->sortByDesc('created_at')->take(30);
 
     // remove entries older than 7 days
     $sevenDaysAgo = now()->subDays(7);
@@ -111,9 +106,6 @@
     });
     $mostRecentPayments = $mostRecentPayments->filter(function ($value, $key) use ($sevenDaysAgo) {
         return $value->invoice_paid_at > $sevenDaysAgo;
-    });
-    $mostRecentMembers = $mostRecentMembers->filter(function ($value, $key) use ($sevenDaysAgo) {
-        return $value->created_at > $sevenDaysAgo;
     });
 
     // create an array with the most recent activities
@@ -145,13 +137,6 @@
             'type' => 'payment',
             'name' => $payment->privacy_name,
             'created_at' => $payment->invoice_paid_at,
-        ];
-    }
-    foreach ($mostRecentMembers as $member) {
-        $mostRecentActivities[] = [
-            'type' => 'member',
-            'name' => $member->first_name . ' ' . $member->last_name,
-            'created_at' => $member->created_at,
         ];
     }
 
@@ -244,15 +229,6 @@
                 title="Durchschn. Spenden"
                 :value="round($meanNumberOfDonationsDonator, 1)"
                 route="admin.donators.index"
-            />
-        </x-stats>
-
-        <!-- Members -->
-        <x-stats title="Vereinsmitglieder">
-            <x-admin.stat-card
-                title="Registriert"
-                :value="$members->count()"
-                route="admin.association-members.index"
             />
         </x-stats>
 
