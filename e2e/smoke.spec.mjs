@@ -88,6 +88,7 @@ test("smoke: public pages", async ({ page }, testInfo) => {
     }
 
     // Assert no console or page errors were logged across all pages
+    // Assert no console or page errors were logged across all pages
     expect(
         consoleErrors,
         consoleErrors.length
