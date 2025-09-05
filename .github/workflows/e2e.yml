@@ -74,7 +74,7 @@ jobs:
       - name: Start Laravel and Run E2E Tests
         run: |
           set -euo pipefail
-          php artisan serve --host=127.0.0.1 --port=8000 &
+          php artisan serve --host=127.0.0.1 --port=8000 --silent &
           npx wait-on http://127.0.0.1:8000
           npx playwright test --reporter=html
         env:
@@ -91,17 +91,6 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload Playwright Artifacts (PR only)
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-artifacts
-          path: |
-            e2e-results/
-            test-results/
           if-no-files-found: ignore
           retention-days: 7
 
