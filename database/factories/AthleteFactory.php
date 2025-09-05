@@ -34,4 +34,11 @@ class AthleteFactory extends Factory
             'verified' => fake()->boolean(80),
         ];
     }
+
+    public function verified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'verified' => true,
+        ]);
+    }
 }
