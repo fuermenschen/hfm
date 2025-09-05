@@ -174,10 +174,10 @@
             <x-slot:question>Wie ist der Ablauf am Anlass?</x-slot:question>
             <ul class="list-disc text-sm list-inside space-y-xs">
                 <li>
-                    Ab <strong>12:30 Uhr</strong> sind die Startnummern im Rundenbüro abholbereit. Das Rundenbüro befindet sich gut Sichtbar beim Start/Ziel, direkt for der Brühlgut Stiftung.
+                    Ab <strong>12:30 Uhr</strong> sind die Startnummern im Rundenbüro abholbereit. Das Rundenbüro befindet sich gut sichtbar beim Start/Ziel, direkt vor der Brühlgut Stiftung.
                 </li>
                 <li>
-                    Die Startnummer muss gut sichtbar auf der Vorderseite deines Trikots/Fahrrads befestigt werden. Es stehen dafür Sicherheitsnadeln bereit.
+                    Die Startnummer muss gut sichtbar auf der Vorderseite deines Trikots befestigt werden. Es stehen dafür Sicherheitsnadeln bereit.
                 </li>
                 <li>
                     Um <strong>13:00 Uhr</strong> gibt es einen gemeinsamen Start mit allen Sportler:innen, die dann bereits bereit sind.
