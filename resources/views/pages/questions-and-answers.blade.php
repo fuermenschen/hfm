@@ -80,7 +80,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Gibt es Verpflegung vor Ort?</x-slot:question>
-            Es wird Getränke und Snacks geben. Für die Sportler:innen gibt es zudem eine Verpflegungsstation beim
+            Es gibt nur Verpflegung für Sportler:innen. Es wird Getränke (Wasser und isotonisches Getränk) und Snacks geben. Die Verpflegungsstation befindet sich beim
             Start/Ziel des Rundkurses.
         </x-faq-question-answer>
 
@@ -168,6 +168,30 @@
             <x-slot:question>Ich bin nicht besonders sportlich. Kann ich trotzdem teilnehmen?</x-slot:question>
             Ja, der Anlass ist für alle geeignet. Du kannst so viele Runden laufen oder fahren, wie du möchtest. Es
             geht nicht darum, wer am besten ist, sondern darum, gemeinsam Spenden zu sammeln.
+        </x-faq-question-answer>
+
+        <x-faq-question-answer>
+            <x-slot:question>Wie ist der Ablauf am Anlass?</x-slot:question>
+            <ul class="list-disc text-sm list-inside space-y-xs">
+                <li>
+                    Ab <strong>12:30 Uhr</strong> sind die Startnummern im Rundenbüro abholbereit. Das Rundenbüro befindet sich gut Sichtbar beim Start/Ziel, direkt for der Brühlgut Stiftung.
+                </li>
+                <li>
+                    Die Startnummer muss gut sichtbar auf der Vorderseite deines Trikots/Fahrrads befestigt werden. Es stehen dafür Sicherheitsnadeln bereit.
+                </li>
+                <li>
+                    Um <strong>13:00 Uhr</strong> gibt es einen gemeinsamen Start mit allen Sportler:innen, die dann bereits bereit sind.
+                </li>
+                <li>
+                    Du hast zwischen 13 Uhr und 18 Uhr Zeit, die Runden zurückzulegen. Du musst auch nicht bereits um 13 Uhr starten.
+                </li>
+                <li>
+                    Wir werden deine zurückgelegten Runden zählen. Aber es hilft, wenn du dies auch tust.
+                </li>
+                <li>
+                    Sobald du fertig bist, kannst du nochmals ins Rundenbüro kommen. Dort gleichen wir die Anzahl Runden ab und du bekommst vielleicht noch eine Kleinigkeit.
+                </li>
+            </ul>
         </x-faq-question-answer>
 
     </dl>
