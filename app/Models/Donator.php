@@ -93,6 +93,10 @@ class Donator extends Model
         return $this->hasMany(Donation::class);
     }
 
+    protected $casts = [
+        'webling_data' => 'array',
+    ];
+
     protected $fillable = [
         'first_name',
         'last_name',
