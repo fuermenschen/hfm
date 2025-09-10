@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\DonorService;
+use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,8 +14,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Bind DonorService as a singleton so the same instance is reused.
         $this->app->singleton(DonorService::class);
+        $this->app->singleton(SettingsService::class);
     }
 
     /**
