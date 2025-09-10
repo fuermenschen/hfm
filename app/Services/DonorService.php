@@ -17,9 +17,8 @@ class DonorService
     public function collectInvoiceData(Donator $donator): array
     {
         // Eager load to avoid N+1 when iterating donations
-        $donations = $donator->donations()
-            ->with(['athlete.partner'])
-            ->get();
+        $donator->load('donations.athlete.partner');
+        $donations = $donator->donations;
 
         $lines = [];
         $total = 0.0;

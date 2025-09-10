@@ -1,0 +1,82 @@
+<?php
+
+use App\Services\Webling\Dto\InvoiceCreateData;
+use App\Services\Webling\WeblingApiService;
+use App\Services\Webling\WeblingInvoiceService;
+use Carbon\Carbon;
+use Mockery;
+use Webling\API\IResponse;
+
+it('builds payload and posts to debitor using DTO', function (): void {
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(IResponse::class);
+
+    $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload): bool {
+        expect($path)->toBe('debitor');
+        expect($payload['properties']['title'])->toBe('Invoice Title');
+        expect($payload['properties']['date'])->toBe('2025-09-05');
+        expect($payload['properties']['duedate'])->toBe('2025-09-10');
+        expect($payload['properties']['address'])->toBe("John Doe\nStreet 1\n8000 Zurich");
+        expect($payload['parents'])->toBe([123]);
+        expect($payload['links']['revenue'])->toHaveCount(2);
+
+        $rev0 = $payload['links']['revenue'][0];
+        expect($rev0['properties']['amount'])->toBe(150.0);
+        expect($rev0['properties']['title'])->toBe('Line A');
+        expect($rev0['parents'][0]['properties']['date'])->toBe('2025-09-05');
+        expect($rev0['parents'][0]['parents'])->toBe([321]);
+        expect($rev0['links']['credit'])->toBe([555]);
+        expect($rev0['links']['debit'])->toBe([777]);
+
+        $rev1 = $payload['links']['revenue'][1];
+        expect($rev1['properties']['amount'])->toBe(120.0);
+        expect($rev1['properties']['title'])->toBe('Line B');
+
+        return true;
+    })->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api);
+
+    $dto = new InvoiceCreateData(
+        title: 'Invoice Title',
+        date: Carbon::parse('2025-09-05'),
+        dueDate: Carbon::parse('2025-09-10'),
+        addressLines: ['John Doe', 'Street 1', '8000 Zurich'],
+        periodId: 123,
+        invoiceLines: [
+            ['amount' => 150.0, 'title' => 'Line A'],
+            ['amount' => 120.0, 'title' => 'Line B'],
+        ],
+        accountingPeriodId: 321,
+        debitAccountId: 777,
+        creditAccountId: 555,
+    );
+
+    $service->createInvoice($dto);
+});
+
+it('accepts array input as well', function (): void {
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(IResponse::class);
+
+    $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload): bool {
+        expect($path)->toBe('debitor');
+        expect($payload['properties']['title'])->toBe('T');
+
+        return true;
+    })->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api);
+
+    $service->createInvoice([
+        'title' => 'T',
+        'date' => '2025-09-01',
+        'duedate' => '2025-09-08',
+        'address_lines' => ['A'],
+        'period_id' => 1,
+        'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
+        'accounting_period_id' => 2,
+        'debit_account_id' => 3,
+        'credit_account_id' => 4,
+    ]);
+});
