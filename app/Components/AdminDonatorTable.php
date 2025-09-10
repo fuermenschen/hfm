@@ -2,9 +2,12 @@
 
 namespace App\Components;
 
+use App\Jobs\CreateDonorInvoice;
 use App\Models\Donator;
+use App\Services\DonorService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
@@ -22,6 +25,13 @@ class AdminDonatorTable extends PowerGridComponent
     public string $sortField = 'first_name';
 
     public string $tableName = 'admin-donator-table';
+
+    protected DonorService $donorService;
+
+    public function boot(DonorService $donorService): void
+    {
+        $this->donorService = $donorService;
+    }
 
     public function header(): array
     {
@@ -66,23 +76,10 @@ class AdminDonatorTable extends PowerGridComponent
                 return $donator->donations->count();
             })
             ->add('donations_sum', function (Donator $donator) {
-                $this_sum = 0;
-                foreach ($donator->donations as $donation) {
-                    $athlete_sum = $donation->athlete->rounds_done * $donation->amount_per_round;
-                    if ($donation->amount_min) {
-                        if ($athlete_sum < $donation->amount_min) {
-                            $athlete_sum = $donation->amount_min;
-                        }
-                    }
-                    if ($donation->amount_max) {
-                        if ($athlete_sum > $donation->amount_max) {
-                            $athlete_sum = $donation->amount_max;
-                        }
-                    }
-                    $this_sum += $athlete_sum;
-                }
+                $lines = $this->donorService->collectInvoiceData($donator);
+                $sum = array_sum(array_column($lines, 'total'));
 
-                return 'Fr. '.number_format($this_sum, 2, '.', "'");
+                return 'Fr. '.number_format($sum, 2, '.', "'");
             })
             ->add('created_at_formatted', fn ($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'))
             ->add('invoice_sent_at_formatted', fn ($donator) => $donator->invoice_sent_at ? Carbon::parse($donator->invoice_sent_at)->format('d.m.Y H:i') : null)
@@ -153,9 +150,26 @@ class AdminDonatorTable extends PowerGridComponent
         ];
     }
 
+    #[On('createDonorInvoice')]
+    public function createDonorInvoice(int $donator_id): void
+    {
+        try {
+            $donor = Donator::findOrFail($donator_id);
+            CreateDonorInvoice::dispatchSync($donor);
+            $this->notification()->success('Rechnung wird erstellt.');
+        } catch (\Throwable $e) {
+            $this->notification()->error('Fehler beim Erstellen der Rechnung');
+        }
+    }
+
     public function actions(Donator $row): array
     {
         return [
+            Button::add('createInvoice')
+                ->slot('Rechnung erstellen')
+                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
+                ->dispatch('createDonorInvoice', ['donator_id' => $row->id])
+                ->tooltip('Rechnung erstellen'),
             Button::add('loginAsDonator')
                 ->slot('Login')
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')

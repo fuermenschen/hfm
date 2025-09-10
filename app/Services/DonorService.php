@@ -21,7 +21,6 @@ class DonorService
         $donations = $donator->donations;
 
         $lines = [];
-        $total = 0.0;
 
         foreach ($donations as $donation) {
             $rounds = (int) ($donation->athlete->rounds_done ?? 0);
@@ -29,7 +28,6 @@ class DonorService
             $subtotal = $rounds * $perRound;
 
             $lineTotal = $this->applyMinMax($subtotal, $donation->amount_min, $donation->amount_max);
-            $total += $lineTotal;
 
             $lines[] = [
                 'athlete' => $donation->athlete->privacy_name,
