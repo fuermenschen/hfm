@@ -47,3 +47,57 @@ it('returns faked values when all properties are faked', function (): void {
             'api_url', 'api_key', 'accounting_period_id', 'debit_account_id', 'credit_account_id',
         ]);
 });
+
+it('getAllSettings returns metadata and current values from repository', function (): void {
+    Artisan::call('settings:discover');
+    Artisan::call('migrate');
+
+    // Seed persisted values
+    $s = app(WeblingApiSettings::class);
+    $s->api_url = 'https://repo.example/v1';
+    $s->api_key = 'repo-key';
+    $s->accounting_period_id = 2023;
+    $s->debit_account_id = 4100;
+    $s->credit_account_id = 8100;
+    $s->save();
+
+    $service = app(SettingsService::class);
+    $result = $service->getAllSettings();
+
+    $group = $result[WeblingApiSettings::class] ?? null;
+    expect($group)->not->toBeNull();
+
+    expect($group['group'] ?? null)->toBe('weblingApi')
+        ->and($group['title'] ?? null)->toBe('Webling API')
+        ->and($group['description'] ?? null)->toBeString()->not->toBe('');
+
+    $settings = $group['settings'] ?? [];
+
+    expect($settings['api_key']['encrypted'] ?? null)->toBeTrue()
+        ->and($settings['api_url']['value'] ?? null)->toBe('https://repo.example/v1')
+        ->and($settings['debit_account_id']['value'] ?? null)->toBe(4100)
+        ->and($settings['api_url']['title'] ?? null)->toBe('Webling API URL')
+        ->and($settings['api_url']['rules'] ?? null)->toBe('required|url');
+});
+
+it('save persists values with type coercion and ignores invalid classes/props', function (): void {
+    Artisan::call('settings:discover');
+    Artisan::call('migrate');
+
+    $service = app(SettingsService::class);
+
+    // Save with coercion and extra noise
+    $service->save([
+        WeblingApiSettings::class => [
+            'api_url' => 'https://coerce.example/v3',
+            'debit_account_id' => '5555', // string -> int
+            'unknown_prop' => 'ignored',
+        ],
+        'App\\Settings\\DoesNotExist' => ['foo' => 'bar'],
+    ]);
+
+    $fresh = app(WeblingApiSettings::class);
+
+    expect($fresh->api_url)->toBe('https://coerce.example/v3')
+        ->and($fresh->debit_account_id)->toBe(5555);
+});

@@ -91,6 +91,39 @@ class SettingsService
                 $descriptionsMap = null;
             }
 
+            $titlesMap = null;
+            try {
+                if (\method_exists($class, 'titles')) {
+                    $titles = $class::titles();
+                    $titlesMap = \is_array($titles) ? $titles : null;
+                }
+            } catch (Throwable $e) {
+                $titlesMap = null;
+            }
+
+            $rulesMap = null;
+            try {
+                if (\method_exists($class, 'rules')) {
+                    $rules = $class::rules();
+                    $rulesMap = \is_array($rules) ? $rules : null;
+                }
+            } catch (Throwable $e) {
+                $rulesMap = null;
+            }
+
+            $details = ['title' => null, 'description' => null];
+            try {
+                if (\method_exists($class, 'settingsDetails')) {
+                    $d = $class::settingsDetails();
+                    if (\is_array($d)) {
+                        $details['title'] = $d['title'] ?? null;
+                        $details['description'] = $d['description'] ?? null;
+                    }
+                }
+            } catch (Throwable $e) {
+                $details = ['title' => null, 'description' => null];
+            }
+
             // Determine settings fields from public properties defined on the class
             $fields = [];
             try {
@@ -172,11 +205,15 @@ class SettingsService
                     'type' => $type,
                     'description' => $description,
                     'encrypted' => $encrypted,
+                    'title' => $titlesMap[$name] ?? null,
+                    'rules' => $rulesMap[$name] ?? null,
                 ];
             }
 
             $result[$class] = [
                 'group' => $group,
+                'title' => $details['title'],
+                'description' => $details['description'],
                 'settings' => $settings,
             ];
         }

@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::view('admin/spenderinnen', 'pages.admin.donators')->name('admin.donators.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
     Route::view('admin/tools', 'pages.admin.tools')->name('admin.tools');
+    Route::view('admin/einstellungen', 'pages.admin.settings')->name('admin.settings');
     Route::post('logout', function () {
         auth()->logout();
         request()->session()->invalidate();
