@@ -33,10 +33,21 @@ class InvoiceCreateData
      */
     public static function fromArray(array $data): self
     {
+        $date = $data['date'] instanceof Carbon ? $data['date'] : Carbon::parse((string) ($data['date'] ?? now()->toDateString()));
+        $due = (isset($data['duedate']) && $data['duedate'] instanceof Carbon)
+            ? $data['duedate']
+            : Carbon::parse((string) ($data['duedate'] ?? $data['due_date'] ?? $date->copy()->addDays(30)->toDateString()));
+
+        // Default title if empty
+        $title = trim((string) ($data['title'] ?? ''));
+        if ($title === '') {
+            $title = 'Spendenquittung '.$date->year; // default title
+        }
+
         return new self(
-            title: (string) ($data['title'] ?? ''),
-            date: $data['date'] instanceof Carbon ? $data['date'] : Carbon::parse((string) $data['date']),
-            dueDate: $data['duedate'] instanceof Carbon ? $data['duedate'] : Carbon::parse((string) ($data['duedate'] ?? $data['due_date'] ?? '')), // support both keys
+            title: $title,
+            date: $date,
+            dueDate: $due,
             addressLines: array_values((array) ($data['address_lines'] ?? [])),
             periodId: (int) ($data['period_id'] ?? $data['periodId'] ?? 0),
             invoiceLines: array_values((array) ($data['invoice_lines'] ?? $data['lines'] ?? [])),
@@ -49,7 +60,7 @@ class InvoiceCreateData
     /**
      * Build the Webling payload for POST /debitor.
      *
-     * @return array<string,mixed>
+     * @return false|string
      */
     public function toWeblingPayload(): array
     {

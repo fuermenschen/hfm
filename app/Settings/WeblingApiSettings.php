@@ -40,11 +40,11 @@ class WeblingApiSettings extends Settings
     public static function rules(): array
     {
         return [
-            'api_url' => 'required|url',
-            'api_key' => 'required',
-            'accounting_period_id' => 'required|integer',
-            'debit_account_id' => 'required|integer',
-            'credit_account_id' => 'required|integer',
+            'api_url' => ['required', 'regex:/^https:\/\/[a-zA-Z0-9\-]+\.webling\.ch$/'],
+            'api_key' => 'required|string|size:32',
+            'accounting_period_id' => 'required|integer|min:1',
+            'debit_account_id' => 'required|integer|min:1',
+            'credit_account_id' => 'required|integer|min:1',
         ];
     }
 
@@ -62,11 +62,11 @@ class WeblingApiSettings extends Settings
     public static function descriptions(): array
     {
         return [
-            'api_url' => 'Die Basis-URL zur Webling API (z.B., https://api.yourdomain.com/v1)',
+            'api_url' => 'Die Basis-URL zur Webling API (z.B., https://yourorg.webling.ch)',
             'api_key' => 'Der API-Schlüssel',
             'accounting_period_id' => 'Die ID der aktuellen Abrechnungsperiode (Achtung: die ID, nicht das Jahr selbst).',
-            'debit_account_id' => 'Die ID der Sollkontos (Achtung: die ID, nicht die Kontonummer selbst).',
-            'credit_account_id' => 'Die ID der Habenkontos (Achtung: die ID, nicht die Kontonummer selbst).',
+            'debit_account_id' => 'Die ID der Sollkontos, i.d.R. Debitoren (Achtung: die ID, nicht die Kontonummer selbst).',
+            'credit_account_id' => 'Die ID der Habenkontos, z.B. Einnahmen Veranstaltungen (Achtung: die ID, nicht die Kontonummer selbst).',
         ];
     }
 }
