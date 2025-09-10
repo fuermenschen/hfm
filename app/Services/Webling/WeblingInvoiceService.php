@@ -3,6 +3,7 @@
 namespace App\Services\Webling;
 
 use App\Services\Webling\Dto\InvoiceCreateData;
+use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
 use Webling\API\IResponse;
 
@@ -14,7 +15,7 @@ use Webling\API\IResponse;
  */
 class WeblingInvoiceService
 {
-    public function __construct(public WeblingApiService $api) {}
+    public function __construct(public WeblingApiService $api, public WeblingApiSettings $settings) {}
 
     /**
      * Create an invoice (debitor) in Webling.
@@ -29,15 +30,31 @@ class WeblingInvoiceService
      * - address_lines: string[]
      * - period_id: int
      * - invoice_lines: array<int, array{amount: float, title: string}>
-     * - accounting_period_id: int
-     * - debit_account_id: int
-     * - credit_account_id: int
+     * - accounting_period_id: int (defaults to settings)
+     * - debit_account_id: int (defaults to settings)
+     * - credit_account_id: int (defaults to settings)
      *
      * @param  InvoiceCreateData|array<string,mixed>  $data
      */
     public function createInvoice(InvoiceCreateData|array $data): IResponse
     {
-        $dto = is_array($data) ? InvoiceCreateData::fromArray($data) : $data;
+        if (is_array($data)) {
+            $data['accounting_period_id'] = $data['accounting_period_id'] ?? $this->settings->accounting_period_id;
+            $data['debit_account_id'] = $data['debit_account_id'] ?? $this->settings->debit_account_id;
+            $data['credit_account_id'] = $data['credit_account_id'] ?? $this->settings->credit_account_id;
+            $dto = InvoiceCreateData::fromArray($data);
+        } else {
+            $dto = $data;
+            if (($dto->accountingPeriodId ?? 0) === 0) {
+                $dto->accountingPeriodId = $this->settings->accounting_period_id;
+            }
+            if (($dto->debitAccountId ?? 0) === 0) {
+                $dto->debitAccountId = $this->settings->debit_account_id;
+            }
+            if (($dto->creditAccountId ?? 0) === 0) {
+                $dto->creditAccountId = $this->settings->credit_account_id;
+            }
+        }
 
         return $this->api->post('debitor', $dto->toWeblingPayload());
     }

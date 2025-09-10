@@ -3,10 +3,19 @@
 use App\Services\Webling\Dto\InvoiceCreateData;
 use App\Services\Webling\WeblingApiService;
 use App\Services\Webling\WeblingInvoiceService;
+use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
 use Webling\API\IResponse;
 
 it('builds payload and posts to debitor using DTO', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+        'accounting_period_id' => 321,
+        'debit_account_id' => 777,
+        'credit_account_id' => 555,
+    ]);
+
     $api = Mockery::mock(WeblingApiService::class);
     $fakeResponse = Mockery::mock(IResponse::class);
 
@@ -34,7 +43,7 @@ it('builds payload and posts to debitor using DTO', function (): void {
         return true;
     })->andReturn($fakeResponse);
 
-    $service = new WeblingInvoiceService($api);
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
 
     $dto = new InvoiceCreateData(
         title: 'Invoice Title',
@@ -55,6 +64,14 @@ it('builds payload and posts to debitor using DTO', function (): void {
 });
 
 it('accepts array input as well', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+        'accounting_period_id' => 2,
+        'debit_account_id' => 3,
+        'credit_account_id' => 4,
+    ]);
+
     $api = Mockery::mock(WeblingApiService::class);
     $fakeResponse = Mockery::mock(IResponse::class);
 
@@ -65,7 +82,7 @@ it('accepts array input as well', function (): void {
         return true;
     })->andReturn($fakeResponse);
 
-    $service = new WeblingInvoiceService($api);
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
 
     $service->createInvoice([
         'title' => 'T',
@@ -74,8 +91,50 @@ it('accepts array input as well', function (): void {
         'address_lines' => ['A'],
         'period_id' => 1,
         'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
-        'accounting_period_id' => 2,
-        'debit_account_id' => 3,
-        'credit_account_id' => 4,
+        // leave out accounting ids to test defaulting as well as explicit ones
+    ]);
+});
+
+it('uses centrally stored settings by default but allows overrides', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+        'accounting_period_id' => 999,
+        'debit_account_id' => 111,
+        'credit_account_id' => 222,
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(IResponse::class);
+
+    $api->shouldReceive('post')->twice()->withArgs(function (string $path, array $payload): bool {
+        expect($path)->toBe('debitor');
+
+        return true;
+    })->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    // 1) Defaults when missing
+    $service->createInvoice([
+        'title' => 'Defaults',
+        'date' => '2025-09-01',
+        'duedate' => '2025-09-08',
+        'address_lines' => ['A'],
+        'period_id' => 10,
+        'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
+    ]);
+
+    // 2) Overrides when provided
+    $service->createInvoice([
+        'title' => 'Overrides',
+        'date' => '2025-09-01',
+        'duedate' => '2025-09-08',
+        'address_lines' => ['A'],
+        'period_id' => 10,
+        'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
+        'accounting_period_id' => 888,
+        'debit_account_id' => 333,
+        'credit_account_id' => 444,
     ]);
 });

@@ -1,12 +1,19 @@
 <?php
 
 use App\Services\Webling\WeblingApiService;
+use App\Settings\WeblingApiSettings;
 use Webling\API\Client;
 
-it('constructs a Webling Client from configuration', function (): void {
+it('constructs a Webling Client from settings and config options', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => '12345678901234567890123456789012',
+        'accounting_period_id' => 1,
+        'debit_account_id' => 2,
+        'credit_account_id' => 3,
+    ]);
+
     config([
-        'services.webling.base_url' => 'https://demo.webling.ch',
-        'services.webling.api_key' => '12345678901234567890123456789012',
         'services.webling.options' => [
             'connecttimeout' => 2,
             'timeout' => 5,
@@ -19,12 +26,14 @@ it('constructs a Webling Client from configuration', function (): void {
     expect($service->client())->toBeInstanceOf(Client::class);
 });
 
-it('throws an exception when Webling config is missing', function (): void {
-    config([
-        'services.webling.base_url' => '',
-        'services.webling.api_key' => '',
-        'services.webling.options' => [],
+it('throws an exception when Webling settings are missing', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => '',
+        'api_key' => '',
+        'accounting_period_id' => 1,
+        'debit_account_id' => 2,
+        'credit_account_id' => 3,
     ]);
 
-    new WeblingApiService(app('config'));
+    app(WeblingApiService::class);
 })->throws(InvalidArgumentException::class);

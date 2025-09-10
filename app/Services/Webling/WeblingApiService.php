@@ -2,6 +2,7 @@
 
 namespace App\Services\Webling;
 
+use App\Settings\WeblingApiSettings;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use InvalidArgumentException;
 use Webling\API\Client;
@@ -13,14 +14,14 @@ class WeblingApiService
 {
     protected Client $client;
 
-    public function __construct(public ConfigRepository $config)
+    public function __construct(public WeblingApiSettings $settings, public ConfigRepository $config)
     {
-        $baseUrl = (string) $this->config->get('services.webling.base_url');
-        $apiKey = (string) $this->config->get('services.webling.api_key');
+        $baseUrl = (string) $this->settings->api_url;
+        $apiKey = (string) $this->settings->api_key;
         $options = (array) $this->config->get('services.webling.options', []);
 
         if ($baseUrl === '' || $apiKey === '') {
-            throw new InvalidArgumentException('Webling configuration is missing. Please set WEBLING_BASE_URL and WEBLING_API_KEY.');
+            throw new InvalidArgumentException('Webling configuration is missing. Please set WEBLING_BASE_URL and WEBLING_API_KEY in settings.');
         }
 
         $this->client = new Client($baseUrl, $apiKey, $options);
