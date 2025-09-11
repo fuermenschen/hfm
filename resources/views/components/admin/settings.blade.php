@@ -54,11 +54,13 @@
                                         <flux:input type="password"
                                             viewable
                                             wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                            wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
                                             class="w-full max-w-md"
                                         />
                                     @else
                                         <flux:input type="number"
                                             wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                            wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
                                             step="{{ in_array($type, ['float','double']) ? '0.01' : '1' }}"
                                             class="w-full max-w-md"
                                         />
@@ -68,6 +70,7 @@
                                 @case('array')
                                     <flux:textarea
                                         wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                        wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
                                         placeholder="JSON oder komma-getrennte Werte"
                                         class="w-full max-w-2xl"
                                     />
@@ -77,6 +80,7 @@
                                     <flux:input
                                         type="{{ $encrypted ? 'password' : 'text' }}"
                                         wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                        wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
                                         class="w-full max-w-2xl"
                                         :viewable="$encrypted"
                                     />

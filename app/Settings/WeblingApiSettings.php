@@ -54,8 +54,8 @@ class WeblingApiSettings extends Settings
             'api_url' => 'Webling API URL',
             'api_key' => 'Webling API Key',
             'accounting_period_id' => 'ID der Abrechnungsperiode',
-            'debit_account_id' => 'Sollkonto ID',
-            'credit_account_id' => 'Habenkonto ID',
+            'debit_account_id' => 'Sollkonto ID für Rechnungen',
+            'credit_account_id' => 'Habenkonto ID für Rechnungen',
         ];
     }
 
