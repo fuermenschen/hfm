@@ -2,9 +2,9 @@
 
 use App\Services\Webling\WeblingApiService;
 use App\Settings\WeblingApiSettings;
-use Webling\API\Client;
+use Illuminate\Http\Client\PendingRequest;
 
-it('constructs a Webling Client from settings and config options', function (): void {
+it('constructs an HTTP client (PendingRequest) from settings and config options', function (): void {
     WeblingApiSettings::fake([
         'api_url' => 'https://demo.webling.ch',
         'api_key' => '12345678901234567890123456789012',
@@ -23,7 +23,7 @@ it('constructs a Webling Client from settings and config options', function (): 
 
     $service = app(WeblingApiService::class);
 
-    expect($service->client())->toBeInstanceOf(Client::class);
+    expect($service->client())->toBeInstanceOf(PendingRequest::class);
 });
 
 it('throws an exception when Webling settings are missing', function (): void {

@@ -5,7 +5,7 @@ namespace App\Services\Webling;
 use App\Services\Webling\Dto\InvoiceCreateData;
 use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
-use Webling\API\IResponse;
+use Illuminate\Http\Client\Response;
 
 /**
  * Service for working with invoices ("debitor") via Webling API.
@@ -36,7 +36,7 @@ class WeblingInvoiceService
      *
      * @param  InvoiceCreateData|array<string,mixed>  $data
      */
-    public function createInvoice(InvoiceCreateData|array $data): IResponse
+    public function createInvoice(InvoiceCreateData|array $data): Response
     {
         if (is_array($data)) {
             $data['accounting_period_id'] = $data['accounting_period_id'] ?? $this->settings->accounting_period_id;
@@ -74,7 +74,7 @@ class WeblingInvoiceService
         int $accountingPeriodId,
         int $debitAccountId,
         int $creditAccountId,
-    ): IResponse {
+    ): Response {
         $dto = new InvoiceCreateData(
             title: $title,
             date: $date,
@@ -93,7 +93,7 @@ class WeblingInvoiceService
     /**
      * Retrieve an invoice by ID.
      */
-    public function getInvoice(int $id): IResponse
+    public function getInvoice(int $id): Response
     {
         return $this->api->get("debitor/{$id}");
     }
@@ -103,7 +103,7 @@ class WeblingInvoiceService
      *
      * @param  array<string,mixed>  $data  Invoice payload updates
      */
-    public function updateInvoice(int $id, array $data): IResponse
+    public function updateInvoice(int $id, array $data): Response
     {
         return $this->api->put("debitor/{$id}", $data);
     }
@@ -111,7 +111,7 @@ class WeblingInvoiceService
     /**
      * Delete an invoice by ID.
      */
-    public function deleteInvoice(int $id): IResponse
+    public function deleteInvoice(int $id): Response
     {
         return $this->api->delete("debitor/{$id}");
     }

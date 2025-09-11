@@ -5,7 +5,7 @@ use App\Services\Webling\WeblingApiService;
 use App\Services\Webling\WeblingInvoiceService;
 use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
-use Webling\API\IResponse;
+use Illuminate\Http\Client\Response;
 
 it('builds payload and posts to debitor using DTO', function (): void {
     WeblingApiSettings::fake([
@@ -17,7 +17,7 @@ it('builds payload and posts to debitor using DTO', function (): void {
     ]);
 
     $api = Mockery::mock(WeblingApiService::class);
-    $fakeResponse = Mockery::mock(IResponse::class);
+    $fakeResponse = Mockery::mock(Response::class);
 
     $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload): bool {
         expect($path)->toBe('debitor')
@@ -73,7 +73,7 @@ it('accepts array input as well', function (): void {
     ]);
 
     $api = Mockery::mock(WeblingApiService::class);
-    $fakeResponse = Mockery::mock(IResponse::class);
+    $fakeResponse = Mockery::mock(Response::class);
 
     $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload): bool {
         expect($path)->toBe('debitor')
@@ -105,7 +105,7 @@ it('uses centrally stored settings by default but allows overrides', function ()
     ]);
 
     $api = Mockery::mock(WeblingApiService::class);
-    $fakeResponse = Mockery::mock(IResponse::class);
+    $fakeResponse = Mockery::mock(Response::class);
 
     $api->shouldReceive('post')->twice()->withArgs(function (string $path, array $payload): bool {
         expect($path)->toBe('debitor');

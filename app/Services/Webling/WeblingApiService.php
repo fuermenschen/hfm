@@ -4,15 +4,17 @@ namespace App\Services\Webling;
 
 use App\Settings\WeblingApiSettings;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
-use Webling\API\Client;
 
 /**
- * Base service to interact with the Webling API client.
+ * Base service to interact with the Webling API using Laravel HTTP client.
  */
 class WeblingApiService
 {
-    protected Client $client;
+    protected PendingRequest $client;
 
     public function __construct(public WeblingApiSettings $settings, public ConfigRepository $config)
     {
@@ -24,13 +26,22 @@ class WeblingApiService
             throw new InvalidArgumentException('Webling configuration is missing. Please set WEBLING_BASE_URL and WEBLING_API_KEY in settings.');
         }
 
-        $this->client = new Client($baseUrl, $apiKey, $options);
+        // Build a PendingRequest with base URL, headers and timeouts
+        $this->client = Http::baseUrl(rtrim($baseUrl, '/').'/api/1/')
+            ->withHeaders([
+                // Webling uses an API key header; the official client sends it as "apikey"
+                'apikey' => $apiKey,
+                'Accept' => 'application/json',
+            ])
+            ->timeout((int) ($options['timeout'] ?? 10))
+            ->connectTimeout((int) ($options['connecttimeout'] ?? 5))
+            ->withUserAgent((string) ($options['useragent'] ?? 'HFM Webling Client'));
     }
 
     /**
-     * Get the underlying Webling API client instance.
+     * Get the underlying HTTP PendingRequest instance.
      */
-    public function client(): Client
+    public function client(): PendingRequest
     {
         return $this->client;
     }
@@ -40,7 +51,7 @@ class WeblingApiService
      *
      * @param  string  $path  Path like "member/123" (no leading slash required)
      */
-    public function get(string $path): \Webling\API\IResponse
+    public function get(string $path): Response
     {
         return $this->client->get(ltrim($path, '/'));
     }
@@ -51,9 +62,9 @@ class WeblingApiService
      * @param  string  $path  Path like "member"
      * @param  array<string,mixed>  $data  JSON serializable payload
      */
-    public function post(string $path, array $data): \Webling\API\IResponse
+    public function post(string $path, array $data): Response
     {
-        return $this->client->post('/'.ltrim($path, '/'), $data);
+        return $this->client->post(ltrim($path, '/'), $data);
     }
 
     /**
@@ -62,9 +73,9 @@ class WeblingApiService
      * @param  string  $path  Path like "member/123"
      * @param  array<string,mixed>  $data  JSON serializable payload
      */
-    public function put(string $path, array $data): \Webling\API\IResponse
+    public function put(string $path, array $data): Response
     {
-        return $this->client->put('/'.ltrim($path, '/'), $data);
+        return $this->client->put(ltrim($path, '/'), $data);
     }
 
     /**
@@ -72,8 +83,8 @@ class WeblingApiService
      *
      * @param  string  $path  Path like "member/123"
      */
-    public function delete(string $path): \Webling\API\IResponse
+    public function delete(string $path): Response
     {
-        return $this->client->delete('/'.ltrim($path, '/'));
+        return $this->client->delete(ltrim($path, '/'));
     }
 }
