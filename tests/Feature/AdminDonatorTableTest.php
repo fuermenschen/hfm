@@ -1,12 +1,12 @@
 <?php
 
 use App\Components\AdminDonatorTable;
-use App\Jobs\CreateDonorInvoice;
+use App\Jobs\CreateDonorInvoiceDebitor;
 use App\Models\Donator;
 use Illuminate\Support\Facades\Bus;
 use Livewire\Livewire;
 
-it('dispatches CreateDonorInvoice synchronously from action', function () {
+it('dispatches CreateDonorInvoiceDebitor synchronously from action', function () {
     $donator = Donator::factory()->create();
 
     Bus::fake();
@@ -15,7 +15,7 @@ it('dispatches CreateDonorInvoice synchronously from action', function () {
         ->call('createDonorInvoice', $donator->id)
         ->assertStatus(200);
 
-    Bus::assertDispatchedSync(CreateDonorInvoice::class, function ($job) use ($donator) {
+    Bus::assertDispatchedSync(CreateDonorInvoiceDebitor::class, function ($job) use ($donator) {
         return $job->donor->is($donator);
     });
 });

@@ -20,11 +20,11 @@ it('applies default title and due date when missing', function () {
         'credit_account_id' => 0,
     ]);
 
-    expect($dto->title)->toBe('Spendenquittung 2025');
-    expect($dto->dueDate->toDateString())->toBe('2025-10-10');
+    expect($dto->title)->toBe('Rechnung')
+        ->and($dto->dueDate->toDateString())->toBe('2025-10-10');
 
     $payload = $dto->toWeblingPayload();
-    expect($payload['properties']['title'])->toBe('Spendenquittung 2025');
-    expect($payload['properties']['date'])->toBe('2025-09-10');
-    expect($payload['properties']['duedate'])->toBe('2025-10-10');
+    expect($payload['properties']['title'])->toBe('Rechnung')
+        ->and($payload['properties']['date'])->toBe('2025-09-10')
+        ->and($payload['properties']['duedate'])->toBe('2025-10-10');
 });

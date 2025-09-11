@@ -77,7 +77,7 @@ it('getAllSettings returns metadata and current values from repository', functio
         ->and($settings['api_url']['value'] ?? null)->toBe('https://repo.example/v1')
         ->and($settings['debit_account_id']['value'] ?? null)->toBe(4100)
         ->and($settings['api_url']['title'] ?? null)->toBe('Webling API URL')
-        ->and($settings['api_url']['rules'] ?? null)->toBe('required|url');
+        ->and($settings['api_url']['rules'] ?? null)->toBe(['required', 'regex:/^https:\/\/[a-zA-Z0-9\-]+\.webling\.ch$/']);
 });
 
 it('save persists values with type coercion and ignores invalid classes/props', function (): void {

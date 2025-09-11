@@ -36,7 +36,7 @@ class DonatorFactory extends Factory
         return [
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'address' => fake()->address(),
+            'address' => fake()->streetAddress(),
             'zip_code' => $postcode,
             'city' => fake()->city(),
             'phone_number' => $phoneNumber,

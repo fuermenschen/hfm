@@ -16,6 +16,8 @@ class WeblingApiSettings extends Settings
 
     public int $credit_account_id;
 
+    public int $due_days;
+
     public static function group(): string
     {
         return 'weblingApi';
@@ -45,6 +47,7 @@ class WeblingApiSettings extends Settings
             'accounting_period_id' => 'required|integer|min:1',
             'debit_account_id' => 'required|integer|min:1',
             'credit_account_id' => 'required|integer|min:1',
+            'due_days' => 'required|integer|min:1',
         ];
     }
 
@@ -56,6 +59,7 @@ class WeblingApiSettings extends Settings
             'accounting_period_id' => 'ID der Abrechnungsperiode',
             'debit_account_id' => 'Sollkonto ID für Rechnungen',
             'credit_account_id' => 'Habenkonto ID für Rechnungen',
+            'due_days' => 'Anzahl Tage Zahlungsfrist',
         ];
     }
 
@@ -67,6 +71,7 @@ class WeblingApiSettings extends Settings
             'accounting_period_id' => 'Die ID der aktuellen Abrechnungsperiode (Achtung: die ID, nicht das Jahr selbst).',
             'debit_account_id' => 'Die ID der Sollkontos, i.d.R. Debitoren (Achtung: die ID, nicht die Kontonummer selbst).',
             'credit_account_id' => 'Die ID der Habenkontos, z.B. Einnahmen Veranstaltungen (Achtung: die ID, nicht die Kontonummer selbst).',
+            'due_days' => 'Die Rechnungen sind fällig heute + X Tage.',
         ];
     }
 }

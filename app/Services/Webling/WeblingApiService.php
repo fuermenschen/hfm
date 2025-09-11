@@ -4,6 +4,7 @@ namespace App\Services\Webling;
 
 use App\Settings\WeblingApiSettings;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -35,7 +36,9 @@ class WeblingApiService
             ])
             ->timeout((int) ($options['timeout'] ?? 10))
             ->connectTimeout((int) ($options['connecttimeout'] ?? 5))
-            ->withUserAgent((string) ($options['useragent'] ?? 'HFM Webling Client'));
+            ->withUserAgent((string) ($options['useragent'] ?? 'HFM Webling Client'))
+            // Throw RequestException on 4xx/5xx responses
+            ->throw();
     }
 
     /**
@@ -50,6 +53,8 @@ class WeblingApiService
      * Perform a GET request against the Webling API.
      *
      * @param  string  $path  Path like "member/123" (no leading slash required)
+     *
+     * @throws ConnectionException
      */
     public function get(string $path): Response
     {
@@ -61,6 +66,8 @@ class WeblingApiService
      *
      * @param  string  $path  Path like "member"
      * @param  array<string,mixed>  $data  JSON serializable payload
+     *
+     * @throws ConnectionException
      */
     public function post(string $path, array $data): Response
     {
@@ -72,6 +79,8 @@ class WeblingApiService
      *
      * @param  string  $path  Path like "member/123"
      * @param  array<string,mixed>  $data  JSON serializable payload
+     *
+     * @throws ConnectionException
      */
     public function put(string $path, array $data): Response
     {
@@ -82,6 +91,8 @@ class WeblingApiService
      * Perform a DELETE request against the Webling API.
      *
      * @param  string  $path  Path like "member/123"
+     *
+     * @throws ConnectionException
      */
     public function delete(string $path): Response
     {

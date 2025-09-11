@@ -41,7 +41,7 @@ class InvoiceCreateData
         // Default title if empty
         $title = trim((string) ($data['title'] ?? ''));
         if ($title === '') {
-            $title = 'Spendenquittung '.$date->year; // default title
+            $title = 'Rechnung'; // default title
         }
 
         return new self(
