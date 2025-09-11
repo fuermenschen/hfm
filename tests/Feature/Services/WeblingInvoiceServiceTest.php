@@ -1,8 +1,8 @@
 <?php
 
-use App\Services\Webling\Dto\InvoiceCreateData;
+use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
+use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Services\Webling\WeblingApiService;
-use App\Services\Webling\WeblingInvoiceService;
 use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;

@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Webling\Dto\InvoiceCreateData;
+use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
 use Carbon\Carbon;
 
 it('applies default title and due date when missing', function () {

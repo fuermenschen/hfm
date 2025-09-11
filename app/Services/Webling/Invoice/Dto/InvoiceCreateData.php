@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Webling\Dto;
+namespace App\Services\Webling\Invoice\Dto;
 
 use Carbon\Carbon;
 

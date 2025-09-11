@@ -2,7 +2,7 @@
 
 namespace App\Components;
 
-use App\Jobs\CreateDonorInvoiceDebitor;
+use App\Jobs\CreateDonorInvoice;
 use App\Models\Donator;
 use App\Services\DonorService;
 use Illuminate\Database\Eloquent\Builder;
@@ -157,7 +157,7 @@ class AdminDonatorTable extends PowerGridComponent
             $donor = Donator::findOrFail($donator_id);
             $this->notification()->info(title: 'Einen Moment bitte...', description: 'Die Rechnung für '.$donor->privacy_name.' wird erstellt.');
             \Log::info('Creating donor invoice', ['donator_id' => $donator_id]);
-            CreateDonorInvoiceDebitor::dispatchSync($donor);
+            CreateDonorInvoice::dispatchSync($donor);
             $this->notification()->success('Rechnung erstellt', 'Die Rechnung für '.$donor->privacy_name.' wurde erfolgreich erstellt.');
         } catch (\Throwable $e) {
             \Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donator_id' => $donator_id]);

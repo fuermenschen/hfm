@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services\Webling;
+namespace App\Services\Webling\Invoice;
 
-use App\Services\Webling\Dto\InvoiceCreateData;
+use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
+use App\Services\Webling\WeblingApiService;
 use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
@@ -16,6 +17,37 @@ use Illuminate\Http\Client\Response;
 class WeblingInvoiceService
 {
     public function __construct(public WeblingApiService $api, public WeblingApiSettings $settings) {}
+
+    /**
+     * Convenience helper to create an invoice from discrete arguments.
+     *
+     * @param  array<int,array{amount: float, title: string}>  $invoiceLines
+     */
+    public function createInvoiceFromParams(
+        string $title,
+        Carbon $date,
+        Carbon $dueDate,
+        array $addressLines,
+        int $periodId,
+        array $invoiceLines,
+        int $accountingPeriodId,
+        int $debitAccountId,
+        int $creditAccountId,
+    ): Response {
+        $dto = new InvoiceCreateData(
+            title: $title,
+            date: $date,
+            dueDate: $dueDate,
+            addressLines: $addressLines,
+            periodId: $periodId,
+            invoiceLines: $invoiceLines,
+            accountingPeriodId: $accountingPeriodId,
+            debitAccountId: $debitAccountId,
+            creditAccountId: $creditAccountId,
+        );
+
+        return $this->createInvoice($dto);
+    }
 
     /**
      * Create an invoice (debitor) in Webling.
@@ -57,37 +89,6 @@ class WeblingInvoiceService
         }
 
         return $this->api->post('debitor', $dto->toWeblingPayload());
-    }
-
-    /**
-     * Convenience helper to create an invoice from discrete arguments.
-     *
-     * @param  array<int,array{amount: float, title: string}>  $invoiceLines
-     */
-    public function createInvoiceFromParams(
-        string $title,
-        Carbon $date,
-        Carbon $dueDate,
-        array $addressLines,
-        int $periodId,
-        array $invoiceLines,
-        int $accountingPeriodId,
-        int $debitAccountId,
-        int $creditAccountId,
-    ): Response {
-        $dto = new InvoiceCreateData(
-            title: $title,
-            date: $date,
-            dueDate: $dueDate,
-            addressLines: $addressLines,
-            periodId: $periodId,
-            invoiceLines: $invoiceLines,
-            accountingPeriodId: $accountingPeriodId,
-            debitAccountId: $debitAccountId,
-            creditAccountId: $creditAccountId,
-        );
-
-        return $this->createInvoice($dto);
     }
 
     /**

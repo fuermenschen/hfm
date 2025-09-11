@@ -11,6 +11,5 @@ return new class extends SettingsMigration
         $this->migrator->add('weblingApi.accounting_period_id', 1);
         $this->migrator->add('weblingApi.debit_account_id', 2);
         $this->migrator->add('weblingApi.credit_account_id', 1);
-        $this->migrator->add('weblingApi.due_days', 14);
     }
 };

@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\InvoiceSettings;
 use App\Settings\WeblingApiSettings;
 
 return [
@@ -9,6 +10,7 @@ return [
      * put them (manually) here.
      */
     'settings' => [
+        InvoiceSettings::class,
         WeblingApiSettings::class,
     ],
 
@@ -85,7 +87,7 @@ return [
      * register them.
      */
     'auto_discover_settings' => [
-        app_path('AdminSettings'),
+        app_path('Settings'),
     ],
 
     /*
