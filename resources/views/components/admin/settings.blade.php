@@ -2,18 +2,19 @@
     {{-- Flux toast outlet --}}
     <flux:toast />
 
-    @foreach ($classes as $fqcn => $meta)
-        @php
-            $short = class_basename($fqcn);
-            $classTitle = $meta['title'] ?? $short;
-            $classDesc = $meta['description'] ?? null;
-        @endphp
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+        @foreach ($classes as $fqcn => $meta)
+            @php
+                $short = class_basename($fqcn);
+                $classTitle = $meta['title'] ?? $short;
+                $classDesc = $meta['description'] ?? null;
+            @endphp
 
-        <section class="space-y-4">
-            <div>
+        <flux:card>
+            <div class="mb-6">
                 <flux:heading size="lg">{{ $classTitle }}</flux:heading>
                 @if (!empty($classDesc))
-                    <flux:subheading class="text-sm opacity-80">{{ $classDesc }}</flux:subheading>
+                    <flux:subheading>{{ $classDesc }}</flux:subheading>
                 @endif
                 <flux:subheading class="text-xs opacity-60">{{ $fqcn }}</flux:subheading>
             </div>
@@ -102,10 +103,10 @@
                     </flux:field>
                 @endforeach
             </div>
-        </section>
+        </flux:card>
 
-        <div class="border-b"></div>
     @endforeach
+    </div>
 
     <!-- Confirmation modal for saving a setting -->
     <flux:modal name="admin-setting-confirm" class="min-w-[26rem]" :dismissible="false">
