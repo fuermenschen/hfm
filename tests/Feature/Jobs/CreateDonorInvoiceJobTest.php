@@ -77,10 +77,9 @@ it('creates a letter after creating a donor invoice and stores flags and pdf han
     // Execute job synchronously
     (new CreateDonorInvoice($donator))->handle();
 
-    // Assert webling_data contains debitor_id, letter_created flag, and the stored PDF handle
+    // Assert webling_data contains debitor_id and the stored PDF handle (no letter_created flag)
     $donator->refresh();
     expect($donator->webling_data['debitor_id'] ?? null)->toBe(98765)
-        ->and($donator->webling_data['letter_created'] ?? null)->toBeTrue()
         ->and($donator->webling_data['letter_pdf']['disk'] ?? null)->toBe('local')
         ->and(isset($donator->webling_data['letter_pdf']['path']))->toBeTrue();
 
@@ -88,7 +87,7 @@ it('creates a letter after creating a donor invoice and stores flags and pdf han
     Storage::disk('local')->assertExists($donator->webling_data['letter_pdf']['path']);
 });
 
-it('sets letter_created to false and no pdf handle when letter creation fails', function (): void {
+it('keeps debitor_id and no pdf handle when letter creation fails', function (): void {
     $donator = Donator::factory()->create([
         'first_name' => 'Ben',
         'last_name' => 'Beispiel',
@@ -134,6 +133,5 @@ it('sets letter_created to false and no pdf handle when letter creation fails', 
 
     $donator->refresh();
     expect($donator->webling_data['debitor_id'] ?? null)->toBe(12345)
-        ->and($donator->webling_data['letter_created'] ?? null)->toBeFalse()
         ->and(isset($donator->webling_data['letter_pdf']))->toBeFalse();
 });
