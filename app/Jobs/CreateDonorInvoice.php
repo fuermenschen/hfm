@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Donator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Bus;
 
 class CreateDonorInvoice implements ShouldQueue
 {
@@ -14,8 +15,10 @@ class CreateDonorInvoice implements ShouldQueue
 
     public function handle(): void
     {
-        // Orchestrate: first ensure we have a debitor, then create the letter PDF
-        (new CreateDonorInvoiceDebitor($this->donor))->handle();
-        (new CreateDebitorInvoiceLetter($this->donor))->handle();
+        // Orchestrate sequentially via the bus: first create debitor, then generate the letter PDF
+        Bus::chain([
+            new CreateDonorInvoiceDebitor($this->donor),
+            new CreateDebitorInvoiceLetter($this->donor),
+        ])->dispatch();
     }
 }

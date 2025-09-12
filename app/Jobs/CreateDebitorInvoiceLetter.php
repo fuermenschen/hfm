@@ -46,7 +46,15 @@ class CreateDebitorInvoiceLetter implements ShouldQueue
                         ->body1("Liebe:r {$this->donor->first_name}\nVielen Dank für deine Unterstützung. Im Anhang findest du die Spendenrechnung.")
                         ->body2('Bitte bezahle bis zum Fälligkeitsdatum. Herzlichen Dank!')
                         ->dueDate($dueDate)
-                        ->withQrInvoice(fn ($q) => $q->withAmount = false);
+                        ->withQrInvoice(function ($q): void {
+                            // Populate debtor details; creditor/IBAN/withAmount fall back to settings
+                            $fullName = trim(($this->donor->first_name ?? '').' '.($this->donor->last_name ?? ''));
+                            $q->debtorName = $fullName !== '' ? [$fullName] : [];
+                            $q->debtorAddress1 = $this->donor->address ? [$this->donor->address] : [];
+                            $cityLine = trim(($this->donor->zip_code ?? '').' '.($this->donor->city ?? ''));
+                            $q->debtorAddress2 = $cityLine !== '' ? [$cityLine] : [];
+                            $q->additionalInformation = 'Spendenrechnung Höhenmeter für Menschen Winterthur 2025';
+                        });
                 },
                 $debitorId
             );
@@ -68,10 +76,11 @@ class CreateDebitorInvoiceLetter implements ShouldQueue
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('Failed to create Webling letter for debitor', [
+            Log::error('Failed to create Webling letter for debitor', [
                 'donor_id' => $this->donor->id,
                 'exception' => $e->getMessage(),
             ]);
+            throw $e;
         }
     }
 }
