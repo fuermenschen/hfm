@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Jobs\CreateDonorInvoice;
+use App\Jobs\DeleteDonorInvoiceDebitor;
 use App\Models\Donator;
 use App\Services\DonorService;
 use Illuminate\Database\Eloquent\Builder;
@@ -165,19 +166,58 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
+    #[On('confirmDeleteDonorInvoice')]
+    public function confirmDeleteDonorInvoice(int $donator_id): void
+    {
+        $donor = Donator::find($donator_id);
+        $name = $donor?->privacy_name ?? 'diesen Spender';
+
+        $this->dialog()->confirm([
+            'title' => 'Rechnung löschen?',
+            'description' => "Möchtest du die Rechnungseinträge für {$name} wirklich löschen? Dies entfernt auch die lokal gespeicherte PDF und löscht die Rechnung und sämtliche verknüpften Buchungen auf Webling.",
+            'icon' => 'exclamation',
+            'accept' => [
+                'label' => 'Ja, löschen',
+                'method' => 'deleteDonorInvoice',
+                'params' => $donator_id,
+            ],
+            'reject' => [
+                'label' => 'Abbrechen',
+            ],
+        ]);
+    }
+
+    public function deleteDonorInvoice(int $donator_id): void
+    {
+        try {
+            $donor = Donator::findOrFail($donator_id);
+            \Log::info('Deleting donor invoice debitor', ['donator_id' => $donator_id]);
+            DeleteDonorInvoiceDebitor::dispatchSync($donor);
+            $this->notification()->success('Rechnung gelöscht', 'Die Rechnungseinträge für '.$donor->privacy_name.' wurden gelöscht.');
+        } catch (\Throwable $e) {
+            \Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donator_id' => $donator_id]);
+            $this->notification()->error(title: 'Fehler beim Löschen der Rechnung', description: $e->getMessage());
+        }
+    }
+
     public function actions(Donator $row): array
     {
         return [
-            Button::add('createInvoice')
-                ->slot('Rechnung erstellen')
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('createDonorInvoice', ['donator_id' => $row->id])
-                ->tooltip('Rechnung erstellen'),
             Button::add('loginAsDonator')
                 ->slot('Login')
                 ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
                 ->route('show-donator', ['login_token' => $row->login_token], '_blank')
                 ->tooltip('Als Spender einloggen'),
+            Button::add('createInvoice')
+                ->slot('Rechnung erstellen')
+                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
+                ->dispatch('createDonorInvoice', ['donator_id' => $row->id])
+                ->tooltip('Rechnung erstellen'),
+            Button::add('deleteInvoice')
+                ->slot('Rechnung löschen')
+                ->class('pg-btn-white text-red-600 border-red-600 hover:bg-red-50 dark:text-red-300 dark:border-red-500 dark:hover:bg-red-900/20')
+                ->dispatch('confirmDeleteDonorInvoice', ['donator_id' => $row->id])
+                ->tooltip('Rechnungseinträge in Webling löschen (mit PDF)'),
         ];
     }
 }
