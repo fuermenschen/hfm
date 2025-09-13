@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
+use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
@@ -19,6 +20,7 @@ use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use WireUi\Traits\Actions;
+use ZipArchive;
 
 class AdminDonatorTable extends PowerGridComponent
 {
@@ -38,7 +40,17 @@ class AdminDonatorTable extends PowerGridComponent
 
     public function header(): array
     {
-        return [];
+        return [
+            Button::add('bulk-create-invoices')
+                ->slot(__('Rechnungen erstellen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
+                ->class('px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
+                ->dispatch('bulkCreateInvoice.'.$this->tableName, []),
+
+            Button::add('bulk-download-invoices')
+                ->slot(__('Rechnungen herunterladen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
+                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
+                ->dispatch('bulkDownloadInvoice.'.$this->tableName, []),
+        ];
     }
 
     public function setUp(): array
@@ -272,5 +284,89 @@ class AdminDonatorTable extends PowerGridComponent
         return view('powergrid.admin-donor-actions', [
             'row' => $row,
         ]);
+    }
+
+    #[On('bulkCreateInvoice.{tableName}')]
+    public function bulkCreateInvoice(): void
+    {
+        $ids = $this->checkboxValues ?? [];
+        if (empty($ids)) {
+            $this->notification()->info(title: 'Keine Auswahl', description: 'Bitte wähle mindestens eine:n Spender:in aus.');
+
+            return;
+        }
+
+        $processed = 0;
+        foreach ($ids as $id) {
+            try {
+                $this->createDonorInvoice((int) $id);
+                $processed++;
+            } catch (\Throwable $e) {
+                \Log::error('Bulk create invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        $this->js('window.pgBulkActions.clearAll()');
+        $this->notification()->success('Aktion abgeschlossen', $processed.' Rechnung(en) verarbeitet.');
+    }
+
+    #[On('bulkDownloadInvoice.{tableName}')]
+    public function bulkDownloadInvoice(): ?HttpResponse
+    {
+        $ids = $this->checkboxValues ?? [];
+        if (empty($ids)) {
+            $this->notification()->info(title: 'Keine Auswahl', description: 'Bitte wähle mindestens eine:n Spender:in aus.');
+
+            return null;
+        }
+
+        $files = [];
+        foreach ($ids as $id) {
+            $donor = Donator::find((int) $id);
+            if (! $donor) {
+                continue;
+            }
+            $weblingData = $donor->webling_data ?? [];
+            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
+                continue;
+            }
+            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
+            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
+            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
+                continue;
+            }
+            $absolutePath = Storage::disk($disk)->path($path);
+            $donId = 'DON-'.sprintf('25%04d', $donor->id);
+            $destName = 'Rechnung_'.$donId.'.pdf';
+            $files[] = ['path' => $absolutePath, 'name' => $destName];
+        }
+
+        if (empty($files)) {
+            $this->notification()->error(title: 'Keine PDFs gefunden', description: 'Für die ausgewählten Spender:innen wurden keine Rechnungs-PDFs gefunden.');
+
+            return null;
+        }
+
+        // Ensure temp directory exists
+        Storage::disk('local')->makeDirectory('tmp');
+        $timestamp = now()->format('Ymd_His');
+        $zipRelative = 'tmp/rechnungen_'.$timestamp.'.zip';
+        $zipPath = Storage::disk('local')->path($zipRelative);
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            $this->notification()->error(title: 'Fehler', description: 'ZIP-Datei konnte nicht erstellt werden.');
+
+            return null;
+        }
+
+        foreach ($files as $file) {
+            $zip->addFile($file['path'], $file['name']);
+        }
+        $zip->close();
+
+        $this->js('window.pgBulkActions.clearAll()');
+
+        return response()->download($zipPath, 'Rechnungen_'.$timestamp.'.zip')->deleteFileAfterSend(true);
     }
 }
