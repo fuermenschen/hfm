@@ -12,4 +12,13 @@ return new class extends SettingsMigration
         $this->migrator->add('weblingApi.debit_account_id', 2);
         $this->migrator->add('weblingApi.credit_account_id', 1);
     }
+
+    public function down(): void
+    {
+        $this->migrator->delete('weblingApi.api_url');
+        $this->migrator->delete('weblingApi.api_key');
+        $this->migrator->delete('weblingApi.accounting_period_id');
+        $this->migrator->delete('weblingApi.debit_account_id');
+        $this->migrator->delete('weblingApi.credit_account_id');
+    }
 };
