@@ -104,6 +104,11 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
 
             $weblingData['debitor_id'] = $debitorId;
 
+            // Also store direct URL to the debitor object in Webling
+            $baseUrl = rtrim($settings->api_url, '/');
+            $periodId = (int) $settings->accounting_period_id;
+            $weblingData['debitor_url'] = sprintf('%s/admin#/accounting/%d/debitor/:debitor/editor/%d', $baseUrl, $periodId, $debitorId);
+
             $this->donor->webling_data = $weblingData;
             $this->donor->save();
         }

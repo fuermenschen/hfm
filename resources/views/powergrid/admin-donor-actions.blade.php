@@ -18,6 +18,11 @@
                 <flux:menu.item icon="paper-airplane" wire:click="sendDonorInvoice({{ $row->id }})">
                     Rechnung senden
                 </flux:menu.item>
+                @if(!empty($row->webling_data['debitor_url']))
+                    <flux:menu.item icon="arrow-top-right-on-square" :href="$row->webling_data['debitor_url']" target="_blank">
+                        Rechnung in Webling anzeigen
+                    </flux:menu.item>
+                @endif
                 <flux:menu.item icon="trash" variant="danger" wire:click="confirmDeleteDonorInvoice({{ $row->id }})">
                     Rechnung löschen
                 </flux:menu.item>

@@ -67,6 +67,7 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
         if (in_array($response->status(), [204, 404], true)) {
             // Consider 204 No Content and 404 Not Found as successful deletions
             unset($weblingData['debitor_id']);
+            unset($weblingData['debitor_url']);
             $this->donor->webling_data = $weblingData;
             $this->donor->save();
 
