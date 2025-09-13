@@ -38,7 +38,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
         // Map donation lines to Webling invoice line format
         $lines = [];
         foreach ($invoiceLines as $l) {
-            $title = sprintf('%s für %s (%d Runden à Fr. %.2f)',
+            $title = sprintf('%s für %s | %d Runden à Fr. %.2f',
                 $l['athlete'],
                 $l['partner'],
                 $l['rounds'],
@@ -46,9 +46,9 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
             );
 
             if ($l['subtotal'] > $l['total']) {
-                $title .= sprintf(' (Max. Fr. %.2f)', $l['total']);
+                $title .= sprintf(' | Max. Fr. %.2f', $l['total']);
             } elseif ($l['subtotal'] < $l['total']) {
-                $title .= sprintf(' (Min. Fr. %.2f)', $l['total']);
+                $title .= sprintf(' | Min. Fr. %.2f', $l['total']);
             }
 
             $lines[] = [
@@ -58,10 +58,22 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
         }
 
         // Build recipient address lines
+        $country = strtoupper((string) ($this->donor->country_of_residence ?? ''));
+        $zip = (string) ($this->donor->zip_code ?? '');
+        $prefixedZip = $zip;
+        if ($country !== '' && $country !== 'CH') {
+            // Prefix non-Swiss ZIPs with the country code (e.g., DE-12345)
+            // Avoid double-prefixing if already present
+            $normalized = strtoupper($zip);
+            if (! str_starts_with($normalized, $country.'-')) {
+                $prefixedZip = $country.'-'.ltrim($zip);
+            }
+        }
+
         $addressLines = array_values(array_filter([
             $this->donor->first_name.' '.$this->donor->last_name,
             $this->donor->address,
-            ($this->donor->zip_code).' '.($this->donor->city),
+            $prefixedZip.' '.($this->donor->city),
         ], fn ($v) => $v !== null && trim((string) $v) !== ''));
 
         // Settings

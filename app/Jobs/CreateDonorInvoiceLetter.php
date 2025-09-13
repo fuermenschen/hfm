@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Donator;
+use App\Services\DonorService;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\InvoiceSettings;
@@ -38,13 +39,31 @@ class CreateDonorInvoiceLetter implements ShouldQueue
         $dueDays = app(InvoiceSettings::class)->due_days;
         $dueDate = $dueDays ? now()->addDays($dueDays) : now()->addDays(14);
 
+        $text1 = 'Liebe:r '.($this->donor->first_name ?? '')."\n\nWir schätzen dein Engagement sehr und möchten dir herzlich danken.\nUntenstehend findest du eine Übersicht über deine Spenden.\n\n";
+
+        // Compute the minimum amount (sum of all donation totals)
+        $invoiceLines = app(DonorService::class)->collectInvoiceData($this->donor);
+        $minTotal = 0.0;
+        foreach ($invoiceLines as $l) {
+            $minTotal += (float) ($l['total'] ?? 0.0);
+        }
+        $amountStr = 'Fr. '.number_format($minTotal, 2, '.', '');
+        $dueStr = $dueDate->format('d.m.Y');
+
+        $text2 = 'Bitte verwende zur Einzahlung den beiliegenden Einzahlungsschein. Die Zahlung des Betrags von mindestens '
+            .$amountStr
+            .' ist fällig bis am '
+            .$dueStr
+            .'. Nach Eingang aller Spenden werden wir eine gemeinsame Überweisung an die drei Benefizpartner:innen vornehmen. '
+            .'Wir werden dich informieren, wann wir welche Beträge überweisen durften.'
+            ."\n\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
+
         try {
             $letterResponse = app(LetterService::class)->createInvoiceLetter(
                 'Spendenrechnung Höhenmeter für Menschen',
-                function (LetterBuilder $b) use ($dueDate): void {
-                    $b->body1("Liebe:r {$this->donor->first_name}\nVielen Dank für deine Unterstützung. Im Anhang findest du die Spendenrechnung.")
-                        ->body2('Bitte bezahle bis zum Fälligkeitsdatum. Herzlichen Dank!')
-                        ->dueDate($dueDate)
+                function (LetterBuilder $b) use ($text1, $text2): void {
+                    $b->body1($text1)
+                        ->body2($text2)
                         ->withQrInvoice(function ($q): void {
                             // Populate debtor details; creditor/IBAN/withAmount fall back to settings
                             $fullName = trim(($this->donor->first_name ?? '').' '.($this->donor->last_name ?? ''));

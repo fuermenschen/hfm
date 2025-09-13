@@ -48,7 +48,21 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
         $debitorId = (int) $weblingData['debitor_id'];
 
         // Call Webling API to delete debitor
-        $response = app(WeblingInvoiceService::class)->deleteInvoice($debitorId);
+        try {
+            $response = app(WeblingInvoiceService::class)->deleteInvoice($debitorId);
+        } catch (\Throwable $e) {
+            if (method_exists($e, 'getCode') && $e->getCode() === 404) {
+                $response = new class
+                {
+                    public function status(): int
+                    {
+                        return 404;
+                    }
+                };
+            } else {
+                throw $e;
+            }
+        }
 
         if (in_array($response->status(), [204, 404], true)) {
             // Consider 204 No Content and 404 Not Found as successful deletions

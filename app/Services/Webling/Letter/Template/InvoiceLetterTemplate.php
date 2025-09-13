@@ -39,8 +39,6 @@ class InvoiceLetterTemplate
             }
         }
 
-        $due = $draft->dueDate ? $draft->dueDate->format('Y-m-d') : '';
-
         $bodyIntroHtml = '<div>'.nl2br(e($draft->bodyIntro)).'</div>';
         $bodyOutroHtml = '<div>'.nl2br(e($draft->bodyOutro)).'</div>';
 
@@ -70,14 +68,47 @@ class InvoiceLetterTemplate
             'body' => [
                 [
                     [
+                        'start' => 6,
+                        'width' => 6,
+                        'minHeight' => 93,
+                        'id' => 'hfm-address',
+                        'type' => 'address',
+                        'padding' => ['top' => 1.9, 'right' => 0, 'bottom' => 1.9, 'left' => 0],
+                        'options' => [
+                            'showSender' => true,
+                        ],
+                        'content' => [
+                            'html' => '<div><span class="fr-deletable webling-placeholder webling-simple-placeholder" contenteditable="false" data-webling-placeholder="%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3AAdresse%22%7D">{{Rechnung:Adresse}}</span>&nbsp;</div>',
+                            'sender' => 'Höhenmeter für Menschen, hfm-winti.ch',
+                        ],
+                    ],
+                ],
+                [
+                    [
                         'start' => 0,
                         'width' => 12,
                         'minHeight' => 20,
-                        'id' => 'hfm-date',
+                        'id' => 'hfm-city-date',
                         'type' => 'html',
-                        'padding' => ['top' => 4, 'right' => 0, 'bottom' => 4, 'left' => 0],
+                        'padding' => ['top' => 4.94, 'right' => 0, 'bottom' => 4.94, 'left' => 0],
                         'options' => [],
-                        'content' => ['html' => "<div>Fällig bis: {$due}</div>"],
+                        'content' => [
+                            'html' => '<div style="text-align: left;">Winterthur, <span class="fr-deletable webling-placeholder webling-simple-placeholder" contenteditable="false" data-webling-placeholder="%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22D.%20MMMM%20YYYY%22%7D">{{D. MMMM YYYY}}</span></div>',
+                        ],
+                    ],
+                ],
+                [
+                    [
+                        'start' => 0,
+                        'width' => 12,
+                        'minHeight' => 20,
+                        'id' => 'hfm-title',
+                        'type' => 'html',
+                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
+                        'options' => [],
+                        'content' => [
+                            'html' => '<div><span class="fr-deletable webling-placeholder webling-simple-placeholder" contenteditable="false" data-webling-placeholder="%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3ATitel%22%7D" style="font-size: 24px;"><strong><span><span class="fr-deletable webling-placeholder webling-simple-placeholder" contenteditable="false" data-webling-placeholder="%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3ATitel%22%7D">{{Rechnung:Titel}}</span><span class="fr-marker"></span></span></strong></span></div>',
+                        ],
                     ],
                 ],
                 [
@@ -87,7 +118,7 @@ class InvoiceLetterTemplate
                         'minHeight' => 20,
                         'id' => 'hfm-intro',
                         'type' => 'html',
-                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
+                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 5, 'left' => 0],
                         'options' => [],
                         'content' => ['html' => $bodyIntroHtml],
                     ],
@@ -99,7 +130,7 @@ class InvoiceLetterTemplate
                         'minHeight' => 0,
                         'id' => 'hfm-invoiceitems',
                         'type' => 'invoiceitems',
-                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
+                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 5, 'left' => 0],
                         'options' => ['design' => 'simple'],
                         'content' => ['html' => ''],
                     ],
@@ -111,9 +142,21 @@ class InvoiceLetterTemplate
                         'minHeight' => 20,
                         'id' => 'hfm-outro',
                         'type' => 'html',
-                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
+                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 5, 'left' => 0],
                         'options' => [],
                         'content' => ['html' => $bodyOutroHtml],
+                    ],
+                ],
+                [
+                    [
+                        'start' => 0,
+                        'width' => 12,
+                        'minHeight' => 20,
+                        'id' => 'hfm-pagebreak',
+                        'type' => 'pagebreak',
+                        'padding' => ['top' => 5, 'right' => 0, 'bottom' => 5, 'left' => 0],
+                        'options' => [],
+                        'content' => ['html' => ''],
                     ],
                 ],
             ],

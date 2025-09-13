@@ -5,7 +5,6 @@ namespace App\Services\Webling\Letter;
 use App\Services\Webling\Letter\Dto\LetterDraft;
 use App\Services\Webling\Letter\Dto\LetterOptions;
 use App\Services\Webling\Letter\Dto\QrInvoiceOptions;
-use Carbon\CarbonInterface;
 use Closure;
 
 class LetterBuilder
@@ -15,8 +14,6 @@ class LetterBuilder
     protected string $body1 = '';
 
     protected string $body2 = '';
-
-    protected ?CarbonInterface $dueDate = null;
 
     protected QrInvoiceOptions $qr;
 
@@ -49,13 +46,6 @@ class LetterBuilder
         return $this;
     }
 
-    public function dueDate(CarbonInterface $date): self
-    {
-        $this->dueDate = $date;
-
-        return $this;
-    }
-
     /**
      * Configure QR invoice options via a callback.
      *
@@ -83,7 +73,6 @@ class LetterBuilder
             headerText: $this->headerText,
             bodyIntro: $this->body1,
             bodyOutro: $this->body2,
-            dueDate: $this->dueDate,
             qr: $this->qr,
             options: $this->options,
         );
