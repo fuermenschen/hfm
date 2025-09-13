@@ -19,8 +19,24 @@ class InvoiceLetterTemplate
 
         $headerHtml = '';
         if ($options['showHeader'] ?? true) {
-            $escaped = nl2br(e($draft->headerText));
-            $headerHtml = "<div><span style=\"font-size: 20px;\"><strong>{$escaped}</strong></span></div>";
+            $headerText = trim($draft->headerText ?? '');
+
+            if ($headerText !== '') {
+                // If a custom header is provided, render it at normal 14px font without strong emphasis.
+                $escaped = nl2br(e($headerText));
+                $headerHtml = "<div><span style=\"font-size: 14px;\">{$escaped}</span></div>";
+            } else {
+                // Default header when none is provided.
+                $headerHtml = '<div style="line-height: 1.25;">'
+                    .'<div style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">Höhenmeter für Menschen</div>'
+                    .'<div style="font-size: 14px; white-space: pre-line;">'
+                    ."Verein für Menschen\n"
+                    ."c/o Kai Frehner\n"
+                    ."Nelkenstrasse 6\n"
+                    .'8400 Winterthur'
+                    .'</div>'
+                    .'</div>';
+            }
         }
 
         $due = $draft->dueDate ? $draft->dueDate->format('Y-m-d') : '';
@@ -80,24 +96,24 @@ class InvoiceLetterTemplate
                     [
                         'start' => 0,
                         'width' => 12,
-                        'minHeight' => 20,
-                        'id' => 'hfm-outro',
-                        'type' => 'html',
-                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
-                        'options' => [],
-                        'content' => ['html' => $bodyOutroHtml],
-                    ],
-                ],
-                [
-                    [
-                        'start' => 0,
-                        'width' => 12,
                         'minHeight' => 0,
                         'id' => 'hfm-invoiceitems',
                         'type' => 'invoiceitems',
                         'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
                         'options' => ['design' => 'simple'],
                         'content' => ['html' => ''],
+                    ],
+                ],
+                [
+                    [
+                        'start' => 0,
+                        'width' => 12,
+                        'minHeight' => 20,
+                        'id' => 'hfm-outro',
+                        'type' => 'html',
+                        'padding' => ['top' => 0, 'right' => 0, 'bottom' => 0, 'left' => 0],
+                        'options' => [],
+                        'content' => ['html' => $bodyOutroHtml],
                     ],
                 ],
             ],

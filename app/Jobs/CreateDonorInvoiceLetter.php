@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-class CreateDebitorInvoiceLetter implements ShouldQueue
+class CreateDonorInvoiceLetter implements ShouldQueue
 {
     use Queueable;
 
@@ -42,8 +42,7 @@ class CreateDebitorInvoiceLetter implements ShouldQueue
             $letterResponse = app(LetterService::class)->createInvoiceLetter(
                 'Spendenrechnung Höhenmeter für Menschen',
                 function (LetterBuilder $b) use ($dueDate): void {
-                    $b->header("Höhenmeter\nfür Menschen")
-                        ->body1("Liebe:r {$this->donor->first_name}\nVielen Dank für deine Unterstützung. Im Anhang findest du die Spendenrechnung.")
+                    $b->body1("Liebe:r {$this->donor->first_name}\nVielen Dank für deine Unterstützung. Im Anhang findest du die Spendenrechnung.")
                         ->body2('Bitte bezahle bis zum Fälligkeitsdatum. Herzlichen Dank!')
                         ->dueDate($dueDate)
                         ->withQrInvoice(function ($q): void {

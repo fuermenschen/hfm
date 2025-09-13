@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\CreateDebitorInvoiceLetter;
+use App\Jobs\CreateDonorInvoiceLetter;
 use App\Models\Donator;
 use App\Services\Webling\Letter\LetterService;
 use Illuminate\Http\Client\Response;
@@ -55,5 +55,5 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
     app()->instance(LetterService::class, $letterService);
 
     // Run the job
-    (new CreateDebitorInvoiceLetter($donator))->handle();
+    (new CreateDonorInvoiceLetter($donator))->handle();
 });

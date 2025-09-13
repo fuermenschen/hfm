@@ -14,6 +14,8 @@ class LetterApiClient
      */
     public function createLetter(array $dataJson, int $debitorId, string $title = 'Rechnung HfM', string $state = 'sent', string $letterType = 'debitor'): Response
     {
+        dump($dataJson);
+
         $payload = [
             'properties' => [
                 'title' => $title,

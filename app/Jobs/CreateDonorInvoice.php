@@ -18,7 +18,7 @@ class CreateDonorInvoice implements ShouldQueue
         // Orchestrate sequentially via the bus: first create debitor, then generate the letter PDF
         Bus::chain([
             new CreateDonorInvoiceDebitor($this->donor),
-            new CreateDebitorInvoiceLetter($this->donor),
+            new CreateDonorInvoiceLetter($this->donor),
         ])->dispatch();
     }
 }
