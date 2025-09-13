@@ -28,7 +28,7 @@ class InvoiceLetterTemplate
             } else {
                 // Default header when none is provided.
                 $headerHtml = '<div style="line-height: 1.25;">'
-                    .'<div style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">Höhenmeter für Menschen</div>'
+                    .'<div style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">Höhenmeter<br>für Menschen</div>'
                     .'<div style="font-size: 14px; white-space: pre-line;">'
                     ."Verein für Menschen\n"
                     ."c/o Kai Frehner\n"
@@ -36,6 +36,13 @@ class InvoiceLetterTemplate
                     .'8400 Winterthur'
                     .'</div>'
                     .'</div>';
+            }
+
+            // Prepend inline SVG logo content above the existing header content.
+            $logoSvg = @file_get_contents(resource_path('images/logo_light.svg')) ?: '';
+            if ($logoSvg !== '') {
+                $logoBlock = '<div style="margin-bottom: 12px; width: 3cm">'.$logoSvg.'</div>';
+                $headerHtml = $logoBlock.$headerHtml;
             }
         }
 
@@ -51,7 +58,7 @@ class InvoiceLetterTemplate
                     [
                         'start' => 0,
                         'width' => 12,
-                        'minHeight' => 184,
+                        'minHeight' => 250,
                         'id' => 'hfm-header',
                         'type' => 'header',
                         'padding' => ['top' => 38, 'right' => 0, 'bottom' => 0, 'left' => 0],
