@@ -83,3 +83,56 @@ it('throws when deletion not successful and keeps debitor_id', function (): void
     $donator->refresh();
     expect($donator->webling_data['debitor_id'] ?? null)->toBe(321);
 });
+
+it('deletes letter pdf even if no debitor_id is present', function (): void {
+    Storage::fake('local');
+
+    // Put a fake file
+    $path = 'webling/orphan.pdf';
+    Storage::disk('local')->put($path, 'pdf');
+
+    /** @var Donator $donator */
+    $donator = Donator::factory()->create([
+        'webling_data' => [
+            'letter_pdf' => [
+                'disk' => 'local',
+                'path' => $path,
+                'size' => 3,
+            ],
+        ],
+    ]);
+
+    // Assert file exists first
+    Storage::disk('local')->assertExists($path);
+
+    // No call should be made to deleteInvoice; don't bind a mock
+
+    (new DeleteDonorInvoiceDebitor($donator))->handle();
+
+    $donator->refresh();
+    // File should be gone and references cleared
+    Storage::disk('local')->assertMissing($path);
+    expect(isset($donator->webling_data['letter_pdf']))->toBeFalse()
+        ->and(isset($donator->webling_data['debitor_id']))->toBeFalse();
+});
+
+it('treats 404 from external deletion as success and clears debitor_id', function (): void {
+    /** @var Donator $donator */
+    $donator = Donator::factory()->create([
+        'webling_data' => [
+            'debitor_id' => 12345,
+        ],
+    ]);
+
+    $deleteResponse = Mockery::mock(Response::class);
+    $deleteResponse->shouldReceive('status')->andReturn(404);
+
+    $service = Mockery::mock(WeblingInvoiceService::class);
+    $service->shouldReceive('deleteInvoice')->once()->with(12345)->andReturn($deleteResponse);
+    app()->instance(WeblingInvoiceService::class, $service);
+
+    (new DeleteDonorInvoiceDebitor($donator))->handle();
+
+    $donator->refresh();
+    expect(isset($donator->webling_data['debitor_id']))->toBeFalse();
+});

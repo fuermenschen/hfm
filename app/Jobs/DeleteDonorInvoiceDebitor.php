@@ -18,10 +18,7 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
     {
         $weblingData = $this->donor->webling_data ?? [];
 
-        // Early return if no debitor_id present
-        if (! isset($weblingData['debitor_id']) || ! $weblingData['debitor_id']) {
-            return;
-        }
+        $changed = false;
 
         // If a PDF handle exists, delete the file and remove reference
         if (isset($weblingData['letter_pdf']) && is_array($weblingData['letter_pdf'])) {
@@ -35,6 +32,17 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
                 }
             }
             unset($weblingData['letter_pdf']);
+            $changed = true;
+        }
+
+        // If no debitor_id present, just persist any local cleanup and return
+        if (! isset($weblingData['debitor_id']) || ! $weblingData['debitor_id']) {
+            if ($changed) {
+                $this->donor->webling_data = $weblingData;
+                $this->donor->save();
+            }
+
+            return;
         }
 
         $debitorId = (int) $weblingData['debitor_id'];
@@ -42,8 +50,8 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
         // Call Webling API to delete debitor
         $response = app(WeblingInvoiceService::class)->deleteInvoice($debitorId);
 
-        if ($response->status() === 204) {
-            // Remove debitor_id on successful deletion
+        if (in_array($response->status(), [204, 404], true)) {
+            // Consider 204 No Content and 404 Not Found as successful deletions
             unset($weblingData['debitor_id']);
             $this->donor->webling_data = $weblingData;
             $this->donor->save();

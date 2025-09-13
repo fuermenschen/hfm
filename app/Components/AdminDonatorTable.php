@@ -6,16 +6,18 @@ use App\Jobs\CreateDonorInvoice;
 use App\Jobs\DeleteDonorInvoiceDebitor;
 use App\Models\Donator;
 use App\Services\DonorService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
-use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use WireUi\Traits\Actions;
 
 class AdminDonatorTable extends PowerGridComponent
@@ -45,7 +47,7 @@ class AdminDonatorTable extends PowerGridComponent
 
         return [
             PowerGrid::responsive(),
-            PowerGrid::exportable('donator')
+            PowerGrid::exportable('donor')
                 ->striped()
                 ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
             PowerGrid::header()
@@ -70,21 +72,21 @@ class AdminDonatorTable extends PowerGridComponent
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
-            ->add('don_id', function (Donator $donator) {
-                return 'DON-'.sprintf('25%04d', $donator->id);
+            ->add('don_id', function (Donator $donor) {
+                return 'DON-'.sprintf('25%04d', $donor->id);
             })
-            ->add('numOfDonations', function (Donator $donator) {
-                return $donator->donations->count();
+            ->add('numOfDonations', function (Donator $donor) {
+                return $donor->donations->count();
             })
-            ->add('donations_sum', function (Donator $donator) {
-                $lines = $this->donorService->collectInvoiceData($donator);
+            ->add('donations_sum', function (Donator $donor) {
+                $lines = $this->donorService->collectInvoiceData($donor);
                 $sum = array_sum(array_column($lines, 'total'));
 
                 return 'Fr. '.number_format($sum, 2, '.', "'");
             })
-            ->add('created_at_formatted', fn ($donator) => Carbon::parse($donator->created_at)->format('d.m.Y'))
-            ->add('invoice_sent_at_formatted', fn ($donator) => $donator->invoice_sent_at ? Carbon::parse($donator->invoice_sent_at)->format('d.m.Y H:i') : null)
-            ->add('country_of_residence', fn ($donator) => $donator->country_of_residence);
+            ->add('created_at_formatted', fn ($donor) => Carbon::parse($donor->created_at)->format('d.m.Y'))
+            ->add('invoice_sent_at_formatted', fn ($donor) => $donor->invoice_sent_at ? Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : null)
+            ->add('country_of_residence', fn ($donor) => $donor->country_of_residence);
     }
 
     public function columns(): array
@@ -152,34 +154,42 @@ class AdminDonatorTable extends PowerGridComponent
     }
 
     #[On('createDonorInvoice')]
-    public function createDonorInvoice(int $donator_id): void
+    public function createDonorInvoice(int $donor_id): void
     {
         try {
-            $donor = Donator::findOrFail($donator_id);
-            $this->notification()->info(title: 'Einen Moment bitte...', description: 'Die Rechnung für '.$donor->privacy_name.' wird erstellt.');
-            \Log::info('Creating donor invoice', ['donator_id' => $donator_id]);
+            $donor = Donator::findOrFail($donor_id);
+
+            // If a debitor already exists AND a letter PDF is present, there's nothing to do
+            $weblingData = $donor->webling_data ?? [];
+            $hasDebitor = ! empty($weblingData['debitor_id']);
+            $hasLetterPdf = ! empty($weblingData['letter_pdf']);
+            if ($hasDebitor && $hasLetterPdf) {
+                $this->notification()->info(title: 'Bereits vorhanden', description: 'Für '.$donor->privacy_name.' ist bereits eine Rechnung erstellt worden. Es gibt nichts zu tun.');
+
+                return;
+            }
             CreateDonorInvoice::dispatchSync($donor);
             $this->notification()->success('Rechnung erstellt', 'Die Rechnung für '.$donor->privacy_name.' wurde erfolgreich erstellt.');
         } catch (\Throwable $e) {
-            \Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donator_id' => $donator_id]);
+            \Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
             $this->notification()->error(title: 'Fehler beim Erstellen der Rechnung', description: $e->getMessage());
         }
     }
 
     #[On('confirmDeleteDonorInvoice')]
-    public function confirmDeleteDonorInvoice(int $donator_id): void
+    public function confirmDeleteDonorInvoice(int $donor_id): void
     {
-        $donor = Donator::find($donator_id);
-        $name = $donor?->privacy_name ?? 'diesen Spender';
+        $donor = Donator::find($donor_id);
+        $name = $donor?->privacy_name ?? 'diese:n Spender:in';
 
         $this->dialog()->confirm([
             'title' => 'Rechnung löschen?',
-            'description' => "Möchtest du die Rechnungseinträge für {$name} wirklich löschen? Dies entfernt auch die lokal gespeicherte PDF und löscht die Rechnung und sämtliche verknüpften Buchungen auf Webling.",
+            'description' => "Möchtest du die Rechnung für {$name} wirklich löschen? Dies entfernt auch die lokal gespeicherte PDF und löscht die Rechnung und <strong>sämtliche verknüpften Buchungen auf Webling.</strong>",
             'icon' => 'exclamation',
             'accept' => [
                 'label' => 'Ja, löschen',
                 'method' => 'deleteDonorInvoice',
-                'params' => $donator_id,
+                'params' => $donor_id,
             ],
             'reject' => [
                 'label' => 'Abbrechen',
@@ -187,37 +197,80 @@ class AdminDonatorTable extends PowerGridComponent
         ]);
     }
 
-    public function deleteDonorInvoice(int $donator_id): void
+    public function deleteDonorInvoice(int $donor_id): void
     {
         try {
-            $donor = Donator::findOrFail($donator_id);
-            \Log::info('Deleting donor invoice debitor', ['donator_id' => $donator_id]);
+            $donor = Donator::findOrFail($donor_id);
+
+            // If neither a debitor nor a letter PDF exists, there's nothing to delete
+            $weblingData = $donor->webling_data ?? [];
+            $hasDebitor = ! empty($weblingData['debitor_id']);
+            $hasLetterPdf = ! empty($weblingData['letter_pdf']);
+            if (! $hasDebitor && ! $hasLetterPdf) {
+                $this->notification()->info(title: 'Nichts zu löschen', description: 'Für '.$donor->privacy_name.' sind keine Rechnungseinträge vorhanden.');
+
+                return;
+            }
+
+            \Log::info('Deleting donor invoice debitor', ['donor_id' => $donor_id]);
             DeleteDonorInvoiceDebitor::dispatchSync($donor);
             $this->notification()->success('Rechnung gelöscht', 'Die Rechnungseinträge für '.$donor->privacy_name.' wurden gelöscht.');
         } catch (\Throwable $e) {
-            \Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donator_id' => $donator_id]);
+            \Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
             $this->notification()->error(title: 'Fehler beim Löschen der Rechnung', description: $e->getMessage());
+        }
+    }
+
+    /**
+     * Download the generated donor invoice letter PDF if available.
+     */
+    public function downloadDonorInvoice(int $donor_id): ?HttpResponse
+    {
+        try {
+            $donor = Donator::findOrFail($donor_id);
+            $weblingData = $donor->webling_data ?? [];
+
+            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
+                $this->notification()->error(title: 'Kein PDF gefunden', description: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.');
+
+                return null;
+            }
+
+            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
+            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
+
+            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
+                $this->notification()->error(title: 'Datei nicht gefunden', description: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.');
+
+                return null;
+            }
+
+            $absolutePath = Storage::disk($disk)->path($path);
+
+            $donId = 'DON-'.sprintf('25%04d', $donor->id);
+            $fileName = 'Rechnung_'.$donId.'.pdf';
+
+            return response()->download($absolutePath, $fileName, [
+                'Content-Type' => 'application/pdf',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error downloading donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+            $this->notification()->error(title: 'Fehler beim Herunterladen', description: $e->getMessage());
+
+            return null;
         }
     }
 
     public function actions(Donator $row): array
     {
-        return [
-            Button::add('loginAsDonator')
-                ->slot('Login')
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->route('show-donator', ['login_token' => $row->login_token], '_blank')
-                ->tooltip('Als Spender einloggen'),
-            Button::add('createInvoice')
-                ->slot('Rechnung erstellen')
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('createDonorInvoice', ['donator_id' => $row->id])
-                ->tooltip('Rechnung erstellen'),
-            Button::add('deleteInvoice')
-                ->slot('Rechnung löschen')
-                ->class('pg-btn-white text-red-600 border-red-600 hover:bg-red-50 dark:text-red-300 dark:border-red-500 dark:hover:bg-red-900/20')
-                ->dispatch('confirmDeleteDonorInvoice', ['donator_id' => $row->id])
-                ->tooltip('Rechnungseinträge in Webling löschen (mit PDF)'),
-        ];
+        // Actions are rendered from a dedicated Blade view via actionsFromView()
+        return [];
+    }
+
+    public function actionsFromView(mixed $row): View
+    {
+        return view('powergrid.admin-donor-actions', [
+            'row' => $row,
+        ]);
     }
 }
