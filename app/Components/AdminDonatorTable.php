@@ -4,11 +4,13 @@ namespace App\Components;
 
 use App\Jobs\CreateDonorInvoice;
 use App\Jobs\DeleteDonorInvoiceDebitor;
+use App\Mail\GenericMailMessage;
 use App\Models\Donator;
 use App\Services\DonorService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
@@ -50,6 +52,11 @@ class AdminDonatorTable extends PowerGridComponent
                 ->slot(__('Rechnungen herunterladen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
                 ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
                 ->dispatch('bulkDownloadInvoice.'.$this->tableName, []),
+
+            Button::add('bulk-send-invoices')
+                ->slot(__('Rechnungen per E-Mail senden (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
+                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
+                ->dispatch('bulkSendInvoice.'.$this->tableName, []),
         ];
     }
 
@@ -286,6 +293,100 @@ class AdminDonatorTable extends PowerGridComponent
         ]);
     }
 
+    public function sendDonorInvoice(int $donor_id): void
+    {
+        $donor = Donator::find($donor_id);
+        if (! $donor) {
+            $this->notification()->error(title: 'Nicht gefunden', description: 'Die/der ausgewählte Spender:in wurde nicht gefunden.');
+
+            return;
+        }
+
+        if ($donor->invoice_sent_at) {
+            $name = $donor->privacy_name ?? 'diese:n Spender:in';
+
+            $this->dialog()->confirm([
+                'title' => 'Rechnung erneut senden?',
+                'description' => "Für {$name} wurde die Rechnung bereits am ".Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i').' gesendet. Möchtest du sie erneut senden?',
+                'icon' => 'exclamation',
+                'accept' => [
+                    'label' => 'Ja, erneut senden',
+                    'method' => 'sendDonorInvoiceConfirmed',
+                    'params' => $donor_id,
+                ],
+                'reject' => [
+                    'label' => 'Abbrechen',
+                ],
+            ]);
+
+            return;
+        }
+
+        $this->sendDonorInvoiceConfirmed($donor_id);
+    }
+
+    public function sendDonorInvoiceConfirmed(int $donor_id): bool
+    {
+        try {
+            $donor = Donator::findOrFail($donor_id);
+
+            if (empty($donor->email)) {
+                $this->notification()->error(title: 'Keine E-Mail-Adresse', description: 'Für '.$donor->privacy_name.' ist keine E-Mail-Adresse hinterlegt.');
+
+                return false;
+            }
+
+            $weblingData = $donor->webling_data ?? [];
+            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
+                $this->notification()->error(title: 'Kein PDF gefunden', description: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.');
+
+                return false;
+            }
+
+            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
+            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
+
+            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
+                $this->notification()->error(title: 'Datei nicht gefunden', description: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.');
+
+                return false;
+            }
+
+            $donId = 'DON-'.sprintf('25%04d', $donor->id);
+            $fileName = 'Rechnung_'.$donId.'.pdf';
+
+            $subject = 'Rechnung Höhenmeter für Menschen';
+            $html = '<p>Liebe:r '.$donor->first_name.',</p>'
+                .'<p>Im Anhang findest du deine Rechnung. Vielen Dank für deine Unterstützung!</p>'
+                .'<p>Herzliche Grüsse<br>Das Team von Höhenmeter für Menschen</p>';
+
+            $mailable = new GenericMailMessage(
+                subject: $subject,
+                html: $html,
+                storageAttachments: [[
+                    'disk' => $disk,
+                    'path' => $path,
+                    'name' => $fileName,
+                    'mime' => 'application/pdf',
+                ]]
+            );
+
+            Mail::to($donor)->queue($mailable);
+
+            $donor->invoice_sent_at = now();
+            $donor->save();
+
+            $this->notification()->success('Rechnung gesendet', 'Die Rechnung wurde an '.$donor->email.' gesendet.');
+
+            return true;
+        } catch (\Throwable $e) {
+            \Log::error('Error sending donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+            $this->notification()->error(title: 'Fehler beim Senden', description: $e->getMessage());
+
+            return false;
+        }
+    }
+
     #[On('bulkCreateInvoice.{tableName}')]
     public function bulkCreateInvoice(): void
     {
@@ -368,5 +469,50 @@ class AdminDonatorTable extends PowerGridComponent
         $this->js('window.pgBulkActions.clearAll()');
 
         return response()->download($zipPath, 'Rechnungen_'.$timestamp.'.zip')->deleteFileAfterSend(true);
+    }
+
+    #[On('bulkSendInvoice.{tableName}')]
+    public function bulkSendInvoice(): void
+    {
+        $ids = $this->checkboxValues ?? [];
+        if (empty($ids)) {
+            $this->notification()->info(title: 'Keine Auswahl', description: 'Bitte wähle mindestens eine:n Spender:in aus.');
+
+            return;
+        }
+
+        $sent = 0;
+        $skipped = 0;
+
+        foreach ($ids as $id) {
+            try {
+                $donor = Donator::find((int) $id);
+                if (! $donor) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                // Skip donors that already have an invoice marked as sent to avoid unintended resends in bulk
+                if ($donor->invoice_sent_at) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $result = $this->sendDonorInvoiceConfirmed((int) $id);
+                if ($result === true) {
+                    $sent++;
+                } else {
+                    $skipped++;
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Bulk send invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+                $skipped++;
+            }
+        }
+
+        $this->js('window.pgBulkActions.clearAll()');
+        $this->notification()->success('Aktion abgeschlossen', $sent.' E-Mail(s) gesendet, '.$skipped.' übersprungen.');
     }
 }

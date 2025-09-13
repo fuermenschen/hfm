@@ -15,6 +15,9 @@
                 <flux:menu.item icon="document-arrow-down" wire:click="downloadDonorInvoice({{ $row->id }})">
                     Rechnung herunterladen
                 </flux:menu.item>
+                <flux:menu.item icon="paper-airplane" wire:click="sendDonorInvoice({{ $row->id }})">
+                    Rechnung senden
+                </flux:menu.item>
                 <flux:menu.item icon="trash" variant="danger" wire:click="confirmDeleteDonorInvoice({{ $row->id }})">
                     Rechnung löschen
                 </flux:menu.item>
