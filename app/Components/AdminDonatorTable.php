@@ -398,17 +398,34 @@ class AdminDonatorTable extends PowerGridComponent
         }
 
         $processed = 0;
+        $skipped = 0;
+
         foreach ($ids as $id) {
             try {
+                $donor = Donator::find((int) $id);
+                if (! $donor) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                // Skip donors without any donations (only for bulk action)
+                if ($donor->donations()->count() === 0) {
+                    $skipped++;
+
+                    continue;
+                }
+
                 $this->createDonorInvoice((int) $id);
                 $processed++;
             } catch (\Throwable $e) {
                 \Log::error('Bulk create invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+                $skipped++;
             }
         }
 
         $this->js('window.pgBulkActions.clearAll()');
-        $this->notification()->success('Aktion abgeschlossen', $processed.' Rechnung(en) verarbeitet.');
+        $this->notification()->success('Aktion abgeschlossen', $processed.' Rechnung(en) erstellt, '.$skipped.' übersprungen.');
     }
 
     #[On('bulkDownloadInvoice.{tableName}')]

@@ -8,24 +8,54 @@
                 </flux:menu.item>
             </flux:menu.group>
 
+            @php
+                $row = $row ?? null;
+                $letterPath = data_get($row->webling_data, 'letter_pdf.path');
+                $hasPdf = ! empty($letterPath);
+                $hasDebitor = ! empty(data_get($row->webling_data, 'debitor_id'));
+                $debitorUrl = data_get($row->webling_data, 'debitor_url');
+                $canDownload = $hasPdf;
+                $canSend = $hasPdf && ! empty($row->email);
+                $canCreate = ((! $hasDebitor) || (! $hasPdf)) && $row->donations()->count() > 0;
+                $canDelete = $hasDebitor || $hasPdf;
+            @endphp
+
             <flux:menu.group heading="Rechnung">
-                <flux:menu.item icon="document-plus" wire:click="createDonorInvoice({{ $row->id }})">
-                    Rechnung erstellen
-                </flux:menu.item>
-                <flux:menu.item icon="document-arrow-down" wire:click="downloadDonorInvoice({{ $row->id }})">
-                    Rechnung herunterladen
-                </flux:menu.item>
-                <flux:menu.item icon="paper-airplane" wire:click="sendDonorInvoice({{ $row->id }})">
-                    Rechnung senden
-                </flux:menu.item>
-                @if(!empty($row->webling_data['debitor_url']))
-                    <flux:menu.item icon="arrow-top-right-on-square" :href="$row->webling_data['debitor_url']" target="_blank">
+                @if($canCreate)
+                    <flux:menu.item icon="document-plus" wire:click="createDonorInvoice({{ $row->id }})">
+                        Rechnung erstellen
+                    </flux:menu.item>
+                @endif
+
+                @if($canDownload)
+                    <flux:menu.item icon="document-arrow-down" wire:click="downloadDonorInvoice({{ $row->id }})">
+                        Rechnung herunterladen
+                    </flux:menu.item>
+                @endif
+
+                @if($canSend)
+                    <flux:menu.item icon="paper-airplane" wire:click="sendDonorInvoice({{ $row->id }})">
+                        Rechnung senden
+                    </flux:menu.item>
+                @endif
+
+                @if(!empty($debitorUrl))
+                    <flux:menu.item icon="arrow-top-right-on-square" :href="$debitorUrl" target="_blank">
                         Rechnung in Webling anzeigen
                     </flux:menu.item>
                 @endif
-                <flux:menu.item icon="trash" variant="danger" wire:click="confirmDeleteDonorInvoice({{ $row->id }})">
-                    Rechnung löschen
-                </flux:menu.item>
+
+                @if($canDelete)
+                    <flux:menu.item icon="trash" variant="danger" wire:click="confirmDeleteDonorInvoice({{ $row->id }})">
+                        Rechnung löschen
+                    </flux:menu.item>
+                @endif
+
+                @if(!$canCreate && !$canDownload && !$canSend && !$canDelete)
+                    <flux:menu.item disabled="true">
+                        Keine Aktionen verfügbar
+                    </flux:menu.item>
+                @endif
             </flux:menu.group>
         </flux:menu>
     </flux:dropdown>
