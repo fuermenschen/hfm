@@ -68,7 +68,7 @@ class AdminSettings extends Component
                 ]);
             } catch (ValidationException $e) {
                 // Show a toast with the first validation error and rethrow to keep inline errors
-                $message = $e->validator?->errors()->first($key) ?? $e->getMessage();
+                $message = $e->validator->errors()->first($key);
                 Flux::toast([
                     'heading' => 'Fehler',
                     'text' => $message,

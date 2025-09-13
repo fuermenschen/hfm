@@ -74,7 +74,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
             $this->donor->first_name.' '.$this->donor->last_name,
             $this->donor->address,
             $prefixedZip.' '.($this->donor->city),
-        ], fn ($v) => $v !== null && trim((string) $v) !== ''));
+        ], fn ($v) => trim((string) $v) !== ''));
 
         // Settings
         $settings = app(WeblingApiSettings::class);

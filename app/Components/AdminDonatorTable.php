@@ -199,7 +199,7 @@ class AdminDonatorTable extends PowerGridComponent
     public function confirmDeleteDonorInvoice(int $donor_id): void
     {
         $donor = Donator::find($donor_id);
-        $name = $donor?->privacy_name ?? 'diese:n Spender:in';
+        $name = $donor ? $donor->privacy_name : 'diese:n Spender:in';
 
         $this->dialog()->confirm([
             'title' => 'Rechnung löschen?',

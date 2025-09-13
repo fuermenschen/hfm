@@ -53,7 +53,7 @@ class SettingsService
                 if ($instance !== null && \method_exists($instance, 'toArray')) {
                     /** @var array<string, mixed> $arr */
                     $arr = $instance->toArray();
-                    $instanceData = \is_array($arr) ? $arr : null;
+                    $instanceData = $arr;
                 }
             } catch (Throwable $e) {
                 $instance = null;

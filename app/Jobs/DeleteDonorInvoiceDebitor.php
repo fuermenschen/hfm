@@ -51,7 +51,7 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
         try {
             $response = app(WeblingInvoiceService::class)->deleteInvoice($debitorId);
         } catch (\Throwable $e) {
-            if (method_exists($e, 'getCode') && $e->getCode() === 404) {
+            if ($e->getCode() === 404) {
                 $response = new class
                 {
                     public function status(): int

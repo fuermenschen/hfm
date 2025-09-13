@@ -21,14 +21,17 @@ class GenericMailMessage extends Mailable implements ShouldQueue
      * @param  string  $html  The HTML content of the email.
      * @param  array  $storageAttachments  An array of attachments sourced from storage disks.
      */
+    /**
+     * @param  array<int, array<string, mixed>>  $storageAttachments
+     */
     public function __construct(
-        public $subject,
-        public $html,
-        public $storageAttachments = [],
+        string $subject,
+        string $html,
+        public array $storageAttachments = [],
     ) {
-        $this->subject = (string) $subject;
-        $this->html = (string) $html;
-        $this->storageAttachments = $storageAttachments;
+        // Assign to Mailable base properties (untyped in parent)
+        $this->subject = $subject;
+        $this->html = $html;
     }
 
     /**
@@ -74,15 +77,12 @@ class GenericMailMessage extends Mailable implements ShouldQueue
         // Optional:
         // - name: desired filename presented to the recipient
         // - mime: mime type
-        if (! is_array($this->storageAttachments) || empty($this->storageAttachments)) {
+        if (empty($this->storageAttachments)) {
             return [];
         }
 
         $attachments = [];
         foreach ($this->storageAttachments as $att) {
-            if (! is_array($att)) {
-                continue;
-            }
             $disk = (string) ($att['disk'] ?? 'local');
             $path = (string) ($att['path'] ?? '');
             if ($path === '') {

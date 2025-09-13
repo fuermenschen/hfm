@@ -60,19 +60,19 @@ class InvoiceCreateData
     /**
      * Build the Webling payload for POST /debitor.
      *
-     * @return false|string
+     * @return array<string, mixed>
      */
     public function toWeblingPayload(): array
     {
         $dateStr = $this->date->toDateString();
         $dueStr = $this->dueDate->toDateString();
 
-        $address = implode("\n", array_filter($this->addressLines, fn ($l) => $l !== null && $l !== ''));
+        $address = implode("\n", array_filter($this->addressLines, fn ($l) => $l !== ''));
 
         $revenue = [];
         foreach ($this->invoiceLines as $line) {
-            $amount = (float) ($line['amount'] ?? 0);
-            $lineTitle = (string) ($line['title'] ?? '');
+            $amount = (float) $line['amount'];
+            $lineTitle = (string) $line['title'];
 
             $revenue[] = [
                 'properties' => [
