@@ -34,7 +34,7 @@ class SettingsService
     {
         $classes = config('settings.settings');
 
-        if (! \is_array($classes) || empty($classes)) {
+        if (! is_array($classes) || empty($classes)) {
             return [];
         }
 

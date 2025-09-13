@@ -66,7 +66,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
             // Avoid double-prefixing if already present
             $normalized = strtoupper($zip);
             if (! str_starts_with($normalized, $country.'-')) {
-                $prefixedZip = $country.'-'.ltrim($zip);
+                $prefixedZip = $country.'-'.ltrim($normalized);
             }
         }
 
