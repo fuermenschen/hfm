@@ -15,42 +15,30 @@
                  autocomplete="street-address" required
     />
 
-    <span class="flex flex-row space-x-4">
-            <span class="basis-1/3">
+            <span>
                 <flux:input.group label="PLZ">
-                    <flux:select wire:model.live="country_of_residence" variant="listbox" class="max-w-fit">
-                        <flux:option value="CH" selected>CH</flux:option>
-                        <flux:option value="DE">DE</flux:option>
-                        <flux:option value="AT">AT</flux:option>
+                    <flux:select wire:model.live="country_of_residence" variant="listbox">
+                        <flux:option value="CH" selected>Schweiz</flux:option>
+                        <flux:option value="DE">Deutschland</flux:option>
+                        <flux:option value="AT">Österreich</flux:option>
                     </flux:select>
                     <flux:input
-                        class="grow"
                         wire:model.blur="zip_code"
                         type="text"
                         autocomplete="postal-code"
                         required
                         :mask="$country_of_residence === 'DE' ? '99999' : '9999'"
                         :placeholder="$country_of_residence === 'DE' ? '57123' : '8406'"
+                        icon-trailing="map-pin"
                     />
                 </flux:input.group>
                 @error('zip_code')
                     <flux:error name="zip_code" class="mt-1" />
                 @enderror
             </span>
-            <span class="grow">
-                <flux:input icon-trailing="home" label="Ort" placeholder="Winterthur" wire:model.blur="city"
+                <flux:input icon-trailing="map-pin" label="Ort" placeholder="Winterthur" wire:model.blur="city"
                             class="grow" type="text" autocomplete="address-level2" required
                 />
-            </span>
-        </span>
-
-    <flux:input icon-trailing="envelope" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-                 wire:model.blur="email" type="email" autocomplete="email" required
-    />
-
-    <flux:input icon-trailing="envelope" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch"
-                 wire:model.blur="email_confirmation" type="email" autocomplete="off" required
-    />
 
     <span>
         <flux:input.group label="Telefon">
@@ -73,6 +61,14 @@
             <flux:error name="phone_national" class="mt-1" />
         @enderror
     </span>
+
+    <flux:input icon-trailing="envelope" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
+                 wire:model.blur="email" type="email" autocomplete="email" required
+    />
+
+    <flux:input icon-trailing="envelope" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch"
+                 wire:model.blur="email_confirmation" type="email" autocomplete="off" required
+    />
 
     <span>
     <flux:select wire:model.live="athlete_id" label="Meine Unterstützung geht an" autocomplete="off" @change="$wire.updateNames()" >
