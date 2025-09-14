@@ -189,6 +189,7 @@ class AdminDonatorTable extends PowerGridComponent
             }
             CreateDonorInvoice::dispatchSync($donor);
             $this->notification()->success('Rechnung erstellt', 'Die Rechnung für '.$donor->privacy_name.' wurde erfolgreich erstellt.');
+            $this->dispatch('$refresh');
         } catch (\Throwable $e) {
             \Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
             $this->notification()->error(title: 'Fehler beim Erstellen der Rechnung', description: $e->getMessage());
@@ -234,6 +235,7 @@ class AdminDonatorTable extends PowerGridComponent
             \Log::info('Deleting donor invoice debitor', ['donor_id' => $donor_id]);
             DeleteDonorInvoiceDebitor::dispatchSync($donor);
             $this->notification()->success('Rechnung gelöscht', 'Die Rechnungseinträge für '.$donor->privacy_name.' wurden gelöscht.');
+            $this->dispatch('$refresh');
         } catch (\Throwable $e) {
             \Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
             $this->notification()->error(title: 'Fehler beim Löschen der Rechnung', description: $e->getMessage());
@@ -288,8 +290,14 @@ class AdminDonatorTable extends PowerGridComponent
 
     public function actionsFromView(mixed $row): View
     {
+        $id = is_array($row) ? ($row['id'] ?? null) : ($row->id ?? null);
+        $freshRow = null;
+        if ($id !== null) {
+            $freshRow = Donator::find($id);
+        }
+
         return view('powergrid.admin-donor-actions', [
-            'row' => $row,
+            'row' => $freshRow ?? $row,
         ]);
     }
 
@@ -356,7 +364,7 @@ class AdminDonatorTable extends PowerGridComponent
             $fileName = 'Rechnung_'.$donId.'.pdf';
 
             $subject = 'Rechnung Höhenmeter für Menschen';
-            $html = '<p>Liebe:r '.$donor->first_name.',</p>'
+            $html = '<p>Liebe:r '.$donor->first_name.'</p>'
                 .'<p>Im Anhang findest du deine Rechnung. Vielen Dank für deine Unterstützung!</p>'
                 .'<p>Herzliche Grüsse<br>Das Team von Höhenmeter für Menschen</p>';
 
@@ -377,6 +385,7 @@ class AdminDonatorTable extends PowerGridComponent
             $donor->save();
 
             $this->notification()->success('Rechnung gesendet', 'Die Rechnung wurde an '.$donor->email.' gesendet.');
+            $this->dispatch('$refresh');
 
             return true;
         } catch (\Throwable $e) {

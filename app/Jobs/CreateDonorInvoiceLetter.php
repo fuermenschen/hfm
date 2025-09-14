@@ -54,7 +54,7 @@ class CreateDonorInvoiceLetter implements ShouldQueue
             .$amountStr
             .' ist fällig bis am '
             .$dueStr
-            .'. Nach Eingang aller Spenden werden wir eine gemeinsame Überweisung an die drei Benefizpartner:innen vornehmen. '
+            .'. Nach Eingang aller Spenden werden wir die Überweisungen an die drei Benefizpartner:innen vornehmen. '
             .'Wir werden dich informieren, wann wir welche Beträge überweisen durften.'
             ."\n\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
