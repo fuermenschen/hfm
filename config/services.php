@@ -29,4 +29,15 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
+    'webling' => [
+        'base_url' => env('WEBLING_BASE_URL'),
+        'api_key' => env('WEBLING_API_KEY'),
+        // Optional cURL options supported by the Webling client
+        'options' => [
+            'connecttimeout' => env('WEBLING_CONNECT_TIMEOUT', 5),
+            'timeout' => env('WEBLING_TIMEOUT', 10),
+            'useragent' => env('WEBLING_USER_AGENT', 'HFM Webling Client'),
+        ],
+    ],
 ];
