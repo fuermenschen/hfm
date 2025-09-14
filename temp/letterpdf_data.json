@@ -1,0 +1,190 @@
+{
+    "options": {
+        "globalFontSize": 16,
+        "globalFontFamily": "'Source Sans Pro', sans-serif",
+        "showHeader": true,
+        "showFooter": false,
+        "showQrInvoice": true,
+        "showPaymentinstruction": false,
+        "letterType": "invoice",
+        "pageMargin": {
+            "top": 95,
+            "right": 78,
+            "bottom": 95,
+            "left": 95
+        }
+    },
+    "qrInvoice": {
+        "iban": "CH44 3199 9123 0008 8901 2",
+        "customerIdentification": "",
+        "creditorName": "Demo Webling",
+        "creditorAddress1": "",
+        "creditorAddress2": "8000 Zürich",
+        "debtorName": [
+            "Vorname",
+            "Name"
+        ],
+        "debtorAddress1": [
+            "Strasse"
+        ],
+        "debtorAddress2": [
+            "PLZ",
+            "Ort"
+        ],
+        "additionalInformation": "Rechnung {{Rechnung:ID}}",
+        "withAmount": false,
+        "hideLines": false,
+        "language": "de",
+        "twintQrActivated": false,
+        "twintMethodParameters": "",
+        "twintBillingInformation": ""
+    },
+    "paymentinstruction": null,
+    "header": [
+        [
+            {
+                "start": 0,
+                "width": 12,
+                "minHeight": 184,
+                "id": "1592984155917",
+                "type": "header",
+                "padding": {
+                    "top": 38,
+                    "right": 0,
+                    "bottom": 0,
+                    "left": 0
+                },
+                "options": {
+                    "backgroundImageUrl": "",
+                    "backgroundImageSize": "cover",
+                    "backgroundImagePosition": "top"
+                },
+                "content": {
+                    "html": "<div><img src=\"/api/client/letterimage/11421/image/logo_light.png\" style=\"height: 50px;\" class=\"fr-fil fr-dib\"></div><div><span style=\"font-size: 20px;\"><strong>Höhenmeter<br>für Menschen</strong></span></div><div><span style=\"font-size: 20px;\"></span><br></div>"
+                }
+            }
+        ]
+    ],
+    "footer": [],
+    "body": [
+        [
+            {
+                "start": 6,
+                "width": 6,
+                "minHeight": 93,
+                "id": "1592925146807",
+                "type": "address",
+                "padding": {
+                    "top": 1.9,
+                    "right": 0,
+                    "bottom": 1.9,
+                    "left": 0
+                },
+                "options": {
+                    "showSender": true
+                },
+                "content": {
+                    "html": "<div><span class=\"fr-deletable webling-placeholder webling-simple-placeholder\" contenteditable=\"false\" data-webling-placeholder=\"%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3AAdresse%22%7D\">{{Rechnung:Adresse}}</span>&nbsp;</div>",
+                    "sender": "Höhenmeter für Menschen, hfm-winti.ch"
+                }
+            }
+        ],
+        [
+            {
+                "start": 0,
+                "width": 12,
+                "minHeight": 20,
+                "id": "1592926783262",
+                "type": "html",
+                "padding": {
+                    "top": 4.94,
+                    "right": 0,
+                    "bottom": 4.94,
+                    "left": 0
+                },
+                "options": {},
+                "content": {
+                    "html": "<div style=\"text-align: left;\">Winterthur, <span class=\"fr-deletable webling-placeholder webling-simple-placeholder\" contenteditable=\"false\" data-webling-placeholder=\"%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22D.%20MMMM%20YYYY%22%7D\">{{D. MMMM YYYY}}</span></div>"
+                }
+            }
+        ],
+        [
+            {
+                "start": 0,
+                "width": 12,
+                "minHeight": 20,
+                "id": "1",
+                "type": "html",
+                "padding": {
+                    "top": 0,
+                    "right": 0,
+                    "bottom": 0,
+                    "left": 0
+                },
+                "options": {},
+                "content": {
+                    "html": "<div><span class=\"fr-deletable webling-placeholder webling-simple-placeholder\" contenteditable=\"false\" data-webling-placeholder=\"%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3ATitel%22%7D\" style=\"font-size: 24px;\"><strong><span><span class=\"fr-deletable webling-placeholder webling-simple-placeholder\" contenteditable=\"false\" data-webling-placeholder=\"%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3ATitel%22%7D\">{{Rechnung:Titel}}</span><span class=\"fr-marker\"></span></span></strong></span><br><br>Liebe:r {{Name Here}}</div><div><br>Wir schätzen dein Engagement sehr und möchten dir herzlich danken.</div><div><br>Untenstehend findest du eine Übersicht über deine Spenden an Höhenmeter für Menschen.<br><br></div>"
+                }
+            }
+        ],
+        [
+            {
+                "start": 0,
+                "width": 12,
+                "minHeight": 0,
+                "id": "1609953901425",
+                "type": "invoiceitems",
+                "padding": {
+                    "top": 0,
+                    "right": 0,
+                    "bottom": 0,
+                    "left": 0
+                },
+                "options": {
+                    "design": "simple"
+                },
+                "content": {
+                    "html": ""
+                }
+            }
+        ],
+        [
+            {
+                "start": 0,
+                "width": 12,
+                "minHeight": 20,
+                "id": "1609953901426",
+                "type": "html",
+                "padding": {
+                    "top": 0,
+                    "right": 0,
+                    "bottom": 0,
+                    "left": 0
+                },
+                "options": {},
+                "content": {
+                    "html": "<div><br></div><div>Bitte verwende zur Einzahlung den beiliegenden Einzahlungsschein. Die Zahlung des Betrags von mindestens {{Amount here}} ist fällig bis am <span class=\"fr-deletable webling-placeholder webling-simple-placeholder\" contenteditable=\"false\" data-webling-placeholder=\"%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22Rechnung%3AF%C3%A4lligkeitsdatum%22%7D\">{{Rechnung:Fälligkeitsdatum}}</span></div><div><br>Nach Eingang aller Spenden werden wir eine gemeinsame Überweisung an die drei Benefizpartner:innen vornehmen. Wir werden dich informieren, wann wir welche Beträge überweisen durften.</div><div><br>Herzliche Grüsse<br>Das Team von Höhenmeter für Menschen</div>"
+                }
+            }
+        ],
+        [
+            {
+                "start": 0,
+                "width": 12,
+                "minHeight": 20,
+                "id": "1757568942620",
+                "type": "pagebreak",
+                "padding": {
+                    "top": 5,
+                    "right": 0,
+                    "bottom": 5,
+                    "left": 0
+                },
+                "options": {},
+                "content": {
+                    "html": ""
+                }
+            }
+        ]
+    ]
+}
