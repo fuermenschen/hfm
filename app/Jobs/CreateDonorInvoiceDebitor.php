@@ -61,7 +61,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
         // remove lines with zero amount
         $lines = array_filter($lines, fn ($l) => $l['amount'] > 0);
         if (count($lines) === 0) {
-            new \RuntimeException('No non-zero amount invoice lines for donor ID '.$this->donor->id);
+            throw new \RuntimeException('No non-zero amount invoice lines for donor ID '.$this->donor->id);
         }
 
         // Build recipient address lines
