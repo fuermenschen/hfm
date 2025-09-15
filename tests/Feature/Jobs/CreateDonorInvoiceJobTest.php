@@ -124,6 +124,9 @@ it('keeps debitor_id and no pdf handle when letter creation fails', function ():
     // Letter service returns unsuccessful response
     $letterResponse = Mockery::mock(Response::class);
     $letterResponse->shouldReceive('successful')->andReturn(false);
+    // Provide methods used for warning log in job
+    $letterResponse->shouldReceive('status')->andReturn(400);
+    $letterResponse->shouldReceive('body')->andReturn('Simulated failure');
 
     $letterService = Mockery::mock(LetterService::class);
     $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);

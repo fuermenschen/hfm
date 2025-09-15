@@ -10,6 +10,7 @@ use App\Settings\InvoiceSettings;
 use App\Settings\WeblingApiSettings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 class CreateDonorInvoiceDebitor implements ShouldQueue
 {
@@ -55,6 +56,12 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
                 'amount' => (float) ($l['total'] ?? 0.0),
                 'title' => $title,
             ];
+        }
+
+        // remove lines with zero amount
+        $lines = array_filter($lines, fn ($l) => $l['amount'] > 0);
+        if (count($lines) === 0) {
+            new \RuntimeException('No non-zero amount invoice lines for donor ID '.$this->donor->id);
         }
 
         // Build recipient address lines
@@ -111,6 +118,14 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
 
             $this->donor->webling_data = $weblingData;
             $this->donor->save();
+        } else {
+            // Log unexpected non-error response codes (e.g., 1xx/2xx other than 201 or 3xx)
+            Log::warning('Unexpected response when creating Webling debitor for donor', [
+                'donor_id' => $this->donor->id,
+                'expected_status' => 201,
+                'actual_status' => $response->status(),
+                'response_excerpt' => substr((string) $response->body(), 0, 500),
+            ]);
         }
     }
 }

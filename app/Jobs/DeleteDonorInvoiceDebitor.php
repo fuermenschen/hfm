@@ -68,6 +68,13 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
             return;
         }
 
+        \Log::warning('Unexpected response when deleting Webling debitor for donor', [
+            'donor_id' => $this->donor->id,
+            'debitor_id' => $debitorId,
+            'expected_statuses' => [204, 404],
+            'actual_status' => $responseStatus,
+        ]);
+
         throw new \RuntimeException('Failed to delete debitor '.$debitorId.' for donor ID '.$this->donor->id);
     }
 }

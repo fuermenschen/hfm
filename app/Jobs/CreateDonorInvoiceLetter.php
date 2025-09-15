@@ -92,6 +92,13 @@ class CreateDonorInvoiceLetter implements ShouldQueue
                     $this->donor->webling_data = $weblingData;
                     $this->donor->save();
                 }
+            } else {
+                // Log unexpected non-error response codes for letter creation
+                Log::warning('Unexpected response when creating Webling invoice letter for donor', [
+                    'donor_id' => $this->donor->id,
+                    'actual_status' => $letterResponse->status(),
+                    'response_excerpt' => substr((string) $letterResponse->body(), 0, 500),
+                ]);
             }
         } catch (\Throwable $e) {
             Log::error('Failed to create Webling letter for debitor', [

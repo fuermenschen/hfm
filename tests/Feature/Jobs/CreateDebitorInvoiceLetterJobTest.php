@@ -22,6 +22,8 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
     // Mock LetterService to capture and assert the QrInvoiceOptions
     $letterResponse = Mockery::mock(Response::class);
     $letterResponse->shouldReceive('successful')->andReturn(false); // avoid file IO in job
+    $letterResponse->shouldReceive('status')->andReturn(123);
+    $letterResponse->shouldReceive('body')->andReturn('Simulated failure');
 
     $letterService = Mockery::mock(LetterService::class);
     $letterService->shouldReceive('createInvoiceLetter')
