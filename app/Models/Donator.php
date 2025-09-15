@@ -90,7 +90,7 @@ class Donator extends Model
 
     public function tokenExists(string $token): bool
     {
-        return self::where('login_token', $token)->exists();
+        return self::where('login_token', $token)->exists() || Athlete::where('login_token', $token)->exists();
     }
 
     public function getPrivacyNameAttribute(): string

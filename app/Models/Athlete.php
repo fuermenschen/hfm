@@ -143,6 +143,11 @@ class Athlete extends Model
 
     public function generateLoginToken(): void
     {
+        // return if token is non empty
+        if (! empty($this->login_token)) {
+            return;
+        }
+
         $token = bin2hex(random_bytes(32));
 
         if ($this->tokenExists($token)) {
@@ -155,7 +160,7 @@ class Athlete extends Model
 
     public function tokenExists(string $token): bool
     {
-        return Athlete::where('login_token', $token)->exists();
+        return Athlete::where('login_token', $token)->exists() || Donator::where('login_token', $token)->exists();
     }
 
     public function donations(): HasMany

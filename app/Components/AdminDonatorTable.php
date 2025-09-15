@@ -83,8 +83,7 @@ class AdminDonatorTable extends PowerGridComponent
     {
         return Donator::query()
             ->with(['donations', 'donations.athlete', 'donations.athlete.partner'])
-            ->select('donators.*')
-            ->selectRaw("CASE\n                WHEN invoice_sent_at IS NOT NULL THEN 'gesendet'\n                WHEN JSON_EXTRACT(webling_data, '$.letter_pdf') IS NOT NULL THEN 'erstellt'\n                ELSE '-'\n            END AS invoice_status");
+            ->select('donators.*');
     }
 
     public function relationSearch(): array

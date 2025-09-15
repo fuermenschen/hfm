@@ -12,6 +12,6 @@ it('renders the admin dashboard for authenticated users', function () {
         ->get('/admin')
         ->assertSuccessful()
         ->assertSee('Sportler:innen')
-        ->assertSee('Spenden (tatsächliche Runden)')
+        ->assertSee('Spenden (tatsächlich)')
         ->assertSee('Letzte Aktivitäten');
 });

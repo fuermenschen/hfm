@@ -46,32 +46,32 @@
         </x-stats>
 
         <!-- Estimated Amounts -->
-        <x-stats title="Spenden (geschätzte Runden)">
+        <x-stats title="Spenden (geschätzt)">
             <x-admin.stat-card
-                title="Erwartete Spenden (geschätzte Runden)"
+                title="Erwartete Spenden"
                 :value="'Fr. '.round($expectedDonationAmount, 2)"
                 route="admin.donations.index"
             />
             @foreach ($partners as $partner)
                 <x-admin.stat-card
                     title="{{ $partner->name }}"
-                    :value="'Fr. '.round($actualAmounts[$partner->id], 2)"
+                    :value="'Fr. '.round($estimatedAmounts[$partner->id], 2)"
                     route="admin.donations.index"
                 />
             @endforeach
         </x-stats>
 
         <!-- Actual Amounts -->
-        <x-stats title="Spenden (tatsächliche Runden)">
+        <x-stats title="Spenden (tatsächlich)">
             <x-admin.stat-card
-                title="Tatsächliche Spenden (tatsächliche Runden)"
+                title="Tatsächliche Spenden"
                 :value="'Fr. '.round($actualTotalAmount, 2)"
                 route="admin.donations.index"
             />
             @foreach ($partners as $partner)
                 <x-admin.stat-card
                     title="{{ $partner->name }}"
-                    :value="'Fr. '.round($estimatedAmounts[$partner->id], 2)"
+                    :value="'Fr. '.round($actualAmounts[$partner->id], 2)"
                     route="admin.donations.index"
                 />
             @endforeach
