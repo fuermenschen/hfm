@@ -19,6 +19,6 @@ class CreateDonorInvoice implements ShouldQueue
         Bus::chain([
             new CreateDonorInvoiceDebitor($this->donor),
             new CreateDonorInvoiceLetter($this->donor),
-        ])->dispatch();
+        ])->onConnection('sync')->dispatch();
     }
 }
