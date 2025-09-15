@@ -63,6 +63,13 @@
                 'current' => $thisRoute === 'pulse',
             ],
             [
+                'label' => 'Logs',
+                'route' => '/admin/logs',
+                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6"><path fill-rule="evenodd" d="M4.5 4.875c0-1.035.84-1.875 1.875-1.875h6.379c.498 0 .975.198 1.327.55l3.494 3.494c.352.352.55.829.55 1.327V19.125c0 1.035-.84 1.875-1.875 1.875h-9.875A1.875 1.875 0 0 1 4.5 19.125V4.875Zm11.25 0v3.75h3.75l-3.75-3.75ZM7.5 9.75A.75.75 0 0 1 8.25 9h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 9.75Zm0 3a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Zm.75 2.25a.75.75 0 0 0 0 1.5h5.25a.75.75 0 0 0 0-1.5H8.25Z" clip-rule="evenodd" /></svg>',
+                'current' => request()->is('admin/logs*'),
+                'target' => '_blank',
+            ],
+            [
                 'label' => 'Ausloggen',
                 'route' => 'logout',
                 'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" /></svg>',

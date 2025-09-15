@@ -23,6 +23,7 @@
         "lorisleiva/laravel-actions": "^2.9",
         "lukeraymonddowning/honey": "^1.0",
         "mews/purifier": "^3.4",
+        "opcodesio/log-viewer": "^3.19",
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^6.0",
         "propaganistas/laravel-phone": "^6.0",

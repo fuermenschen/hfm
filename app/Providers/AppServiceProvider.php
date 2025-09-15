@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::define('viewPulse', fn (User $user) => true);
+        Gate::define('viewLogViewer', fn (User $user) => true);
 
         // Inject computed dashboard data via a view composer
         View::composer('pages.admin.dashboard', function ($view): void {
