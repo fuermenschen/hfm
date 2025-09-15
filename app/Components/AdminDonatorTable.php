@@ -290,14 +290,8 @@ class AdminDonatorTable extends PowerGridComponent
 
     public function actionsFromView(mixed $row): View
     {
-        $id = is_array($row) ? ($row['id'] ?? null) : ($row->id ?? null);
-        $freshRow = null;
-        if ($id !== null) {
-            $freshRow = Donator::find($id);
-        }
-
         return view('powergrid.admin-donor-actions', [
-            'row' => $freshRow ?? $row,
+            'row' => $row,
         ]);
     }
 
