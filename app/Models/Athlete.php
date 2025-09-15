@@ -71,11 +71,19 @@ class Athlete extends Model
         static::created(function ($athlete) {
             $athlete->generateLoginToken();
 
-            $athlete->notify(new AthleteRegistered(
-                $athlete->first_name,
-                $athlete->public_id_string,
-                $athlete->login_token
-            ));
+            try {
+                $athlete->notify(new AthleteRegistered(
+                    $athlete->first_name,
+                    $athlete->public_id_string,
+                    $athlete->login_token
+                ));
+            } catch (\Throwable $e) {
+                Log::error('Failed to send AthleteRegistered notification', [
+                    'athlete_id' => $athlete->id,
+                    'email' => $athlete->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // add log entry
             Log::info('Athlete created', [
@@ -90,16 +98,24 @@ class Athlete extends Model
             $athlete->donations()->delete();
 
             // notify the athlete that their account has been deleted
-            // directly use the email address because the athlete is beeing deleted
-            $email = $athlete->email;
-            $message = 'Du wurdest als Sportler:in gelöscht.';
-            $subject = 'Deine Registrierung wurde gelöscht';
-            $first_name = $athlete->first_name;
-            Notification::route('mail', $email)->notify(new GenericMessage(
-                $message,
-                $subject,
-                $first_name)
-            );
+            // directly use the email address because the athlete is being deleted
+            try {
+                $email = $athlete->email;
+                $message = 'Du wurdest als Sportler:in gelöscht.';
+                $subject = 'Deine Registrierung wurde gelöscht';
+                $first_name = $athlete->first_name;
+                Notification::route('mail', $email)->notify(new GenericMessage(
+                    $message,
+                    $subject,
+                    $first_name)
+                );
+            } catch (\Throwable $e) {
+                Log::error('Failed to send athlete deletion notification', [
+                    'athlete_id' => $athlete->id,
+                    'email' => $athlete->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // add log entry
             Log::info('Athlete deleted', [

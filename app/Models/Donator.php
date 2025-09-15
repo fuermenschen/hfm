@@ -47,16 +47,24 @@ class Donator extends Model
             $donator->donations()->delete();
 
             // notify the donator that their account has been deleted
-            // directly use the email address because the donator is beeing deleted
-            $email = $donator->email;
-            $message = 'Du wurdest als Spender:in gelöscht.';
-            $subject = 'Deine Registrierung wurde gelöscht';
-            $first_name = $donator->first_name;
-            Notification::route('mail', $email)->notify(new GenericMessage(
-                $message,
-                $subject,
-                $first_name)
-            );
+            // directly use the email address because the donator is being deleted
+            try {
+                $email = $donator->email;
+                $message = 'Du wurdest als Spender:in gelöscht.';
+                $subject = 'Deine Registrierung wurde gelöscht';
+                $first_name = $donator->first_name;
+                Notification::route('mail', $email)->notify(new GenericMessage(
+                    $message,
+                    $subject,
+                    $first_name)
+                );
+            } catch (\Throwable $e) {
+                Log::error('Failed to send donator deletion notification', [
+                    'donator_id' => $donator->id,
+                    'email' => $donator->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // add log entry
             Log::info('Donator deleted', [
@@ -68,11 +76,13 @@ class Donator extends Model
 
     public function generateLoginToken(): void
     {
-        $token = bin2hex(random_bytes(32));
-
-        if ($this->tokenExists($token)) {
-            $this->generateLoginToken();
+        if (! empty($this->login_token)) {
+            return;
         }
+
+        do {
+            $token = bin2hex(random_bytes(32));
+        } while ($this->tokenExists($token));
 
         $this->login_token = $token;
         $this->save();
@@ -80,7 +90,7 @@ class Donator extends Model
 
     public function tokenExists(string $token): bool
     {
-        return Athlete::where('login_token', $token)->exists();
+        return self::where('login_token', $token)->exists();
     }
 
     public function getPrivacyNameAttribute(): string

@@ -39,15 +39,8 @@ class GenericMailMessage extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
-        $bcc = [];
-        $fromAddress = config('mail.from.address');
-        if (is_string($fromAddress) && $fromAddress !== '') {
-            $bcc = [$fromAddress];
-        }
-
         return new Envelope(
             subject: $this->subject,
-            bcc: $bcc,
         );
     }
 
