@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Services\DashboardService;
+use App\Services\DonationService;
 use App\Services\DonorService;
 use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -16,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DonorService::class);
         $this->app->singleton(SettingsService::class);
+        $this->app->singleton(DonationService::class);
+        $this->app->singleton(DashboardService::class);
     }
 
     /**
@@ -26,5 +31,12 @@ class AppServiceProvider extends ServiceProvider
         if (app()->isLocal()) {
             Model::preventLazyLoading();
         }
+
+        // Inject computed dashboard data via a view composer
+        View::composer('pages.admin.dashboard', function ($view): void {
+            /** @var DashboardService $dashboard */
+            $dashboard = app(DashboardService::class);
+            $view->with($dashboard->getData());
+        });
     }
 }

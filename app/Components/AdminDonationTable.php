@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Models\Donation;
+use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use PowerComponents\LivewirePowerGrid\Column;
@@ -64,7 +65,16 @@ class AdminDonationTable extends PowerGridComponent
                 return 'Fr. '.number_format($donation->amount_per_round, 2, '.', "'");
             })
             ->add('estimated_amount', function (Donation $donation) {
-                return 'Fr. '.number_format($donation->amount_per_round * $donation->athlete->rounds_estimated, 2, '.', "'");
+                $service = app(DonationService::class);
+                $calculated = $service->calculateEstimatedAmount($donation);
+
+                return 'Fr. '.number_format($calculated, 2, '.', "'");
+            })
+            ->add('actual_amount', function (Donation $donation) {
+                $service = app(DonationService::class);
+                $calculated = $service->calculateActualAmount($donation);
+
+                return 'Fr. '.number_format($calculated, 2, '.', "'");
             })
             ->add('min_amount', function (Donation $donation) {
 
@@ -105,7 +115,10 @@ class AdminDonationTable extends PowerGridComponent
             Column::make('Betrag pro Runde', 'amount_per_round')
                 ->sortable(),
 
-            Column::make('Geschätzter Betrag', 'estimated_amount')
+            Column::make('Geschätzter Betrag', 'estimated_amount', 'estimated_amount_raw')
+                ->fixedOnResponsive(),
+
+            Column::make('Tatsächlicher Betrag', 'actual_amount')
                 ->fixedOnResponsive(),
 
             Column::make('Minimaler Betrag', 'min_amount'),
