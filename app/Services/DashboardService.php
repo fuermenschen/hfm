@@ -94,11 +94,11 @@ class DashboardService
         $time = (int) date('H');
         $greeting = 'Hallo ';
 
-        if ($time >= 12 && $time < 17) {
-            $greeting = 'Grüezi ';
-        } elseif ($time >= 17 && $time <= 24) {
+        if ($time >= 17) {
             $greeting = 'Guten Abend ';
-        } elseif ($time >= 4 && $time < 12) {
+        } elseif ($time >= 12) {
+            $greeting = 'Grüezi ';
+        } elseif ($time >= 4) {
             $greeting = 'Guten Morgen ';
         }
 
@@ -158,8 +158,8 @@ class DashboardService
         foreach ($recentDonations as $donation) {
             $activities[] = [
                 'type' => 'donation',
-                'name' => $donation->donator?->privacy_name,
-                'name2' => $donation->athlete?->privacy_name,
+                'name' => $donation->donator->privacy_name,
+                'name2' => $donation->athlete->privacy_name,
                 'created_at' => $donation->created_at,
             ];
         }

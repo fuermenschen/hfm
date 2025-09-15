@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mime\Address;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -87,28 +88,32 @@ class AppServiceProvider extends ServiceProvider
 
         // Mail events
         Event::listen(MessageSending::class, function (MessageSending $event): void {
-            $to = collect($event->message->getTo() ?? [])->map(fn ($addr) => method_exists($addr, 'getAddress') ? $addr->getAddress() : (string) $addr)->all();
+            $to = collect($event->message->getTo())
+                ->map(fn (Address $addr) => $addr->getAddress())
+                ->all();
             Log::info('Mail sending', [
                 'to' => $to,
-                'subject' => method_exists($event->message, 'getSubject') ? $event->message->getSubject() : null,
+                'subject' => $event->message->getSubject(),
             ]);
         });
 
         Event::listen(MessageSent::class, function (MessageSent $event): void {
-            $to = collect($event->message->getTo() ?? [])->map(fn ($addr) => method_exists($addr, 'getAddress') ? $addr->getAddress() : (string) $addr)->all();
+            $to = collect($event->message->getTo())
+                ->map(fn (Address $addr) => $addr->getAddress())
+                ->all();
             Log::info('Mail sent', [
                 'to' => $to,
-                'subject' => method_exists($event->message, 'getSubject') ? $event->message->getSubject() : null,
+                'subject' => $event->message->getSubject(),
             ]);
         });
 
         // Capture failures from queued mail/notification jobs (e.g., mail server down)
         Event::listen(JobFailed::class, function (JobFailed $event): void {
             $payload = $event->job->payload();
-            $displayName = $payload['displayName'] ?? ($event->job->resolveName() ?? 'unknown');
+            $displayName = $payload['displayName'] ?? $event->job->resolveName();
             $context = [
                 'connection' => $event->connectionName,
-                'queue' => method_exists($event->job, 'getQueue') ? $event->job->getQueue() : null,
+                'queue' => $event->job->getQueue(),
                 'display_name' => $displayName,
                 'exception' => $event->exception->getMessage(),
             ];
