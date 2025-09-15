@@ -7,6 +7,8 @@ use App\Services\DonationService;
 use App\Services\DonorService;
 use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
         if (app()->isLocal()) {
             Model::preventLazyLoading();
         }
+
+        Gate::define('viewPulse', fn (User $user) => true);
 
         // Inject computed dashboard data via a view composer
         View::composer('pages.admin.dashboard', function ($view): void {

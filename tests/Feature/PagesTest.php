@@ -26,6 +26,11 @@ test('all public routes are accessible', function () {
             continue;
         }
 
+        // skip pulse route
+        if ($route->uri == 'admin/pulse') {
+            continue;
+        }
+
         // Skip routes with API key middleware
         if (in_array('api-key', $route->middleware())) {
             continue;
@@ -60,8 +65,9 @@ test('all authenticated routes are accessible when logged in', function () {
             continue;
         }
 
-        // Only routes with auth middleware
-        if (! in_array('auth', $route->middleware())) {
+        // Only routes with auth middleware or Pulse Authorize middleware
+        if (! in_array('auth', $route->middleware()) &&
+            ! in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware())) {
             continue;
         }
 
