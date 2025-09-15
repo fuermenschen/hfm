@@ -7,6 +7,7 @@ use App\Jobs\DeleteDonorInvoiceDebitor;
 use App\Mail\GenericMailMessage;
 use App\Models\Donator;
 use App\Services\DonorService;
+use Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -80,7 +81,10 @@ class AdminDonatorTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        return Donator::query()->with(['donations', 'donations.athlete', 'donations.athlete.partner']);
+        return Donator::query()
+            ->with(['donations', 'donations.athlete', 'donations.athlete.partner'])
+            ->select('donators.*')
+            ->selectRaw("CASE\n                WHEN invoice_sent_at IS NOT NULL THEN 'gesendet'\n                WHEN JSON_EXTRACT(webling_data, '$.letter_pdf') IS NOT NULL THEN 'erstellt'\n                ELSE '-'\n            END AS invoice_status");
     }
 
     public function relationSearch(): array
@@ -105,6 +109,17 @@ class AdminDonatorTable extends PowerGridComponent
             })
             ->add('created_at_formatted', fn ($donor) => Carbon::parse($donor->created_at)->format('d.m.Y'))
             ->add('invoice_sent_at_formatted', fn ($donor) => $donor->invoice_sent_at ? Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : null)
+            ->add('invoice_status', function (Donator $donor) {
+                if (! empty($donor->invoice_sent_at)) {
+                    return 'gesendet';
+                }
+                $weblingData = $donor->webling_data ?? [];
+                if (! empty($weblingData['letter_pdf'])) {
+                    return 'erstellt';
+                }
+
+                return '-';
+            })
             ->add('country_of_residence', fn ($donor) => $donor->country_of_residence);
     }
 
@@ -130,8 +145,7 @@ class AdminDonatorTable extends PowerGridComponent
             Column::make('Anzahl Spenden', 'numOfDonations')
                 ->fixedOnResponsive(),
 
-            Column::make('Rechnungsbetrag', 'donations_sum')
-                ->searchable(),
+            Column::make('Rechnungsbetrag', 'donations_sum'),
 
             Column::make('Anmeldung', 'created_at_formatted', 'created_at')
                 ->sortable(),
@@ -157,6 +171,9 @@ class AdminDonatorTable extends PowerGridComponent
                 ->sortable()
                 ->searchable(),
 
+            Column::make('Rechnung', 'invoice_status')
+                ->sortable(),
+
             Column::make('Rechnung gesendet am', 'invoice_sent_at_formatted', 'invoice_sent_at')
                 ->sortable(),
 
@@ -175,6 +192,7 @@ class AdminDonatorTable extends PowerGridComponent
     #[On('createDonorInvoice')]
     public function createDonorInvoice(int $donor_id): void
     {
+
         try {
             $donor = Donator::findOrFail($donor_id);
 
@@ -183,16 +201,29 @@ class AdminDonatorTable extends PowerGridComponent
             $hasDebitor = ! empty($weblingData['debitor_id']);
             $hasLetterPdf = ! empty($weblingData['letter_pdf']);
             if ($hasDebitor && $hasLetterPdf) {
-                $this->notification()->info(title: 'Bereits vorhanden', description: 'Für '.$donor->privacy_name.' ist bereits eine Rechnung erstellt worden. Es gibt nichts zu tun.');
+                Flux::toast(
+                    heading: 'Bereits vorhanden',
+                    text: 'Für '.$donor->privacy_name.' ist bereits eine Rechnung erstellt worden. Es gibt nichts zu tun.',
+                    variant: 'warning',
+                );
 
                 return;
             }
             CreateDonorInvoice::dispatchSync($donor);
-            $this->notification()->success('Rechnung erstellt', 'Die Rechnung für '.$donor->privacy_name.' wurde erfolgreich erstellt.');
+            Flux::toast(
+                heading: 'Rechnung erstellt',
+                text: 'Die Rechnung für '.$donor->privacy_name.' wurde erfolgreich erstellt.',
+                variant: 'success',
+            );
             $this->dispatch('$refresh');
         } catch (\Throwable $e) {
             \Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
-            $this->notification()->error(title: 'Fehler beim Erstellen der Rechnung', description: $e->getMessage());
+            Flux::toast(
+                heading: 'Fehler beim Erstellen der Rechnung',
+                text: $e->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
         }
     }
 
@@ -227,18 +258,31 @@ class AdminDonatorTable extends PowerGridComponent
             $hasDebitor = ! empty($weblingData['debitor_id']);
             $hasLetterPdf = ! empty($weblingData['letter_pdf']);
             if (! $hasDebitor && ! $hasLetterPdf) {
-                $this->notification()->info(title: 'Nichts zu löschen', description: 'Für '.$donor->privacy_name.' sind keine Rechnungseinträge vorhanden.');
+                Flux::toast(
+                    heading: 'Nichts zu löschen',
+                    text: 'Für '.$donor->privacy_name.' sind keine Rechnungseinträge vorhanden.',
+                    variant: 'warning',
+                );
 
                 return;
             }
 
             \Log::info('Deleting donor invoice debitor', ['donor_id' => $donor_id]);
             DeleteDonorInvoiceDebitor::dispatchSync($donor);
-            $this->notification()->success('Rechnung gelöscht', 'Die Rechnungseinträge für '.$donor->privacy_name.' wurden gelöscht.');
+            Flux::toast(
+                heading: 'Rechnung gelöscht',
+                text: 'Die Rechnungseinträge für '.$donor->privacy_name.' wurden gelöscht.',
+                variant: 'success',
+            );
             $this->dispatch('$refresh');
         } catch (\Throwable $e) {
             \Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
-            $this->notification()->error(title: 'Fehler beim Löschen der Rechnung', description: $e->getMessage());
+            Flux::toast(
+                heading: 'Fehler beim Löschen der Rechnung',
+                text: $e->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
         }
     }
 
@@ -252,7 +296,12 @@ class AdminDonatorTable extends PowerGridComponent
             $weblingData = $donor->webling_data ?? [];
 
             if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
-                $this->notification()->error(title: 'Kein PDF gefunden', description: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.');
+                Flux::toast(
+                    heading: 'Kein PDF gefunden',
+                    text: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.',
+                    variant: 'danger',
+                    duration: 0,
+                );
 
                 return null;
             }
@@ -261,7 +310,12 @@ class AdminDonatorTable extends PowerGridComponent
             $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
 
             if ($path === '' || ! Storage::disk($disk)->exists($path)) {
-                $this->notification()->error(title: 'Datei nicht gefunden', description: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.');
+                Flux::toast(
+                    heading: 'Datei nicht gefunden',
+                    text: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.',
+                    variant: 'danger',
+                    duration: 0,
+                );
 
                 return null;
             }
@@ -276,7 +330,12 @@ class AdminDonatorTable extends PowerGridComponent
             ]);
         } catch (\Throwable $e) {
             \Log::error('Error downloading donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
-            $this->notification()->error(title: 'Fehler beim Herunterladen', description: $e->getMessage());
+            Flux::toast(
+                heading: 'Fehler beim Herunterladen',
+                text: $e->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
 
             return null;
         }
@@ -290,6 +349,7 @@ class AdminDonatorTable extends PowerGridComponent
 
     public function actionsFromView(mixed $row): View
     {
+
         return view('powergrid.admin-donor-actions', [
             'row' => $row,
         ]);
@@ -299,7 +359,12 @@ class AdminDonatorTable extends PowerGridComponent
     {
         $donor = Donator::find($donor_id);
         if (! $donor) {
-            $this->notification()->error(title: 'Nicht gefunden', description: 'Die/der ausgewählte Spender:in wurde nicht gefunden.');
+            Flux::toast(
+                heading: 'Nicht gefunden',
+                text: 'Die/der ausgewählte Spender:in wurde nicht gefunden.',
+                variant: 'danger',
+                duration: 0,
+            );
 
             return;
         }
@@ -333,14 +398,24 @@ class AdminDonatorTable extends PowerGridComponent
             $donor = Donator::findOrFail($donor_id);
 
             if (empty($donor->email)) {
-                $this->notification()->error(title: 'Keine E-Mail-Adresse', description: 'Für '.$donor->privacy_name.' ist keine E-Mail-Adresse hinterlegt.');
+                Flux::toast(
+                    heading: 'Keine E-Mail-Adresse',
+                    text: 'Für '.$donor->privacy_name.' ist keine E-Mail-Adresse hinterlegt.',
+                    variant: 'danger',
+                    duration: 0,
+                );
 
                 return false;
             }
 
             $weblingData = $donor->webling_data ?? [];
             if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
-                $this->notification()->error(title: 'Kein PDF gefunden', description: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.');
+                Flux::toast(
+                    heading: 'Kein PDF gefunden',
+                    text: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.',
+                    variant: 'danger',
+                    duration: 0,
+                );
 
                 return false;
             }
@@ -349,7 +424,12 @@ class AdminDonatorTable extends PowerGridComponent
             $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
 
             if ($path === '' || ! Storage::disk($disk)->exists($path)) {
-                $this->notification()->error(title: 'Datei nicht gefunden', description: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.');
+                Flux::toast(
+                    heading: 'Datei nicht gefunden',
+                    text: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.',
+                    variant: 'danger',
+                    duration: 0,
+                );
 
                 return false;
             }
@@ -378,13 +458,22 @@ class AdminDonatorTable extends PowerGridComponent
             $donor->invoice_sent_at = now();
             $donor->save();
 
-            $this->notification()->success('Rechnung gesendet', 'Die Rechnung wurde an '.$donor->email.' gesendet.');
+            Flux::toast(
+                heading: 'Rechnung gesendet',
+                text: 'Die Rechnung wurde an '.$donor->email.' gesendet.',
+                variant: 'success',
+            );
             $this->dispatch('$refresh');
 
             return true;
         } catch (\Throwable $e) {
             \Log::error('Error sending donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
-            $this->notification()->error(title: 'Fehler beim Senden', description: $e->getMessage());
+            Flux::toast(
+                heading: 'Fehler beim Senden',
+                text: $e->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
 
             return false;
         }
@@ -395,7 +484,11 @@ class AdminDonatorTable extends PowerGridComponent
     {
         $ids = $this->checkboxValues ?? [];
         if (empty($ids)) {
-            $this->notification()->info(title: 'Keine Auswahl', description: 'Bitte wähle mindestens eine:n Spender:in aus.');
+            Flux::toast(
+                heading: 'Keine Auswahl',
+                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
+                variant: 'warning',
+            );
 
             return;
         }
@@ -428,7 +521,11 @@ class AdminDonatorTable extends PowerGridComponent
         }
 
         $this->js('window.pgBulkActions.clearAll()');
-        $this->notification()->success('Aktion abgeschlossen', $processed.' Rechnung(en) erstellt, '.$skipped.' übersprungen.');
+        Flux::toast(
+            heading: 'Aktion abgeschlossen',
+            text: $processed.' Rechnung(en) erstellt, '.$skipped.' übersprungen.',
+            variant: 'success',
+        );
     }
 
     #[On('bulkDownloadInvoice.{tableName}')]
@@ -436,7 +533,11 @@ class AdminDonatorTable extends PowerGridComponent
     {
         $ids = $this->checkboxValues ?? [];
         if (empty($ids)) {
-            $this->notification()->info(title: 'Keine Auswahl', description: 'Bitte wähle mindestens eine:n Spender:in aus.');
+            Flux::toast(
+                heading: 'Keine Auswahl',
+                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
+                variant: 'warning',
+            );
 
             return null;
         }
@@ -463,7 +564,12 @@ class AdminDonatorTable extends PowerGridComponent
         }
 
         if (empty($files)) {
-            $this->notification()->error(title: 'Keine PDFs gefunden', description: 'Für die ausgewählten Spender:innen wurden keine Rechnungs-PDFs gefunden.');
+            Flux::toast(
+                heading: 'Keine PDFs gefunden',
+                text: 'Für die ausgewählten Spender:innen wurden keine Rechnungs-PDFs gefunden.',
+                variant: 'danger',
+                duration: 0,
+            );
 
             return null;
         }
@@ -476,7 +582,12 @@ class AdminDonatorTable extends PowerGridComponent
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            $this->notification()->error(title: 'Fehler', description: 'ZIP-Datei konnte nicht erstellt werden.');
+            Flux::toast(
+                heading: 'Fehler',
+                text: 'ZIP-Datei konnte nicht erstellt werden.',
+                variant: 'danger',
+                duration: 0,
+            );
 
             return null;
         }
@@ -496,7 +607,11 @@ class AdminDonatorTable extends PowerGridComponent
     {
         $ids = $this->checkboxValues ?? [];
         if (empty($ids)) {
-            $this->notification()->info(title: 'Keine Auswahl', description: 'Bitte wähle mindestens eine:n Spender:in aus.');
+            Flux::toast(
+                heading: 'Keine Auswahl',
+                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
+                variant: 'warning',
+            );
 
             return;
         }
@@ -533,6 +648,10 @@ class AdminDonatorTable extends PowerGridComponent
         }
 
         $this->js('window.pgBulkActions.clearAll()');
-        $this->notification()->success('Aktion abgeschlossen', $sent.' E-Mail(s) gesendet, '.$skipped.' übersprungen.');
+        Flux::toast(
+            heading: 'Aktion abgeschlossen',
+            text: $sent.' E-Mail(s) gesendet, '.$skipped.' übersprungen.',
+            variant: 'success',
+        );
     }
 }
