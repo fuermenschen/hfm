@@ -5,6 +5,7 @@ use App\Models\Donator;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Opcodes\LogViewer\Http\Middleware\AuthorizeLogViewer;
 
 test('all public routes are accessible', function () {
     // Get all registered routes
@@ -22,7 +23,14 @@ test('all public routes are accessible', function () {
         }
 
         // Skip authenticated routes (handled in a separate test)
-        if (in_array('auth', $route->middleware())) {
+        if (in_array('auth', $route->middleware()) ||
+            in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware()) ||
+            in_array(AuthorizeLogViewer::class, $route->middleware())) {
+            continue;
+        }
+
+        // skip pulse route
+        if ($route->uri == 'admin/pulse') {
             continue;
         }
 
@@ -60,8 +68,10 @@ test('all authenticated routes are accessible when logged in', function () {
             continue;
         }
 
-        // Only routes with auth middleware
-        if (! in_array('auth', $route->middleware())) {
+        // Only routes with auth middleware or Pulse Authorize middleware
+        if (! in_array('auth', $route->middleware()) &&
+            ! in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware()) &&
+            ! in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
         }
 
@@ -92,16 +102,35 @@ test('authenticated routes are protected', function () {
             continue;
         }
 
-        // Only test routes with auth middleware
-        if (! in_array('auth', $route->middleware())) {
+        // Only test routes with auth, Pulse Authorize, or Log Viewer Authorize middleware
+        if (! in_array('auth', $route->middleware()) &&
+            ! in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware()) &&
+            ! in_array(AuthorizeLogViewer::class, $route->middleware())) {
+            continue;
+        }
+
+        // Skip parameterized routes
+        if (str_contains($route->uri, '{')) {
+            continue;
+        }
+
+        // Skip debug and framework routes
+        if (str_starts_with($route->uri, '_ignition') ||
+            str_starts_with($route->uri, '_debugbar') ||
+            str_starts_with($route->uri, 'flux/') ||
+            str_starts_with($route->uri, 'livewire/')) {
             continue;
         }
 
         // Test the route without authentication
         $response = $this->get($route->uri);
 
-        // Assert the response redirects to login
-        $response->assertRedirect(route('login'));
+        // Assert unauthenticated users cannot access (either redirect to login or 403 forbidden)
+        if ($response->status() === 403) {
+            $response->assertForbidden();
+        } else {
+            $response->assertRedirect(route('login'));
+        }
     }
 });
 

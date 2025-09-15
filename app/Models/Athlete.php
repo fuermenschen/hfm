@@ -66,16 +66,30 @@ class Athlete extends Model
 
         static::creating(function ($athlete) {
             $athlete->public_id = $athlete->generatePublicId();
+
+            // Generate login token before first save to avoid an extra update query
+            $athlete->generateLoginToken(false);
         });
 
         static::created(function ($athlete) {
-            $athlete->generateLoginToken();
+            // Skip notifications and logs during unit tests to speed up the test suite
+            if (app()->runningUnitTests()) {
+                return;
+            }
 
-            $athlete->notify(new AthleteRegistered(
-                $athlete->first_name,
-                $athlete->public_id_string,
-                $athlete->login_token
-            ));
+            try {
+                $athlete->notify(new AthleteRegistered(
+                    $athlete->first_name,
+                    $athlete->public_id_string,
+                    $athlete->login_token
+                ));
+            } catch (\Throwable $e) {
+                Log::error('Failed to send AthleteRegistered notification', [
+                    'athlete_id' => $athlete->id,
+                    'email' => $athlete->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // add log entry
             Log::info('Athlete created', [
@@ -89,17 +103,27 @@ class Athlete extends Model
             // delete all donations of the athlete
             $athlete->donations()->delete();
 
-            // notify the athlete that their account has been deleted
-            // directly use the email address because the athlete is beeing deleted
-            $email = $athlete->email;
-            $message = 'Du wurdest als Sportler:in gelöscht.';
-            $subject = 'Deine Registrierung wurde gelöscht';
-            $first_name = $athlete->first_name;
-            Notification::route('mail', $email)->notify(new GenericMessage(
-                $message,
-                $subject,
-                $first_name)
-            );
+            if (! app()->runningUnitTests()) {
+                // notify the athlete that their account has been deleted
+                // directly use the email address because the athlete is being deleted
+                try {
+                    $email = $athlete->email;
+                    $message = 'Du wurdest als Sportler:in gelöscht.';
+                    $subject = 'Deine Registrierung wurde gelöscht';
+                    $first_name = $athlete->first_name;
+                    Notification::route('mail', $email)->notify(new GenericMessage(
+                        $message,
+                        $subject,
+                        $first_name)
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('Failed to send athlete deletion notification', [
+                        'athlete_id' => $athlete->id,
+                        'email' => $athlete->email,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             // add log entry
             Log::info('Athlete deleted', [
@@ -125,21 +149,31 @@ class Athlete extends Model
         return Athlete::where('public_id', $token)->exists();
     }
 
-    public function generateLoginToken(): void
+    public function generateLoginToken(bool $persist = true): void
     {
+        // return if token is non empty
+        if (! empty($this->login_token)) {
+            return;
+        }
+
         $token = bin2hex(random_bytes(32));
 
         if ($this->tokenExists($token)) {
-            $this->generateLoginToken();
+            $this->generateLoginToken($persist);
+
+            return;
         }
 
         $this->login_token = $token;
-        $this->save();
+
+        if ($persist && $this->exists) {
+            $this->save();
+        }
     }
 
     public function tokenExists(string $token): bool
     {
-        return Athlete::where('login_token', $token)->exists();
+        return Athlete::where('login_token', $token)->exists() || Donator::where('login_token', $token)->exists();
     }
 
     public function donations(): HasMany

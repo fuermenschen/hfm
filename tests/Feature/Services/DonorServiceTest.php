@@ -100,39 +100,51 @@ describe('collectInvoiceData', function () {
     })->with('invoice_line_cases');
 
     it('handles multiple donations for the same donator', function (): void {
+        // Create partner and sport types in a single query
         $partner = Partner::query()->create(['name' => 'Globex']);
-        $athlete1 = Athlete::factory()->create([
-            'first_name' => 'Bob',
-            'last_name' => 'Roe',
-            'partner_id' => $partner->id,
-            'sport_type_id' => SportType::query()->create(['name' => 'Swim'])->id,
-            'verified' => true,
-            'rounds_done' => 12,
+        $sportTypes = SportType::query()->insert([
+            ['name' => 'Swim'],
+            ['name' => 'Bike'],
         ]);
-        $athlete2 = Athlete::factory()->create([
-            'first_name' => 'Carol',
-            'last_name' => 'Moe',
-            'partner_id' => $partner->id,
-            'sport_type_id' => SportType::query()->create(['name' => 'Bike'])->id,
-            'verified' => true,
-            'rounds_done' => 3,
+
+        // Create athletes in a single batch
+        $athletes = Athlete::factory()->createMany([
+            [
+                'first_name' => 'Bob',
+                'last_name' => 'Roe',
+                'partner_id' => $partner->id,
+                'sport_type_id' => SportType::first()->id,
+                'verified' => true,
+                'rounds_done' => 12,
+            ],
+            [
+                'first_name' => 'Carol',
+                'last_name' => 'Moe',
+                'partner_id' => $partner->id,
+                'sport_type_id' => SportType::skip(1)->first()->id,
+                'verified' => true,
+                'rounds_done' => 3,
+            ],
         ]);
 
         $donator = Donator::factory()->create();
 
-        Donation::query()->create([
-            'donator_id' => $donator->id,
-            'athlete_id' => $athlete1->id,
-            'amount_per_round' => 2.0,
-            'amount_min' => null,
-            'amount_max' => 30.0,
-        ]);
-        Donation::query()->create([
-            'donator_id' => $donator->id,
-            'athlete_id' => $athlete2->id,
-            'amount_per_round' => 5.0,
-            'amount_min' => 20.0,
-            'amount_max' => null,
+        // Create donations in a single batch
+        Donation::query()->insert([
+            [
+                'donator_id' => $donator->id,
+                'athlete_id' => $athletes[0]->id,
+                'amount_per_round' => 2.0,
+                'amount_min' => null,
+                'amount_max' => 30.0,
+            ],
+            [
+                'donator_id' => $donator->id,
+                'athlete_id' => $athletes[1]->id,
+                'amount_per_round' => 5.0,
+                'amount_min' => 20.0,
+                'amount_max' => null,
+            ],
         ]);
 
         $service = app(DonorService::class);

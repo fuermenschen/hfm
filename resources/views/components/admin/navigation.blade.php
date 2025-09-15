@@ -13,6 +13,7 @@
                 :current="$nav['current']"
                 :svg="$nav['svg']"
                 :label="$nav['label']"
+                :target="$nav['target'] ?? null"
             />
         @endforeach
     </ul>
@@ -23,6 +24,7 @@
                 :current="$nav['current']"
                 :svg="$nav['svg']"
                 :label="$nav['label']"
+                :target="$nav['target'] ?? null"
             />
         @endforeach
     </ul>

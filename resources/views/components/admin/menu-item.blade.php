@@ -1,3 +1,11 @@
+@props([
+    'route',
+    'current' => false,
+    'svg' => '',
+    'label' => '',
+    'target' => null,
+])
+
 <li>
     @if($route === 'logout')
         <form method="POST" action="{{ route($route) }}"
@@ -16,7 +24,11 @@
         </form>
 
     @else
-        <a href="{{ route($route) }}" wire:navigate.hover
+        @php
+            $href = \Illuminate\Support\Facades\Route::has($route) ? route($route) : url($route);
+            $newTab = $target === '_blank';
+        @endphp
+        <a href="{{ $href }}" @if(!$newTab) wire:navigate.hover @endif @if($target) target="{{ $target }}" @endif @if($newTab) rel="noopener noreferrer" @endif
             @class([
               "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
               "text-slate-300 hover:text-slate-50" => !$current,

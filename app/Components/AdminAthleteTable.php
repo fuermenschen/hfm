@@ -3,6 +3,7 @@
 namespace App\Components;
 
 use App\Models\Athlete;
+use App\Services\DonationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -62,6 +63,18 @@ class AdminAthleteTable extends PowerGridComponent
             ->add('sportType.name')
             ->add('partner.name')
             ->add('number_of_donations', fn ($athlete) => $athlete->donations->count())
+            ->add('estimated_donations', function (Athlete $athlete) {
+                $service = app(DonationService::class);
+                $calculated = $service->calculateEstimatedTotalForAthlete($athlete);
+
+                return 'Fr. '.number_format($calculated, 2, '.', "'");
+            })
+            ->add('actual_donations', function (Athlete $athlete) {
+                $service = app(DonationService::class);
+                $calculated = $service->calculateActualTotalForAthlete($athlete);
+
+                return 'Fr. '.number_format($calculated, 2, '.', "'");
+            })
             ->add('created_at_formatted', fn ($athlete) => Carbon::parse($athlete->created_at)->format('d.m.Y'))
             ->add('adult', fn ($athlete) => $athlete->adult ? 'Ja' : 'Nein');
     }
@@ -101,6 +114,12 @@ class AdminAthleteTable extends PowerGridComponent
                 ),
 
             Column::make('Spenden', 'number_of_donations')
+                ->fixedOnResponsive(),
+
+            Column::make('Geschätzte Spenden', 'estimated_donations')
+                ->fixedOnResponsive(),
+
+            Column::make('Tatsächliche Spenden', 'actual_donations')
                 ->fixedOnResponsive(),
 
             Column::make('Anmeldung', 'created_at_formatted', 'created_at')

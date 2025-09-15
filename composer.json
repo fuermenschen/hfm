@@ -15,6 +15,7 @@
         "intervention/image": "^3.7",
         "laravel-frontend-presets/tall": "^8.0",
         "laravel/framework": "^11.0",
+        "laravel/pulse": "^1.4",
         "laravel/tinker": "^2.9",
         "livewire/flux": "^1.0",
         "livewire/flux-pro": "^1.0",
@@ -22,6 +23,7 @@
         "lorisleiva/laravel-actions": "^2.9",
         "lukeraymonddowning/honey": "^1.0",
         "mews/purifier": "^3.4",
+        "opcodesio/log-viewer": "^3.19",
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^6.0",
         "propaganistas/laravel-phone": "^6.0",
@@ -32,6 +34,7 @@
         "wireui/wireui": "^1.19"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^3.16",
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "3.1",
         "laravel/boost": "^1.0",

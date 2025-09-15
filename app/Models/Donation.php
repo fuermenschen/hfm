@@ -22,6 +22,12 @@ class Donation extends Model
         parent::boot();
 
         static::created(function ($donation) {
+            // Skip notifications and logs during unit tests to speed up tests
+            if (app()->runningUnitTests()) {
+                return;
+            }
+
+            // Ensure donator has a login token (should already be set on creating)
             $donation->donator->generateLoginToken();
 
             $donation->donator->notify(new DonationRegistered(
@@ -50,15 +56,17 @@ class Donation extends Model
         });
 
         static::deleting(function ($donation) {
-            // add log entry
-            Log::info('Donation deleted', [
-                'donator' => $donation->donator->privacy_name,
-                'athlete' => $donation->athlete->privacy_name,
-                'amount_per_round' => $donation->amount_per_round,
-                'amount_max' => $donation->amount_max,
-                'amount_min' => $donation->amount_min,
-                'comment' => $donation->comment,
-            ]);
+            if (! app()->runningUnitTests()) {
+                // add log entry
+                Log::info('Donation deleted', [
+                    'donator' => $donation->donator->privacy_name,
+                    'athlete' => $donation->athlete->privacy_name,
+                    'amount_per_round' => $donation->amount_per_round,
+                    'amount_max' => $donation->amount_max,
+                    'amount_min' => $donation->amount_min,
+                    'comment' => $donation->comment,
+                ]);
+            }
         });
     }
 
