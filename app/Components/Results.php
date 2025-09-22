@@ -33,7 +33,7 @@ class Results extends Component
               (select max(updated_at) from athletes)  as a,
               (select max(updated_at) from donations) as d
         ');
-        $version = $version = ($row->a ?? '0').'|'.($row->d ?? '0');
+        $version = ($row->a ?? '0').'|'.($row->d ?? '0');
         $cacheKey = 'components.results.data.'.$version;
 
         $data = Cache::remember($cacheKey, now()->addHour(), function () use ($donationService): array {
@@ -47,10 +47,7 @@ class Results extends Component
     public function render(): ViewContract
     {
         // Properties are already prepared in mount() (and cached).
-        return view('components.results', [
-            'totals' => $this->totals,
-            'athletes' => $this->athletes,
-        ]);
+        return view('components.results');
     }
 
     /**
