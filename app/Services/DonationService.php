@@ -82,11 +82,10 @@ class DonationService
     /**
      * Calculate the estimated total amount across all donations in the system.
      */
-    public function calculateEstimatedTotal(): float
+    public function calculateEstimatedTotal(iterable $donations): float
     {
         $total = 0.0;
 
-        $donations = Donation::query()->with('athlete')->get();
         foreach ($donations as $donation) {
             $total += $this->calculateEstimatedAmount($donation);
         }
@@ -97,11 +96,10 @@ class DonationService
     /**
      * Calculate the actual total amount across all donations in the system.
      */
-    public function calculateActualTotal(): float
+    public function calculateActualTotal(iterable $donations): float
     {
         $total = 0.0;
 
-        $donations = Donation::query()->with('athlete')->get();
         foreach ($donations as $donation) {
             $total += $this->calculateActualAmount($donation);
         }
@@ -114,12 +112,9 @@ class DonationService
      *
      * @return array<int, float> key: partner_id, value: total
      */
-    public function calculateEstimatedTotalPerPartner(): array
+    public function calculateEstimatedTotalPerPartner(iterable $donations): array
     {
         $totals = [];
-
-        // Ensure partner is eagerly loaded to avoid N+1
-        $donations = Donation::query()->with('athlete.partner')->get();
 
         foreach ($donations as $donation) {
             /** @var Partner|null $partner */
@@ -146,12 +141,9 @@ class DonationService
      *
      * @return array<int, float> key: partner_id, value: total
      */
-    public function calculateActualTotalPerPartner(): array
+    public function calculateActualTotalPerPartner(iterable $donations): array
     {
         $totals = [];
-
-        // Ensure partner is eagerly loaded to avoid N+1
-        $donations = Donation::query()->with('athlete.partner')->get();
 
         foreach ($donations as $donation) {
             /** @var Partner|null $partner */

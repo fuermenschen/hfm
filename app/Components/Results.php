@@ -4,11 +4,11 @@ namespace App\Components;
 
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
 use App\Models\Partner;
 use App\Services\DonationService;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Results extends Component
@@ -28,9 +28,12 @@ class Results extends Component
     public function mount(DonationService $donationService): void
     {
         // Compute a version string based on the latest updated_at timestamps
-        $athleteUpdatedAt = Athlete::max('updated_at');
-        $donationUpdatedAt = Donation::max('updated_at');
-        $version = $athleteUpdatedAt.'|'.$donationUpdatedAt;
+        $row = DB::selectOne('
+            select
+              (select max(updated_at) from athletes)  as a,
+              (select max(updated_at) from donations) as d
+        ');
+        $version = $version = ($row->a ?? '0').'|'.($row->d ?? '0');
         $cacheKey = 'components.results.data.'.$version;
 
         $data = Cache::remember($cacheKey, now()->addHour(), function () use ($donationService): array {
@@ -65,17 +68,35 @@ class Results extends Component
 
         // Totals (prefer in-memory where possible)
         $athletesCount = $allAthletes->count();
-        $donorsCount = Donator::query()->count();
+        $donorsCount = $allAthletes->flatMap->donations
+            ->pluck('donator_id')->filter()->unique()->count();
         $roundsTotal = (int) ($allAthletes->sum('rounds_done') ?? 0);
         $elevationTotal = $roundsTotal * 50; // meters
-        $donationsTotal = $donationService->calculateActualTotal();
+
+        // Build donations list from already loaded athletes to avoid extra queries
+        $donations = $allAthletes->flatMap(function (Athlete $athlete) {
+            return $athlete->donations->map(function (Donation $donation) use ($athlete) {
+                // Ensure the donation has the athlete relation (with partner) set to avoid N+1 later
+                $donation->setRelation('athlete', $athlete);
+
+                return $donation;
+            });
+        });
+        $donationsTotal = $donationService->calculateActualTotal($donations);
 
         // Donations per partner (name => amount)
-        $perPartnerRaw = $donationService->calculateActualTotalPerPartner(); // [partner_id => amount]
-        $partners = Partner::query()->whereIn('id', array_keys($perPartnerRaw))->pluck('name', 'id');
+        $perPartnerRaw = $donationService->calculateActualTotalPerPartner($donations); // [partner_id => amount]
+        // Build partner id => name map from already eager-loaded athletes to avoid extra query
+        $partners = $allAthletes
+            ->pluck('partner')
+            ->filter()
+            ->keyBy('id')
+            ->map(function (Partner $partner) {
+                return $partner->name;
+            });
         $perPartner = collect($perPartnerRaw)
             ->mapWithKeys(function (float $amount, int $partnerId) use ($partners): array {
-                return [$partners[$partnerId] ?? ('Partner #'.$partnerId) => $amount];
+                return [($partners[$partnerId] ?? ('Partner #'.$partnerId)) => $amount];
             })
             ->sortKeys();
 
@@ -127,7 +148,7 @@ class Results extends Component
                 'rounds' => $roundsTotal,
                 'elevation_m' => $elevationTotal,
                 'donations_total' => $donationsTotal,
-                'per_partner' => $perPartner,
+                'per_partner' => $perPartner->toArray(),
             ],
             'athletes' => $athletes,
         ];

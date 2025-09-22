@@ -191,7 +191,8 @@ describe('calculateEstimatedTotal', function () {
         Donation::create(['donator_id' => $donator2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 3.0, 'amount_min' => 20.0, 'amount_max' => null, 'comment' => null]); // 5*3=15 -> 20 (min)
         Donation::create(['donator_id' => $donator3->id, 'athlete_id' => $a3->id, 'amount_per_round' => 1.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 50*1=50 -> 30 (max)
 
-        $total = $this->service->calculateEstimatedTotal();
+        $donations = Donation::query()->with('athlete')->get();
+        $total = $this->service->calculateEstimatedTotal($donations);
 
         expect($total)->toBe(70.00);
     });
@@ -237,7 +238,8 @@ describe('calculateActualTotal', function () {
         Donation::create(['donator_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
         Donation::create(['donator_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10 (min)
 
-        $total = $this->service->calculateActualTotal();
+        $donations = Donation::query()->with('athlete')->get();
+        $total = $this->service->calculateActualTotal($donations);
 
         expect($total)->toBe(34.00);
     });
@@ -265,7 +267,8 @@ describe('calculateEstimatedTotalPerPartner', function () {
         Donation::create(['donator_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 10.0, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 5*10=50 -> 40
         Donation::create(['donator_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 10.0, 'amount_min' => 40.0, 'amount_max' => null, 'comment' => null]); // 3*10=30 -> 40
 
-        $totals = $this->service->calculateEstimatedTotalPerPartner();
+        $donations = Donation::query()->with('athlete.partner')->get();
+        $totals = $this->service->calculateEstimatedTotalPerPartner($donations);
 
         expect($totals)->toBe([
             $this->p1->id => 60.00,
@@ -302,7 +305,8 @@ describe('calculateActualTotalPerPartner', function () {
         Donation::create(['donator_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10
         Donation::create(['donator_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 0.5, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 100*0.5=50 -> 40
 
-        $totals = $this->service->calculateActualTotalPerPartner();
+        $donations = Donation::query()->with('athlete.partner')->get();
+        $totals = $this->service->calculateActualTotalPerPartner($donations);
 
         expect($totals)->toBe([
             $this->p1->id => 34.00,
