@@ -16,7 +16,7 @@
         --color-accent-foreground: #f8fafc;
     }
 
-    .dark {
+    :root.dark {
         --color-accent: #f8fafc;
         --color-accent-content: #f8fafc;
         --color-accent-foreground: #1B2E47;
