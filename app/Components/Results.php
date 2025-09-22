@@ -20,11 +20,6 @@ class Results extends Component
      */
     public array $totals = [];
 
-    /**
-     * @var array<int, array<string, string>>
-     */
-    public array $athletes = [];
-
     public function mount(DonationService $donationService): void
     {
         // Compute a version string based on the latest updated_at timestamps
@@ -33,7 +28,7 @@ class Results extends Component
               (select max(updated_at) from athletes)  as a,
               (select max(updated_at) from donations) as d
         ');
-        $version = ($row->a ?? '0').'|'.($row->d ?? '0');
+        $version = hash('sha256', ($row->a ?? '0').($row->d ?? '0'));
         $cacheKey = 'components.results.data.'.$version;
 
         $data = Cache::remember($cacheKey, now()->addHour(), function () use ($donationService): array {
@@ -41,7 +36,6 @@ class Results extends Component
         });
 
         $this->totals = $data['totals'];
-        $this->athletes = $data['athletes'];
     }
 
     public function render(): ViewContract
@@ -54,7 +48,7 @@ class Results extends Component
      * Collect and prepare all data for the component.
      * Ensures a single initial athletes query including relations (donations, partner, sportType).
      *
-     * @return array{totals: array<string, mixed>, athletes: array<int, array<string, string>>}
+     * @return array{totals: array<string, mixed>}
      */
     protected function collectData(DonationService $donationService): array
     {
@@ -114,30 +108,6 @@ class Results extends Component
             }
         }
 
-        // Athletes table data (exclude athletes without completed rounds)
-        $athletes = $allAthletes
-            ->filter(function (Athlete $athlete): bool {
-                return (int) ($athlete->rounds_done ?? 0) > 0;
-            })
-            ->map(function (Athlete $athlete) use ($donationService): array {
-                $donationsActual = $donationService->calculateActualTotalForAthlete($athlete);
-
-                $rounds = (int) ($athlete->rounds_done ?? 0);
-                $roundsFormatted = number_format($rounds, 0, '.', "'");
-                $donationsFormatted = number_format($donationsActual, 2, '.', "'");
-
-                return [
-                    'privacy_name' => $athlete->privacy_name,
-                    'sport_type' => optional($athlete->sportType)->name ?? '—',
-                    'partner' => optional($athlete->partner)->name ?? '—',
-                    'rounds_done' => $roundsFormatted,
-                    'donations_actual' => $donationsFormatted,
-                ];
-            })
-            ->sortBy('privacy_name', SORT_NATURAL | SORT_FLAG_CASE)
-            ->values()
-            ->all();
-
         return [
             'totals' => [
                 'athletes' => $athletesCount,
@@ -147,7 +117,6 @@ class Results extends Component
                 'donations_total' => $donationsTotal,
                 'per_partner' => $perPartner->toArray(),
             ],
-            'athletes' => $athletes,
         ];
     }
 }
