@@ -72,10 +72,10 @@ class DatabaseSeeder extends Seeder
 
         // create example data
         if (config('app.env') === 'local') {
-            Athlete::factory(5)->create();
-            Athlete::factory(5)->verified()->create();
-            Donator::factory(10)->create();
-            Donation::factory(10)->create();
+            Athlete::factory(10)->create();
+            Athlete::factory(20)->verified()->create();
+            Donator::factory(150)->create();
+            Donation::factory(250)->create();
         }
     }
 }

@@ -60,12 +60,14 @@ class DashboardService
         $meanNumberOfDonationsDonator = $donatorCount > 0 ? (float) ($donationCount / $donatorCount) : 0.0;
         $meanDonationAmount = (float) (Donation::query()->avg('amount_per_round') ?? 0.0);
 
-        // Totals via DonationService (kept as-is)
-        $expectedDonationAmount = $this->donationService->calculateEstimatedTotal();
-        $actualTotalAmount = $this->donationService->calculateActualTotal();
+        // Preload donations once to avoid repeated queries in the service
+        $donations = Donation::query()->with('athlete.partner')->get();
 
-        $estimatedAmounts = $this->donationService->calculateEstimatedTotalPerPartner();
-        $actualAmounts = $this->donationService->calculateActualTotalPerPartner();
+        $expectedDonationAmount = $this->donationService->calculateEstimatedTotal($donations);
+        $actualTotalAmount = $this->donationService->calculateActualTotal($donations);
+
+        $estimatedAmounts = $this->donationService->calculateEstimatedTotalPerPartner($donations);
+        $actualAmounts = $this->donationService->calculateActualTotalPerPartner($donations);
 
         $mostRecentActivities = $this->buildRecentActivities();
 

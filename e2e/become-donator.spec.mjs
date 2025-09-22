@@ -24,7 +24,7 @@ test.describe("Become Donator Form", () => {
         await page.getByRole("textbox", { name: "79 123 45 67" }).click();
         await expect(page.getByRole("alert")).toContainText("Die E-Mail-Adressen stimmen nicht überein.");
         await page.getByRole("textbox", { name: "79 123 45 67" }).fill("079 123 45 67");
-        await page.getByLabel("Meine Unterstützung geht an").selectOption("3");
+        await page.getByLabel("Meine Unterstützung geht an").selectOption({ index: 5 });
         await expect(page.locator("form")).toContainText("Mit deiner Unterstützung für");
         await page.getByRole("spinbutton", { name: "Dein Beitrag pro Runde" }).click();
         await page.getByRole("spinbutton", { name: "Dein Beitrag pro Runde" }).fill("8.27");
