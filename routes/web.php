@@ -34,6 +34,9 @@ Route::view('impressum', 'pages.impressum')->name('impressum');
 Route::view('datenschutz', 'pages.privacy')->name('privacy');
 Route::view('verein', 'pages.association')->name('association');
 
+// Results
+Route::view('resultate', 'pages.results')->name('results');
+
 // User Login
 Route::get('login/{uuid}', function ($uuid) {
 

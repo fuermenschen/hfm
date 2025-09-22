@@ -28,7 +28,7 @@ class AthleteFactory extends Factory
             'adult' => fake()->boolean(10),
             'sport_type_id' => fake()->numberBetween(1, 4),
             'rounds_estimated' => fake()->numberBetween(1, 10),
-            'rounds_done' => 0,
+            'rounds_done' => fake()->numberBetween(0, 15),
             'partner_id' => fake()->numberBetween(1, 4),
             'comment' => fake()->optional()->text(2000),
             'verified' => fake()->boolean(80),
