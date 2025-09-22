@@ -75,7 +75,7 @@ class Results extends Component
 
         // Build donations list from already loaded athletes to avoid extra queries
         $donations = $allAthletes->flatMap(function (Athlete $athlete) {
-            return $athlete->donations->map(function (Donation $donation) use ($athlete) {
+            return collect($athlete->donations)->map(function (Donation $donation) use ($athlete) {
                 // Ensure the donation has the athlete relation (with partner) set to avoid N+1 later
                 $donation->setRelation('athlete', $athlete);
 
