@@ -11,9 +11,8 @@ use Livewire\Livewire;
 it('renders successfully and shows per-partner section', function () {
     Livewire::test(Results::class)
         ->assertStatus(200)
-        ->assertSee('Resultate')
-        ->assertSee('Einzelresultate')
-        ->assertSee('Spenden pro Benefizpartner:in');
+        ->assertSee('Spenden pro Benefizpartner:in')
+        ->assertDontSee('Einzelresultate');
 });
 
 it('splits "alle zu gleichen Teilen" amount across remaining partners', function () {
@@ -85,7 +84,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         ->assertSee('Fr. 80.00');
 });
 
-it('filters out athletes with zero rounds in the table', function () {
+it('does not expose single athlete results anymore', function () {
     $sportType = SportType::create(['name' => 'Run']);
     $partner = Partner::create(['name' => 'Partner X']);
 
@@ -107,9 +106,7 @@ it('filters out athletes with zero rounds in the table', function () {
 
     Livewire::test(Results::class)
         ->assertStatus(200)
-        ->assertSee('Einzelresultate')
-        // Should show the athlete with > 0 rounds
-        ->assertSee($three->privacy_name)
-        // Should NOT show the athlete with 0 rounds
+        ->assertDontSee('Einzelresultate')
+        ->assertDontSee($three->privacy_name)
         ->assertDontSee($zero->privacy_name);
 });
