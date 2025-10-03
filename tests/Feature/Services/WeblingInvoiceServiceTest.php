@@ -138,3 +138,86 @@ it('uses centrally stored settings by default but allows overrides', function ()
         'credit_account_id' => 444,
     ]);
 });
+
+it('indexes all debitors when no filter is provided', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(Response::class);
+
+    $api->shouldReceive('get')->once()->with('debitor')->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    $service->index();
+});
+
+it('builds correct query string when passing raw filter string', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(Response::class);
+
+    $filter = '`state`!="paid"AND`duedate`<TODAY()';
+    $expectedPath = 'debitor?filter='.rawurlencode($filter);
+
+    $api->shouldReceive('get')->once()->with($expectedPath)->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    $service->index($filter);
+});
+
+it('builds filter from associative array (equals conditions)', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(Response::class);
+
+    $conditions = [
+        'state' => 'paid',
+        'period_id' => 10,
+    ];
+
+    $filter = '`state`="paid"AND`period_id`=10';
+    $expectedPath = 'debitor?filter='.rawurlencode($filter);
+
+    $api->shouldReceive('get')->once()->with($expectedPath)->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    $service->index($conditions);
+});
+
+it('builds filter from triplet conditions', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $fakeResponse = Mockery::mock(Response::class);
+
+    $conditions = [
+        ['state', '!=', 'paid'],
+        ['duedate', '<', 'TODAY()'],
+    ];
+
+    $filter = '`state`!="paid"AND`duedate`<TODAY()';
+    $expectedPath = 'debitor?filter='.rawurlencode($filter);
+
+    $api->shouldReceive('get')->once()->with($expectedPath)->andReturn($fakeResponse);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    $service->index($conditions);
+});

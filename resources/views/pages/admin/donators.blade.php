@@ -10,6 +10,7 @@
     @section('content')
 
         @livewire('admin-donator-table')
+        @livewire('admin-payment-status-summary')
 
     @endsection
 
