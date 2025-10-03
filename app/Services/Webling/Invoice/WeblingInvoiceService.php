@@ -19,6 +19,36 @@ class WeblingInvoiceService
     public function __construct(public WeblingApiService $api, public WeblingApiSettings $settings) {}
 
     /**
+     * List invoice (debitor) IDs with optional filter.
+     *
+     * Examples:
+     * - index() → GET debitor (all IDs)
+     * - index('`state`="paid"') → GET debitor?filter=...
+     * - index([['state', '!=', 'paid']]) → GET debitor?filter=`state`!="paid"
+     * - index([
+     *     ['state', '!=', 'paid'],
+     *     ['duedate', '<', 'TODAY()'],
+     *   ]) → GET debitor?filter=`state`!="paid"AND`duedate`<TODAY()
+     * - index(['state' => 'paid']) → GET debitor?filter=`state`="paid"
+     *
+     * @param  null|string|array<int,array{0:string,1:string,2:mixed}>|array<string,mixed>  $filter
+     */
+    public function index(null|string|array $filter = null): Response
+    {
+        if ($filter === null) {
+            return $this->api->get('debitor');
+        }
+
+        $filterString = is_string($filter)
+            ? $filter
+            : $this->buildFilter($filter);
+
+        $encoded = rawurlencode($filterString);
+
+        return $this->api->get("debitor?filter={$encoded}");
+    }
+
+    /**
      * Convenience helper to create an invoice from discrete arguments.
      *
      * @param  array<int,array{amount: float, title: string}>  $invoiceLines
@@ -115,5 +145,93 @@ class WeblingInvoiceService
     public function deleteInvoice(int $id): Response
     {
         return $this->api->delete("debitor/{$id}");
+    }
+
+    /**
+     * Build a Webling filter string from an array definition.
+     *
+     * Supported forms:
+     * - ['field' => value, 'field2' => value2]
+     * - [[field, operator, value], [field2, operator, value2]]
+     * Values:
+     * - strings are quoted: "value"
+     * - numbers are kept as-is
+     * - Carbon|string dates are quoted as YYYY-MM-DD
+     * - UPPERCASE_FUNCTION() values are kept as-is (no quotes)
+     *
+     * @param  array<int,array{0:string,1:string,2:mixed}>|array<string,mixed>  $conditions
+     */
+    protected function buildFilter(array $conditions): string
+    {
+        $parts = [];
+
+        // Associative array of equals
+        if ($this->isAssoc($conditions)) {
+            foreach ($conditions as $field => $value) {
+                $parts[] = $this->quoteName((string) $field).'='.$this->formatValue($value);
+            }
+        } else {
+            // List of triplets
+            foreach ($conditions as $cond) {
+                if (! is_array($cond) || count($cond) !== 3) {
+                    continue; // ignore invalid entries silently
+                }
+                [$field, $op, $value] = $cond;
+                $parts[] = $this->quoteName((string) $field).trim((string) $op).$this->formatValue($value);
+            }
+        }
+
+        return implode('AND', $parts);
+    }
+
+    protected function isAssoc(array $arr): bool
+    {
+        if ($arr === []) {
+            return false;
+        }
+
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
+    /**
+     * Quote a field name for Webling filter: `field`.
+     */
+    protected function quoteName(string $name): string
+    {
+        return '`'.str_replace('`', '', $name).'`';
+    }
+
+    /**
+     * Format a value for the filter string.
+     */
+    protected function formatValue(mixed $value): string
+    {
+        if ($value instanceof Carbon) {
+            return '"'.$value->format('Y-m-d').'"';
+        }
+
+        if (is_string($value)) {
+            // If looks like an UPPERCASE_FUNCTION(), keep it as-is.
+            if (preg_match('/^[A-Z_]+\(\)$/', $value) === 1) {
+                return $value;
+            }
+
+            return '"'.str_replace('"', '\"', $value).'"';
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_numeric($value)) {
+            return (string) $value;
+        }
+
+        if ($value === null) {
+            return 'NULL';
+        }
+
+        // Fallback to JSON string
+        return '"'.addslashes((string) $value).'"';
     }
 }

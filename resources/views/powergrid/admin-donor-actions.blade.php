@@ -39,6 +39,16 @@
                     </flux:menu.item>
                 @endif
 
+                @php
+                    $paymentStatus = data_get($row->webling_data, 'payment_status');
+                    $canSendReminder = $hasPdf && ! empty($row->email) && ! empty($row->invoice_sent_at) && $paymentStatus === 'overdue';
+                @endphp
+                @if($canSendReminder)
+                    <flux:menu.item icon="bell-alert" wire:click="sendDonorInvoiceReminder({{ $row->id }})">
+                        Zahlungserinnerung senden
+                    </flux:menu.item>
+                @endif
+
                 @if(!empty($debitorUrl))
                     <flux:menu.item icon="arrow-top-right-on-square" :href="$debitorUrl" target="_blank">
                         Rechnung in Webling anzeigen
@@ -51,7 +61,7 @@
                     </flux:menu.item>
                 @endif
 
-                @if(!$canCreate && !$canDownload && !$canSend && !$canDelete)
+                @if(!$canCreate && !$canDownload && !$canSend && !($canSendReminder ?? false) && !$canDelete)
                     <flux:menu.item disabled="true">
                         Keine Aktionen verfügbar
                     </flux:menu.item>
