@@ -148,6 +148,8 @@ export default defineConfig({
     testDir: "e2e",
     timeout: 30_000,
     expect: { timeout: 5_000 },
+    globalSetup: "./e2e/global-setup.mjs",
+    globalTeardown: "./e2e/global-teardown.mjs",
     reporter: [["list"], ["html", { open: "on-failure" }]],
     outputDir: "e2e-results",
     retries: 0,
@@ -167,7 +169,13 @@ export default defineConfig({
               timeout: 120_000,
               stdout: "pipe",
               stderr: "pipe",
+              env: {
+                  ...process.env,
+                  // Force debugbar off during tests; global setup/teardown toggles back if needed.
+                  DEBUGBAR_ENABLED: "false",
+              },
           }
         : undefined,
     projects: [...genericProjects, ...homepageProjects, ...smokeProjects],
 });
+
