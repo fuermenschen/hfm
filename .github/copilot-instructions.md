@@ -1,3 +1,93 @@
+=== project overview ===
+
+# Höhenmeter für Menschen (HFM)
+
+## About This Application
+
+**Höhenmeter für Menschen** (Heights for People) is a Laravel-based web application that serves a dual purpose:
+
+1. **Charity Run Event Management**: Manages the annual "Höhenmeter für Menschen" charity run where participants climb mountains/stairs to raise funds
+2. **Association Management**: Supports "Verein für Menschen" (Association for People), managing members and their activities
+
+## Domain Context
+
+### Key Concepts
+- **Athletes**: Participants in the charity run who climb heights (Höhenmeter) to raise donations
+- **Donors**: Individuals or organizations who sponsor athletes or make direct contributions
+- **Members**: Members of the "Verein für Menschen" association
+- **Partner Organizations**: Organizations that benefit from the charity run proceeds
+- **Donations**: Financial contributions tied to athlete performance or direct gifts
+
+### Application Modules
+1. **Event Management**: Registration, tracking, and reporting for the charity run
+2. **Donation Management**: Processing and tracking donations from various sources
+3. **Member Management**: Member registration, database, and communication
+4. **Partner Organization Support**: Managing partner organizations and fund distribution
+
+## Quick Start
+
+### Setup
+See [DEVELOPMENT_SETUP.md](../DEVELOPMENT_SETUP.md) for detailed setup instructions.
+
+```bash
+composer install && npm install
+cp .env.local .env
+php artisan key:generate
+php artisan migrate:fresh --seed
+npm run dev
+```
+
+### Development Commands
+- **Build assets**: `npm run build`
+- **Dev server**: `npm run dev` (Vite hot reload)
+- **Run tests**: `php artisan test`
+- **Run specific test**: `php artisan test --filter=testName`
+- **Lint PHP**: `vendor/bin/pint` (Laravel Pint)
+- **Format code**: `npm run prettier`
+- **Static analysis**: `vendor/bin/phpstan analyse`
+- **Run E2E tests**: `npm run e2e`
+
+### Important URLs
+- **Production**: https://hfm-winti.ch
+- **Local (Herd)**: https://hfm.test (or as configured in Herd)
+- **Mailpit**: http://localhost:8025 (local email testing)
+
+## Project-Specific Conventions
+
+### Database & Models
+- **Webling Integration**: The app integrates with Webling API for member management. Check existing WeblingApiService usage before creating new member-related functionality.
+- **Swiss-specific**: Uses Swiss phone number validation, Swiss QR bill generation, and Swiss postal code formats.
+- **Multi-purpose entities**: Some entities serve both event and association purposes. Check model relationships carefully.
+
+### Frontend & UI
+- **Flux UI**: This project uses both Flux UI (free) and Flux UI Pro. Prefer Flux components over custom implementations.
+- **Livewire**: Heavy use of Livewire for interactive components. Check existing Livewire components before creating new ones.
+- **German language**: UI text is primarily in German. Follow existing translation patterns.
+
+### Security & Validation
+- **API Key Middleware**: Protected endpoints use API key authentication. See `ApiKeyTest.php` for usage.
+- **Honey**: Uses Laravel Honey for spam prevention on forms.
+- **Purifier**: Uses HTMLPurifier for sanitizing user input to prevent XSS.
+
+### File Management
+- **PDF Generation**: Uses DomPDF for generating donation receipts and reports.
+- **QR Codes**: Generates Swiss QR bills for donation processing.
+- **Image Processing**: Uses Intervention Image for photo uploads and manipulation.
+
+### External Services
+- **Webling API**: Member management system integration
+- **Email**: Uses Mailpit locally, configured mail service in production
+- **Log Viewer**: Opcodesio Log Viewer available at `/log-viewer` route
+
+## Branch Naming
+Follow conventions in [CONVENTIONS.md](../CONVENTIONS.md):
+- `feat/` - New features
+- `fix/` - Bug fixes
+- `refactor/` - Code restructuring
+- `test/` - Test additions/updates
+- `docs/` - Documentation updates
+- `chore/` - Maintenance tasks
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
