@@ -38,6 +38,8 @@ it('can be serialized and deserialized for Livewire hydration', function () {
     $serialized = serialize($rule);
 
     // Deserialize the rule (simulating Livewire hydration)
+    // Note: Using unserialize here is safe as we're testing PHP's native serialization
+    // mechanism used by Livewire, with data we just created in this test
     $unserialized = unserialize($serialized);
 
     // Validate that the rule still works correctly after serialization
