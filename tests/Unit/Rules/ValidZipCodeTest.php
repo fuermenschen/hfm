@@ -30,3 +30,28 @@ it('validates zip code pattern per country', function (string $country, string $
         expect($validator->errors()->first('zip_code'))->toBe('Ungültige Postleitzahl');
     }
 })->with('valid_zip_rule_cases');
+
+it('can be serialized and deserialized for Livewire hydration', function () {
+    $rule = new ValidZipCode('CH');
+
+    // Serialize the rule (simulating Livewire dehydration)
+    $serialized = serialize($rule);
+
+    // Deserialize the rule (simulating Livewire hydration)
+    $unserialized = unserialize($serialized);
+
+    // Validate that the rule still works correctly after serialization
+    $validValidator = Validator::make(
+        ['zip_code' => '8001'],
+        ['zip_code' => [$unserialized]],
+    );
+
+    $invalidValidator = Validator::make(
+        ['zip_code' => '0123'],
+        ['zip_code' => [$unserialized]],
+    );
+
+    expect($validValidator->passes())->toBeTrue();
+    expect($invalidValidator->fails())->toBeTrue();
+    expect($invalidValidator->errors()->first('zip_code'))->toBe('Ungültige Postleitzahl');
+});
