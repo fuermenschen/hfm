@@ -6,6 +6,7 @@ use App\Models\Athlete;
 use App\Models\Donator;
 use App\Models\Partner;
 use App\Notifications\AdminSomeoneRegistered;
+use App\Rules\ValidZipCode;
 use Exception;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -134,17 +135,7 @@ class BecomeDonatorForm extends Component
         return [
             'zip_code' => [
                 'required',
-                function ($attr, $value, $fail) {
-                    $pattern = match ($this->country_of_residence) {
-                        'AT' => '/^\d{4}$/',
-                        'DE' => '/^\d{5}$/',
-                        'CH' => '/^[1-9]\d{3}$/',
-                        default => null,
-                    };
-                    if ($pattern && ! preg_match($pattern, (string) $value)) {
-                        $fail('Ungültige Postleitzahl');
-                    }
-                },
+                new ValidZipCode($this->country_of_residence),
             ],
             'phone_national' => ['required', 'phone:phone_country'],
             'amount_max' => ['nullable', 'gte:amount_min'],

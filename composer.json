@@ -72,6 +72,13 @@
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
+        ],
+        "precommit": [
+            "vendor/bin/pint --dirty",
+            "npm run build",
+            "vendor/bin/phpstan",
+            "php artisan test --parallel",
+            "npm run e2e"
         ]
     },
     "extra": {
