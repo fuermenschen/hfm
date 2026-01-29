@@ -128,6 +128,6 @@ jobs:
             cd /home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch
 
             echo "Bringing application back online..."
-            /opt/php8.2/bin/php artisan up
+            /opt/php8.4/bin/php artisan up
 
             echo "Deployment complete!"
