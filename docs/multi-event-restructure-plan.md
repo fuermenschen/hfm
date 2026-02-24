@@ -161,10 +161,13 @@
 
 ### Phase 3 — Build external identity map (`athletes` + `donators` → `external_users`)
 
-1. Match by normalized email first (primary keying strategy).
-2. For unmatched rows, create new `external_users`.
-3. For conflicts (same email but materially different names/addresses), output manual-review report and resolve before hard cutover.
-4. Persist mapping table (`legacy_athlete_id`/`legacy_donator_id` or dedicated map table).
+1. Build an index of normalized emails across `athletes` and `donators` (note: only `athletes.email` is constrained unique; `donators.email` may be duplicated).
+2. For emails that are unique across both tables, create one `external_users` row and attach all matching `athletes` / `donators`.
+3. For emails that appear on multiple `donators` rows:
+    - If name and address are identical, auto-merge them into a single `external_users` entry and record all `legacy_donator_id`s.
+    - If name or address differ (likely shared email or data inconsistency), write them to a "donator-email-conflicts" manual-review report/CSV and require resolution (deduplication or explicit shared-email modeling) before hard cutover.
+4. For rows without email or still unmatched after the email-based pass, create new `external_users` keyed by other stable attributes (e.g. name, address, optional phone).
+5. Persist a mapping table (`legacy_athlete_id` / `legacy_donator_id` → `external_user_id`) or a dedicated map table.
 
 ### Phase 4 — Backfill participations and donations
 
