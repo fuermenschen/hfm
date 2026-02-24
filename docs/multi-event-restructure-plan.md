@@ -130,8 +130,18 @@
 
 ### Deletion / referential integrity
 
-- Restrict deletion for `donation_events`, `athlete_registrations`, `donations`, `groups` once financial/history data exists.
-- Prefer soft-deletes for `external_users` in later phase; hard delete only before first production usage or with strict compliance workflow.
+- **Foreign key strategy (financial tables)**
+    - All financial / operational tables (`donations`, `athlete_registrations`, `group_memberships`) use `ON DELETE RESTRICT` (or equivalent `NO ACTION`) towards their parents to prevent accidental data loss.
+    - `donation_events` is referenced by `athlete_registrations`, `groups`, and `donations` and must use `ON DELETE RESTRICT` on these FKs. Events cannot be deleted once any related registrations, groups, or donations exist.
+    - `athlete_registrations` is referenced by `donations` and `group_memberships` and must use `ON DELETE RESTRICT`. Registrations cannot be deleted if they are used in any donation or group membership.
+    - `groups` is referenced by `donations` and `group_memberships` and must use `ON DELETE RESTRICT`. Groups cannot be deleted if they are used in any donation or membership.
+    - `donations` are never cascaded‑deleted via any parent FK; deletion is restricted once created (application‑level and DB‑level).
+- **Foreign key strategy (configuration / link tables)**
+    - Configuration/link tables that do not themselves hold financial records (e.g. `donation_event_partner`) may use `ON DELETE CASCADE` on their `donation_event_id` FK so that links are removed automatically when an unused event is deleted.
+    - Where a configuration/link table is referenced by financial data (directly or indirectly), its FKs towards those financial tables must use `ON DELETE RESTRICT`.
+- **External users and identities**
+    - Prefer soft-deletes for `external_users`; hard delete only before first production usage or with a strict compliance workflow.
+    - FKs from financial tables (`donations`, `athlete_registrations`) to `external_users` must use `ON DELETE RESTRICT` so that historical records prevent hard deletion of identities.
 
 ### Results representation
 
