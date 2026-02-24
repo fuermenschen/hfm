@@ -195,7 +195,14 @@
 ### Phase 5 — Backfill auth identities
 
 1. Convert legacy static tokens (`athletes.login_token`, `donators.login_token`) into `external_user_auth_identities` records (`type=static_qr`, long expiry or policy-based expiry).
-2. If one user had both tokens, keep both temporarily and mark one canonical for newly generated links.
+    - For each legacy `login_token`, compute and store `token_hash` using the same hashing algorithm and format used for newly issued tokens in the new system.
+    - Do **not** store raw legacy tokens in `external_user_auth_identities`; keep raw values only in legacy tables/columns until they are dropped at the end of the deprecation window.
+    - The user-facing token (e.g. in QR codes or login links) remains the same string; only the persistence format changes from plain value to `token_hash`.
+2. During the transition period, support both hashed and legacy tokens with a clear deprecation timeline:
+    - Authentication should first attempt to resolve by `token_hash` in `external_user_auth_identities`.
+    - If no match is found and a feature flag (for example, `legacy_plain_tokens_enabled`) is on, fall back to matching against the legacy plain-hex `login_token` columns, and then record/create the corresponding `external_user_auth_identities` entry with `token_hash` populated.
+    - Define and document a concrete deprecation date (for example, 3–6 months after deployment) after which the legacy fallback is removed, remaining legacy tokens are reissued using the new scheme, and legacy token columns are considered write-locked and then dropped.
+3. If one user had both tokens, keep both (each as its own `external_user_auth_identities` row with its own `token_hash`) temporarily and mark one canonical for newly generated links.
 
 ### Phase 6 — Enforce constraints and cutover
 
