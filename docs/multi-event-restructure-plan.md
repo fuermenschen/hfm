@@ -219,7 +219,7 @@
 ### Event scoping
 
 1. Introduce canonical event routes: `/events/{event:slug}/...`.
-2. Add event context resolver (route first, fallback to current event setting).
+2. Add event context resolver (route first, then fallback to the "current event" configured via the existing `SettingsService`).
 3. Apply event scope to all dashboard/results/admin/export/invoice queries.
 
 ### Authentication architecture (internal vs external)
