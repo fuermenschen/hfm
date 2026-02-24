@@ -292,7 +292,8 @@
 
 4. **Regression tests**
     - invoice generation still works with event filter,
-    - legacy token links continue via compatibility redirect during transition.
+    - legacy token links (QR codes, emailed links) continue to work via compatibility redirect throughout the one-release transition window,
+    - existing bookmarks and saved links to legacy routes (e.g. dashboards, invoices, athlete/donor views) remain functional during the transition window via redirect or compatibility routing.
 
 ### Post-migration verification checklist
 
