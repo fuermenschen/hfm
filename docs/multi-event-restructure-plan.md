@@ -116,7 +116,7 @@
     - `groups`: unique (`donation_event_id`, `name`).
     - `donation_event_partner`: unique (`donation_event_id`, `partner_id`).
     - `group_memberships`: unique (`group_id`, `athlete_registration_id`).
-    - `donations`: unique (`donator_external_user_id`, `donation_event_id`, `athlete_registration_id`) when athlete target is used.
+    - `donations`: unique (`donator_external_user_id`, `donation_event_id`, `athlete_registration_id`) when athlete target is used; unique (`donator_external_user_id`, `donation_event_id`, `group_id`) when group target is used.
 
 - **Integrity checks**
 
