@@ -120,7 +120,7 @@
 
 - **Integrity checks**
 
-    - DB check: exactly one donation target (`athlete_registration_id IS NOT NULL XOR group_id IS NOT NULL`).
+    - DB check: exactly one donation target (`(athlete_registration_id IS NOT NULL AND group_id IS NULL) OR (athlete_registration_id IS NULL AND group_id IS NOT NULL)`).
     - DB check: `donations.donation_event_id` must match target event (enforced in app + migration validation; DB-level via trigger if needed).
 
 - **Indexes**
