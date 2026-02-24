@@ -171,13 +171,16 @@
 
 ### Phase 4 — Backfill participations and donations
 
-1. For each legacy athlete row, create one `athlete_registration` in its event with copied event-scoped fields.
-2. For each legacy donation row:
+1. Determine the `donation_event` for each legacy athlete:
+    - If all legacy data belongs to a single event, create one `donation_events` row flagged (e.g. via `is_legacy_default = true` in `settings_json` or similar metadata) and assign all legacy athletes to that event.
+    - If multiple historical events existed, create an explicit mapping (for example a `legacy_event_mappings` config array or temporary table) that maps legacy athletes to `donation_event_id` based on agreed business rules (such as `created_at` windows, ID ranges, or manually curated lists). This mapping MUST be defined before running the backfill.
+2. For each legacy athlete row, create one `athlete_registration` using the resolved `donation_event_id` from step 1 and copy event-scoped fields (`rounds_estimated`, `rounds_done`, `verified`, and legacy `partner_id`).
+3. For each legacy donation row:
     - map `donator_id` to `donator_external_user_id`,
     - map `athlete_id` to `athlete_registration_id`,
-    - set `donation_event_id` from registration event,
+    - set `donation_event_id` from the registration’s event (`athlete_registrations.donation_event_id`),
     - keep `group_id = null`.
-3. Fill `donation_event_partner` from distinct partner selections per historical event.
+4. Fill `donation_event_partner` using the same mapping as in step 1: for each `donation_event_id`, take the distinct `partner_id` values from the associated legacy athletes / registrations and insert `(donation_event_id, partner_id)` rows.
 
 ### Phase 5 — Backfill auth identities
 
