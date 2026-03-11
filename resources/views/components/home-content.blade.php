@@ -67,8 +67,8 @@
                     </p>
 
                     <h2 class="mt-16 text-2xl font-bold tracking-tight">Wer profitiert?</h2>
-                    <p class="mt-6">Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der drei
-                        Benefizpartner:innen von deinem Einsatz profitiert.</p>
+                    <p class="mt-6">Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der Benefizpartner:innen
+                        von deinem Einsatz profitiert.</p>
                     <ul role="list" class="mt-8 space-y-8">
                         <li class="flex gap-x-3">
                             <span>
@@ -77,6 +77,7 @@
                                                target="_blank">Brühlgut Stiftung</x-inline-link>
                             </span>
                         </li>
+                        {{--
                         <li class="flex gap-x-3">
                             <span>
                                 <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> Das Institut Kinderseele Schweiz unterstützt Familien mit psychisch kranken Eltern mit Beratungen und weiteren Angeboten.
@@ -90,6 +91,19 @@
                                                target="_blank">Tel. 143 &ndash; Die Dargebotene Hand</x-inline-link>
                             </span>
                         </li>
+                        --}}
+                        <li class="flex gap-x-3">
+                            <span class="w-full rounded-md border border-slate-300/70 dark:border-slate-600/60 bg-slate-100/80 dark:bg-slate-800/50 p-3 animate-pulse">
+                                <span class="block h-3 w-1/2 rounded bg-slate-300 dark:bg-slate-500"></span>
+                                <span class="mt-2 block h-3 w-4/5 rounded bg-slate-300/90 dark:bg-slate-500/90"></span>
+                            </span>
+                        </li>
+                        <li class="flex gap-x-3">
+                            <span class="w-full rounded-md border border-slate-300/70 dark:border-slate-600/60 bg-slate-100/80 dark:bg-slate-800/50 p-3 animate-pulse">
+                                <span class="block h-3 w-1/2 rounded bg-slate-300 dark:bg-slate-500"></span>
+                                <span class="mt-2 block h-3 w-4/5 rounded bg-slate-300/90 dark:bg-slate-500/90"></span>
+                            </span>
+                        </li>
                     </ul>
 
                 </div>
@@ -97,4 +111,3 @@
         </div>
     </div>
 </div>
-

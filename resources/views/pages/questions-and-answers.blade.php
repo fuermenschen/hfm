@@ -50,8 +50,8 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
-            <span>Der Spendenlauf findet am <strong>Samstag, 13. September 2025 in Winterthur</strong> statt. Der Anlass
-            dauert von <strong>13 Uhr bis 18 Uhr</strong>. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung
+            <span>Der Spendenlauf findet am <strong>Samstag, 12. September 2026 in Winterthur</strong> statt. Der Anlass
+            dauert von <strong>13 Uhr bis 16 Uhr</strong>. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung
             (Brühlbergstrasse 6).</span>
             <div x-data="{ pointerEvents: false, timeout: null }" @click.outside="pointerEvents = false"
                  @click="pointerEvents = true;"
@@ -121,9 +121,14 @@
                     kannst.
                 </li>
                 <li>Du suchst Spender:innen für dich. Diese können dich pro Runde unterstützen.</li>
-                <li>Am Anlass selber läufst oder fährst du so viele Runden wie möglich.</li>
+                <li>Am Anlass läufst oder fährst du so viele Runden wie möglich.</li>
                 <li>Fertig! Den Rest übernehmen wir.</li>
             </ol>
+        </x-faq-question-answer>
+
+        <x-faq-question-answer>
+            <x-slot:question>Wann startet der Lauf?</x-slot:question>
+            Es gibt um <strong>13 Uhr</strong> einen gemeinsamen Start für alle Sportler:innen.
         </x-faq-question-answer>
 
         <x-faq-question-answer>
@@ -174,22 +179,22 @@
             <x-slot:question>Wie ist der Ablauf am Anlass?</x-slot:question>
             <ul class="list-disc text-sm list-inside space-y-xs">
                 <li>
-                    Ab <strong>12:30 Uhr</strong> sind die Startnummern im Rundenbüro abholbereit. Das Rundenbüro befindet sich gut sichtbar beim Start/Ziel, direkt vor der Brühlgut Stiftung.
+                    Ab <strong>12:00 Uhr</strong> sind die Startnummern im Rundenbüro abholbereit. Das Rundenbüro befindet sich gut sichtbar beim Start/Ziel, direkt vor der Brühlgut Stiftung.
                 </li>
                 <li>
                     Die Startnummer muss gut sichtbar auf der Vorderseite deines Trikots befestigt werden. Es stehen dafür Sicherheitsnadeln bereit.
                 </li>
                 <li>
-                    Um <strong>13:00 Uhr</strong> gibt es einen gemeinsamen Start mit allen Sportler:innen, die dann bereits bereit sind.
+                    Um <strong>13:00 Uhr</strong> gibt es einen gemeinsamen Start mit allen Sportler:innen.
                 </li>
                 <li>
-                    Du hast zwischen 13 Uhr und 18 Uhr Zeit, die Runden zurückzulegen. Du musst auch nicht bereits um 13 Uhr starten.
+                    Um <strong>16:00 Uhr</strong> gibt es einen gemeinsamen Abschluss des Laufs.
                 </li>
                 <li>
-                    Wir werden deine zurückgelegten Runden zählen. Aber es hilft, wenn du dies auch tust.
+                    Falls du wirklich nicht um 13 Uhr starten kannst, finden wir eine Lösung. Melde dich bitte vorgängig bei uns.
                 </li>
                 <li>
-                    Sobald du fertig bist, kannst du nochmals ins Rundenbüro kommen. Dort gleichen wir die Anzahl Runden ab und du bekommst vielleicht noch eine Kleinigkeit.
+                    Wir zählen deine Runden. Es hilft, wenn du ebenfalls mitzählst.
                 </li>
             </ul>
         </x-faq-question-answer>
@@ -206,11 +211,8 @@
             <ol class="list-decimal text-sm list-inside space-y-xs">
                 <li>Du überlegst dir, welche:n Sportler:in du unterstützen möchtest.</li>
                 <li>Du überlegst dir, welchen Betrag du pro Runde spenden möchtest.</li>
-                <li>Du füllst das
-                    <x-inline-link href="{{ route('become-donator') }}">Spendenformular</x-inline-link>
-                    aus.
-                </li>
-                <li>Du feuerst die Sportler:innen kräftig an am 13. September 2025.</li>
+                <li>Du meldest dich über den Newsletter an und wir informieren dich, sobald das Spendenformular wieder offen ist.</li>
+                <li>Du feuerst die Sportler:innen kräftig an am 12. September 2026.</li>
                 <li>Wir senden dir eine Rechnung mit einem Einzahlungsschein zu.</li>
                 <li>Fertig! Vielen Dank für deine Unterstützung.</li>
             </ol>
@@ -233,7 +235,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>An wen gehen die Spenden?</x-slot:question>
-            Die Spenden gehen an die drei Benefizpartner:innen. Diese sind:
+            Die Spenden gehen an die Benefizpartner:innen. Aktuell bestätigt ist:
             <ul role="list" class="mt-8 space-y-8 text-sm">
                 <li class="flex gap-x-3">
                             <span>
@@ -244,15 +246,12 @@
                 </li>
                 <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> <br> Das Institut Kinderseele Schweiz unterstützt Familien mit psychisch kranken Eltern mit Beratungen und weiteren Angeboten.
-                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Institut Kinderseele Schweiz</x-inline-link>
+                                <strong class="font-semibold"> Weiterer Benefizpartner </strong> <br> Information folgt.
                             </span>
                 </li>
                 <li class="flex gap-x-3">
                             <span>
-                                <strong class="font-semibold">Tel. 143 &ndash; Die Dargebotene Hand</strong> <br> Die Dargebotene Hand ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
-                                <x-inline-link href="https://www.143.ch"
-                                               target="_blank">Tel. 143 &ndash; Die Dargebotene Hand</x-inline-link>
+                                <strong class="font-semibold"> Weiterer Benefizpartner </strong> <br> Information folgt.
                             </span>
                 </li>
             </ul>
@@ -296,19 +295,17 @@
             Bei der Auswahl der Benefizpartner:innen haben wir darauf geachtet, dass nur Institutionen ausgewählt
             werden,
             die in Winterthur und Umgebung tätig sind. Zudem haben wir uns auf Institutionen fokussiert, die sich für
-            Menschen einsetzen. Die drei Benefizpartner:innen sind:
+            Menschen einsetzen. Aktuell bestätigt ist:
             <ul class="list-disc text-sm mt-sm list-inside space-y-xs">
                 <li>
                     <x-inline-link href="https://www.xn--brhlgut-o2a.ch/" target="_blank">Brühlgut Stiftung
                     </x-inline-link>
                 </li>
                 <li>
-                    <x-inline-link href="https://kinderseele.ch" target="_blank">Institut Kinderseele Schweiz
-                    </x-inline-link>
+                    Weiterer Benefizpartner folgt.
                 </li>
                 <li>
-                    <x-inline-link href="https://143.ch" target="_blank">Tel. 143 &ndash; Die Dargebotene Hand
-                    </x-inline-link>
+                    Weiterer Benefizpartner folgt.
                 </li>
             </ul>
         </x-faq-question-answer>

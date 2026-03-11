@@ -23,6 +23,10 @@ class PublicFooter extends Component
             'name' => 'Verein',
             'route' => 'association',
         ],
+        [
+            'name' => 'Newsletter',
+            'route' => 'newsletter',
+        ],
     ];
 
     public function render()
