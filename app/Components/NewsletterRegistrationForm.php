@@ -3,11 +3,15 @@
 namespace App\Components;
 
 use App\Jobs\RegisterNewsletterSubscriber;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Lukeraymonddowning\Honey\Traits\WithHoney;
 
 class NewsletterRegistrationForm extends Component
 {
+    use WithHoney;
+
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
     #[Validate('string', message: 'Der Vorname muss ein Text sein.')]
     #[Validate('max:255', message: 'Der Vorname darf nicht länger als 255 Zeichen sein.')]
@@ -26,6 +30,12 @@ class NewsletterRegistrationForm extends Component
 
     public function save(): void
     {
+        if (! $this->honeyPasses()) {
+            throw ValidationException::withMessages([
+                'email' => ['Bitte überprüfe deine Angaben.'],
+            ]);
+        }
+
         $this->validate();
 
         RegisterNewsletterSubscriber::dispatch((string) $this->first_name, strtolower((string) $this->email));

@@ -44,7 +44,7 @@
         <div class="sm:col-span-2">
             <flux:input
                 wire:model.blur="email_confirmation"
-                label="E-Mail bestaetigen"
+                label="E-Mail bestätigen"
                 icon-trailing="envelope"
                 placeholder="francesca.arslan@posteo.ch"
                 autocomplete="off"
@@ -52,6 +52,8 @@
                 type="email"
             />
         </div>
+
+        <x-honey />
 
         <flux:button icon="paper-airplane" label="Anmelden" type="submit" class="sm:col-span-2 justify-self-start">
             Anmelden
