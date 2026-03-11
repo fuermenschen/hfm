@@ -14,7 +14,7 @@
 
 <x-hero :img="$img">
   <x-slot:kicker>
-    am <time datetime="2026-09-12">12. September 2026</time> um 13 Uhr in Winterthur
+    <time datetime="2026-09-12">12. September 2026</time> in Winterthur
   </x-slot:kicker>
 
   <x-slot:title>
