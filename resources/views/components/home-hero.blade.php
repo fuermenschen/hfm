@@ -14,7 +14,7 @@
 
 <x-hero :img="$img">
   <x-slot:kicker>
-    <time datetime="2025-09-13">Samstag, 13. September 2025</time> in Winterthur
+    am <time datetime="2026-09-12">12. September 2026</time> um 13 Uhr in Winterthur
   </x-slot:kicker>
 
   <x-slot:title>
@@ -43,6 +43,7 @@
                            beneficiaryName="Brühlgut Stiftung"
                            beneficiaryUrl="https://www.xn--brhlgut-o2a.ch/" />
 
+      {{--
       <x-home-hero-partner class="partner-logo"
                            assetUrl="resources/images/iks_light.svg"
                            assetUrlDark="resources/images/iks_dark.svg"
@@ -56,11 +57,28 @@
                            imgAlt="Logo Tel. 143 &ndash; Die Dargebotene Hand"
                            beneficiaryName="Tel. 143 &ndash; Die Dargebotene Hand"
                            beneficiaryUrl="https://143.ch" />
+      --}}
+
+      <div class="max-h-12 max-w-32 w-full aspect-video rounded-md border border-white/35 bg-white/10 p-2 animate-pulse" aria-hidden="true">
+        <div class="h-full w-full rounded bg-white/15 flex items-center justify-center">
+          <div class="w-4/5 space-y-1.5">
+            <div class="h-1.5 rounded bg-white/45"></div>
+            <div class="h-1.5 w-3/4 rounded bg-white/30"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="max-h-12 max-w-32 w-full aspect-video rounded-md border border-white/35 bg-white/10 p-2 animate-pulse" aria-hidden="true">
+        <div class="h-full w-full rounded bg-white/15 flex items-center justify-center">
+          <div class="w-4/5 space-y-1.5">
+            <div class="h-1.5 rounded bg-white/45"></div>
+            <div class="h-1.5 w-3/4 rounded bg-white/30"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </x-slot:partners>
 </x-hero>
-
-
 
 
 

@@ -21,9 +21,22 @@
         <x-page-subtitle>
             Anmeldeformular
         </x-page-subtitle>
+
+        <div class="mt-sm mb-md rounded-lg border border-hfm-red/40 bg-hfm-red/10 px-md py-sm">
+            <p class="font-semibold text-hfm-red">Die Anmeldung als Spender:in ist aktuell noch nicht offen.</p>
+            <p class="mt-1">Melde dich für den Newsletter an. Wir informieren dich, sobald das Spendenformular wieder verfügbar ist.</p>
+        </div>
+
+        {{--
         Es freut uns, dass du Spender:in werden möchtest. Indem du das Formular ausfüllst, hilfst du den Sportler:innen,
         Spenden für unsere Benefizpartner:innen zu sammeln.
 
         @livewire('become-donator-form')
+        --}}
+
+        <x-page-subtitle>
+            Newsletter Anmeldung
+        </x-page-subtitle>
+        @livewire('newsletter-registration-form')
     </div>
 @endsection

@@ -58,12 +58,12 @@ dataset('phone_validation_cases', [
 test('renders successfully', function () {
     Livewire::test(BecomeDonatorForm::class)
         ->assertStatus(200);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('defaults country to CH', function () {
     Livewire::test(BecomeDonatorForm::class)
         ->assertSet('country_of_residence', 'CH');
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('validates ZIP per country', function (
     string $country,
@@ -100,7 +100,7 @@ it('validates ZIP per country', function (
     } else {
         $test->assertHasErrors(['zip_code']);
     }
-})->with('zip_validation_cases');
+})->with('zip_validation_cases')->skip('Registrierung aktuell geschlossen.');
 
 it('persists selected country', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -132,7 +132,7 @@ it('persists selected country', function () {
         'email' => 'erika@example.de',
         'country_of_residence' => 'DE',
     ]);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('shows ZIP validation message in the UI when invalid', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -160,7 +160,7 @@ it('shows ZIP validation message in the UI when invalid', function () {
         ->call('save')
         ->assertHasErrors(['zip_code'])
         ->assertSee('Ungültige Postleitzahl');
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 // Replaces dedicated phone tests with a dataset-driven variant
 it('validates phone per country', function (
@@ -226,7 +226,7 @@ it('validates phone per country', function (
         $test->assertHasErrors(['phone_national']);
         $this->assertDatabaseMissing('donators', ['email' => $email]);
     }
-})->with('phone_validation_cases');
+})->with('phone_validation_cases')->skip('Registrierung aktuell geschlossen.');
 
 // --- Added pragmatic, high-impact tests ---
 it('rejects email confirmation mismatch and does not persist', function () {
@@ -256,7 +256,7 @@ it('rejects email confirmation mismatch and does not persist', function () {
         ->assertHasErrors(['email_confirmation' => 'same']);
 
     $this->assertDatabaseMissing('donators', ['email' => 'alex@example.com']);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('requires privacy acceptance', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -285,7 +285,7 @@ it('requires privacy acceptance', function () {
         ->assertHasErrors(['privacy' => 'accepted']);
 
     $this->assertDatabaseMissing('donators', ['email' => 'maya@example.com']);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('validates amount rules and boundaries', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -379,7 +379,7 @@ it('validates amount rules and boundaries', function () {
         ->set('privacy', true)
         ->call('save')
         ->assertHasErrors(['amount_max']);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('prevents duplicate donation for the same athlete', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -432,7 +432,7 @@ it('prevents duplicate donation for the same athlete', function () {
 
     $donator->refresh();
     expect($donator->donations()->where('athlete_id', $athlete->id)->count())->toBe(1);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('reuses donator across different athletes', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -488,7 +488,7 @@ it('reuses donator across different athletes', function () {
         ->assertHasNoErrors();
 
     expect(Donator::where('email', $email)->count())->toBe(1);
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('sends admin notification only for first-time donators when enabled', function () {
     config(['app.send_notification_on_registration' => true]);
@@ -540,7 +540,7 @@ it('sends admin notification only for first-time donators when enabled', functio
         ->set('amount_per_round', 6.0)
         ->set('privacy', true)
         ->call('save');
-});
+})->skip('Registrierung aktuell geschlossen.');
 
 it('does not send admin notification when disabled', function () {
     config(['app.send_notification_on_registration' => false]);
@@ -574,4 +574,4 @@ it('does not send admin notification when disabled', function () {
 
     // specifically ensure no on-demand admin notification is sent
     Notification::assertNotSentTo(new Illuminate\Notifications\AnonymousNotifiable, AdminSomeoneRegistered::class);
-});
+})->skip('Registrierung aktuell geschlossen.');

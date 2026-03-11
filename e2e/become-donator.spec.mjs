@@ -1,7 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.describe("Become Donator Form", () => {
-    test("can submit become donator form", async ({ page }) => {
+    test.skip("can submit become donator form", async ({ page }) => {
         await page.goto("/spenderin-werden", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle");
         await expect(page.locator("h1")).toContainText("Spender:in werden");
@@ -52,4 +52,3 @@ test.describe("Become Donator Form", () => {
         // TODO
     });
 });
-
