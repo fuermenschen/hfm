@@ -57,7 +57,7 @@ class NewsletterRegistrationStatusNotification extends Notification implements S
             ->line('In diesem Newsletter informieren wir über wichtige Neuigkeiten rund um den Anlass "Höhenmeter für Menschen".')
             ->line('Bei Fragen kannst du jederzeit auf diese Nachricht antworten.')
             ->line('')
-            ->line('Falls du dich aus Versehen registriert hast oder jemand Deine E-mail-Adresse genutzt hat, kannst du dich mit dem folgenden Link wieder abmelden.')
+            ->line('Falls du dich aus Versehen registriert hast oder jemand deine E-Mail-Adresse genutzt hat, kannst du dich mit dem folgenden Link wieder abmelden.')
             ->action('Newsletter-Abmeldung', $unsubscribeUrl);
     }
 
