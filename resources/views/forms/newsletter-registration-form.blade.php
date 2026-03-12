@@ -53,8 +53,6 @@
             />
         </div>
 
-        <x-honey />
-
         <flux:button icon="paper-airplane" label="Anmelden" type="submit" class="sm:col-span-2 justify-self-start">
             Anmelden
         </flux:button>

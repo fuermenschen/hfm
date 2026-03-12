@@ -13,13 +13,11 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
 use WireUi\Traits\Actions;
 
 class LoginForm extends Component
 {
     use Actions;
-    use WithHoney;
 
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
@@ -29,12 +27,6 @@ class LoginForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
-
             $this->validate();
         } catch (ValidationException $e) {
 

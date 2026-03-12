@@ -95,7 +95,6 @@
                         class="text-xs underline mt-xs">Was heisst das?</button>
     </span>
 
-    <x-honey />
     <flux:button
         icon="paper-airplane" label="Senden" type="submit" class="justify-self-start">
         Senden

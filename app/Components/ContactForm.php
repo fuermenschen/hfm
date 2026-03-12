@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
 use WireUi\Traits\Actions;
 
 class ContactForm extends Component
 {
     use Actions;
-    use WithHoney;
 
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
@@ -32,12 +30,6 @@ class ContactForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
-
             $this->validate();
         } catch (ValidationException $e) {
 

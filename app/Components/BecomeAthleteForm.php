@@ -13,13 +13,11 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
 use WireUi\Traits\Actions;
 
 class BecomeAthleteForm extends Component
 {
     use Actions;
-    use WithHoney;
 
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
@@ -105,12 +103,6 @@ class BecomeAthleteForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
-
             $this->validate();
         } catch (ValidationException $e) {
 

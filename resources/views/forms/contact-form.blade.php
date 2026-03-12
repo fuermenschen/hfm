@@ -15,8 +15,6 @@
                 placeholder="Hallo, kann man bei eurem Verein auch direkt mitmachen? lg Francesca."
                 wire:model.blur="message" autocomplete="off" />
 
-    <x-honey />
-
     <span class="sm:col-span-2">
             <x-button label="Nachricht senden" type="submit" spinner="save" />
         </span>

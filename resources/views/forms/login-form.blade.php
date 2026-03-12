@@ -7,8 +7,6 @@
              wire:model.blur="email" type="email" autocomplete="email"
     />
 
-    <x-honey />
-
     <span class="sm:col-span-2">
             <x-button label="Login-Link erhalten" type="submit" spinner="save" />
         </span>
