@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7a605fb7280cdea561f66de64cd833a2",
+    "content-hash": "03445e979b7088872e001592961a73de",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -8517,51 +8517,6 @@
                 "source": "https://github.com/tijsverkoyen/CssToInlineStyles/tree/v2.4.0"
             },
             "time": "2025-12-02T11:56:42+00:00"
-        },
-        {
-            "name": "usystems/webling-api-php",
-            "version": "1.3.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/usystems/webling-api-php.git",
-                "reference": "e49f1668bafa1df8ca06d3795e114ee7ca7eebf7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/usystems/webling-api-php/zipball/e49f1668bafa1df8ca06d3795e114ee7ca7eebf7",
-                "reference": "e49f1668bafa1df8ca06d3795e114ee7ca7eebf7",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "ext-json": "*",
-                "php": ">=5.6.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": ">=4.8 <10.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Webling": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Demian Holderegger",
-                    "email": "support@webling.ch"
-                }
-            ],
-            "description": "Lightweight Webling API Wrapper",
-            "support": {
-                "issues": "https://github.com/usystems/webling-api-php/issues",
-                "source": "https://github.com/usystems/webling-api-php/tree/1.3.1"
-            },
-            "time": "2024-08-27T11:47:39+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
