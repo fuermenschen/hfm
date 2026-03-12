@@ -15,10 +15,10 @@
             "enabled": true,
             "command": [
                 "php",
-                "/Applications/Herd.app/Contents/Resources/herd-mcp.phar"
+                "herd-mcp.phar"
             ],
             "environment": {
-                "SITE_PATH": "/Users/simonmoser/Code/hfm"
+                "SITE_PATH": "."
             }
         }
     }
