@@ -115,11 +115,11 @@
                    wire:model.live.debounce="comment" hint="{{ strlen($comment) }}/2000" autocomplete="off" />
 
     <span class="sm:col-span-2">
-            <x-toggle wire:model.bool.live="privacy"
-                      label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
+            <flux:checkbox wire:model.live="privacy"
+                           label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
                 <button type="button" wire:click="showPrivacyInfo"
                         class="text-xs underline mt-xs">Was heisst das?</button>
     </span>
 
-    <x-button label="Senden" type="submit" spinner="save" class="justify-self-start" />
+    <flux:button type="submit" icon="paper-airplane" class="justify-self-start">Senden</flux:button>
 </form>

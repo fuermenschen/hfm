@@ -24,14 +24,14 @@
             <div class="flex flex-col gap-y-2 items-center">
                 <img src="{{ Vite::asset('resources/image_templates/story_single_light.jpg') }}" alt="Athlete Light"
                      class="w-32 object-contain border-2">
-                <x-button wire:click="downloadStorySingleLight" spinner="downloadStorySingleLight" xs>Herunterladen
-                </x-button>
+                <flux:button wire:click="downloadStorySingleLight" size="xs" icon="arrow-down-tray">Herunterladen
+                </flux:button>
             </div>
             <div class="flex flex-col gap-y-2 items-center">
                 <img src="{{ Vite::asset('resources/image_templates/story_single_dark.jpg') }}" alt="Athlete Light"
                      class="w-32 object-contain border-2">
-                <x-button wire:click="downloadStorySingleDark" spinner="downloadStorySingleDark" xs>Herunterladen
-                </x-button>
+                <flux:button wire:click="downloadStorySingleDark" size="xs" icon="arrow-down-tray">Herunterladen
+                </flux:button>
             </div>
 
         </div>

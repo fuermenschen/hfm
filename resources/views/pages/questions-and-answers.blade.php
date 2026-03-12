@@ -13,34 +13,26 @@
             !
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-xs gap-x-xs sm:gap-y-2 my-lg mx-auto max-w-lg">
-            <x-button
+            <flux:button
                 href="#allgemein"
-                label="Allgemein"
-                outline
-                dark
-                sm
-            />
-            <x-button
+                variant="filled"
+                size="xs"
+            >Allgemein</flux:button>
+            <flux:button
                 href="#sportlerinnen"
-                label="Sportler:innen"
-                outline
-                dark
-                sm
-            />
-            <x-button
+                variant="filled"
+                size="xs"
+            >Sportler:innen</flux:button>
+            <flux:button
                 href="#spenderinnen"
-                label="Spender:innen"
-                outline
-                dark
-                sm
-            />
-            <x-button
+                variant="filled"
+                size="xs"
+            >Spender:innen</flux:button>
+            <flux:button
                 href="#hintergruende"
-                label="Hintergründe"
-                outline
-                dark
-                sm
-            />
+                variant="filled"
+                size="xs"
+            >Hintergründe</flux:button>
         </div>
     </div>
 

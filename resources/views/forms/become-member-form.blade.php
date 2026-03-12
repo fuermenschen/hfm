@@ -105,8 +105,8 @@
         wire:model.blur="comment" autocomplete="off" />
 
     <span class="sm:col-span-2">
-        <x-toggle
-            wire:model.bool.live="statutes_read"
+        <flux:checkbox
+            wire:model.live="statutes_read"
             label="Ich habe die Statuten gelesen." />
     </span>
 

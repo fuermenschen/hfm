@@ -8,12 +8,9 @@ use Flux;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use WireUi\Traits\Actions;
 
 class AdminAssociationDonationInvoiceForm extends Component
 {
-    use Actions;
-
     // Name der Firma (optional)
     #[Validate('nullable')]
     #[Validate('string', message: 'Der Name der Firma muss ein Text sein.')]

@@ -63,7 +63,6 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @livewireStyles
     @livewireScripts
-    @wireUiScripts
     @fluxStyles
     @stack('head')
     <!-- CSRF Token -->
@@ -71,8 +70,6 @@
 </head>
 
 <body class="h-full w-full bg-hfm-white dark:bg-hfm-dark text-hfm-dark dark:text-hfm-white">
-<x-dialog />
-<x-notifications />
 @yield('body')
 @persist('toast')
 <flux:toast />
