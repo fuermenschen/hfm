@@ -22,7 +22,7 @@ composer install
 npm install
 
 # Copy the example environment file
-cp .env.local .env
+cp .env.example .env
 
 # Generate the application key
 php artisan key:generate
@@ -41,8 +41,8 @@ php artisan db:seed
 
 ### 1️⃣ **Local Development Environment - Herd**
 
-We use **[Herd](https://herd.laravel.com/)** as the **local dependency manager** for **PHP**, **Node.js**, and as the *
-*local web server**.
+We use **[Herd](https://herd.laravel.com/)** as the **local dependency manager** for **PHP**, **Node.js**, and as the \*
+\*local web server\*\*.
 
 #### ➡️ Install Herd
 
@@ -94,7 +94,7 @@ Download from: [https://code.visualstudio.com/](https://code.visualstudio.com/)
 To ensure a productive development environment, install the following extensions:
 
 | Extension                     | Description                                 |
-|-------------------------------|---------------------------------------------|
+| ----------------------------- | ------------------------------------------- |
 | **Laravel**                   | Official Laravel extension for VSCode       |
 | **Better Pest**               | Pest test runner for Laravel projects       |
 | **Pest Snippets**             | Snippets for Pest tests in Laravel projects |
@@ -113,4 +113,3 @@ To ensure a productive development environment, install the following extensions
 
 - **Database:** Use SQLite locally
 - **Code Standards:** Use Prettier & ESLint for formatting
-

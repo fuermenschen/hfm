@@ -38,7 +38,7 @@ Initial local setup:
 ```bash
 composer install
 npm install
-cp .env.local .env
+cp .env.example .env
 php artisan key:generate
 php artisan migrate:fresh --seed
 ```
