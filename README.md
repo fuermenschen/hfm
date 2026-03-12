@@ -18,7 +18,20 @@ Currently, the app includes modules for athlete registration, donation managemen
 
 ## 🛠 Installation
 
-To set up Höhenmeter für Menschen locally, follow the steps mentioned in [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md).
+To set up Höhenmeter für Menschen locally, follow [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md).
+
+Quick start:
+
+```bash
+git clone https://github.com/fuermenschen/hfm.git
+cd hfm
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run dev
+```
 
 ## 🎛 Tech Stack
 
@@ -28,10 +41,24 @@ To set up Höhenmeter für Menschen locally, follow the steps mentioned in [DEVE
 
 ## 📦 Dependencies
 
-- **PHP:** 8.2
-- **Node.js:** 22
+- **PHP:** 8.4+
+- **Node.js:** 22+
+
+## ✅ Quality Checks
+
+Before opening a pull request, run:
+
+```bash
+composer precommit
+```
+
+This command runs formatting (`pint --dirty`), frontend build checks, static analysis (`phpstan`), parallel Pest tests, and Playwright end-to-end tests.
+
+## 📘 Additional Docs
+
+- Development setup: [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md)
+- Repository conventions: [CONVENTIONS.md](CONVENTIONS.md)
 
 ## 🤝 Dual Purpose
 
 This app is like a Swiss Army knife for good causes. It helps manage the **Höhenmeter für Menschen** charity run while also supporting the **Verein für Menschen** association. Whether you're climbing mountains or signing up members, we've got your back.
-
