@@ -19,6 +19,8 @@
           class="flex flex-col space-y-6 sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-6">
         @csrf
 
+        <x-honeypot livewire-model="extraFields" />
+
         <flux:input
             wire:model.blur="first_name"
             label="Vorname"

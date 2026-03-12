@@ -24,6 +24,7 @@
         "openspout/openspout": "^5.4",
         "power-components/livewire-powergrid": "^6.0",
         "propaganistas/laravel-phone": "^6.0",
+        "spatie/laravel-honeypot": "^4.7",
         "spatie/laravel-settings": "^3.4",
         "sprain/swiss-qr-bill": "^5.3"
     },

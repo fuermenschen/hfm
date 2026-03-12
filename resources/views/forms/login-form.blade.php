@@ -3,6 +3,8 @@
 
     @csrf
 
+    <x-honeypot livewire-model="extraFields" />
+
     <flux:input
         icon-trailing="envelope"
         label="E-Mail"

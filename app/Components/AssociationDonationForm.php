@@ -10,9 +10,15 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class AssociationDonationForm extends Component
 {
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
+
     // Name der Firma (optional)
     #[Validate('nullable')]
     #[Validate('string', message: 'Der Name der Firma muss ein Text sein.')]
@@ -72,6 +78,8 @@ class AssociationDonationForm extends Component
 
     public function submit(CreateAssociationDonationInvoiceService $createAssociationDonationInvoiceService)
     {
+        $this->protectAgainstSpam();
+
         try {
             $this->validate();
         } catch (ValidationException $e) {
@@ -129,5 +137,10 @@ class AssociationDonationForm extends Component
     public function redirectHelper(): void
     {
         $this->redirect(route('home'), navigate: true);
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

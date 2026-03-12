@@ -1,6 +1,8 @@
 <form wire:submit="submit"
       class="flex flex-col space-y-6 sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-6 mt-6">
 
+    <x-honeypot livewire-model="extraFields" />
+
     <flux:input
         icon-trailing="user"
         label="Vorname"
