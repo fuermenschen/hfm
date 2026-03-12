@@ -25,6 +25,7 @@ Route::get('/', function () {
 })->name('home');
 Route::view('sportlerin-werden', 'pages.become-athlete')->name('become-athlete');
 Route::view('spenderin-werden', 'pages.become-donator')->name('become-donator');
+Route::view('newsletter', 'pages.newsletter')->name('newsletter');
 Route::view('fragen-und-antworten', 'pages.questions-and-answers')->name('questions-and-answers');
 
 // Footer Menu

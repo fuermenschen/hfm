@@ -129,4 +129,9 @@
 
     @livewire('association-donation-form')
 
+    <x-page-subtitle>Newsletter</x-page-subtitle>
+    <div class="mt-xs">Wenn du lieber nur Neuigkeiten erhalten möchtest, kannst du dich hier für den Newsletter anmelden.</div>
+
+    @livewire('newsletter-registration-form')
+
 @endsection

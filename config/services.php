@@ -40,4 +40,14 @@ return [
             'useragent' => env('WEBLING_USER_AGENT', 'HFM Webling Client'),
         ],
     ],
+
+    'infomaniak_newsletter' => [
+        'token' => env('INFOMANIAK_NEWSLETTER_TOKEN'),
+        'domain_id' => env('INFOMANIAK_NEWSLETTER_DOMAIN_ID'),
+        'group_id' => env('INFOMANIAK_NEWSLETTER_GROUP_ID', 275443),
+        'base_url' => env('INFOMANIAK_API_BASEURL', 'api.infomaniak.com'),
+        'timeout' => env('INFOMANIAK_NEWSLETTER_TIMEOUT', 10),
+        'connect_timeout' => env('INFOMANIAK_NEWSLETTER_CONNECT_TIMEOUT', 5),
+        'user_agent' => env('INFOMANIAK_NEWSLETTER_USER_AGENT', 'HFM Newsletter Client'),
+    ],
 ];
