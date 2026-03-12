@@ -3,7 +3,9 @@
 use App\Models\Athlete;
 use App\Models\Donation;
 use App\Models\User;
+use App\Services\Infomaniak\InfomaniakNewsletterService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +29,20 @@ Route::get('/', function () {
 Route::view('sportlerin-werden', 'pages.become-athlete')->name('become-athlete');
 Route::view('spenderin-werden', 'pages.become-donator')->name('become-donator');
 Route::view('newsletter', 'pages.newsletter')->name('newsletter');
+Route::get('newsletter/abmelden/{email}', function (string $email, InfomaniakNewsletterService $newsletterService) {
+    try {
+        $newsletterService->unsubscribeSubscriber($email);
+
+        return response('Du wurdest erfolgreich vom Newsletter abgemeldet.');
+    } catch (Throwable $exception) {
+        Log::error('Newsletter unsubscribe API call failed.', [
+            'email' => $email,
+            'error' => $exception->getMessage(),
+        ]);
+
+        return response('Die Abmeldung konnte nicht verarbeitet werden.', 500);
+    }
+})->name('newsletter.unsubscribe')->middleware('signed');
 Route::view('fragen-und-antworten', 'pages.questions-and-answers')->name('questions-and-answers');
 
 // Footer Menu
