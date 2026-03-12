@@ -7,20 +7,16 @@ use App\Models\Partner;
 use App\Models\SportType;
 use App\Notifications\AdminSomeoneRegistered;
 use Exception;
+use Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
-use WireUi\Traits\Actions;
 
 class BecomeAthleteForm extends Component
 {
-    use Actions;
-    use WithHoney;
-
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
     #[Validate('string', message: 'Der Vorname muss ein Text sein.')]
@@ -105,12 +101,6 @@ class BecomeAthleteForm extends Component
     public function save(): void
     {
         try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
-
             $this->validate();
         } catch (ValidationException $e) {
 
@@ -122,11 +112,7 @@ class BecomeAthleteForm extends Component
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
-            $this->dialog([
-                'title' => $title,
-                'description' => $description,
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: $title, text: $description, variant: 'danger');
 
             return;
         }
@@ -143,31 +129,25 @@ class BecomeAthleteForm extends Component
 
             $this->reset();
 
-            $this->dialog([
-                'title' => 'Prüfe deine E-Mails!',
-                'description' => 'Vielen Dank für deine Anmeldung. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.',
-                'icon' => 'mail-open',
-                'onClose' => [
-                    'method' => 'redirectHelper',
-                ],
-            ]);
+            Flux::toast(
+                heading: 'Prüfe deine E-Mails!',
+                text: 'Vielen Dank für deine Anmeldung. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.',
+                variant: 'success',
+            );
+
+            $this->redirectHelper();
 
         } catch (Exception $e) {
-            $this->dialog([
-                'title' => 'Fehler',
-                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
         }
     }
 
     public function showPrivacyInfo(): void
     {
-        $this->dialog([
-            'title' => 'Datenschutz',
-            'description' => "Wir benutzen deine Daten nur für die Organisation des Anlasses Höhenmeter für Menschen. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der <a href='/datenschutz' target='_blank' class='underline'>Datenschutzerklärung</a>.",
-            'icon' => 'info',
-        ]);
+        Flux::toast(
+            heading: 'Datenschutz',
+            text: 'Wir benutzen deine Daten nur für die Organisation des Anlasses Höhenmeter für Menschen. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.',
+        );
     }
 
     public function showNumRoundsInfo(): void
@@ -178,22 +158,14 @@ class BecomeAthleteForm extends Component
 
         $message .= '<br><br>Die geschätzte Anzahl Runden hilft deinen Spender:innen, den Betrag pro Runden festzulegen. Aber keine Angst, du musst nicht so viele Runden zurücklegen, wie du schätzt. Du kannst auch mehr oder weniger Runden laufen.';
 
-        $this->dialog([
-            'title' => 'Strecke',
-            'description' => $message,
-            'icon' => 'light-bulb',
-        ]);
+        Flux::toast(heading: 'Strecke', text: strip_tags($message));
     }
 
     public function showDistributionInfo(): void
     {
         $message = 'Du kannst Auswählen, für welche:n der drei Benefizpartner:innen du spenden sammeln möchtest. <br><br> Sämtliche Spenden, welche dann von deinen Spender:innen eingehen, werden zu 100% an die gewählte Organisation gespendet.<br><br> Wenn du keine Präferenz hast, kannst du auch alle drei anwählen.';
 
-        $this->dialog([
-            'title' => 'Verteilung der Spenden',
-            'description' => $message,
-            'icon' => 'light-bulb',
-        ]);
+        Flux::toast(heading: 'Verteilung der Spenden', text: strip_tags($message));
     }
 
     public function mount(): void

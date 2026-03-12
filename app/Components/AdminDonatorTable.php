@@ -24,12 +24,10 @@ use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use WireUi\Traits\Actions;
 use ZipArchive;
 
 class AdminDonatorTable extends PowerGridComponent
 {
-    use Actions;
     use WithExport;
 
     public string $sortField = 'first_name';
@@ -37,6 +35,9 @@ class AdminDonatorTable extends PowerGridComponent
     public string $tableName = 'admin-donator-table';
 
     protected DonorService $donorService;
+
+    /** @var array<string, int> */
+    public array $pendingConfirmations = [];
 
     public function boot(DonorService $donorService): void
     {
@@ -281,19 +282,15 @@ class AdminDonatorTable extends PowerGridComponent
         $donor = Donator::find($donor_id);
         $name = $donor ? $donor->privacy_name : 'diese:n Spender:in';
 
-        $this->dialog()->confirm([
-            'title' => 'Rechnung löschen?',
-            'description' => "Möchtest du die Rechnung für {$name} wirklich löschen? Dies entfernt auch die lokal gespeicherte PDF und löscht die Rechnung und <strong>sämtliche verknüpften Buchungen auf Webling.</strong>",
-            'icon' => 'exclamation',
-            'accept' => [
-                'label' => 'Ja, löschen',
-                'method' => 'deleteDonorInvoice',
-                'params' => $donor_id,
-            ],
-            'reject' => [
-                'label' => 'Abbrechen',
-            ],
-        ]);
+        if ($this->requiresSecondClick(
+            key: 'delete-invoice-'.$donor_id,
+            heading: 'Bitte bestätigen',
+            text: "Klicke erneut auf Löschen für {$name}, um die Rechnung inklusive Webling-Buchungen zu entfernen.",
+        )) {
+            return;
+        }
+
+        $this->deleteDonorInvoice($donor_id);
     }
 
     public function deleteDonorInvoice(int $donor_id): void
@@ -507,21 +504,14 @@ class AdminDonatorTable extends PowerGridComponent
         if ($donor->invoice_sent_at) {
             $name = $donor->privacy_name ?? 'diese:n Spender:in';
 
-            $this->dialog()->confirm([
-                'title' => 'Rechnung erneut senden?',
-                'description' => "Für {$name} wurde die Rechnung bereits am ".Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i').' gesendet. Möchtest du sie erneut senden?',
-                'icon' => 'exclamation',
-                'accept' => [
-                    'label' => 'Ja, erneut senden',
-                    'method' => 'sendDonorInvoiceConfirmed',
-                    'params' => $donor_id,
-                ],
-                'reject' => [
-                    'label' => 'Abbrechen',
-                ],
-            ]);
+            if ($this->requiresSecondClick(
+                key: 'resend-invoice-'.$donor_id,
+                heading: 'Rechnung erneut senden?',
+                text: "Die Rechnung für {$name} wurde bereits gesendet. Klicke erneut, um sie nochmals zu senden.",
+            )) {
+                return;
+            }
 
-            return;
         }
 
         $this->sendDonorInvoiceConfirmed($donor_id);
@@ -631,24 +621,34 @@ class AdminDonatorTable extends PowerGridComponent
         if (! empty($donor->invoice_reminder_sent_at)) {
             $name = $donor->privacy_name ?? 'diese:n Spender:in';
 
-            $this->dialog()->confirm([
-                'title' => 'Zahlungserinnerung erneut senden?',
-                'description' => "Für {$name} wurde die Zahlungserinnerung bereits am ".Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i').' gesendet. Möchtest du sie erneut senden?',
-                'icon' => 'exclamation',
-                'accept' => [
-                    'label' => 'Ja, erneut senden',
-                    'method' => 'sendDonorInvoiceReminderConfirmed',
-                    'params' => $donor_id,
-                ],
-                'reject' => [
-                    'label' => 'Abbrechen',
-                ],
-            ]);
+            if ($this->requiresSecondClick(
+                key: 'resend-reminder-'.$donor_id,
+                heading: 'Zahlungserinnerung erneut senden?',
+                text: "Für {$name} wurde bereits eine Erinnerung gesendet. Klicke erneut, um sie nochmals zu senden.",
+            )) {
+                return;
+            }
 
-            return;
         }
 
         $this->sendDonorInvoiceReminderConfirmed($donor_id);
+    }
+
+    protected function requiresSecondClick(string $key, string $heading, string $text): bool
+    {
+        $now = now()->timestamp;
+        $expiresAt = $this->pendingConfirmations[$key] ?? null;
+
+        if (is_int($expiresAt) && $expiresAt >= $now) {
+            unset($this->pendingConfirmations[$key]);
+
+            return false;
+        }
+
+        $this->pendingConfirmations[$key] = $now + 15;
+        Flux::toast(heading: $heading, text: $text, variant: 'warning');
+
+        return true;
     }
 
     public function sendDonorInvoiceReminderConfirmed(int $donor_id): bool

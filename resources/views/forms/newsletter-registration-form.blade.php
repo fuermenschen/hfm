@@ -1,4 +1,4 @@
-<div class="mt-sm"
+<div class="mt-6"
      x-data="{ registrationQueued: $wire.entangle('registrationQueued').live }"
      x-effect="if (registrationQueued) { $flux.modal('newsletter-registration-success').show() }">
     <flux:modal name="newsletter-registration-success" class="sm:w-full md:w-xl" :dismissible="false">
@@ -16,7 +16,7 @@
     </flux:modal>
 
     <form wire:submit="save"
-          class="flex flex-col space-y-sm sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-sm">
+          class="flex flex-col space-y-6 sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-6">
         @csrf
 
         <flux:input
@@ -52,8 +52,6 @@
                 type="email"
             />
         </div>
-
-        <x-honey />
 
         <flux:button icon="paper-airplane" label="Anmelden" type="submit" class="sm:col-span-2 justify-self-start">
             Anmelden

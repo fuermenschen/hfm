@@ -1,5 +1,5 @@
 <div>
-    <flux:modal name="payment-status-summary" class="min-w-[26rem] sm:w-full md:w-xl">
+    <flux:modal name="payment-status-summary" class="min-w-104 sm:w-full md:w-xl">
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Zahlungsstatus – Zusammenfassung</flux:heading>

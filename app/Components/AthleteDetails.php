@@ -4,17 +4,15 @@ namespace App\Components;
 
 use App\Models\Athlete;
 use App\Models\Donation;
+use Flux;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
-use WireUi\Traits\Actions;
 
 class AthleteDetails extends Component
 {
-    use Actions;
-
     #[Locked]
     public array $athlete;
 
@@ -32,9 +30,10 @@ class AthleteDetails extends Component
             $athlete->save();
 
             // show a success message
-            $this->dialog()->success(
-                $title = 'Anmeldung bestätigt!',
-                $message = 'Deine Anmeldung wurde bestätigt. Ab sofort können Spender:innen dich bei der Anmeldung auswählen'
+            Flux::toast(
+                heading: 'Anmeldung bestätigt!',
+                text: 'Deine Anmeldung wurde bestätigt. Ab sofort können Spender:innen dich bei der Anmeldung auswählen',
+                variant: 'success',
             );
         }
 

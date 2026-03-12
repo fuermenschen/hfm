@@ -243,8 +243,10 @@
         );
 
         $output = new QrBill\PaymentPart\Output\HtmlOutput\HtmlOutput($qrBill, 'de');
+        $displayOptions = (new QrBill\PaymentPart\Output\DisplayOptions())
+            ->setPrintable(false);
 
-        $html = $output->setPrintable(false)->getPaymentPart();
+        $html = $output->setDisplayOptions($displayOptions)->getPaymentPart();
 
     @endphp
     <div class="qr-bill">

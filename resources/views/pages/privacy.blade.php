@@ -53,7 +53,7 @@
     <p>Verantwortlich für die Datenverarbeitung ist der <strong>Verein für Menschen</strong>. Bei Fragen
         zur
         Datenverarbeitung kannst du dich an folgende Adresse wenden:</p>
-    <div class="m-sm">
+    <div class="m-6">
         Verein für Menschen<br>
         <a href="mailto:info@fuer-menschen.ch">info@fuer-menschen.ch</a>
     </div>

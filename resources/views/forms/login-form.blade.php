@@ -1,15 +1,18 @@
 <form wire:submit="save"
-      class="flex flex-col w-96 max-w-full space-y-sm mt-sm sm:mx-auto items-stretch">
+      class="flex flex-col w-96 max-w-full space-y-6 mt-6 sm:mx-auto items-stretch">
 
     @csrf
 
-    <x-input right-icon="mail" label="E-Mail" placeholder="francesca.arslan@posteo.ch"
-             wire:model.blur="email" type="email" autocomplete="email"
+    <flux:input
+        icon-trailing="envelope"
+        label="E-Mail"
+        placeholder="francesca.arslan@posteo.ch"
+        wire:model.blur="email"
+        type="email"
+        autocomplete="email"
     />
 
-    <x-honey />
-
     <span class="sm:col-span-2">
-            <x-button label="Login-Link erhalten" type="submit" spinner="save" />
+            <flux:button type="submit" icon="paper-airplane">Login-Link erhalten</flux:button>
         </span>
 </form>

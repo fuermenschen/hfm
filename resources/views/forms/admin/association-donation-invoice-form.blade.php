@@ -1,5 +1,5 @@
 <form wire:submit="submit"
-      class="flex flex-col space-y-sm md:grid md:grid-cols-2 max-w-full md:space-y-0 md:gap-sm mt-sm">
+      class="flex flex-col space-y-6 md:grid md:grid-cols-2 max-w-full md:space-y-0 md:gap-6 mt-6">
 
     <flux:input
         label="Vorname"

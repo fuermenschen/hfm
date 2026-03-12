@@ -1,176 +1,276 @@
-# AGENTS.md
+<laravel-boost-guidelines>
+=== foundation rules ===
 
-Guide for coding agents operating in this repository.
-This file captures build/lint/test commands and coding conventions.
+# Laravel Boost Guidelines
 
-## 1) Project Snapshot
+The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
 
-- Stack: Laravel 11, PHP 8.4, Livewire 3, Flux UI.
-- Frontend: Vite 5, Tailwind CSS v3, Prettier.
-- Testing: Pest (`php artisan test`) + Playwright (`npm run e2e`).
-- Static analysis: PHPStan/Larastan (level 5).
-- Key paths: `app/`, `resources/`, `routes/`, `tests/`, `e2e/`.
+## Foundational Context
 
-## 2) Rule Files
+This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- Cursor rules: none found.
-- `.cursorrules` not present.
-- `.cursor/rules/` not present.
-- Copilot instructions exist: `.github/copilot-instructions.md`.
+- php - 8.4.18
+- laravel/framework (LARAVEL) - v12
+- laravel/prompts (PROMPTS) - v0
+- laravel/pulse (PULSE) - v1
+- livewire/flux (FLUXUI_FREE) - v2
+- livewire/flux-pro (FLUXUI_PRO) - v2
+- livewire/livewire (LIVEWIRE) - v4
+- larastan/larastan (LARASTAN) - v3
+- laravel/boost (BOOST) - v2
+- laravel/mcp (MCP) - v0
+- laravel/pint (PINT) - v1
+- pestphp/pest (PEST) - v4
+- phpunit/phpunit (PHPUNIT) - v12
+- prettier (PRETTIER) - v3
+- tailwindcss (TAILWINDCSS) - v4
 
-Copilot rules to apply in practice:
+## Skills Activation
 
-- Follow existing conventions and sibling-file patterns.
-- Reuse existing components/services before creating new ones.
-- Prefer Laravel-native patterns (`artisan make:*`, Form Requests, Eloquent relations).
-- Use explicit parameter types and return types.
-- Use braces for all control structures.
-- Use Pest tests; do not remove tests without explicit approval.
-- Run targeted tests first, then broaden as needed.
-- Use Flux/Tailwind patterns already in this codebase.
-- Use `config()`, not `env()`, outside config files.
-- Do not add dependencies or top-level folders without approval.
+This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
-## 3) Setup Commands
+- `pulse-development` — Handles Laravel Pulse setup, configuration, and custom card development. Activates when installing Pulse; configuring the dashboard or authorization gate; setting up recorders and filtering; building custom Livewire cards; optimizing with Redis ingest or sampling; or when the user mentions /pulse, pulse:check, pulse:work, Pulse::record(), or application monitoring.
+- `fluxui-development` — Use this skill for Flux UI development in Livewire applications only. Trigger when working with <flux:\*> components, building or customizing Livewire component UIs, creating forms, modals, tables, or other interactive elements. Covers: flux: components (buttons, inputs, modals, forms, tables, date-pickers, kanban, badges, tooltips, etc.), component composition, Tailwind CSS styling, Heroicons/Lucide icon integration, validation patterns, responsive design, and theming. Do not use for non-Livewire frameworks or non-component styling.
+- `livewire-development` — Develops reactive Livewire 4 components. Activates when creating, updating, or modifying Livewire components; working with wire:model, wire:click, wire:loading, or any wire: directives; adding real-time updates, loading states, or reactivity; debugging component behavior; writing Livewire tests; or when the user mentions Livewire, component, counter, or reactive UI.
+- `pest-testing` — Tests applications using the Pest 4 PHP framework. Activates when writing tests, creating unit or feature tests, adding assertions, testing Livewire components, browser testing, debugging test failures, working with datasets or mocking; or when the user mentions test, spec, TDD, expects, assertion, coverage, or needs to verify functionality works.
+- `tailwindcss-development` — Styles applications using Tailwind CSS v4 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
 
-Initial local setup:
+## Conventions
 
-```bash
-composer install
-npm install
-cp .env.local .env
-php artisan key:generate
-php artisan migrate:fresh --seed
+- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
+- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
+- Check for existing components to reuse before writing a new one.
+
+## Verification Scripts
+
+- Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+- Prefer running `composer precommit` before opening a pull request. It runs project-wide quality checks (`pint --dirty`, frontend build, PHPStan, parallel Pest tests, and Playwright end-to-end tests).
+
+## Application Structure & Architecture
+
+- Stick to existing directory structure; don't create new base folders without approval.
+- Do not change the application's dependencies without approval.
+
+## Frontend Bundling
+
+- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+
+## Documentation Files
+
+- You must only create documentation files if explicitly requested by the user.
+
+## Replies
+
+- Be concise in your explanations - focus on what's important rather than explaining obvious details.
+
+=== boost rules ===
+
+# Laravel Boost
+
+- Laravel Boost is an MCP server that comes with powerful tools designed specifically for this application. Use them.
+
+## Artisan Commands
+
+- Run Artisan commands directly via the command line (e.g., `php artisan route:list`, `php artisan tinker --execute "..."`).
+- Use `php artisan list` to discover available commands and `php artisan [command] --help` to check parameters.
+
+## URLs
+
+- Whenever you share a project URL with the user, you should use the `get-absolute-url` tool to ensure you're using the correct scheme, domain/IP, and port.
+
+## Debugging
+
+- Use the `database-query` tool when you only need to read from the database.
+- Use the `database-schema` tool to inspect table structure before writing migrations or models.
+- To execute PHP code for debugging, run `php artisan tinker --execute "your code here"` directly.
+- To read configuration values, read the config files directly or run `php artisan config:show [key]`.
+- To inspect routes, run `php artisan route:list` directly.
+- To check environment variables, read the `.env` file directly.
+
+## Reading Browser Logs With the `browser-logs` Tool
+
+- You can read browser logs, errors, and exceptions using the `browser-logs` tool from Boost.
+- Only recent browser logs will be useful - ignore old logs.
+
+## Searching Documentation (Critically Important)
+
+- Boost comes with a powerful `search-docs` tool you should use before trying other approaches when working with Laravel or Laravel ecosystem packages. This tool automatically passes a list of installed packages and their versions to the remote Boost API, so it returns only version-specific documentation for the user's circumstance. You should pass an array of packages to filter on if you know you need docs for particular packages.
+- Search the documentation before making code changes to ensure we are taking the correct approach.
+- Use multiple, broad, simple, topic-based queries at once. For example: `['rate limiting', 'routing rate limiting', 'routing']`. The most relevant results will be returned first.
+- Do not add package names to queries; package information is already shared. For example, use `test resource table`, not `filament 4 test resource table`.
+
+### Available Search Syntax
+
+1. Simple Word Searches with auto-stemming - query=authentication - finds 'authenticate' and 'auth'.
+2. Multiple Words (AND Logic) - query=rate limit - finds knowledge containing both "rate" AND "limit".
+3. Quoted Phrases (Exact Position) - query="infinite scroll" - words must be adjacent and in that order.
+4. Mixed Queries - query=middleware "rate limit" - "middleware" AND exact phrase "rate limit".
+5. Multiple Queries - queries=["authentication", "middleware"] - ANY of these terms.
+
+=== php rules ===
+
+# PHP
+
+- Always use curly braces for control structures, even for single-line bodies.
+
+## Constructors
+
+- Use PHP 8 constructor property promotion in `__construct()`.
+    - `public function __construct(public GitHub $github) { }`
+- Do not allow empty `__construct()` methods with zero parameters unless the constructor is private.
+
+## Type Declarations
+
+- Always use explicit return type declarations for methods and functions.
+- Use appropriate PHP type hints for method parameters.
+
+<!-- Explicit Return Types and Method Params -->
+
+```php
+protected function isAccessible(User $user, ?string $path = null): bool
+{
+    ...
+}
 ```
 
-Install Playwright browsers when needed:
+## Enums
 
-```bash
-npm run e2e:install
-```
+- Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
 
-## 4) Build, Lint, Test Commands
+## Comments
 
-Development:
+- Prefer PHPDoc blocks over inline comments. Never use comments within the code itself unless the logic is exceptionally complex.
 
-- Start dev assets: `npm run dev`
-- Build assets: `npm run build`
+## PHPDoc Blocks
 
-Formatting / linting:
+- Add useful array shape type definitions when appropriate.
 
-- Format PHP: `vendor/bin/pint`
-- Format changed PHP only: `vendor/bin/pint --dirty`
-- Static analysis: `vendor/bin/phpstan analyse`
-- Run Prettier: `npm run prettier -- .`
+=== herd rules ===
 
-PHP tests (Pest via Artisan):
+# Laravel Herd
 
-- Run all tests: `php artisan test`
-- Run in parallel: `php artisan test --parallel`
-- Run one file: `php artisan test tests/Feature/Livewire/BecomeAthleteFormTest.php`
-- Run one test name: `php artisan test --filter="allows requests with a valid API key"`
-- Run class/pattern: `php artisan test --filter=ApiKeyTest`
+- The application is served by Laravel Herd and will be available at: `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs for the user.
+- You must not run any commands to make the site available via HTTP(S). It is always available through Laravel Herd.
 
-Playwright E2E:
+=== tests rules ===
 
-- Run all E2E: `npm run e2e`
-- Run headed: `npm run e2e:headed`
-- Run one spec: `npx playwright test e2e/homepage.spec.mjs`
-- Run by title: `npx playwright test -g "hero section"`
-- Run one project: `npx playwright test --project="Desktop"`
+# Test Enforcement
 
-Recommended pre-handoff checks:
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
-```bash
-vendor/bin/pint --dirty
-npm run build
-vendor/bin/phpstan analyse
-php artisan test --parallel
-npm run e2e
-```
+=== laravel/core rules ===
 
-## 5) Formatting Rules
+# Do Things the Laravel Way
 
-Source of truth: `.editorconfig`, Pint, and Prettier.
+- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `php artisan list` and check their parameters with `php artisan [command] --help`.
+- If you're creating a generic PHP class, use `php artisan make:class`.
+- Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
-- Charset: UTF-8.
-- Line endings: CRLF (do not normalize to LF).
-- Indentation: 4 spaces by default.
-- YAML indentation: 2 spaces.
-- Max line length target: 120.
-- Keep final newline at EOF.
+## Database
 
-## 6) PHP Style Guidelines
+- Always use proper Eloquent relationship methods with return type hints. Prefer relationship methods over raw queries or manual joins.
+- Use Eloquent models and relationships before suggesting raw database queries.
+- Avoid `DB::`; prefer `Model::query()`. Generate code that leverages Laravel's ORM capabilities rather than bypassing them.
+- Generate code that prevents N+1 query problems by using eager loading.
+- Use Laravel's query builder for very complex database operations.
 
-Imports and namespaces:
+### Model Creation
 
-- Declare namespace first, then `use` imports.
-- Prefer imports over inline fully-qualified names.
-- Remove unused imports.
+- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
 
-Types and signatures:
+### APIs & Eloquent Resources
 
-- Add explicit param and return types.
-- Use nullable types only when null is valid domain behavior.
-- Prefer constructor property promotion.
-- Avoid empty constructors.
+- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
 
-Naming conventions:
+## Controllers & Validation
 
-- Classes: PascalCase (`DonorService`, `InvoiceCreateData`).
-- Methods/variables: camelCase (`collectInvoiceData`, `$partnerId`).
-- Persistence fields may stay snake_case where schema-aligned.
-- Branch naming: `<prefix>/<kebab-case-description>` (`CONVENTIONS.md`).
+- Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
+- Check sibling Form Requests to see if the application uses array or string based validation rules.
 
-Control flow and structure:
+## Authentication & Authorization
 
-- Always use braces.
-- Keep methods focused and reasonably small.
-- Extract reusable logic to services/actions.
+- Use Laravel's built-in authentication and authorization features (gates, policies, Sanctum, etc.).
 
-Validation, data access, error handling:
+## URL Generation
 
-- Prefer Form Request classes for HTTP validation.
-- In Livewire, follow existing validation attribute patterns.
-- Keep validation/UI text clear and consistent with German-first tone.
-- Prefer Eloquent relationships/query builder over raw SQL.
-- Prevent N+1 issues with eager loading (`with`, `load`).
-- Add relationship return types (`HasMany`, `BelongsTo`, etc.).
-- Catch specific exceptions when practical.
-- Log failures with context (IDs/key fields), never secrets.
-- Return appropriate HTTP status codes for API/middleware responses.
+- When generating links to other pages, prefer named routes and the `route()` function.
 
-## 7) Livewire / Blade / Frontend
+## Queues
 
-- Prefer Flux components first; fallback to Blade components only as needed.
-- Keep Livewire state server-driven and validate all actions.
-- Use `wire:key` inside loops.
-- Use Livewire v3 event style (`$this->dispatch()`).
-- Follow existing Tailwind utility/class composition patterns.
+- Use queued jobs for time-consuming operations with the `ShouldQueue` interface.
 
-## 8) Testing Conventions
+## Configuration
 
-- Write tests in Pest style (`it`, `test`).
-- Keep tests under `tests/Feature` and `tests/Unit`.
-- Run the smallest relevant test scope first.
-- Cover happy, failure, and edge cases for changed behavior.
-- Do not remove unrelated tests.
+- Use environment variables only in configuration files - never use the `env()` function directly outside of config files. Always use `config('app.name')`, not `env('APP_NAME')`.
 
-## 9) Agent Handoff Checklist
+## Testing
 
-Before finishing:
+- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the model.
+- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
+- When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
-1. Run targeted tests for changed behavior.
-2. Run `vendor/bin/pint --dirty` for PHP edits.
-3. Run `vendor/bin/phpstan analyse` for non-trivial PHP logic changes.
-4. Run `npm run build` for frontend-impacting changes.
-5. Run selective Playwright tests for changed UI flows.
-6. Keep edits minimal and avoid unrelated refactors.
+## Vite Error
 
-## 10) Quick References
+- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
 
-- `.github/copilot-instructions.md`
-- `CONVENTIONS.md`
-- `DEVELOPMENT_SETUP.md`
-- `tests/Pest.php`, `tests/TestCase.php`
-- `.editorconfig`, `.prettierrc`, `phpstan.neon`, `phpunit.xml`, `playwright.config.mjs`
+=== laravel/v12 rules ===
+
+# Laravel 12
+
+- CRITICAL: ALWAYS use `search-docs` tool for version-specific Laravel documentation and updated code examples.
+- Since Laravel 11, Laravel has a new streamlined file structure which this project uses.
+
+## Laravel 12 Structure
+
+- In Laravel 12, middleware are no longer registered in `app/Http/Kernel.php`.
+- Middleware are configured declaratively in `bootstrap/app.php` using `Application::configure()->withMiddleware()`.
+- `bootstrap/app.php` is the file to register middleware, exceptions, and routing files.
+- `bootstrap/providers.php` contains application specific service providers.
+- The `app\Console\Kernel.php` file no longer exists; use `bootstrap/app.php` or `routes/console.php` for console configuration.
+- Console commands in `app/Console/Commands/` are automatically available and do not require manual registration.
+
+## Database
+
+- When modifying a column, the migration must include all of the attributes that were previously defined on the column. Otherwise, they will be dropped and lost.
+- Laravel 12 allows limiting eagerly loaded records natively, without external packages: `$query->latest()->limit(10);`.
+
+### Models
+
+- Casts can and likely should be set in a `casts()` method on a model rather than the `$casts` property. Follow existing conventions from other models.
+
+=== livewire/core rules ===
+
+# Livewire
+
+- Livewire allows you to build dynamic, reactive interfaces using only PHP — no JavaScript required.
+- Instead of writing frontend code in JavaScript frameworks, you use Alpine.js to build the UI when client-side interactions are required.
+- State lives on the server; the UI reflects it. Validate and authorize in actions (they're like HTTP requests).
+- IMPORTANT: Activate `livewire-development` every time you're working with Livewire-related tasks.
+
+=== pint/core rules ===
+
+# Laravel Pint Code Formatter
+
+- If you have modified any PHP files, you must run `vendor/bin/pint --dirty --format agent` before finalizing changes to ensure your code matches the project's expected style.
+- Do not run `vendor/bin/pint --test --format agent`, simply run `vendor/bin/pint --format agent` to fix any formatting issues.
+
+=== pest/core rules ===
+
+## Pest
+
+- This project uses Pest for testing. Create tests: `php artisan make:test --pest {name}`.
+- Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
+- Do NOT delete tests without approval.
+- CRITICAL: ALWAYS use `search-docs` tool for version-specific Pest documentation and updated code examples.
+- IMPORTANT: Activate `pest-testing` every time you're working with a Pest or testing-related task.
+
+=== tailwindcss/core rules ===
+
+# Tailwind CSS
+
+- Always use existing Tailwind conventions; check project patterns before adding new ones.
+- IMPORTANT: Always use `search-docs` tool for version-specific Tailwind CSS documentation and updated code examples. Never rely on training data.
+- IMPORTANT: Activate `tailwindcss-development` every time you're working with a Tailwind CSS or styling-related task.
+
+</laravel-boost-guidelines>

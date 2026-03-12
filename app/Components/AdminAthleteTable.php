@@ -5,6 +5,7 @@ namespace App\Components;
 use App\Models\Athlete;
 use App\Services\DonationService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
@@ -15,11 +16,9 @@ use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\Traits\WithExport;
-use WireUi\Traits\Actions;
 
 class AdminAthleteTable extends PowerGridComponent
 {
-    use Actions;
     use WithExport;
 
     public string $sortField = 'first_name';
@@ -169,11 +168,11 @@ class AdminAthleteTable extends PowerGridComponent
             $athlete->$field = $value;
             $athlete->save();
         } catch (\Exception $e) {
-            $this->notification()->error('Fehler beim Speichern');
+            Flux::toast(text: 'Die Änderungen konnten nicht gespeichert werden.', heading: 'Fehler beim Speichern', variant: 'danger');
 
             return;
         }
-        $this->notification()->success('Erfolgreich gespeichert');
+        Flux::toast(text: 'Die Änderungen wurden gespeichert.', heading: 'Erfolgreich gespeichert', variant: 'success');
     }
 
     #[On('downloadWelcomeLetter')]

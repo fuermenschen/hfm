@@ -3,16 +3,21 @@
 @props(['athlete'])
 
 @php
+    use Endroid\QrCode\Color\Color;
+    use Endroid\QrCode\ErrorCorrectionLevel;
+    use Endroid\QrCode\QrCode;
+    use Endroid\QrCode\Writer\SvgWriter;
     use Illuminate\Support\Facades\Vite;
-    use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
-    $qrCode = QrCode::format('svg')
-        ->margin(0)
-        ->errorCorrection('L')
-        ->color(27, 46, 71)
-        ->size(100)
-        ->generate(route('show-athlete', $athlete->login_token));
-    $qrCodeData = base64_encode($qrCode);
+    $qrCode = new QrCode(
+        data: route('show-athlete', $athlete->login_token),
+        errorCorrectionLevel: ErrorCorrectionLevel::Low,
+        size: 100,
+        margin: 0,
+        foregroundColor: new Color(27, 46, 71)
+    );
+    $writer = new SvgWriter;
+    $qrCodeData = base64_encode($writer->write($qrCode)->getString());
 
     $partnerName = "";
 

@@ -2,6 +2,7 @@
 
 use App\Jobs\CreateDonorInvoiceLetter;
 use App\Models\Donator;
+use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use Illuminate\Http\Client\Response;
 
@@ -33,7 +34,7 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
                 ->and($debitorId)->toBe(456);
 
             // Build a draft using the provided configure callback
-            $builder = new \App\Services\Webling\Letter\LetterBuilder;
+            $builder = new LetterBuilder;
             $configure($builder);
             $draft = $builder->build();
 

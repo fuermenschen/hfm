@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Athlete;
+use App\Models\Donation;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -18,8 +19,8 @@ use Illuminate\Support\Facades\Route;
 
 // Main Menu
 Route::get('/', function () {
-    $athleteCount = Schema::hasTable('athletes') ? \App\Models\Athlete::count() : 0;
-    $donationCount = Schema::hasTable('donations') ? \App\Models\Donation::count() : 0;
+    $athleteCount = Schema::hasTable('athletes') ? Athlete::count() : 0;
+    $donationCount = Schema::hasTable('donations') ? Donation::count() : 0;
 
     return view('home', compact('athleteCount', 'donationCount'));
 })->name('home');
