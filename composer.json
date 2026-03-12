@@ -11,6 +11,7 @@
         "php": "^8.4",
         "ext-zip": "*",
         "barryvdh/laravel-dompdf": "^2.2",
+        "endroid/qr-code": "^5.0",
         "intervention/image": "^3.7",
         "laravel/framework": "^11.0",
         "laravel/pulse": "^1.4",
@@ -22,7 +23,6 @@
         "openspout/openspout": "^4.24",
         "power-components/livewire-powergrid": "^6.0",
         "propaganistas/laravel-phone": "^6.0",
-        "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-settings": "^3.4",
         "sprain/swiss-qr-bill": "^4.14"
     },
