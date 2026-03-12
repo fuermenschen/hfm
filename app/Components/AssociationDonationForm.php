@@ -2,8 +2,8 @@
 
 namespace App\Components;
 
-use App\Actions\CreateAssociationDonationInvoice;
 use App\Notifications\AssociationDonationMessage;
+use App\Services\CreateAssociationDonationInvoiceService;
 use Exception;
 use Flux;
 use Illuminate\Support\Facades\Notification;
@@ -70,7 +70,7 @@ class AssociationDonationForm extends Component
         return view('forms.association-donation-form');
     }
 
-    public function submit()
+    public function submit(CreateAssociationDonationInvoiceService $createAssociationDonationInvoiceService)
     {
         try {
             $this->validate();
@@ -91,7 +91,7 @@ class AssociationDonationForm extends Component
 
         try {
 
-            $invoice = CreateAssociationDonationInvoice::run(
+            $invoice = $createAssociationDonationInvoiceService(
                 first_name: $this->first_name,
                 last_name: $this->last_name,
                 company_name: $this->company_name,

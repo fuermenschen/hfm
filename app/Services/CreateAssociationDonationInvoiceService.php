@@ -1,15 +1,12 @@
 <?php
 
-namespace App\Actions;
+namespace App\Services;
 
 use Barryvdh\DomPDF\Facade\Pdf;
-use Lorisleiva\Actions\Concerns\AsAction;
 
-class CreateAssociationDonationInvoice
+class CreateAssociationDonationInvoiceService
 {
-    use AsAction;
-
-    public function handle(
+    public function __invoke(
         string $first_name,
         string $last_name,
         string $address,

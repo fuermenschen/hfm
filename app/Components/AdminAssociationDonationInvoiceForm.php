@@ -2,7 +2,7 @@
 
 namespace App\Components;
 
-use App\Actions\CreateAssociationDonationInvoice;
+use App\Services\CreateAssociationDonationInvoiceService;
 use Exception;
 use Flux;
 use Illuminate\Validation\ValidationException;
@@ -58,7 +58,7 @@ class AdminAssociationDonationInvoiceForm extends Component
         return view('forms.admin.association-donation-invoice-form');
     }
 
-    public function submit()
+    public function submit(CreateAssociationDonationInvoiceService $createAssociationDonationInvoiceService)
     {
 
         $response = response();
@@ -74,7 +74,7 @@ class AdminAssociationDonationInvoiceForm extends Component
 
         try {
 
-            $invoice = CreateAssociationDonationInvoice::run(
+            $invoice = $createAssociationDonationInvoiceService(
                 first_name: $this->first_name,
                 last_name: $this->last_name,
                 address: $this->address,
