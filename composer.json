@@ -12,7 +12,6 @@
         "ext-zip": "*",
         "barryvdh/laravel-dompdf": "^2.2",
         "intervention/image": "^3.7",
-        "laravel-frontend-presets/tall": "^8.0",
         "laravel/framework": "^11.0",
         "laravel/pulse": "^1.4",
         "laravel/tinker": "^2.9",
