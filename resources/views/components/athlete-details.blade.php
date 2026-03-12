@@ -2,7 +2,7 @@
     <x-page-title>Hallo {{ $athlete['first_name'] }}</x-page-title>
 
     <div
-        class="w-full max-w-2xl mx-auto text-left sm:text-center space-y-md">
+        class="w-full max-w-2xl mx-auto text-left sm:text-center space-y-9">
         <p>Auf dieser Seite siehst du, wer sich schon
             alles als
             Spender:in für dich eingetragen hat. Du kannst den Link in der Mail jederzeit wieder aufrufen, um zu sehen,
@@ -20,7 +20,7 @@
             teilen kannst.</p>
 
         <x-page-subsubtitle>Für Insta- und Whatsapp-Storys</x-page-subsubtitle>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div class="flex flex-col gap-y-2 items-center">
                 <img src="{{ Vite::asset('resources/image_templates/story_single_light.jpg') }}" alt="Athlete Light"
                      class="w-32 object-contain border-2">
@@ -73,7 +73,7 @@
                             </div>
                         </div>
                         @if ($donation['comment'])
-                            <div class="text-xs text-gray-500 pt-xs">
+                            <div class="text-xs text-gray-500 pt-3">
                                 <span class="font-semibold">Kommentar:</span> {{ $donation['comment'] }}
                             </div>
                         @endif

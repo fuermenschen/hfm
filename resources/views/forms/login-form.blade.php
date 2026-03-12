@@ -1,5 +1,5 @@
 <form wire:submit="save"
-      class="flex flex-col w-96 max-w-full space-y-sm mt-sm sm:mx-auto items-stretch">
+      class="flex flex-col w-96 max-w-full space-y-6 mt-6 sm:mx-auto items-stretch">
 
     @csrf
 

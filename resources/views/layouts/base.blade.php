@@ -60,10 +60,10 @@
     <!-- Fonts -->
     <link rel="stylesheet" href="https://use.typekit.net/enf1jch.css"> <!-- darkmode-on -->
 
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @livewireScripts
-    @fluxStyles
+    @fluxAppearance
     @stack('head')
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">

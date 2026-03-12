@@ -10,31 +10,31 @@
     "require": {
         "php": "^8.4",
         "ext-zip": "*",
-        "barryvdh/laravel-dompdf": "^2.2",
-        "endroid/qr-code": "^5.0",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "endroid/qr-code": "^6.1",
         "intervention/image": "^3.7",
-        "laravel/framework": "^11.0",
-        "laravel/pulse": "^1.4",
+        "laravel/framework": "^12.0",
+        "laravel/pulse": "^1.7",
         "laravel/tinker": "^2.9",
-        "livewire/flux": "^1.0",
-        "livewire/flux-pro": "^1.0",
-        "livewire/livewire": "^3.6",
-        "opcodesio/log-viewer": "^3.19",
-        "openspout/openspout": "^4.24",
+        "livewire/flux": "^2.13",
+        "livewire/flux-pro": "^2.13",
+        "livewire/livewire": "^4.2",
+        "opcodesio/log-viewer": "^3.23",
+        "openspout/openspout": "^5.4",
         "power-components/livewire-powergrid": "^6.0",
         "propaganistas/laravel-phone": "^6.0",
         "spatie/laravel-settings": "^3.4",
-        "sprain/swiss-qr-bill": "^4.14"
+        "sprain/swiss-qr-bill": "^5.3"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.16",
+        "barryvdh/laravel-debugbar": "^4.1",
         "fakerphp/faker": "^1.23",
-        "larastan/larastan": "3.1",
-        "laravel/pint": "^1.22",
+        "larastan/larastan": "^3.9",
+        "laravel/pint": "^1.28",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.0",
-        "pestphp/pest": "^3.7",
-        "spatie/laravel-ignition": "^2.4"
+        "nunomaduro/collision": "^8.9",
+        "pestphp/pest": "^4.4",
+        "spatie/laravel-ignition": "^2.11"
     },
     "autoload": {
         "psr-4": {

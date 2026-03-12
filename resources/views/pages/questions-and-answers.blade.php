@@ -12,7 +12,7 @@
             <x-inline-link href=" {{ route('contact') }}">schreib uns</x-inline-link>
             !
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-xs gap-x-xs sm:gap-y-2 my-lg mx-auto max-w-lg">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-3 sm:gap-y-2 my-12 mx-auto max-w-lg">
             <flux:button
                 href="#allgemein"
                 variant="filled"
@@ -38,7 +38,7 @@
 
     <x-page-subtitle id="allgemein">Allgemein</x-page-subtitle>
 
-    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30  mb-md">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30  mb-9">
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
@@ -49,7 +49,7 @@
                  @click="pointerEvents = true;"
                  @mouseenter="clearTimeout(timeout); timeout = setTimeout(() => pointerEvents = true, 2000)"
                  @mouseleave="clearTimeout(timeout); timeout = setTimeout(() => pointerEvents = false, 2000)"
-                 class="relative w-full h-96 mt-sm">
+                 class="relative w-full h-96 mt-6">
                 <iframe
                     :class="pointerEvents? 'pointer-events-auto' : 'pointer-events-none'"
                     src='https://map.geo.admin.ch/embed.html?lang=de&topic=ech&bgLayer=ch.swisstopo.pixelkarte-farbe&layers=ch.bav.haltestellen-oev,KML%7C%7Chttps:%2F%2Fpublic.geo.admin.ch%2Fapi%2Fkml%2Ffiles%2FWa_orMUOTPmuGvtVdPcemw&E=2695929.64&N=1261399.28&zoom=10'
@@ -96,12 +96,12 @@
     <x-page-subtitle id="sportlerinnen">Sportler:innen</x-page-subtitle>
 
 
-    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30  mb-md">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30  mb-9">
 
         <x-faq-question-answer>
             <x-slot:question>Wie läuft alles ab?</x-slot:question>
-            <span class="mb-sm">Der Ablauf für dich als Sportler:in ist wie folgt:</span>
-            <ol class="list-decimal text-sm list-inside space-y-xs">
+            <span class="mb-6">Der Ablauf für dich als Sportler:in ist wie folgt:</span>
+            <ol class="list-decimal text-sm list-inside space-y-3">
                 <li>Du überlegst dir, welche:n der drei Benefizpartner:innen du unterstützen möchtest (alle drei auch
                     möglich).
                 </li>
@@ -169,7 +169,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wie ist der Ablauf am Anlass?</x-slot:question>
-            <ul class="list-disc text-sm list-inside space-y-xs">
+            <ul class="list-disc text-sm list-inside space-y-3">
                 <li>
                     Ab <strong>12:00 Uhr</strong> sind die Startnummern im Rundenbüro abholbereit. Das Rundenbüro befindet sich gut sichtbar beim Start/Ziel, direkt vor der Brühlgut Stiftung.
                 </li>
@@ -194,13 +194,13 @@
     </dl>
 
     <x-page-subtitle id="spenderinnen">Spender:innen</x-page-subtitle>
-    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30 mb-md">
+    <dl class="space-y-6 divide-y divide-gray-900/10 dark:divide-gray-100/30 mb-9">
 
         <x-faq-question-answer>
             <x-slot:question>Wie läuft alles ab?</x-slot:question>
-            <span class="mb-sm">Der
+            <span class="mb-6">Der
                 Ablauf für dich als Spender:in ist wie folgt:</span>
-            <ol class="list-decimal text-sm list-inside space-y-xs">
+            <ol class="list-decimal text-sm list-inside space-y-3">
                 <li>Du überlegst dir, welche:n Sportler:in du unterstützen möchtest.</li>
                 <li>Du überlegst dir, welchen Betrag du pro Runde spenden möchtest.</li>
                 <li>Du meldest dich über den Newsletter an und wir informieren dich, sobald das Spendenformular wieder offen ist.</li>
@@ -288,7 +288,7 @@
             werden,
             die in Winterthur und Umgebung tätig sind. Zudem haben wir uns auf Institutionen fokussiert, die sich für
             Menschen einsetzen. Aktuell bestätigt ist:
-            <ul class="list-disc text-sm mt-sm list-inside space-y-xs">
+            <ul class="list-disc text-sm mt-6 list-inside space-y-3">
                 <li>
                     <x-inline-link href="https://www.xn--brhlgut-o2a.ch/" target="_blank">Brühlgut Stiftung
                     </x-inline-link>

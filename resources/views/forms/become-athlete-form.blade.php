@@ -1,5 +1,5 @@
 <form wire:submit="save"
-      class="flex flex-col space-y-sm sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-sm mt-sm">
+      class="flex flex-col space-y-6 sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-6 mt-6">
 
     @csrf
 
@@ -66,7 +66,7 @@
         <flux:input icon-trailing="fire" label="Geschätzte Anzahl Runden" placeholder="11"
                     wire:model.blur="rounds_estimated" required autocomplete="off" />
         <button type="button" wire:click="showNumRoundsInfo"
-                class="text-xs underline mt-xs">Informationen zur Strecke</button>
+                class="text-xs underline mt-3">Informationen zur Strecke</button>
     </span>
     <flux:separator class="sm:col-span-2" />
     <span>
@@ -81,7 +81,7 @@
             @endif
         </flux:radio.group>
         <button type="button" wire:click="showDistributionInfo"
-                class="text-xs underline mt-xs">Informationen zur Verteilung der Spenden</button>
+                class="text-xs underline mt-3">Informationen zur Verteilung der Spenden</button>
     </span>
     <flux:separator class="sm:col-span-2" />
     <flux:textarea label="Kommentar" badge="optional"
@@ -92,7 +92,7 @@
             <flux:checkbox wire:model.live="privacy"
                            label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
                 <button type="button" wire:click="showPrivacyInfo"
-                        class="text-xs underline mt-xs">Was heisst das?</button>
+                        class="text-xs underline mt-3">Was heisst das?</button>
     </span>
 
     <flux:button

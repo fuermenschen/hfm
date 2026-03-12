@@ -2,7 +2,7 @@
     'question'
 ])
 
-<div x-data="{ open: false }" class="pt-sm">
+<div x-data="{ open: false }" class="pt-6">
     <dt>
         <!-- Expand/collapse question button -->
         <button type="button" class="flex w-full items-start justify-between">
@@ -33,7 +33,7 @@
         </button>
     </dt>
     <dd class="mt-2 pr-12" x-show="open" x-transition>
-        <p class="leading-7 text-sm flex flex-col space-y-xs">
+        <p class="leading-7 text-sm flex flex-col space-y-3">
             {{ $slot }}
         </p>
     </dd>

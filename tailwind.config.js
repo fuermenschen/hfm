@@ -3,7 +3,7 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 const colors = require("tailwindcss/colors");
 
 module.exports = {
-    darkMode: "media",
+    darkMode: "class",
     theme: {
         extend: {
             fontFamily: {
@@ -22,12 +22,6 @@ module.exports = {
                 secondary: colors.neutral,
                 "pg-primary": colors.slate,
                 "pg-secondary": colors.slate,
-            },
-            spacing: {
-                xs: "0.75rem",
-                sm: "1.5rem",
-                md: "2.25rem",
-                lg: "3rem",
             },
         },
     },

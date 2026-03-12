@@ -107,7 +107,7 @@
     </div>
 
     <!-- Confirmation modal for saving a setting -->
-    <flux:modal name="admin-setting-confirm" class="min-w-[26rem]" :dismissible="false">
+    <flux:modal name="admin-setting-confirm" class="min-w-104" :dismissible="false">
         @php
             $pc = $pendingClass ?? null;
             $pn = $pendingName ?? null;

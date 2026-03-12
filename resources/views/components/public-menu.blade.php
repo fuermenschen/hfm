@@ -1,5 +1,5 @@
 <header class="h-[var(--nav-h)]" x-data="{ open: false }" data-site-header>
-    <nav class="mx-auto flex items-baseline justify-between p-md" aria-label="Global">
+    <nav class="mx-auto flex items-baseline justify-between p-9" aria-label="Global">
         <a href="{{ route("home") }}" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
             <x-logo class="h-10 -mb-1.5 ml-0.5" />
@@ -105,7 +105,7 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
-            class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-hfm-white dark:bg-hfm-dark p-md sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+            class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-hfm-white dark:bg-hfm-dark p-9 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
             <div class="flex items-center justify-between">
                 <a wire:navigate href="/" class="-m-1.5 p-1.5">
                     <span class="sr-only">Höhenmeter für Menschen</span>

@@ -1,25 +1,20 @@
-/**
- * This injects Tailwind's base styles, which is a combination of
- * Normalize.css and some additional base styles.
- *
- * You can see the styles here:
- * https://unpkg.com/tailwindcss/dist/base.css
- */
-@tailwind base;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@import "../../vendor/livewire/flux/dist/flux.css";
 
-/* resources/css/app.css */
+@custom-variant dark (&:where(.dark, .dark *));
 
-@layer base {
-    :root {
-        --color-accent: #1B2E47;
-        --color-accent-content: #1B2E47;
-        --color-accent-foreground: #f8fafc;
-    }
+@theme {
+    --color-accent: #1b2e47;
+    --color-accent-content: #1b2e47;
+    --color-accent-foreground: #f8fafc;
+}
 
-    :root.dark {
+@layer theme {
+    .dark {
         --color-accent: #f8fafc;
         --color-accent-content: #f8fafc;
-        --color-accent-foreground: #1B2E47;
+        --color-accent-foreground: #1b2e47;
     }
 }
 
@@ -35,28 +30,6 @@ textarea:invalid,
 select:invalid {
     box-shadow: none;
 }
-
-/**
- * This injects any component classes registered by plugins.
- */
-@tailwind components;
-
-/**
- * Here you would add any of your custom component classes; stuff that you'd
- * want loaded *before* the utilities so that the utilities could still
- * override them.
- *
- * Example:
- *
- * .btn { ... }
- * .form-input { ... }
- */
-
-/**
- * This injects all of Tailwind's utility classes, generated based on your
- * config file.
- */
-@tailwind utilities;
 
 /* Hero and utility layers moved from resources/css/app.css */
 @layer utilities {
@@ -94,10 +67,7 @@ select:invalid {
 
     .hfm-hero__overlay {
         /* Remove fixed-percentage overlay to avoid doubling; top/bottom fades are handled by content layers */
-        background: linear-gradient(to top,
-            rgba(var(--overlay-from) / 0) 0%,
-            rgba(var(--overlay-from) / 0) 100%
-        );
+        background: linear-gradient(to top, rgba(var(--overlay-from) / 0) 0%, rgba(var(--overlay-from) / 0) 100%);
         clip-path: polygon(0 var(--slope), 100% 0, 100% 100%, 0 100%);
     }
 
@@ -122,9 +92,9 @@ select:invalid {
         pointer-events: none;
         z-index: -1; /* Behind the content text but within the content stacking context */
         background: linear-gradient(
-                to bottom,
-                rgba(var(--overlay-from) / var(--overlay-mid-alpha)) 0%,
-                rgba(var(--overlay-from) / var(--overlay-alpha)) 100%
+            to bottom,
+            rgba(var(--overlay-from) / var(--overlay-mid-alpha)) 0%,
+            rgba(var(--overlay-from) / var(--overlay-alpha)) 100%
         );
     }
 
@@ -139,12 +109,11 @@ select:invalid {
         pointer-events: none;
         z-index: -1; /* Same stacking as ::before */
         background: linear-gradient(
-                to bottom,
-                rgba(var(--overlay-from) / 0) 0%,
-                rgba(var(--overlay-from) / var(--overlay-mid-alpha)) 100%
+            to bottom,
+            rgba(var(--overlay-from) / 0) 0%,
+            rgba(var(--overlay-from) / var(--overlay-mid-alpha)) 100%
         );
     }
-
 
     .hfm-hero__badge {
         position: relative;
@@ -261,7 +230,11 @@ select:invalid {
     .hfm-hero__img--placeholder {
         filter: blur(20px);
         transform: scale(1.05);
-        transition: opacity 400ms ease, visibility 400ms ease, filter 400ms ease, transform 400ms ease;
+        transition:
+            opacity 400ms ease,
+            visibility 400ms ease,
+            filter 400ms ease,
+            transform 400ms ease;
         position: absolute;
         inset: 0;
         width: 100%;
@@ -293,7 +266,6 @@ select:invalid {
     }
 }
 
-
 /**
  * Here you would add any custom utilities you need that don't come out of the
  * box with Tailwind.
@@ -314,8 +286,8 @@ select:invalid {
         --nav-h: 116px;
         --hero-reserve: 8px;
         /* Tailwind theme colors (see tailwind.config.js colors.hfm) */
-        --hfm-white: theme('colors.hfm.white');
-        --hfm-dark: theme('colors.hfm.dark');
+        --hfm-white: #f8fafc;
+        --hfm-dark: #1b2e47;
     }
 }
 
@@ -330,10 +302,10 @@ select:invalid {
         opacity: 0.5;
         /* Title glow uses brand light color with varying alpha */
         background: radial-gradient(
-                50% 50% at 50% 50%,
-                rgb(from var(--hfm-white) r g b / 0.70) 0%,
-                rgb(from var(--hfm-white) r g b / 0.35) 35%,
-                rgb(from var(--hfm-white) r g b / 0) 90%
+            50% 50% at 50% 50%,
+            rgb(from var(--hfm-white) r g b / 0.7) 0%,
+            rgb(from var(--hfm-white) r g b / 0.35) 35%,
+            rgb(from var(--hfm-white) r g b / 0) 90%
         );
     }
 
@@ -348,15 +320,14 @@ select:invalid {
         .hfm-hero__titleRadial {
             /* Title glow uses brand dark color in dark mode */
             background: radial-gradient(
-                    50% 50% at 50% 50%,
-                    rgb(from var(--hfm-dark) r g b / 0.45) 0%,
-                    rgb(from var(--hfm-dark) r g b / 0.25) 35%,
-                    rgb(from var(--hfm-dark) r g b / 0) 70%
+                50% 50% at 50% 50%,
+                rgb(from var(--hfm-dark) r g b / 0.45) 0%,
+                rgb(from var(--hfm-dark) r g b / 0.25) 35%,
+                rgb(from var(--hfm-dark) r g b / 0) 70%
             );
         }
     }
 }
-
 
 @layer components {
     /* Short-height (e.g., small mobile landscape) adjustments for hero */
