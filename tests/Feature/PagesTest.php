@@ -5,6 +5,7 @@ use App\Models\Donator;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Laravel\Pulse\Http\Middleware\Authorize;
 use Opcodes\LogViewer\Http\Middleware\AuthorizeLogViewer;
 
 test('all public routes are accessible', function () {
@@ -24,7 +25,7 @@ test('all public routes are accessible', function () {
 
         // Skip authenticated routes (handled in a separate test)
         if (in_array('auth', $route->middleware()) ||
-            in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware()) ||
+            in_array(Authorize::class, $route->middleware()) ||
             in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
         }
@@ -70,7 +71,7 @@ test('all authenticated routes are accessible when logged in', function () {
 
         // Only routes with auth middleware or Pulse Authorize middleware
         if (! in_array('auth', $route->middleware()) &&
-            ! in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware()) &&
+            ! in_array(Authorize::class, $route->middleware()) &&
             ! in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
         }
@@ -104,7 +105,7 @@ test('authenticated routes are protected', function () {
 
         // Only test routes with auth, Pulse Authorize, or Log Viewer Authorize middleware
         if (! in_array('auth', $route->middleware()) &&
-            ! in_array(Laravel\Pulse\Http\Middleware\Authorize::class, $route->middleware()) &&
+            ! in_array(Authorize::class, $route->middleware()) &&
             ! in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
         }
