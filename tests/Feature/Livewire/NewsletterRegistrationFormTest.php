@@ -52,7 +52,21 @@ test('association page contains newsletter registration form', function () {
         ->assertSeeLivewire('newsletter-registration-form');
 });
 
-test('signed newsletter unsubscribe route calls unsubscribe service', function () {
+test('signed newsletter unsubscribe route shows confirmation page first', function () {
+    $service = Mockery::mock(InfomaniakNewsletterService::class);
+    $service->shouldNotReceive('unsubscribeSubscriber');
+
+    $this->app->instance(InfomaniakNewsletterService::class, $service);
+
+    $url = URL::temporarySignedRoute('newsletter.unsubscribe', now()->addDay(), ['email' => 'anna@example.com']);
+
+    $this->get($url)
+        ->assertOk()
+        ->assertSeeText('Möchtest du die E-Mail-Adresse anna@example.com wirklich vom Newsletter abmelden?')
+        ->assertSeeText('Jetzt abmelden');
+});
+
+test('signed newsletter unsubscribe route unsubscribes only after post confirmation', function () {
     $service = Mockery::mock(InfomaniakNewsletterService::class);
     $service->shouldReceive('unsubscribeSubscriber')
         ->once()
@@ -62,12 +76,18 @@ test('signed newsletter unsubscribe route calls unsubscribe service', function (
 
     $url = URL::temporarySignedRoute('newsletter.unsubscribe', now()->addDay(), ['email' => 'anna@example.com']);
 
+    $this->post($url)
+        ->assertRedirect($url);
+
     $this->get($url)
         ->assertOk()
-        ->assertSeeText('Du wurdest erfolgreich vom Newsletter abgemeldet.');
+        ->assertSeeText('Deine E-Mail-Adresse anna@example.com wurde erfolgreich vom Newsletter abgemeldet.');
 });
 
 test('newsletter unsubscribe route requires valid signature', function () {
     $this->get(route('newsletter.unsubscribe', ['email' => 'anna@example.com']))
+        ->assertForbidden();
+
+    $this->post(route('newsletter.unsubscribe.perform', ['email' => 'anna@example.com']))
         ->assertForbidden();
 });
