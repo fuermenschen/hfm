@@ -66,3 +66,36 @@ it('uses shared donation table render conventions', function (): void {
     expect($component->viewData('pageIds'))->toContain($donation->id);
     expect($component->viewData('donations')->getCollection()->pluck('id')->all())->toContain($donation->id);
 });
+
+it('always renders clear selection button across admin datatables', function (): void {
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSee('Auswahl entfernen')
+        ->assertSee('Ausgewählt: 0');
+
+    Livewire::test(AdminAthleteTable::class)
+        ->assertSee('Auswahl entfernen')
+        ->assertSee('Ausgewählt: 0');
+
+    Livewire::test(AdminDonationTable::class)
+        ->assertSee('Auswahl entfernen')
+        ->assertSee('Ausgewählt: 0');
+});
+
+it('shows create invoice row action when no invoice exists yet', function (): void {
+    Donator::factory()->create(['webling_data' => []]);
+
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSee('Rechnung erstellen');
+});
+
+it('keeps donor bulk action labels stable without embedded selection counters', function (): void {
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSee('Rechnungen erstellen')
+        ->assertSee('Rechnungen herunterladen')
+        ->assertSee('Rechnungen senden')
+        ->assertSee('Erinnerungen senden')
+        ->assertDontSee('Rechnungen erstellen (')
+        ->assertDontSee('Rechnungen herunterladen (')
+        ->assertDontSee('Rechnungen senden (')
+        ->assertDontSee('Erinnerungen senden (');
+});

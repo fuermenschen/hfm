@@ -1,49 +1,53 @@
 <div>
     <x-admin.datatable>
         <x-slot:toolbar>
-            <div class="flex flex-wrap items-center gap-2">
-                <flux:input wire:model.live.debounce.300ms="search" placeholder="Spenden suchen..." icon="magnifying-glass" />
+            <x-admin.tables.partials.toolbar-grid>
+                <x-slot:topLeft>
+                    <flux:input wire:model.live.debounce.300ms="search" placeholder="Spenden suchen..." icon="magnifying-glass" />
+                </x-slot:topLeft>
 
-                <flux:dropdown>
-                    <flux:button variant="ghost" icon="arrow-down-tray">Export</flux:button>
-                    <flux:menu>
-                        <flux:menu.group heading="Kompletter Datensatz">
-                            <flux:menu.item wire:click="exportAll('xlsx')">Excel</flux:menu.item>
-                            <flux:menu.item wire:click="exportAll('csv')">CSV</flux:menu.item>
-                        </flux:menu.group>
-                        <flux:menu.group heading="Ausgewählte Zeilen">
-                            <flux:menu.item wire:click="exportSelected('xlsx')">Excel</flux:menu.item>
-                            <flux:menu.item wire:click="exportSelected('csv')">CSV</flux:menu.item>
-                        </flux:menu.group>
-                    </flux:menu>
-                </flux:dropdown>
+                <x-slot:topRight>
+                    <x-admin.tables.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                </x-slot:topRight>
 
-                <flux:dropdown>
-                    <flux:button variant="ghost" icon="adjustments-horizontal">Spalten</flux:button>
-                    <flux:menu keep-open>
-                        @foreach ($this->visibleColumnOptions() as $columnKey => $columnLabel)
-                            <flux:menu.item keep-open wire:click="toggleColumn('{{ $columnKey }}')">
-                                {{ $this->isColumnVisible($columnKey) ? '✓ ' : '' }}{{ $columnLabel }}
-                            </flux:menu.item>
-                        @endforeach
-                    </flux:menu>
-                </flux:dropdown>
-            </div>
+                <x-slot:bottomLeft>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <flux:dropdown>
+                            <flux:button variant="ghost" size="sm" icon="arrow-down-tray">Export</flux:button>
+                            <flux:menu>
+                                <flux:menu.group heading="Kompletter Datensatz">
+                                    <flux:menu.item wire:click="exportAll('xlsx')">Excel</flux:menu.item>
+                                    <flux:menu.item wire:click="exportAll('csv')">CSV</flux:menu.item>
+                                </flux:menu.group>
+                                <flux:menu.group heading="Ausgewählte Zeilen">
+                                    <flux:menu.item wire:click="exportSelected('xlsx')">Excel</flux:menu.item>
+                                    <flux:menu.item wire:click="exportSelected('csv')">CSV</flux:menu.item>
+                                </flux:menu.group>
+                            </flux:menu>
+                        </flux:dropdown>
 
-            @if ($this->selectedCount() > 0)
-                <flux:button variant="subtle" wire:click="clearSelection">Auswahl entfernen ({{ $this->selectedCount() }})</flux:button>
-            @endif
+                        <flux:dropdown>
+                            <flux:button variant="ghost" size="sm" icon="adjustments-horizontal">Spalten</flux:button>
+                            <flux:menu keep-open>
+                                @foreach ($this->visibleColumnOptions() as $columnKey => $columnLabel)
+                                    <flux:menu.item keep-open wire:click="toggleColumn('{{ $columnKey }}')">
+                                        {{ $this->isColumnVisible($columnKey) ? '✓ ' : '' }}{{ $columnLabel }}
+                                    </flux:menu.item>
+                                @endforeach
+                            </flux:menu>
+                        </flux:dropdown>
+                    </div>
+                </x-slot:bottomLeft>
+            </x-admin.tables.partials.toolbar-grid>
         </x-slot:toolbar>
 
-        <flux:table class="min-w-max">
+        <flux:checkbox.group wire:model.live="checkboxValues">
+            <flux:table class="min-w-max">
             <flux:table.columns>
                 <flux:table.column>
-                    <input
-                        type="checkbox"
-                        class="size-4"
-                        @checked(count($pageIds) > 0 && count(array_intersect($pageIds, $checkboxValues)) === count($pageIds))
-                        wire:click="toggleSelectPage({{ json_encode($pageIds) }})"
-                    />
+                    <flux:field variant="inline">
+                        <flux:checkbox.all />
+                    </flux:field>
                 </flux:table.column>
                 @if ($this->isColumnVisible('donator'))
                     <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'donator', 'label' => 'Spender:in'])</flux:table.column>
@@ -82,7 +86,9 @@
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
                     <flux:table.row wire:key="donation-{{ $donation->id }}" class="{{ $rowClass }}">
                         <flux:table.cell>
-                            <input type="checkbox" class="size-4" wire:model.live="checkboxValues" value="{{ $donation->id }}" />
+                            <flux:field variant="inline">
+                                <flux:checkbox value="{{ $donation->id }}" />
+                            </flux:field>
                         </flux:table.cell>
                         @if ($this->isColumnVisible('donator'))
                             <flux:table.cell>{{ $donation->donator->privacy_name }}</flux:table.cell>
@@ -125,7 +131,8 @@
                     </flux:table.row>
                 @endforelse
             </flux:table.rows>
-        </flux:table>
+            </flux:table>
+        </flux:checkbox.group>
 
         <x-slot:footer>
             <div class="flex items-center gap-2">

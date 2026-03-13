@@ -15,7 +15,7 @@
                 $debitorUrl = data_get($row->webling_data, 'debitor_url');
                 $canDownload = $hasPdf;
                 $canSend = $hasPdf && ! empty($row->email);
-                $canCreate = ((! $hasDebitor) || (! $hasPdf)) && ($row->donations_count > 0);
+                $canCreate = (! $hasDebitor) || (! $hasPdf);
                 $canDelete = $hasDebitor || $hasPdf;
                 $paymentStatus = data_get($row->webling_data, 'payment_status');
                 $canSendReminder = $hasPdf && ! empty($row->email) && ! empty($row->invoice_sent_at) && $paymentStatus === 'overdue';

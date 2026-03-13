@@ -1,67 +1,74 @@
 <div>
     <x-admin.datatable>
         <x-slot:toolbar>
-            <div class="flex flex-wrap items-center gap-2">
-                <flux:input wire:model.live.debounce.300ms="search" placeholder="Spender:innen suchen..." icon="magnifying-glass" />
+            <x-admin.tables.partials.toolbar-grid>
+                <x-slot:topLeft>
+                    <flux:input wire:model.live.debounce.300ms="search" placeholder="Spender:innen suchen..." icon="magnifying-glass" />
+                </x-slot:topLeft>
 
-                <flux:dropdown>
-                    <flux:button variant="ghost" icon="arrow-down-tray">Export</flux:button>
-                    <flux:menu>
-                        <flux:menu.group heading="Kompletter Datensatz">
-                            <flux:menu.item wire:click="exportAll('xlsx')" icon="document-text">Excel</flux:menu.item>
-                            <flux:menu.item wire:click="exportAll('csv')" icon="document-text">CSV</flux:menu.item>
-                        </flux:menu.group>
-                        <flux:menu.group heading="Ausgewählte Zeilen">
-                            <flux:menu.item wire:click="exportSelected('xlsx')" icon="check-circle">Excel</flux:menu.item>
-                            <flux:menu.item wire:click="exportSelected('csv')" icon="check-circle">CSV</flux:menu.item>
-                        </flux:menu.group>
-                    </flux:menu>
-                </flux:dropdown>
+                <x-slot:topRight>
+                    <x-admin.tables.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                </x-slot:topRight>
 
-                <flux:button variant="ghost" icon="banknotes" wire:click="checkPaymentStatus">
-                    Zahlungsstatus prüfen
-                </flux:button>
+                <x-slot:bottomLeft>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <flux:dropdown>
+                            <flux:button variant="ghost" size="sm" icon="arrow-down-tray">Export</flux:button>
+                            <flux:menu>
+                                <flux:menu.group heading="Kompletter Datensatz">
+                                    <flux:menu.item wire:click="exportAll('xlsx')" icon="document-text">Excel</flux:menu.item>
+                                    <flux:menu.item wire:click="exportAll('csv')" icon="document-text">CSV</flux:menu.item>
+                                </flux:menu.group>
+                                <flux:menu.group heading="Ausgewählte Zeilen">
+                                    <flux:menu.item wire:click="exportSelected('xlsx')" icon="check-circle">Excel</flux:menu.item>
+                                    <flux:menu.item wire:click="exportSelected('csv')" icon="check-circle">CSV</flux:menu.item>
+                                </flux:menu.group>
+                            </flux:menu>
+                        </flux:dropdown>
 
-                <flux:dropdown>
-                    <flux:button variant="ghost" icon="adjustments-horizontal">Spalten</flux:button>
-                    <flux:menu keep-open>
-                        @foreach ($this->visibleColumnOptions() as $columnKey => $columnLabel)
-                            <flux:menu.item keep-open wire:click="toggleColumn('{{ $columnKey }}')">
-                                {{ $this->isColumnVisible($columnKey) ? '✓ ' : '' }}{{ $columnLabel }}
-                            </flux:menu.item>
-                        @endforeach
-                    </flux:menu>
-                </flux:dropdown>
-            </div>
+                        <flux:button variant="ghost" size="sm" icon="banknotes" wire:click="checkPaymentStatus">
+                            Zahlungsstatus prüfen
+                        </flux:button>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <flux:button variant="primary" wire:click="bulkCreateInvoice">
-                    Rechnungen erstellen ({{ $this->selectedCount() }})
-                </flux:button>
-                <flux:button variant="ghost" wire:click="bulkDownloadInvoice">
-                    Rechnungen herunterladen ({{ $this->selectedCount() }})
-                </flux:button>
-                <flux:button variant="ghost" wire:click="bulkSendInvoice">
-                    Rechnungen senden ({{ $this->selectedCount() }})
-                </flux:button>
-                <flux:button variant="ghost" wire:click="bulkSendInvoiceReminder">
-                    Erinnerungen senden ({{ $this->selectedCount() }})
-                </flux:button>
-                @if ($this->selectedCount() > 0)
-                    <flux:button variant="subtle" wire:click="clearSelection">Auswahl entfernen</flux:button>
-                @endif
-            </div>
+                        <flux:dropdown>
+                            <flux:button variant="ghost" size="sm" icon="adjustments-horizontal">Spalten</flux:button>
+                            <flux:menu keep-open>
+                                @foreach ($this->visibleColumnOptions() as $columnKey => $columnLabel)
+                                    <flux:menu.item keep-open wire:click="toggleColumn('{{ $columnKey }}')">
+                                        {{ $this->isColumnVisible($columnKey) ? '✓ ' : '' }}{{ $columnLabel }}
+                                    </flux:menu.item>
+                                @endforeach
+                            </flux:menu>
+                        </flux:dropdown>
+                    </div>
+                </x-slot:bottomLeft>
+
+                <x-slot:bottomRight>
+                    <x-admin.tables.partials.bulk-actions>
+                        <flux:button size="sm" wire:click="bulkCreateInvoice">
+                            Rechnungen erstellen
+                        </flux:button>
+                        <flux:button size="sm" wire:click="bulkDownloadInvoice">
+                            Rechnungen herunterladen
+                        </flux:button>
+                        <flux:button size="sm" wire:click="bulkSendInvoice">
+                            Rechnungen senden
+                        </flux:button>
+                        <flux:button size="sm" wire:click="bulkSendInvoiceReminder">
+                            Erinnerungen senden
+                        </flux:button>
+                    </x-admin.tables.partials.bulk-actions>
+                </x-slot:bottomRight>
+            </x-admin.tables.partials.toolbar-grid>
         </x-slot:toolbar>
 
-        <flux:table class="min-w-max">
+        <flux:checkbox.group wire:model.live="checkboxValues">
+            <flux:table class="min-w-max">
             <flux:table.columns>
                 <flux:table.column>
-                    <input
-                        type="checkbox"
-                        class="size-4"
-                        @checked(count($pageIds) > 0 && count(array_intersect($pageIds, $checkboxValues)) === count($pageIds))
-                        wire:click="toggleSelectPage({{ json_encode($pageIds) }})"
-                    />
+                    <flux:field variant="inline">
+                        <flux:checkbox.all />
+                    </flux:field>
                 </flux:table.column>
                 @if ($this->isColumnVisible('don_id'))
                     <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'don_id', 'label' => 'DON-ID'])</flux:table.column>
@@ -121,7 +128,9 @@
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
                     <flux:table.row wire:key="donor-{{ $donor->id }}" class="{{ $rowClass }}">
                         <flux:table.cell>
-                            <input type="checkbox" class="size-4" wire:model.live="checkboxValues" value="{{ $donor->id }}" />
+                            <flux:field variant="inline">
+                                <flux:checkbox value="{{ $donor->id }}" />
+                            </flux:field>
                         </flux:table.cell>
                         @if ($this->isColumnVisible('don_id'))
                             <flux:table.cell>DON-{{ sprintf('25%04d', $donor->id) }}</flux:table.cell>
@@ -186,7 +195,8 @@
                     </flux:table.row>
                 @endforelse
             </flux:table.rows>
-        </flux:table>
+            </flux:table>
+        </flux:checkbox.group>
 
         <x-slot:footer>
             <div class="flex items-center gap-2">

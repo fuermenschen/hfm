@@ -1,6 +1,6 @@
 <div class="min-w-0 max-w-full space-y-4">
     @isset($toolbar)
-        <div class="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
             {{ $toolbar }}
         </div>
     @endisset
