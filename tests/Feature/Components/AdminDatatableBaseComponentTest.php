@@ -10,16 +10,19 @@ use App\Models\Partner;
 use App\Models\SportType;
 use Livewire\Livewire;
 
-it('uses shared fallback sorting and page id extraction for donor table', function (): void {
+it('normalizes invalid donor sorting input using shared allowlist validation', function (): void {
     $later = Donator::factory()->create(['first_name' => 'Zoe']);
     $earlier = Donator::factory()->create(['first_name' => 'Anna']);
 
     $component = Livewire::test(AdminDonatorTable::class)
-        ->set('sortField', 'unsupported_sort_column');
+        ->set('sortField', 'unsupported_sort_column')
+        ->set('sortDirection', 'invalid-direction');
 
     $pageIds = $component->viewData('pageIds');
     $donorIds = $component->viewData('donors')->getCollection()->pluck('id')->all();
 
+    expect($component->get('sortField'))->toBe('first_name');
+    expect($component->get('sortDirection'))->toBe('asc');
     expect($pageIds)->toBe([$earlier->id, $later->id]);
     expect($donorIds)->toBe([$earlier->id, $later->id]);
 });

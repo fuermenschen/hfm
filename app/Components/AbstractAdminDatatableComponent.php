@@ -38,6 +38,8 @@ abstract class AbstractAdminDatatableComponent extends Component
 
     protected function queryForTable(bool $ignoreSearch): Builder
     {
+        $this->normalizeSorting();
+
         $query = $this->baseQuery();
         $search = trim($this->search);
 
@@ -54,7 +56,34 @@ abstract class AbstractAdminDatatableComponent extends Component
 
     protected function resolvedSortColumn(): string
     {
-        return $this->sortColumns()[$this->sortField] ?? $this->defaultSortColumn();
+        return $this->sortColumns()[$this->sortField];
+    }
+
+    protected function normalizeSorting(): void
+    {
+        if (! $this->isAllowedSortField($this->sortField)) {
+            $this->sortField = $this->defaultSortField();
+        }
+
+        if (! in_array($this->sortDirection, ['asc', 'desc'], true)) {
+            $this->sortDirection = 'asc';
+        }
+    }
+
+    protected function isAllowedSortField(string $field): bool
+    {
+        return array_key_exists($field, $this->sortColumns());
+    }
+
+    protected function defaultSortField(): string
+    {
+        $defaultSortField = array_search($this->defaultSortColumn(), $this->sortColumns(), true);
+
+        if (! is_string($defaultSortField) || $defaultSortField === '') {
+            throw new \LogicException(static::class.' must map defaultSortColumn() in sortColumns().');
+        }
+
+        return $defaultSortField;
     }
 
     /**
