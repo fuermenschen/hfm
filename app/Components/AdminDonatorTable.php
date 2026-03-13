@@ -5,6 +5,8 @@ namespace App\Components;
 use App\Jobs\CheckDonorInvoicesStatus;
 use App\Models\Donator;
 use App\Services\DonorInvoiceService;
+use App\Support\AdminDatatable\Actions\DonorBulkActionFactory;
+use App\Support\AdminDatatable\Actions\DonorRowActionFactory;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -32,6 +34,22 @@ class AdminDonatorTable extends AbstractAdminDatatableComponent
     protected function tableView(): string
     {
         return 'components.admin.tables.donator-table';
+    }
+
+    /**
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    public function donorRowActionGroups(Donator $donor): array
+    {
+        return DonorRowActionFactory::make($donor);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function donorBulkActions(): array
+    {
+        return DonorBulkActionFactory::make();
     }
 
     protected function tableDataKey(): string

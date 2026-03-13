@@ -187,6 +187,45 @@ it('builds a schema-driven visible column map with metadata', function (): void 
     expect($visibleDefinitions['don_id']['export_key'])->toBe('DON-ID');
 });
 
+it('builds formal donor bulk action descriptors with execution callbacks', function (): void {
+    $actions = Livewire::test(AdminDonatorTable::class)
+        ->instance()
+        ->donorBulkActions();
+
+    expect($actions)->toHaveCount(4);
+    expect($actions[0]['key'])->toBe('bulk-create');
+    expect($actions[0]['type'])->toBe('wire');
+    expect($actions[0]['click'])->toBe('bulkCreateInvoice');
+    expect($actions[0]['loading_label'])->toBe('Erstelle Rechnungen...');
+    expect($actions[3]['key'])->toBe('bulk-reminder');
+    expect($actions[3]['click'])->toBe('bulkSendInvoiceReminder');
+});
+
+it('builds donor row action groups and keeps overdue reminder visibility', function (): void {
+    $donor = Donator::factory()->create([
+        'email' => 'row-action@example.com',
+        'invoice_sent_at' => now()->subDays(2),
+        'webling_data' => [
+            'debitor_id' => 123,
+            'debitor_url' => 'https://example.test/debitor/123',
+            'payment_status' => 'overdue',
+            'letter_pdf' => ['path' => 'letters/test.pdf'],
+        ],
+    ]);
+
+    $groups = Livewire::test(AdminDonatorTable::class)
+        ->instance()
+        ->donorRowActionGroups($donor);
+
+    $invoiceKeys = collect($groups['Rechnung'] ?? [])->pluck('key')->all();
+
+    expect($groups)->toHaveKeys(['Spender:in', 'Rechnung']);
+    expect($invoiceKeys)->toContain('invoice-download');
+    expect($invoiceKeys)->toContain('invoice-send');
+    expect($invoiceKeys)->toContain('invoice-send-reminder');
+    expect($invoiceKeys)->toContain('invoice-delete');
+});
+
 it('updates selected row counter when page selection is toggled', function (): void {
     $first = Donator::factory()->create();
     $second = Donator::factory()->create();

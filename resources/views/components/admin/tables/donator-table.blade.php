@@ -24,24 +24,7 @@
                 </x-slot:bottomLeft>
 
                 <x-slot:bottomRight>
-                    <x-admin.tables.partials.bulk-actions>
-                        <flux:button size="sm" wire:click="bulkCreateInvoice" wire:target="bulkCreateInvoice" wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="bulkCreateInvoice">Rechnungen erstellen</span>
-                            <span wire:loading wire:target="bulkCreateInvoice">Erstelle Rechnungen...</span>
-                        </flux:button>
-                        <flux:button size="sm" wire:click="bulkDownloadInvoice" wire:target="bulkDownloadInvoice" wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="bulkDownloadInvoice">Rechnungen herunterladen</span>
-                            <span wire:loading wire:target="bulkDownloadInvoice">Bereite ZIP vor...</span>
-                        </flux:button>
-                        <flux:button size="sm" wire:click="bulkSendInvoice" wire:target="bulkSendInvoice" wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="bulkSendInvoice">Rechnungen senden</span>
-                            <span wire:loading wire:target="bulkSendInvoice">Sende Rechnungen...</span>
-                        </flux:button>
-                        <flux:button size="sm" wire:click="bulkSendInvoiceReminder" wire:target="bulkSendInvoiceReminder" wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="bulkSendInvoiceReminder">Erinnerungen senden</span>
-                            <span wire:loading wire:target="bulkSendInvoiceReminder">Sende Erinnerungen...</span>
-                        </flux:button>
-                    </x-admin.tables.partials.bulk-actions>
+                    <x-admin.tables.partials.bulk-action-buttons :actions="$this->donorBulkActions()" />
                 </x-slot:bottomRight>
             </x-admin.tables.partials.toolbar-grid>
         </x-slot:toolbar>
@@ -163,7 +146,7 @@
                             </flux:table.cell>
                         @endforeach
                         <flux:table.cell class="sticky right-0 z-10 w-14 min-w-14 align-middle border-l border-zinc-200 {{ $rowClass }} text-center dark:border-zinc-700">
-                            @include('components.admin.tables.partials.donator-row-actions', ['row' => $donor])
+                            @include('components.admin.tables.partials.donator-row-actions', ['row' => $donor, 'actionGroups' => $this->donorRowActionGroups($donor)])
                         </flux:table.cell>
                     </flux:table.row>
                 @empty
