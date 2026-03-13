@@ -34,7 +34,11 @@ it('renders athlete welcome letter with embedded png qr code', function (): void
 
     $html = view('printables.athlete_welcome_letter', ['athlete' => $athlete])->render();
 
-    expect($html)->toContain('data:image/png;base64,');
+    preg_match('/<img src="(data:image\/png;base64,[^"]+)" alt="QR Code"\s*\/>/', $html, $matches);
+
+    expect($matches)
+        ->toHaveKey(1)
+        ->and(strlen($matches[1]))->toBeGreaterThan(strlen('data:image/png;base64,'));
 });
 
 it('renders association donation invoice with embedded png qr bill image', function (): void {
@@ -48,7 +52,12 @@ it('renders association donation invoice with embedded png qr bill image', funct
         'amount' => 120.50,
     ])->render();
 
+    preg_match_all('/data:image\/png;base64,[A-Za-z0-9+\/=]+/', $html, $matches);
+
     expect($html)
-        ->toContain('id="qr-bill-swiss-qr-image"')
-        ->toContain('data:image/png;base64,');
+        ->toContain('id="qr-bill-swiss-qr-image"');
+
+    expect($matches[0] ?? [])
+        ->not->toBeEmpty()
+        ->and(strlen($matches[0][0]))->toBeGreaterThan(strlen('data:image/png;base64,'));
 });
