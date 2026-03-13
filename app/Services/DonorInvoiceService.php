@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Jobs\CreateDonorInvoice;
 use App\Jobs\DeleteDonorInvoiceDebitor;
 use App\Mail\GenericMailMessage;
+use App\Models\Donation;
 use App\Models\Donator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -323,6 +325,27 @@ class DonorInvoiceService
             && $paymentStatus === 'overdue';
     }
 
+    public function invoiceTotalSubquery(): Builder
+    {
+        return $this->invoiceTotalQuery()
+            ->whereColumn('donations.donator_id', 'donators.id');
+    }
+
+    public function invoiceTotalForDonor(Donator $donor): float
+    {
+        $precomputedInvoiceTotal = $donor->getAttribute('invoice_total');
+
+        if (is_numeric($precomputedInvoiceTotal)) {
+            return round((float) $precomputedInvoiceTotal, 2);
+        }
+
+        $invoiceTotal = $this->invoiceTotalQuery()
+            ->where('donations.donator_id', $donor->id)
+            ->value('invoice_total');
+
+        return round((float) $invoiceTotal, 2);
+    }
+
     public function invoiceStatusCaseSql(): string
     {
         $driver = DB::connection()->getDriverName();
@@ -342,6 +365,24 @@ class DonorInvoiceService
             ."                WHEN {$letterExpr} IS NOT NULL THEN 'erstellt'\n"
             ."                ELSE '-'\n"
             .'                END AS invoice_status';
+    }
+
+    protected function invoiceTotalQuery(): Builder
+    {
+        return Donation::query()
+            ->join('athletes', 'athletes.id', '=', 'donations.athlete_id')
+            ->selectRaw('COALESCE(SUM('.$this->invoiceLineTotalSql().'), 0) AS invoice_total');
+    }
+
+    protected function invoiceLineTotalSql(): string
+    {
+        $subtotal = '(COALESCE(athletes.rounds_done, 0) * COALESCE(donations.amount_per_round, 0))';
+
+        return 'ROUND(CASE '
+            .'WHEN donations.amount_min IS NOT NULL AND '.$subtotal.' < donations.amount_min THEN donations.amount_min '
+            .'WHEN donations.amount_max IS NOT NULL AND '.$subtotal.' > donations.amount_max THEN donations.amount_max '
+            .'ELSE '.$subtotal.' '
+            .'END, 2)';
     }
 
     /**

@@ -2,7 +2,6 @@
 
 namespace App\Components;
 
-use App\Actions\CollectDonorInvoiceDataAction;
 use App\Components\Concerns\InteractsWithAdminDatatable;
 use App\Jobs\CheckDonorInvoicesStatus;
 use App\Models\Donator;
@@ -26,8 +25,6 @@ class AdminDonatorTable extends Component
 
     public string $sortField = 'first_name';
 
-    protected CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction;
-
     protected DonorInvoiceService $donorInvoiceService;
 
     /**
@@ -35,9 +32,8 @@ class AdminDonatorTable extends Component
      */
     public array $pendingConfirmations = [];
 
-    public function boot(CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction, DonorInvoiceService $donorInvoiceService): void
+    public function boot(DonorInvoiceService $donorInvoiceService): void
     {
-        $this->collectDonorInvoiceDataAction = $collectDonorInvoiceDataAction;
         $this->donorInvoiceService = $donorInvoiceService;
     }
 
@@ -546,9 +542,9 @@ class AdminDonatorTable extends Component
     protected function baseQuery(): Builder
     {
         return Donator::query()
-            ->with(['donations', 'donations.athlete', 'donations.athlete.partner'])
             ->withCount('donations')
             ->select('donators.*')
+            ->selectSub($this->donorInvoiceService->invoiceTotalSubquery(), 'invoice_total')
             ->selectRaw($this->donorInvoiceService->invoiceStatusCaseSql());
     }
 
@@ -671,9 +667,7 @@ class AdminDonatorTable extends Component
 
     public function donorInvoiceTotal(Donator $donor): float
     {
-        $lines = ($this->collectDonorInvoiceDataAction)($donor);
-
-        return (float) array_sum(array_column($lines, 'total'));
+        return $this->donorInvoiceService->invoiceTotalForDonor($donor);
     }
 
     public function invoiceStatusLabel(Donator $donor): string

@@ -117,7 +117,7 @@
 
             <flux:table.rows>
                 @forelse ($donors as $donor)
-                    @php($sum = $this->donorInvoiceTotal($donor))
+                    @php($invoiceTotal = (float) ($donor->invoice_total ?? 0))
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
                     <flux:table.row wire:key="donor-{{ $donor->id }}" class="{{ $rowClass }}">
                         <flux:table.cell>
@@ -136,7 +136,7 @@
                             <flux:table.cell>{{ $donor->donations_count }}</flux:table.cell>
                         @endif
                         @if ($this->isColumnVisible('invoice_total'))
-                            <flux:table.cell>Fr. {{ number_format($sum, 2, '.', "'") }}</flux:table.cell>
+                            <flux:table.cell>Fr. {{ number_format($invoiceTotal, 2, '.', "'") }}</flux:table.cell>
                         @endif
                         @if ($this->isColumnVisible('created_at'))
                             <flux:table.cell>{{ \Illuminate\Support\Carbon::parse($donor->created_at)->format('d.m.Y') }}</flux:table.cell>
