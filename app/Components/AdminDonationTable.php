@@ -21,6 +21,13 @@ class AdminDonationTable extends PowerGridComponent
 
     public string $tableName = 'admin-donation-table';
 
+    protected DonationService $donationService;
+
+    public function boot(DonationService $donationService): void
+    {
+        $this->donationService = $donationService;
+    }
+
     public function setUp(): array
     {
         $this->showCheckBox();
@@ -65,14 +72,12 @@ class AdminDonationTable extends PowerGridComponent
                 return 'Fr. '.number_format($donation->amount_per_round, 2, '.', "'");
             })
             ->add('estimated_amount', function (Donation $donation) {
-                $service = app(DonationService::class);
-                $calculated = $service->calculateEstimatedAmount($donation);
+                $calculated = $this->donationService->calculateEstimatedAmount($donation);
 
                 return 'Fr. '.number_format($calculated, 2, '.', "'");
             })
             ->add('actual_amount', function (Donation $donation) {
-                $service = app(DonationService::class);
-                $calculated = $service->calculateActualAmount($donation);
+                $calculated = $this->donationService->calculateActualAmount($donation);
 
                 return 'Fr. '.number_format($calculated, 2, '.', "'");
             })

@@ -3,9 +3,9 @@
 namespace App\Components;
 
 use App\Models\Athlete;
+use App\Services\AthleteDocumentService;
 use App\Services\DonationService;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Flux;
+use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\On;
@@ -24,6 +24,16 @@ class AdminAthleteTable extends PowerGridComponent
     public string $sortField = 'first_name';
 
     public string $tableName = 'admin-athlete-table';
+
+    protected DonationService $donationService;
+
+    protected AthleteDocumentService $athleteDocumentService;
+
+    public function boot(DonationService $donationService, AthleteDocumentService $athleteDocumentService): void
+    {
+        $this->donationService = $donationService;
+        $this->athleteDocumentService = $athleteDocumentService;
+    }
 
     public function setUp(): array
     {
@@ -63,14 +73,12 @@ class AdminAthleteTable extends PowerGridComponent
             ->add('partner.name')
             ->add('number_of_donations', fn ($athlete) => $athlete->donations->count())
             ->add('estimated_donations', function (Athlete $athlete) {
-                $service = app(DonationService::class);
-                $calculated = $service->calculateEstimatedTotalForAthlete($athlete);
+                $calculated = $this->donationService->calculateEstimatedTotalForAthlete($athlete);
 
                 return 'Fr. '.number_format($calculated, 2, '.', "'");
             })
             ->add('actual_donations', function (Athlete $athlete) {
-                $service = app(DonationService::class);
-                $calculated = $service->calculateActualTotalForAthlete($athlete);
+                $calculated = $this->donationService->calculateActualTotalForAthlete($athlete);
 
                 return 'Fr. '.number_format($calculated, 2, '.', "'");
             })
@@ -179,26 +187,22 @@ class AdminAthleteTable extends PowerGridComponent
     public function downloadWelcomeLetter($athlete_id)
     {
         $athlete = Athlete::findOrfail($athlete_id);
-        $filename = $athlete->first_name.'_'.$athlete->last_name.'_Willkommensbrief.pdf';
-        $pdf = Pdf::loadView('printables.athlete_welcome_letter', compact('athlete'))
-            ->setPaper('a4', 'portrait');
+        $document = $this->athleteDocumentService->buildWelcomeLetter($athlete);
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->stream();
-        }, $filename);
+        return response()->streamDownload(function () use ($document) {
+            echo $document['pdf']->stream();
+        }, $document['filename']);
     }
 
     #[On('downloadPersonalizedFlyerTemplate')]
     public function downloadPersonalizedFlyerTemplate($athlete_id)
     {
         $athlete = Athlete::findOrfail($athlete_id);
-        $filename = $athlete->first_name.'_'.$athlete->last_name.'_Flyer.pdf';
-        $pdf = Pdf::loadView('printables.athlete_personalized_flyer', compact('athlete'))
-            ->setPaper('a5', 'portrait');
+        $document = $this->athleteDocumentService->buildPersonalizedFlyer($athlete);
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->stream();
-        }, $filename);
+        return response()->streamDownload(function () use ($document) {
+            echo $document['pdf']->stream();
+        }, $document['filename']);
     }
 
     public function actions(Athlete $row): array

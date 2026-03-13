@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\AthleteDocumentService;
 use App\Services\DashboardService;
 use App\Services\DonationService;
+use App\Services\DonorInvoiceService;
 use App\Services\DonorService;
 use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(DonorService::class);
+        $this->app->singleton(DonorInvoiceService::class);
+        $this->app->singleton(AthleteDocumentService::class);
         $this->app->singleton(SettingsService::class);
         $this->app->singleton(DonationService::class);
         $this->app->singleton(DashboardService::class);

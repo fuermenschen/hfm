@@ -6,7 +6,7 @@
     use Endroid\QrCode\Color\Color;
     use Endroid\QrCode\ErrorCorrectionLevel;
     use Endroid\QrCode\QrCode;
-    use Endroid\QrCode\Writer\SvgWriter;
+    use Endroid\QrCode\Writer\PngWriter;
     use Illuminate\Support\Facades\Vite;
 
     $qrCode = new QrCode(
@@ -16,8 +16,8 @@
         margin: 0,
         foregroundColor: new Color(27, 46, 71)
     );
-    $writer = new SvgWriter;
-    $qrCodeData = base64_encode($writer->write($qrCode)->getString());
+    $writer = new PngWriter;
+    $qrCodeDataUri = $writer->write($qrCode)->getDataUri();
 
     $partnerName = "";
 
@@ -33,8 +33,27 @@
         throw new Exception("Unknown partner name: " . $athlete->partner->name);
     }
 
-    $letterhead = Vite::asset("resources/images/letterhead_hfm.svg");
-    $letterheadData = base64_encode(file_get_contents($letterhead));
+    $letterheadAsset = Vite::asset("resources/images/letterhead_hfm.svg");
+    $letterheadCandidates = [$letterheadAsset];
+
+    $parsedPath = parse_url($letterheadAsset, PHP_URL_PATH);
+    if (is_string($parsedPath)) {
+        $trimmedPath = ltrim($parsedPath, '/');
+        $letterheadCandidates[] = public_path($trimmedPath);
+
+        if (str_starts_with($trimmedPath, 'resources/')) {
+            $letterheadCandidates[] = base_path($trimmedPath);
+        }
+    }
+
+    $letterheadPath = collect($letterheadCandidates)
+        ->first(fn ($candidate) => is_string($candidate) && file_exists($candidate));
+
+    if (! is_string($letterheadPath)) {
+        throw new Exception('Letterhead asset file could not be resolved.');
+    }
+
+    $letterheadData = base64_encode(file_get_contents($letterheadPath));
 
 
 @endphp
@@ -225,7 +244,7 @@
 
     <!-- QR Code -->
     <div class="qr-code">
-        <img src="data:image/svg+xml;base64,{{ $qrCodeData }}" alt="QR Code" />
+        <img src="{{ $qrCodeDataUri }}" alt="QR Code" />
         <p>Direktlink zu deinem persönlichen Bereich</p>
     </div>
 
