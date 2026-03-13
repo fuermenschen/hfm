@@ -268,3 +268,15 @@ it('renders consistent table loading and action loading labels', function (): vo
     Livewire::test(AdminDonationTable::class)
         ->assertSee('Tabelle wird aktualisiert...');
 });
+
+it('formats datatable values through shared formatter helpers', function (): void {
+    $component = Livewire::test(AdminDonationTable::class)->instance();
+
+    expect($component->formatMoney(1234.5))->toBe("Fr. 1'234.50");
+    expect($component->formatMoneyOrUnlimited(0))->toBe('unbegrenzt');
+    expect($component->formatDate('2026-02-03'))->toBe('03.02.2026');
+    expect($component->formatDateTime(null))->toBe('-');
+    expect($component->formatDateTimeOrNull(null))->toBeNull();
+    expect($component->truncateText('Ein kurzer Text', 50))->toBe('Ein kurzer Text');
+    expect($component->truncateText('    ', 10))->toBe('-');
+});

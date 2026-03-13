@@ -8,7 +8,6 @@ use App\Services\DonationService;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
@@ -268,7 +267,7 @@ class AdminAthleteTable extends AbstractAdminDatatableComponent
             'Spenden' => $athlete->donations_count,
             'Geschätzte Spenden' => $this->estimatedDonationsTotal($athlete),
             'Tatsächliche Spenden' => $this->actualDonationsTotal($athlete),
-            'Anmeldung' => Carbon::parse($athlete->created_at)->format('d.m.Y'),
+            'Anmeldung' => $this->formatDate($athlete->created_at),
             'Erwachsen' => $athlete->adult ? 'Ja' : 'Nein',
             'Telefon' => $athlete->phone_number,
             'E-Mail' => $athlete->email,

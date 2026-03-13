@@ -107,15 +107,15 @@
                                         @break
 
                                     @case('estimated_total')
-                                        Fr. {{ number_format($this->estimatedDonationsTotal($athlete), 2, '.', "'") }}
+                                        {{ $this->formatMoney($this->estimatedDonationsTotal($athlete)) }}
                                         @break
 
                                     @case('actual_total')
-                                        Fr. {{ number_format($this->actualDonationsTotal($athlete), 2, '.', "'") }}
+                                        {{ $this->formatMoney($this->actualDonationsTotal($athlete)) }}
                                         @break
 
                                     @case('created_at')
-                                        {{ \Illuminate\Support\Carbon::parse($athlete->created_at)->format('d.m.Y') }}
+                                        {{ $this->formatDate($athlete->created_at) }}
                                         @break
 
                                     @case('adult')
@@ -127,13 +127,13 @@
                                         @break
 
                                     @case('email')
-                                        <flux:tooltip content="{{ $athlete->email }}">
+                                        <flux:tooltip content="{{ $this->fallbackText($athlete->email) }}">
                                             <span class="block max-w-52 truncate">{{ $this->truncateText($athlete->email, (int) ($columnDefinition['truncate'] ?? 52)) }}</span>
                                         </flux:tooltip>
                                         @break
 
                                     @case('address')
-                                        <flux:tooltip content="{{ $athlete->address }}">
+                                        <flux:tooltip content="{{ $this->fallbackText($athlete->address) }}">
                                             <span class="block max-w-56 truncate">{{ $this->truncateText($athlete->address, (int) ($columnDefinition['truncate'] ?? 44)) }}</span>
                                         </flux:tooltip>
                                         @break
@@ -147,7 +147,7 @@
                                         @break
 
                                     @case('comment')
-                                        <flux:tooltip content="{{ $athlete->comment }}">
+                                        <flux:tooltip content="{{ $this->fallbackText($athlete->comment) }}">
                                             <span class="block max-w-60 truncate">{{ $this->truncateText($athlete->comment, (int) ($columnDefinition['truncate'] ?? 48)) }}</span>
                                         </flux:tooltip>
                                         @break

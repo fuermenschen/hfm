@@ -9,7 +9,6 @@ use App\Support\AdminDatatable\Actions\DonorBulkActionFactory;
 use App\Support\AdminDatatable\Actions\DonorRowActionFactory;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -686,7 +685,7 @@ class AdminDonatorTable extends AbstractAdminDatatableComponent
             'Nachname' => $donor->last_name,
             'Anzahl Spenden' => $donor->donations_count,
             'Rechnungsbetrag' => $sum,
-            'Anmeldung' => Carbon::parse($donor->created_at)->format('d.m.Y'),
+            'Anmeldung' => $this->formatDate($donor->created_at),
             'E-Mail' => $donor->email,
             'Telefon' => $donor->phone_number,
             'Land' => $donor->country_of_residence,
@@ -694,8 +693,8 @@ class AdminDonatorTable extends AbstractAdminDatatableComponent
             'PLZ' => $donor->zip_code,
             'Ort' => $donor->city,
             'Rechnung' => $this->invoiceStatusLabel($donor),
-            'Rechnung gesendet am' => $donor->invoice_sent_at ? Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : null,
-            'Zahlungserinnerung gesendet am' => $donor->invoice_reminder_sent_at ? Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : null,
+            'Rechnung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_sent_at),
+            'Zahlungserinnerung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_reminder_sent_at),
         ];
     }
 }

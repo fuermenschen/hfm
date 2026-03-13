@@ -66,7 +66,6 @@
                     </flux:table.cell>
                 </flux:table.row>
                 @forelse ($donors as $donor)
-                    @php($invoiceTotal = (float) ($donor->invoice_total ?? 0))
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
                     <flux:table.row wire:key="donor-{{ $donor->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}" class="{{ $rowClass }}">
                         <flux:table.cell>
@@ -96,15 +95,15 @@
                                         @break
 
                                     @case('invoice_total')
-                                        Fr. {{ number_format($invoiceTotal, 2, '.', "'") }}
+                                        {{ $this->formatMoney($donor->invoice_total) }}
                                         @break
 
                                     @case('created_at')
-                                        {{ \Illuminate\Support\Carbon::parse($donor->created_at)->format('d.m.Y') }}
+                                        {{ $this->formatDate($donor->created_at) }}
                                         @break
 
                                     @case('email')
-                                        <flux:tooltip content="{{ $donor->email }}">
+                                        <flux:tooltip content="{{ $this->fallbackText($donor->email) }}">
                                             <span class="block max-w-52 truncate">{{ $this->truncateText($donor->email, (int) ($columnDefinition['truncate'] ?? 52)) }}</span>
                                         </flux:tooltip>
                                         @break
@@ -118,7 +117,7 @@
                                         @break
 
                                     @case('address')
-                                        <flux:tooltip content="{{ $donor->address }}">
+                                        <flux:tooltip content="{{ $this->fallbackText($donor->address) }}">
                                             <span class="block max-w-56 truncate">{{ $this->truncateText($donor->address, (int) ($columnDefinition['truncate'] ?? 44)) }}</span>
                                         </flux:tooltip>
                                         @break
@@ -136,11 +135,11 @@
                                         @break
 
                                     @case('invoice_sent_at')
-                                        {{ $donor->invoice_sent_at ? \Illuminate\Support\Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : '-' }}
+                                        {{ $this->formatDateTime($donor->invoice_sent_at) }}
                                         @break
 
                                     @case('invoice_reminder_sent_at')
-                                        {{ $donor->invoice_reminder_sent_at ? \Illuminate\Support\Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : '-' }}
+                                        {{ $this->formatDateTime($donor->invoice_reminder_sent_at) }}
                                         @break
                                 @endswitch
                             </flux:table.cell>

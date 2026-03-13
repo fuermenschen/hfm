@@ -76,31 +76,31 @@
                                         @break
 
                                     @case('amount_per_round')
-                                        Fr. {{ number_format($donation->amount_per_round, 2, '.', "'") }}
+                                        {{ $this->formatMoney($donation->amount_per_round) }}
                                         @break
 
                                     @case('estimated')
-                                        Fr. {{ number_format($this->estimatedAmount($donation), 2, '.', "'") }}
+                                        {{ $this->formatMoney($this->estimatedAmount($donation)) }}
                                         @break
 
                                     @case('actual')
-                                        Fr. {{ number_format($this->actualAmount($donation), 2, '.', "'") }}
+                                        {{ $this->formatMoney($this->actualAmount($donation)) }}
                                         @break
 
                                     @case('amount_min')
-                                        {{ $donation->amount_min ? 'Fr. '.number_format($donation->amount_min, 2, '.', "'") : 'unbegrenzt' }}
+                                        {{ $this->formatMoneyOrUnlimited($donation->amount_min) }}
                                         @break
 
                                     @case('amount_max')
-                                        {{ $donation->amount_max ? 'Fr. '.number_format($donation->amount_max, 2, '.', "'") : 'unbegrenzt' }}
+                                        {{ $this->formatMoneyOrUnlimited($donation->amount_max) }}
                                         @break
 
                                     @case('created_at')
-                                        {{ \Illuminate\Support\Carbon::parse($donation->created_at)->format('d.m.Y') }}
+                                        {{ $this->formatDate($donation->created_at) }}
                                         @break
 
                                     @case('comment')
-                                        <flux:tooltip content="{{ $donation->comment }}">
+                                        <flux:tooltip content="{{ $this->fallbackText($donation->comment) }}">
                                             <span class="block max-w-60 truncate">{{ $this->truncateText($donation->comment, (int) ($columnDefinition['truncate'] ?? 48)) }}</span>
                                         </flux:tooltip>
                                         @break

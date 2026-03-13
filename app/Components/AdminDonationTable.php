@@ -5,7 +5,6 @@ namespace App\Components;
 use App\Models\Donation;
 use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminDonationTable extends AbstractAdminDatatableComponent
@@ -165,7 +164,7 @@ class AdminDonationTable extends AbstractAdminDatatableComponent
             'Tatsächlicher Betrag' => $this->actualAmount($donation),
             'Minimaler Betrag' => $donation->amount_min,
             'Maximaler Betrag' => $donation->amount_max,
-            'Erstellt am' => Carbon::parse($donation->created_at)->format('d.m.Y'),
+            'Erstellt am' => $this->formatDate($donation->created_at),
             'Kommentar' => $donation->comment,
         ];
     }

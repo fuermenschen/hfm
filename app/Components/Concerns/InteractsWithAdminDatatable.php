@@ -2,6 +2,7 @@
 
 namespace App\Components\Concerns;
 
+use App\Support\AdminDatatable\AdminDatatableValueFormatter;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +26,8 @@ trait InteractsWithAdminDatatable
      * @var array<int, string>
      */
     public array $visibleColumns = [];
+
+    protected ?AdminDatatableValueFormatter $datatableValueFormatter = null;
 
     public function updatedSearch(): void
     {
@@ -198,17 +201,47 @@ trait InteractsWithAdminDatatable
 
     public function truncateText(?string $value, int $length = 42): string
     {
-        $text = trim((string) $value);
+        return $this->valueFormatter()->truncate($value, $length);
+    }
 
-        if ($text === '') {
-            return '-';
-        }
+    public function fallbackText(?string $value, string $fallback = '-'): string
+    {
+        return $this->valueFormatter()->text($value, $fallback);
+    }
 
-        if (mb_strlen($text) <= $length) {
-            return $text;
-        }
+    public function formatMoney(float|int|string|null $value, string $fallback = '-'): string
+    {
+        return $this->valueFormatter()->money($value, $fallback);
+    }
 
-        return mb_substr($text, 0, $length - 1).'…';
+    public function formatMoneyOrUnlimited(float|int|string|null $value, string $unlimitedLabel = 'unbegrenzt'): string
+    {
+        return $this->valueFormatter()->moneyOrUnlimited($value, $unlimitedLabel);
+    }
+
+    public function formatDate(mixed $value, string $fallback = '-'): string
+    {
+        return $this->valueFormatter()->date($value, $fallback);
+    }
+
+    public function formatDateOrNull(mixed $value): ?string
+    {
+        return $this->valueFormatter()->dateOrNull($value);
+    }
+
+    public function formatDateTime(mixed $value, string $fallback = '-'): string
+    {
+        return $this->valueFormatter()->dateTime($value, $fallback);
+    }
+
+    public function formatDateTimeOrNull(mixed $value): ?string
+    {
+        return $this->valueFormatter()->dateTimeOrNull($value);
+    }
+
+    protected function valueFormatter(): AdminDatatableValueFormatter
+    {
+        return $this->datatableValueFormatter ??= app(AdminDatatableValueFormatter::class);
     }
 
     public function sortByColumn(string $column): void
