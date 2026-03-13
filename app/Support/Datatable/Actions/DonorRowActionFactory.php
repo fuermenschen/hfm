@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\AdminDatatable\Actions;
+namespace App\Support\Datatable\Actions;
 
 use App\Models\Donator;
 
@@ -30,7 +30,7 @@ class DonorRowActionFactory
         ];
 
         $actions = [
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'donor-login',
                 group: 'Spender:in',
                 label: 'Als Spender einloggen',
@@ -41,7 +41,7 @@ class DonorRowActionFactory
                     'target' => '_blank',
                 ],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'invoice-create',
                 group: 'Rechnung',
                 label: 'Rechnung erstellen',
@@ -49,7 +49,7 @@ class DonorRowActionFactory
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'createDonorInvoice('.$payload['donor']->id.')'],
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_create'],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'invoice-download',
                 group: 'Rechnung',
                 label: 'Rechnung herunterladen',
@@ -57,7 +57,7 @@ class DonorRowActionFactory
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'downloadDonorInvoice('.$payload['donor']->id.')'],
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_download'],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'invoice-send',
                 group: 'Rechnung',
                 label: 'Rechnung senden',
@@ -65,7 +65,7 @@ class DonorRowActionFactory
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'sendDonorInvoice('.$payload['donor']->id.')'],
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_send'],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'invoice-send-reminder',
                 group: 'Rechnung',
                 label: 'Zahlungserinnerung senden',
@@ -73,7 +73,7 @@ class DonorRowActionFactory
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'sendDonorInvoiceReminder('.$payload['donor']->id.')'],
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_send_reminder'],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'invoice-show-webling',
                 group: 'Rechnung',
                 label: 'Rechnung in Webling anzeigen',
@@ -85,7 +85,7 @@ class DonorRowActionFactory
                 ],
                 visibleWhen: static fn (array $payload): bool => filled($payload['debitor_url']),
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'invoice-delete',
                 group: 'Rechnung',
                 label: 'Rechnung löschen',

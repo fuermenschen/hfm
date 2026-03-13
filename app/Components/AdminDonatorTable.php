@@ -5,8 +5,8 @@ namespace App\Components;
 use App\Jobs\CheckDonorInvoicesStatus;
 use App\Models\Donator;
 use App\Services\DonorInvoiceService;
-use App\Support\AdminDatatable\Actions\DonorBulkActionFactory;
-use App\Support\AdminDatatable\Actions\DonorRowActionFactory;
+use App\Support\Datatable\Actions\DonorBulkActionFactory;
+use App\Support\Datatable\Actions\DonorRowActionFactory;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use ZipArchive;
 
-class AdminDonatorTable extends AbstractAdminDatatableComponent
+class AdminDonatorTable extends AbstractDatatableComponent
 {
     public string $sortField = 'first_name';
 

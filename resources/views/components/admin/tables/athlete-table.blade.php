@@ -1,22 +1,22 @@
 <div>
-    <x-admin.datatable>
+    <x-datatable>
         <x-slot:toolbar>
-            <x-admin.tables.partials.toolbar-grid>
+            <x-datatable.partials.toolbar-grid>
                 <x-slot:topLeft>
                     <flux:input wire:model.live.debounce.300ms="search" placeholder="Sportler:innen suchen..." icon="magnifying-glass" />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
-                    <x-admin.tables.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                    <x-datatable.partials.selection-toolbar :selected-count="$this->selectedCount()" />
                 </x-slot:topRight>
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        <x-admin.tables.partials.export-dropdown />
-                        <x-admin.tables.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
+                        <x-datatable.partials.export-dropdown />
+                        <x-datatable.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
-            </x-admin.tables.partials.toolbar-grid>
+            </x-datatable.partials.toolbar-grid>
         </x-slot:toolbar>
 
         <flux:checkbox.group wire:model.live="checkboxValues">
@@ -33,7 +33,7 @@
                     @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
                     <flux:table.column class="{{ $headerClass }}">
                         @if ($columnDefinition['sortable'])
-                            @include('components.admin.tables.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                            @include('components.datatable.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
                         @else
                             <span>{{ $columnDefinition['label'] }}</span>
                         @endif
@@ -187,9 +187,9 @@
         </flux:checkbox.group>
 
         <x-slot:footer>
-            <x-admin.tables.partials.per-page-select />
+            <x-datatable.partials.per-page-select />
 
             <flux:pagination :paginator="$athletes" />
         </x-slot:footer>
-    </x-admin.datatable>
+    </x-datatable>
 </div>

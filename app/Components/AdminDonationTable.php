@@ -7,7 +7,7 @@ use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-class AdminDonationTable extends AbstractAdminDatatableComponent
+class AdminDonationTable extends AbstractDatatableComponent
 {
     public string $sortField = 'created_at';
 

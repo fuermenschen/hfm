@@ -11,7 +11,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-class AdminAthleteTable extends AbstractAdminDatatableComponent
+class AdminAthleteTable extends AbstractDatatableComponent
 {
     public string $sortField = 'first_name';
 

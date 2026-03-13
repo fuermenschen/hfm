@@ -2,14 +2,14 @@
 
 namespace App\Components\Concerns;
 
-use App\Support\AdminDatatable\AdminDatatableValueFormatter;
+use App\Support\Datatable\DatatableValueFormatter;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Spatie\SimpleExcel\SimpleExcelWriter;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-trait InteractsWithAdminDatatable
+trait InteractsWithDatatable
 {
     public string $search = '';
 
@@ -27,7 +27,7 @@ trait InteractsWithAdminDatatable
      */
     public array $visibleColumns = [];
 
-    protected ?AdminDatatableValueFormatter $datatableValueFormatter = null;
+    protected ?DatatableValueFormatter $datatableValueFormatter = null;
 
     public function updatedSearch(): void
     {
@@ -239,9 +239,9 @@ trait InteractsWithAdminDatatable
         return $this->valueFormatter()->dateTimeOrNull($value);
     }
 
-    protected function valueFormatter(): AdminDatatableValueFormatter
+    protected function valueFormatter(): DatatableValueFormatter
     {
-        return $this->datatableValueFormatter ??= app(AdminDatatableValueFormatter::class);
+        return $this->datatableValueFormatter ??= app(DatatableValueFormatter::class);
     }
 
     public function sortByColumn(string $column): void

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Support\AdminDatatable\Actions;
+namespace App\Support\Datatable\Actions;
 
-use App\Support\AdminDatatable\Actions\Contracts\AdminDatatableAction;
+use App\Support\Datatable\Actions\Contracts\DatatableAction;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
-class AdminDatatableActionDefinition implements AdminDatatableAction
+class DatatableActionDefinition implements DatatableAction
 {
     /**
      * @param  Closure(array<string, mixed>):bool  $visibleWhen

@@ -3,7 +3,7 @@
 @php
     $resolvedActionGroups = is_array($actionGroups)
         ? $actionGroups
-        : \App\Support\AdminDatatable\Actions\DonorRowActionFactory::make($row);
+        : \App\Support\Datatable\Actions\DonorRowActionFactory::make($row);
 @endphp
 
 <div class="flex items-center justify-center">

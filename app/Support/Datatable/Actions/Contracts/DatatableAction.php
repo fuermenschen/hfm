@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Support\AdminDatatable\Actions\Contracts;
+namespace App\Support\Datatable\Actions\Contracts;
 
-interface AdminDatatableAction
+interface DatatableAction
 {
     public function key(): string;
 

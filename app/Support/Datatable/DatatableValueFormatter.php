@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Support\AdminDatatable;
+namespace App\Support\Datatable;
 
 use Illuminate\Support\Carbon;
 
-class AdminDatatableValueFormatter
+class DatatableValueFormatter
 {
     public function moneyOrUnlimited(float|int|string|null $value, string $unlimitedLabel = 'unbegrenzt'): string
     {

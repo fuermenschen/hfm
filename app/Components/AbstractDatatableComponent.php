@@ -2,16 +2,16 @@
 
 namespace App\Components;
 
-use App\Components\Concerns\InteractsWithAdminDatatable;
+use App\Components\Concerns\InteractsWithDatatable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-abstract class AbstractAdminDatatableComponent extends Component
+abstract class AbstractDatatableComponent extends Component
 {
-    use InteractsWithAdminDatatable;
+    use InteractsWithDatatable;
     use WithPagination;
 
     public string $sortField = '';

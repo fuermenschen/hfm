@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support\AdminDatatable\Actions;
+namespace App\Support\Datatable\Actions;
 
 class DonorBulkActionFactory
 {
@@ -10,7 +10,7 @@ class DonorBulkActionFactory
     public static function make(): array
     {
         $actions = [
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'bulk-create',
                 group: 'bulk',
                 label: 'Rechnungen erstellen',
@@ -20,7 +20,7 @@ class DonorBulkActionFactory
                     'loading_label' => 'Erstelle Rechnungen...',
                 ],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'bulk-download',
                 group: 'bulk',
                 label: 'Rechnungen herunterladen',
@@ -30,7 +30,7 @@ class DonorBulkActionFactory
                     'loading_label' => 'Bereite ZIP vor...',
                 ],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'bulk-send',
                 group: 'bulk',
                 label: 'Rechnungen senden',
@@ -40,7 +40,7 @@ class DonorBulkActionFactory
                     'loading_label' => 'Sende Rechnungen...',
                 ],
             ),
-            new AdminDatatableActionDefinition(
+            new DatatableActionDefinition(
                 key: 'bulk-reminder',
                 group: 'bulk',
                 label: 'Erinnerungen senden',
