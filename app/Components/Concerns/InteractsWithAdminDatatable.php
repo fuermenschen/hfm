@@ -92,9 +92,61 @@ trait InteractsWithAdminDatatable
     }
 
     /**
-     * @return array<string, array{label:string, sortable:bool, sort_field?:string}>
+     * @return array<string, array{
+     *     label:string,
+     *     sortable:bool,
+     *     sort_field?:string,
+     *     align?:string,
+     *     width?:string,
+     *     tooltip?:bool,
+     *     truncate?:int,
+     *     export_key?:string,
+     *     formatter?:string
+     * }>
      */
     abstract protected function columnDefinitions(): array;
+
+    /**
+     * @return array<string, array{
+     *     label:string,
+     *     sortable:bool,
+     *     sort_field:?string,
+     *     align:string,
+     *     width:?string,
+     *     tooltip:bool,
+     *     truncate:?int,
+     *     export_key:?string,
+     *     formatter:?string
+     * }>
+     */
+    public function visibleColumnDefinitions(): array
+    {
+        $definitions = $this->columnDefinitions();
+        $visibleColumnKeys = array_values(array_filter(
+            $this->visibleColumns,
+            static fn (string $column): bool => array_key_exists($column, $definitions),
+        ));
+
+        $visibleDefinitions = [];
+
+        foreach ($visibleColumnKeys as $column) {
+            $definition = $definitions[$column];
+
+            $visibleDefinitions[$column] = [
+                'label' => (string) $definition['label'],
+                'sortable' => (bool) $definition['sortable'],
+                'sort_field' => isset($definition['sort_field']) ? (string) $definition['sort_field'] : null,
+                'align' => isset($definition['align']) ? (string) $definition['align'] : 'left',
+                'width' => isset($definition['width']) ? (string) $definition['width'] : null,
+                'tooltip' => (bool) ($definition['tooltip'] ?? false),
+                'truncate' => isset($definition['truncate']) ? (int) $definition['truncate'] : null,
+                'export_key' => isset($definition['export_key']) ? (string) $definition['export_key'] : null,
+                'formatter' => isset($definition['formatter']) ? (string) $definition['formatter'] : null,
+            ];
+        }
+
+        return $visibleDefinitions;
+    }
 
     public function toggleColumn(string $column): void
     {

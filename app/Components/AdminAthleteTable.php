@@ -205,29 +205,29 @@ class AdminAthleteTable extends AbstractAdminDatatableComponent
     }
 
     /**
-     * @return array<string, array{label:string, sortable:bool, sort_field?:string}>
+     * @return array<string, array{label:string, sortable:bool, sort_field?:string, align?:string, width?:string, tooltip?:bool, truncate?:int, export_key?:string, formatter?:string}>
      */
     protected function columnDefinitions(): array
     {
         return [
-            'first_name' => ['label' => 'Vorname', 'sortable' => true],
-            'last_name' => ['label' => 'Nachname', 'sortable' => true],
-            'verified' => ['label' => 'Bestätigt', 'sortable' => true],
-            'sport_type' => ['label' => 'Sportart', 'sortable' => true, 'sort_field' => 'sport_type_id'],
-            'partner' => ['label' => 'Partner', 'sortable' => true, 'sort_field' => 'partner_id'],
-            'rounds_estimated' => ['label' => 'Runden geschätzt', 'sortable' => true],
-            'rounds_done' => ['label' => 'Runden gemacht', 'sortable' => true],
-            'donations_count' => ['label' => 'Spenden', 'sortable' => true],
-            'estimated_total' => ['label' => 'Geschätzte Spenden', 'sortable' => false],
-            'actual_total' => ['label' => 'Tatsächliche Spenden', 'sortable' => false],
-            'created_at' => ['label' => 'Anmeldung', 'sortable' => true],
-            'adult' => ['label' => 'Erwachsen', 'sortable' => true],
-            'phone_number' => ['label' => 'Telefon', 'sortable' => true],
-            'email' => ['label' => 'E-Mail', 'sortable' => true],
-            'address' => ['label' => 'Adresse', 'sortable' => true],
-            'zip_code' => ['label' => 'PLZ', 'sortable' => true],
-            'city' => ['label' => 'Ort', 'sortable' => true],
-            'comment' => ['label' => 'Kommentar', 'sortable' => true],
+            'first_name' => ['label' => 'Vorname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Vorname'],
+            'last_name' => ['label' => 'Nachname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Nachname'],
+            'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
+            'sport_type' => ['label' => 'Sportart', 'sortable' => true, 'sort_field' => 'sport_type_id', 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Sportart'],
+            'partner' => ['label' => 'Partner', 'sortable' => true, 'sort_field' => 'partner_id', 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Partner'],
+            'rounds_estimated' => ['label' => 'Runden geschätzt', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-32', 'export_key' => 'Runden geschätzt'],
+            'rounds_done' => ['label' => 'Runden gemacht', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Runden gemacht', 'formatter' => 'editable_rounds'],
+            'donations_count' => ['label' => 'Spenden', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'Spenden'],
+            'estimated_total' => ['label' => 'Geschätzte Spenden', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Geschätzte Spenden', 'formatter' => 'money'],
+            'actual_total' => ['label' => 'Tatsächliche Spenden', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Tatsächliche Spenden', 'formatter' => 'money'],
+            'created_at' => ['label' => 'Anmeldung', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anmeldung', 'formatter' => 'date'],
+            'adult' => ['label' => 'Erwachsen', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Erwachsen', 'formatter' => 'yes_no'],
+            'phone_number' => ['label' => 'Telefon', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Telefon'],
+            'email' => ['label' => 'E-Mail', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'tooltip' => true, 'truncate' => 52, 'export_key' => 'E-Mail'],
+            'address' => ['label' => 'Adresse', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 44, 'export_key' => 'Adresse'],
+            'zip_code' => ['label' => 'PLZ', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-24', 'export_key' => 'PLZ'],
+            'city' => ['label' => 'Ort', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Ort'],
+            'comment' => ['label' => 'Kommentar', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 48, 'export_key' => 'Kommentar'],
         ];
     }
 

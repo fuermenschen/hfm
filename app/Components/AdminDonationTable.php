@@ -117,21 +117,21 @@ class AdminDonationTable extends AbstractAdminDatatableComponent
     }
 
     /**
-     * @return array<string, array{label:string, sortable:bool, sort_field?:string}>
+     * @return array<string, array{label:string, sortable:bool, sort_field?:string, align?:string, width?:string, tooltip?:bool, truncate?:int, export_key?:string, formatter?:string}>
      */
     protected function columnDefinitions(): array
     {
         return [
-            'donator' => ['label' => 'Spender:in', 'sortable' => false],
-            'athlete' => ['label' => 'Sportler:in', 'sortable' => false],
-            'verified' => ['label' => 'Bestätigt', 'sortable' => true],
-            'amount_per_round' => ['label' => 'Betrag pro Runde', 'sortable' => true],
-            'estimated' => ['label' => 'Geschätzter Betrag', 'sortable' => false],
-            'actual' => ['label' => 'Tatsächlicher Betrag', 'sortable' => false],
-            'amount_min' => ['label' => 'Minimaler Betrag', 'sortable' => true],
-            'amount_max' => ['label' => 'Maximaler Betrag', 'sortable' => true],
-            'created_at' => ['label' => 'Erstellt am', 'sortable' => true],
-            'comment' => ['label' => 'Kommentar', 'sortable' => false],
+            'donator' => ['label' => 'Spender:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Spender:in'],
+            'athlete' => ['label' => 'Sportler:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Sportler:in'],
+            'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
+            'amount_per_round' => ['label' => 'Betrag pro Runde', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Betrag pro Runde', 'formatter' => 'money'],
+            'estimated' => ['label' => 'Geschätzter Betrag', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Geschätzter Betrag', 'formatter' => 'money'],
+            'actual' => ['label' => 'Tatsächlicher Betrag', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Tatsächlicher Betrag', 'formatter' => 'money'],
+            'amount_min' => ['label' => 'Minimaler Betrag', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Minimaler Betrag', 'formatter' => 'money_or_unlimited'],
+            'amount_max' => ['label' => 'Maximaler Betrag', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Maximaler Betrag', 'formatter' => 'money_or_unlimited'],
+            'created_at' => ['label' => 'Erstellt am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Erstellt am', 'formatter' => 'date'],
+            'comment' => ['label' => 'Kommentar', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 48, 'export_key' => 'Kommentar'],
         ];
     }
 

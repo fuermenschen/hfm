@@ -42,6 +42,7 @@
         </x-slot:toolbar>
 
         <flux:checkbox.group wire:model.live="checkboxValues">
+            @php($visibleColumns = $this->visibleColumnDefinitions())
             <flux:table class="min-w-max">
             <flux:table.columns>
                 <flux:table.column>
@@ -49,36 +50,17 @@
                         <flux:checkbox.all />
                     </flux:field>
                 </flux:table.column>
-                @if ($this->isColumnVisible('donator'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'donator', 'label' => 'Spender:in'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('athlete'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'athlete', 'label' => 'Sportler:in'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('verified'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'verified', 'label' => 'Bestätigt'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('amount_per_round'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'amount_per_round', 'label' => 'Betrag pro Runde'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('estimated'))
-                    <flux:table.column>Geschätzter Betrag</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('actual'))
-                    <flux:table.column>Tatsächlicher Betrag</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('amount_min'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'amount_min', 'label' => 'Minimaler Betrag'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('amount_max'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'amount_max', 'label' => 'Maximaler Betrag'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('created_at'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'created_at', 'label' => 'Erstellt am'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('comment'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'comment', 'label' => 'Kommentar'])</flux:table.column>
-                @endif
+                @foreach ($visibleColumns as $columnKey => $columnDefinition)
+                    @php($headerAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
+                    @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
+                    <flux:table.column class="{{ $headerClass }}">
+                        @if ($columnDefinition['sortable'])
+                            @include('components.admin.tables.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                        @else
+                            <span>{{ $columnDefinition['label'] }}</span>
+                        @endif
+                    </flux:table.column>
+                @endforeach
             </flux:table.columns>
 
             <flux:table.rows>
@@ -98,40 +80,55 @@
                                 <flux:checkbox value="{{ $donation->id }}" />
                             </flux:field>
                         </flux:table.cell>
-                        @if ($this->isColumnVisible('donator'))
-                            <flux:table.cell>{{ $donation->donator->privacy_name }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('athlete'))
-                            <flux:table.cell>{{ $donation->athlete->privacy_name }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('verified'))
-                            <flux:table.cell>{{ $donation->verified ? 'Ja' : 'Nein' }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('amount_per_round'))
-                            <flux:table.cell>Fr. {{ number_format($donation->amount_per_round, 2, '.', "'") }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('estimated'))
-                            <flux:table.cell>Fr. {{ number_format($this->estimatedAmount($donation), 2, '.', "'") }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('actual'))
-                            <flux:table.cell>Fr. {{ number_format($this->actualAmount($donation), 2, '.', "'") }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('amount_min'))
-                            <flux:table.cell>{{ $donation->amount_min ? 'Fr. '.number_format($donation->amount_min, 2, '.', "'") : 'unbegrenzt' }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('amount_max'))
-                            <flux:table.cell>{{ $donation->amount_max ? 'Fr. '.number_format($donation->amount_max, 2, '.', "'") : 'unbegrenzt' }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('created_at'))
-                            <flux:table.cell>{{ \Illuminate\Support\Carbon::parse($donation->created_at)->format('d.m.Y') }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('comment'))
-                            <flux:table.cell>
-                                <flux:tooltip content="{{ $donation->comment }}">
-                                    <span class="block max-w-60 truncate">{{ $this->truncateText($donation->comment, 48) }}</span>
-                                </flux:tooltip>
+                        @foreach ($visibleColumns as $columnKey => $columnDefinition)
+                            @php($cellAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
+                            @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
+                            <flux:table.cell class="{{ $cellClass }}">
+                                @switch($columnKey)
+                                    @case('donator')
+                                        {{ $donation->donator->privacy_name }}
+                                        @break
+
+                                    @case('athlete')
+                                        {{ $donation->athlete->privacy_name }}
+                                        @break
+
+                                    @case('verified')
+                                        {{ $donation->verified ? 'Ja' : 'Nein' }}
+                                        @break
+
+                                    @case('amount_per_round')
+                                        Fr. {{ number_format($donation->amount_per_round, 2, '.', "'") }}
+                                        @break
+
+                                    @case('estimated')
+                                        Fr. {{ number_format($this->estimatedAmount($donation), 2, '.', "'") }}
+                                        @break
+
+                                    @case('actual')
+                                        Fr. {{ number_format($this->actualAmount($donation), 2, '.', "'") }}
+                                        @break
+
+                                    @case('amount_min')
+                                        {{ $donation->amount_min ? 'Fr. '.number_format($donation->amount_min, 2, '.', "'") : 'unbegrenzt' }}
+                                        @break
+
+                                    @case('amount_max')
+                                        {{ $donation->amount_max ? 'Fr. '.number_format($donation->amount_max, 2, '.', "'") : 'unbegrenzt' }}
+                                        @break
+
+                                    @case('created_at')
+                                        {{ \Illuminate\Support\Carbon::parse($donation->created_at)->format('d.m.Y') }}
+                                        @break
+
+                                    @case('comment')
+                                        <flux:tooltip content="{{ $donation->comment }}">
+                                            <span class="block max-w-60 truncate">{{ $this->truncateText($donation->comment, (int) ($columnDefinition['truncate'] ?? 48)) }}</span>
+                                        </flux:tooltip>
+                                        @break
+                                @endswitch
                             </flux:table.cell>
-                        @endif
+                        @endforeach
                     </flux:table.row>
                 @empty
                     <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">

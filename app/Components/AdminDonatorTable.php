@@ -550,26 +550,26 @@ class AdminDonatorTable extends AbstractAdminDatatableComponent
     }
 
     /**
-     * @return array<string, array{label:string, sortable:bool, sort_field?:string}>
+     * @return array<string, array{label:string, sortable:bool, sort_field?:string, align?:string, width?:string, tooltip?:bool, truncate?:int, export_key?:string, formatter?:string}>
      */
     protected function columnDefinitions(): array
     {
         return [
-            'don_id' => ['label' => 'DON-ID', 'sortable' => true, 'sort_field' => 'id'],
-            'first_name' => ['label' => 'Vorname', 'sortable' => true],
-            'last_name' => ['label' => 'Nachname', 'sortable' => true],
-            'donations_count' => ['label' => 'Anzahl Spenden', 'sortable' => true],
-            'invoice_total' => ['label' => 'Rechnungsbetrag', 'sortable' => false],
-            'created_at' => ['label' => 'Anmeldung', 'sortable' => true],
-            'email' => ['label' => 'E-Mail', 'sortable' => true],
-            'phone_number' => ['label' => 'Telefon', 'sortable' => true],
-            'country' => ['label' => 'Land', 'sortable' => true, 'sort_field' => 'country_of_residence'],
-            'address' => ['label' => 'Adresse', 'sortable' => true],
-            'zip_code' => ['label' => 'PLZ', 'sortable' => true],
-            'city' => ['label' => 'Ort', 'sortable' => true],
-            'invoice_status' => ['label' => 'Rechnung', 'sortable' => true],
-            'invoice_sent_at' => ['label' => 'Rechnung gesendet am', 'sortable' => true],
-            'invoice_reminder_sent_at' => ['label' => 'Erinnerung gesendet am', 'sortable' => true],
+            'don_id' => ['label' => 'DON-ID', 'sortable' => true, 'sort_field' => 'id', 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'DON-ID'],
+            'first_name' => ['label' => 'Vorname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Vorname'],
+            'last_name' => ['label' => 'Nachname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Nachname'],
+            'donations_count' => ['label' => 'Anzahl Spenden', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'Anzahl Spenden'],
+            'invoice_total' => ['label' => 'Rechnungsbetrag', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Rechnungsbetrag', 'formatter' => 'money'],
+            'created_at' => ['label' => 'Anmeldung', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anmeldung', 'formatter' => 'date'],
+            'email' => ['label' => 'E-Mail', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'tooltip' => true, 'truncate' => 52, 'export_key' => 'E-Mail'],
+            'phone_number' => ['label' => 'Telefon', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Telefon'],
+            'country' => ['label' => 'Land', 'sortable' => true, 'sort_field' => 'country_of_residence', 'align' => 'left', 'width' => 'min-w-32', 'export_key' => 'Land'],
+            'address' => ['label' => 'Adresse', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 44, 'export_key' => 'Adresse'],
+            'zip_code' => ['label' => 'PLZ', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-24', 'export_key' => 'PLZ'],
+            'city' => ['label' => 'Ort', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Ort'],
+            'invoice_status' => ['label' => 'Rechnung', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Rechnung'],
+            'invoice_sent_at' => ['label' => 'Rechnung gesendet am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Rechnung gesendet am', 'formatter' => 'datetime_or_dash'],
+            'invoice_reminder_sent_at' => ['label' => 'Erinnerung gesendet am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Erinnerung gesendet am', 'formatter' => 'datetime_or_dash'],
         ];
     }
 

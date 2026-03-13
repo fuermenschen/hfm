@@ -172,6 +172,21 @@ it('persists donor visible columns in session across component reloads', functio
         ->assertSet('visibleColumns', fn (array $columns): bool => ! in_array('email', $columns, true));
 });
 
+it('builds a schema-driven visible column map with metadata', function (): void {
+    $component = Livewire::test(AdminDonatorTable::class);
+
+    $visibleDefinitions = $component->instance()->visibleColumnDefinitions();
+    $visibleColumns = $component->get('visibleColumns');
+
+    expect(array_keys($visibleDefinitions))->toBe($visibleColumns);
+    expect($visibleDefinitions['first_name']['label'])->toBe('Vorname');
+    expect($visibleDefinitions['first_name']['sortable'])->toBeTrue();
+    expect($visibleDefinitions['invoice_total']['align'])->toBe('right');
+    expect($visibleDefinitions['email']['tooltip'])->toBeTrue();
+    expect($visibleDefinitions['email']['truncate'])->toBe(52);
+    expect($visibleDefinitions['don_id']['export_key'])->toBe('DON-ID');
+});
+
 it('updates selected row counter when page selection is toggled', function (): void {
     $first = Donator::factory()->create();
     $second = Donator::factory()->create();

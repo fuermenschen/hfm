@@ -68,6 +68,7 @@
         </x-slot:toolbar>
 
         <flux:checkbox.group wire:model.live="checkboxValues">
+            @php($visibleColumns = $this->visibleColumnDefinitions())
             <flux:table class="min-w-max">
             <flux:table.columns>
                 <flux:table.column>
@@ -75,51 +76,17 @@
                         <flux:checkbox.all />
                     </flux:field>
                 </flux:table.column>
-                @if ($this->isColumnVisible('don_id'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'don_id', 'label' => 'DON-ID'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('first_name'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'first_name', 'label' => 'Vorname'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('last_name'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'last_name', 'label' => 'Nachname'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('donations_count'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'donations_count', 'label' => 'Anzahl Spenden'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('invoice_total'))
-                    <flux:table.column>Rechnungsbetrag</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('created_at'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'created_at', 'label' => 'Anmeldung'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('email'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'email', 'label' => 'E-Mail'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('phone_number'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'phone_number', 'label' => 'Telefon'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('country'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'country', 'label' => 'Land'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('address'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'address', 'label' => 'Adresse'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('zip_code'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'zip_code', 'label' => 'PLZ'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('city'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'city', 'label' => 'Ort'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('invoice_status'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'invoice_status', 'label' => 'Rechnung'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('invoice_sent_at'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'invoice_sent_at', 'label' => 'Rechnung gesendet am'])</flux:table.column>
-                @endif
-                @if ($this->isColumnVisible('invoice_reminder_sent_at'))
-                    <flux:table.column>@include('components.admin.tables.partials.sortable-header', ['column' => 'invoice_reminder_sent_at', 'label' => 'Erinnerung gesendet am'])</flux:table.column>
-                @endif
+                @foreach ($visibleColumns as $columnKey => $columnDefinition)
+                    @php($headerAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
+                    @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
+                    <flux:table.column class="{{ $headerClass }}">
+                        @if ($columnDefinition['sortable'])
+                            @include('components.admin.tables.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                        @else
+                            <span>{{ $columnDefinition['label'] }}</span>
+                        @endif
+                    </flux:table.column>
+                @endforeach
                 <flux:table.column class="sticky right-0 z-10 w-14 min-w-14 align-middle border-l border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-800">
                     <div class="flex items-center justify-center">
                         <flux:icon.cog-6-tooth class="size-4" />
@@ -145,59 +112,77 @@
                                 <flux:checkbox value="{{ $donor->id }}" />
                             </flux:field>
                         </flux:table.cell>
-                        @if ($this->isColumnVisible('don_id'))
-                            <flux:table.cell>DON-{{ sprintf('25%04d', $donor->id) }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('first_name'))
-                            <flux:table.cell>{{ $donor->first_name }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('last_name'))
-                            <flux:table.cell>{{ $donor->last_name }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('donations_count'))
-                            <flux:table.cell>{{ $donor->donations_count }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('invoice_total'))
-                            <flux:table.cell>Fr. {{ number_format($invoiceTotal, 2, '.', "'") }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('created_at'))
-                            <flux:table.cell>{{ \Illuminate\Support\Carbon::parse($donor->created_at)->format('d.m.Y') }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('email'))
-                            <flux:table.cell>
-                                <flux:tooltip content="{{ $donor->email }}">
-                                    <span class="block max-w-52 truncate">{{ $donor->email }}</span>
-                                </flux:tooltip>
+                        @foreach ($visibleColumns as $columnKey => $columnDefinition)
+                            @php($cellAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
+                            @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
+                            <flux:table.cell class="{{ $cellClass }}">
+                                @switch($columnKey)
+                                    @case('don_id')
+                                        DON-{{ sprintf('25%04d', $donor->id) }}
+                                        @break
+
+                                    @case('first_name')
+                                        {{ $donor->first_name }}
+                                        @break
+
+                                    @case('last_name')
+                                        {{ $donor->last_name }}
+                                        @break
+
+                                    @case('donations_count')
+                                        {{ $donor->donations_count }}
+                                        @break
+
+                                    @case('invoice_total')
+                                        Fr. {{ number_format($invoiceTotal, 2, '.', "'") }}
+                                        @break
+
+                                    @case('created_at')
+                                        {{ \Illuminate\Support\Carbon::parse($donor->created_at)->format('d.m.Y') }}
+                                        @break
+
+                                    @case('email')
+                                        <flux:tooltip content="{{ $donor->email }}">
+                                            <span class="block max-w-52 truncate">{{ $this->truncateText($donor->email, (int) ($columnDefinition['truncate'] ?? 52)) }}</span>
+                                        </flux:tooltip>
+                                        @break
+
+                                    @case('phone_number')
+                                        {{ $donor->phone_number }}
+                                        @break
+
+                                    @case('country')
+                                        {{ $donor->country_of_residence }}
+                                        @break
+
+                                    @case('address')
+                                        <flux:tooltip content="{{ $donor->address }}">
+                                            <span class="block max-w-56 truncate">{{ $this->truncateText($donor->address, (int) ($columnDefinition['truncate'] ?? 44)) }}</span>
+                                        </flux:tooltip>
+                                        @break
+
+                                    @case('zip_code')
+                                        {{ $donor->zip_code }}
+                                        @break
+
+                                    @case('city')
+                                        {{ $donor->city }}
+                                        @break
+
+                                    @case('invoice_status')
+                                        {{ $this->invoiceStatusLabel($donor) }}
+                                        @break
+
+                                    @case('invoice_sent_at')
+                                        {{ $donor->invoice_sent_at ? \Illuminate\Support\Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : '-' }}
+                                        @break
+
+                                    @case('invoice_reminder_sent_at')
+                                        {{ $donor->invoice_reminder_sent_at ? \Illuminate\Support\Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : '-' }}
+                                        @break
+                                @endswitch
                             </flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('phone_number'))
-                            <flux:table.cell>{{ $donor->phone_number }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('country'))
-                            <flux:table.cell>{{ $donor->country_of_residence }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('address'))
-                            <flux:table.cell>
-                                <flux:tooltip content="{{ $donor->address }}">
-                                    <span class="block max-w-56 truncate">{{ $this->truncateText($donor->address, 44) }}</span>
-                                </flux:tooltip>
-                            </flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('zip_code'))
-                            <flux:table.cell>{{ $donor->zip_code }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('city'))
-                            <flux:table.cell>{{ $donor->city }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('invoice_status'))
-                            <flux:table.cell>{{ $this->invoiceStatusLabel($donor) }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('invoice_sent_at'))
-                            <flux:table.cell>{{ $donor->invoice_sent_at ? \Illuminate\Support\Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : '-' }}</flux:table.cell>
-                        @endif
-                        @if ($this->isColumnVisible('invoice_reminder_sent_at'))
-                            <flux:table.cell>{{ $donor->invoice_reminder_sent_at ? \Illuminate\Support\Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : '-' }}</flux:table.cell>
-                        @endif
+                        @endforeach
                         <flux:table.cell class="sticky right-0 z-10 w-14 min-w-14 align-middle border-l border-zinc-200 {{ $rowClass }} text-center dark:border-zinc-700">
                             @include('components.admin.tables.partials.donator-row-actions', ['row' => $donor])
                         </flux:table.cell>
