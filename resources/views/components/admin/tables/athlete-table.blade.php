@@ -12,30 +12,8 @@
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        <flux:dropdown>
-                            <flux:button variant="ghost" size="sm" icon="arrow-down-tray">Export</flux:button>
-                            <flux:menu>
-                                <flux:menu.group heading="Kompletter Datensatz">
-                                    <flux:menu.item wire:click="exportAll('xlsx')">Excel</flux:menu.item>
-                                    <flux:menu.item wire:click="exportAll('csv')">CSV</flux:menu.item>
-                                </flux:menu.group>
-                                <flux:menu.group heading="Ausgewählte Zeilen">
-                                    <flux:menu.item wire:click="exportSelected('xlsx')">Excel</flux:menu.item>
-                                    <flux:menu.item wire:click="exportSelected('csv')">CSV</flux:menu.item>
-                                </flux:menu.group>
-                            </flux:menu>
-                        </flux:dropdown>
-
-                        <flux:dropdown>
-                            <flux:button variant="ghost" size="sm" icon="adjustments-horizontal">Spalten</flux:button>
-                            <flux:menu keep-open>
-                                @foreach ($this->visibleColumnOptions() as $columnKey => $columnLabel)
-                                    <flux:menu.item keep-open wire:click="toggleColumn('{{ $columnKey }}')">
-                                        {{ $this->isColumnVisible($columnKey) ? '✓ ' : '' }}{{ $columnLabel }}
-                                    </flux:menu.item>
-                                @endforeach
-                            </flux:menu>
-                        </flux:dropdown>
+                        <x-admin.tables.partials.export-dropdown />
+                        <x-admin.tables.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
             </x-admin.tables.partials.toolbar-grid>
@@ -209,16 +187,7 @@
         </flux:checkbox.group>
 
         <x-slot:footer>
-            <div class="flex items-center gap-2">
-                <flux:text>Pro Seite</flux:text>
-                <flux:select wire:model.live="perPage" class="w-24">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                </flux:select>
-            </div>
+            <x-admin.tables.partials.per-page-select />
 
             <flux:pagination :paginator="$athletes" />
         </x-slot:footer>

@@ -12,35 +12,14 @@
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        <flux:dropdown>
-                            <flux:button variant="ghost" size="sm" icon="arrow-down-tray">Export</flux:button>
-                            <flux:menu>
-                                <flux:menu.group heading="Kompletter Datensatz">
-                                    <flux:menu.item wire:click="exportAll('xlsx')" icon="document-text">Excel</flux:menu.item>
-                                    <flux:menu.item wire:click="exportAll('csv')" icon="document-text">CSV</flux:menu.item>
-                                </flux:menu.group>
-                                <flux:menu.group heading="Ausgewählte Zeilen">
-                                    <flux:menu.item wire:click="exportSelected('xlsx')" icon="check-circle">Excel</flux:menu.item>
-                                    <flux:menu.item wire:click="exportSelected('csv')" icon="check-circle">CSV</flux:menu.item>
-                                </flux:menu.group>
-                            </flux:menu>
-                        </flux:dropdown>
+                        <x-admin.tables.partials.export-dropdown />
 
                         <flux:button variant="ghost" size="sm" icon="banknotes" wire:click="checkPaymentStatus" wire:target="checkPaymentStatus" wire:loading.attr="disabled">
                             <span wire:loading.remove wire:target="checkPaymentStatus">Zahlungsstatus prüfen</span>
                             <span wire:loading wire:target="checkPaymentStatus">Prüfe Zahlungsstatus...</span>
                         </flux:button>
 
-                        <flux:dropdown>
-                            <flux:button variant="ghost" size="sm" icon="adjustments-horizontal">Spalten</flux:button>
-                            <flux:menu keep-open>
-                                @foreach ($this->visibleColumnOptions() as $columnKey => $columnLabel)
-                                    <flux:menu.item keep-open wire:click="toggleColumn('{{ $columnKey }}')">
-                                        {{ $this->isColumnVisible($columnKey) ? '✓ ' : '' }}{{ $columnLabel }}
-                                    </flux:menu.item>
-                                @endforeach
-                            </flux:menu>
-                        </flux:dropdown>
+                        <x-admin.tables.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
 
@@ -207,16 +186,7 @@
         </flux:checkbox.group>
 
         <x-slot:footer>
-            <div class="flex items-center gap-2">
-                <flux:text>Pro Seite</flux:text>
-                <flux:select wire:model.live="perPage" class="w-24">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    <option value="200">200</option>
-                </flux:select>
-            </div>
+            <x-admin.tables.partials.per-page-select />
 
             <flux:pagination :paginator="$donors" />
         </x-slot:footer>
