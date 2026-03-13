@@ -3,39 +3,36 @@
 namespace App\Components;
 
 use App\Actions\CollectDonorInvoiceDataAction;
+use App\Components\Concerns\InteractsWithAdminDatatable;
 use App\Jobs\CheckDonorInvoicesStatus;
 use App\Models\Donator;
 use App\Services\DonorInvoiceService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Attributes\On;
-use PowerComponents\LivewirePowerGrid\Button;
-use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
-use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
-use PowerComponents\LivewirePowerGrid\PowerGridComponent;
-use PowerComponents\LivewirePowerGrid\PowerGridFields;
-use PowerComponents\LivewirePowerGrid\Traits\WithExport;
+use Livewire\Component;
+use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use ZipArchive;
 
-class AdminDonatorTable extends PowerGridComponent
+class AdminDonatorTable extends Component
 {
-    use WithExport;
+    use InteractsWithAdminDatatable;
+    use WithPagination;
 
     public string $sortField = 'first_name';
-
-    public string $tableName = 'admin-donator-table';
 
     protected CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction;
 
     protected DonorInvoiceService $donorInvoiceService;
 
-    /** @var array<string, int> */
+    /**
+     * @var array<string, int>
+     */
     public array $pendingConfirmations = [];
 
     public function boot(CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction, DonorInvoiceService $donorInvoiceService): void
@@ -44,223 +41,105 @@ class AdminDonatorTable extends PowerGridComponent
         $this->donorInvoiceService = $donorInvoiceService;
     }
 
-    public function header(): array
+    public function mount(): void
     {
-        return [
-            Button::add('bulk-create-invoices')
-                ->slot(__('Rechnungen erstellen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkCreateInvoice.'.$this->tableName, []),
-
-            Button::add('bulk-download-invoices')
-                ->slot(__('Rechnungen herunterladen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkDownloadInvoice.'.$this->tableName, []),
-
-            Button::add('bulk-send-invoices')
-                ->slot(__('Rechnungen per E-Mail senden (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkSendInvoice.'.$this->tableName, []),
-
-            Button::add('bulk-send-invoice-reminders')
-                ->slot(__('Zahlungserinnerungen senden (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkSendInvoiceReminder.'.$this->tableName, []),
-
-            Button::add('check-payment-status')
-                ->slot(__('Zahlungsstatus prüfen'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('checkPaymentStatus.'.$this->tableName, []),
-        ];
+        $this->initializeVisibleColumns();
     }
 
-    public function setUp(): array
+    public function render(): View
     {
-        $this->showCheckBox();
+        $donors = $this->queryForTable(ignoreSearch: false)->paginate($this->perPage);
 
-        return [
-            PowerGrid::responsive(),
-            PowerGrid::exportable('donor')
-                ->striped()
-                ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            PowerGrid::header()
-                ->showSearchInput()
-                ->showToggleColumns(),
-            PowerGrid::footer()
-                ->showPerPage(10, [10, 25, 50, 100, 200])
-                ->showRecordCount(mode: 'short'),
-        ];
+        return view('components.admin.tables.donator-table', [
+            'donors' => $donors,
+            'pageIds' => $this->pageIds($donors),
+        ]);
     }
 
-    public function datasource(): Builder
-    {
-        return Donator::query()
-            ->with(['donations', 'donations.athlete', 'donations.athlete.partner'])
-            ->select('donators.*')
-            ->selectRaw(
-                $this->donorInvoiceService->invoiceStatusCaseSql()
-            );
-    }
-
-    public function relationSearch(): array
-    {
-        return [];
-    }
-
-    public function fields(): PowerGridFields
-    {
-        return PowerGrid::fields()
-            ->add('don_id', function (Donator $donor) {
-                return 'DON-'.sprintf('25%04d', $donor->id);
-            })
-            ->add('numOfDonations', function (Donator $donor) {
-                return $donor->donations->count();
-            })
-            ->add('donations_sum', function (Donator $donor) {
-                $lines = ($this->collectDonorInvoiceDataAction)($donor);
-                $sum = array_sum(array_column($lines, 'total'));
-
-                return 'Fr. '.number_format($sum, 2, '.', "'");
-            })
-            ->add('created_at_formatted', fn ($donor) => Carbon::parse($donor->created_at)->format('d.m.Y'))
-            ->add('invoice_sent_at_formatted', fn ($donor) => $donor->invoice_sent_at ? Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : null)
-            ->add('invoice_reminder_sent_at_formatted', fn ($donor) => $donor->invoice_reminder_sent_at ? Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : null)
-            ->add('invoice_status', function (Donator $donor) {
-                return $this->donorInvoiceService->formatInvoiceStatus($donor);
-            })
-            ->add('country_of_residence', fn ($donor) => $donor->country_of_residence);
-    }
-
-    public function columns(): array
-    {
-        return [
-
-            Column::make('DON-ID', 'don_id', 'id')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Vorname', 'first_name')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Nachname', 'last_name')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Anzahl Spenden', 'numOfDonations')
-                ->fixedOnResponsive(),
-
-            Column::make('Rechnungsbetrag', 'donations_sum'),
-
-            Column::make('Anmeldung', 'created_at_formatted', 'created_at')
-                ->sortable(),
-
-            Column::make('E-Mail', 'email')
-                ->sortable(),
-
-            Column::make('Telefon', 'phone_number')
-                ->sortable(),
-
-            Column::make('Land', 'country_of_residence')
-                ->sortable(),
-
-            Column::make('Adresse', 'address')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('PLZ', 'zip_code')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Ort', 'city')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Rechnung', 'invoice_status')
-                ->sortable(),
-
-            Column::make('Rechnung gesendet am', 'invoice_sent_at_formatted', 'invoice_sent_at')
-                ->sortable(),
-
-            Column::make('Zahlungserinnerung gesendet am', 'invoice_reminder_sent_at_formatted', 'invoice_reminder_sent_at')
-                ->sortable()
-                ->bodyAttribute('class', 'whitespace-nowrap'),
-
-            Column::action('Aktionen')
-                ->fixedOnResponsive(),
-
-        ];
-    }
-
-    public function filters(): array
-    {
-        return [
-        ];
-    }
-
-    #[On('createDonorInvoice')]
-    public function createDonorInvoice(int $donor_id): void
+    public function checkPaymentStatus(): void
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
+            CheckDonorInvoicesStatus::dispatchSync();
 
-            $this->toastActionResult($this->donorInvoiceService->createInvoice($donor));
-        } catch (\Throwable $e) {
-            Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+            $summary = $this->donorInvoiceService->invoiceStatusSummary();
+
             Flux::toast(
-                heading: 'Fehler beim Erstellen der Rechnung',
-                text: $e->getMessage(),
+                heading: 'Zahlungsstatus aktualisiert',
+                text: 'Bezahlte und überfällige Rechnungen wurden abgeglichen.',
+                variant: 'success',
+            );
+
+            $this->dispatch('showPaymentStatusSummary', $summary);
+            $this->dispatch('$refresh');
+        } catch (\Throwable $exception) {
+            Log::error('Error checking payment status', ['error' => $exception->getMessage()]);
+
+            Flux::toast(
+                heading: 'Fehler beim Prüfen des Zahlungsstatus',
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
         }
     }
 
-    #[On('confirmDeleteDonorInvoice')]
-    public function confirmDeleteDonorInvoice(int $donor_id): void
+    public function createDonorInvoice(int $donorId): void
     {
-        $donor = Donator::find($donor_id);
+        try {
+            $donor = Donator::query()->findOrFail($donorId);
+
+            $this->toastActionResult($this->donorInvoiceService->createInvoice($donor));
+        } catch (\Throwable $exception) {
+            Log::error('Error creating donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
+            Flux::toast(
+                heading: 'Fehler beim Erstellen der Rechnung',
+                text: $exception->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
+        }
+    }
+
+    public function confirmDeleteDonorInvoice(int $donorId): void
+    {
+        $donor = Donator::query()->find($donorId);
         $name = $donor ? $donor->privacy_name : 'diese:n Spender:in';
 
         if ($this->requiresSecondClick(
-            key: 'delete-invoice-'.$donor_id,
+            key: 'delete-invoice-'.$donorId,
             heading: 'Bitte bestätigen',
             text: "Klicke erneut auf Löschen für {$name}, um die Rechnung inklusive Webling-Buchungen zu entfernen.",
         )) {
             return;
         }
 
-        $this->deleteDonorInvoice($donor_id);
+        $this->deleteDonorInvoice($donorId);
     }
 
-    public function deleteDonorInvoice(int $donor_id): void
+    public function deleteDonorInvoice(int $donorId): void
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
+            $donor = Donator::query()->findOrFail($donorId);
 
-            Log::info('Deleting donor invoice debitor', ['donor_id' => $donor_id]);
+            Log::info('Deleting donor invoice debitor', ['donor_id' => $donorId]);
             $this->toastActionResult($this->donorInvoiceService->deleteInvoice($donor));
-        } catch (\Throwable $e) {
-            Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+        } catch (\Throwable $exception) {
+            Log::error('Error deleting donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
             Flux::toast(
                 heading: 'Fehler beim Löschen der Rechnung',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
         }
     }
 
-    /**
-     * Download the generated donor invoice letter PDF if available.
-     */
-    public function downloadDonorInvoice(int $donor_id): ?HttpResponse
+    public function downloadDonorInvoice(int $donorId): ?HttpResponse
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
+            $donor = Donator::query()->findOrFail($donorId);
             $downloadData = $this->donorInvoiceService->getDownloadData($donor);
 
             if (! is_array($downloadData)) {
@@ -277,11 +156,12 @@ class AdminDonatorTable extends PowerGridComponent
             return response()->download($downloadData['absolute_path'], $downloadData['file_name'], [
                 'Content-Type' => 'application/pdf',
             ]);
-        } catch (\Throwable $e) {
-            Log::error('Error downloading donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+        } catch (\Throwable $exception) {
+            Log::error('Error downloading donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
             Flux::toast(
                 heading: 'Fehler beim Herunterladen',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -290,51 +170,10 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    public function actions(Donator $row): array
+    public function sendDonorInvoice(int $donorId): void
     {
-        // Actions are rendered from a dedicated Blade view via actionsFromView()
-        return [];
-    }
+        $donor = $this->findDonorOrToast($donorId);
 
-    #[On('checkPaymentStatus.{tableName}')]
-    public function checkPaymentStatus(): void
-    {
-        try {
-            CheckDonorInvoicesStatus::dispatchSync();
-
-            $summary = $this->donorInvoiceService->invoiceStatusSummary();
-
-            Flux::toast(
-                heading: 'Zahlungsstatus aktualisiert',
-                text: 'Bezahlte und überfällige Rechnungen wurden abgeglichen.',
-                variant: 'success',
-            );
-
-            $this->dispatch('showPaymentStatusSummary', $summary);
-
-            $this->dispatch('$refresh');
-        } catch (\Throwable $e) {
-            Log::error('Error checking payment status', ['error' => $e->getMessage()]);
-            Flux::toast(
-                heading: 'Fehler beim Prüfen des Zahlungsstatus',
-                text: $e->getMessage(),
-                variant: 'danger',
-                duration: 0,
-            );
-        }
-    }
-
-    public function actionsFromView(mixed $row): View
-    {
-
-        return view('powergrid.admin-donor-actions', [
-            'row' => $row,
-        ]);
-    }
-
-    public function sendDonorInvoice(int $donor_id): void
-    {
-        $donor = $this->findDonorOrToast((int) $donor_id);
         if (! $donor) {
             return;
         }
@@ -343,32 +182,31 @@ class AdminDonatorTable extends PowerGridComponent
             $name = $donor->privacy_name ?? 'diese:n Spender:in';
 
             if ($this->requiresSecondClick(
-                key: 'resend-invoice-'.$donor_id,
+                key: 'resend-invoice-'.$donorId,
                 heading: 'Rechnung erneut senden?',
                 text: "Die Rechnung für {$name} wurde bereits gesendet. Klicke erneut, um sie nochmals zu senden.",
             )) {
                 return;
             }
-
         }
 
-        $this->sendDonorInvoiceConfirmed($donor_id);
+        $this->sendDonorInvoiceConfirmed($donorId);
     }
 
-    public function sendDonorInvoiceConfirmed(int $donor_id): bool
+    public function sendDonorInvoiceConfirmed(int $donorId): bool
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
-
+            $donor = Donator::query()->findOrFail($donorId);
             $result = $this->donorInvoiceService->sendInvoice($donor);
             $this->toastActionResult($result);
 
             return $result['variant'] === 'success';
-        } catch (\Throwable $e) {
-            Log::error('Error sending donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+        } catch (\Throwable $exception) {
+            Log::error('Error sending donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
             Flux::toast(
                 heading: 'Fehler beim Senden',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -377,9 +215,10 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    public function sendDonorInvoiceReminder(int $donor_id): void
+    public function sendDonorInvoiceReminder(int $donorId): void
     {
-        $donor = $this->findDonorOrToast((int) $donor_id);
+        $donor = $this->findDonorOrToast($donorId);
+
         if (! $donor) {
             return;
         }
@@ -388,49 +227,31 @@ class AdminDonatorTable extends PowerGridComponent
             $name = $donor->privacy_name ?? 'diese:n Spender:in';
 
             if ($this->requiresSecondClick(
-                key: 'resend-reminder-'.$donor_id,
+                key: 'resend-reminder-'.$donorId,
                 heading: 'Zahlungserinnerung erneut senden?',
                 text: "Für {$name} wurde bereits eine Erinnerung gesendet. Klicke erneut, um sie nochmals zu senden.",
             )) {
                 return;
             }
-
         }
 
-        $this->sendDonorInvoiceReminderConfirmed($donor_id);
+        $this->sendDonorInvoiceReminderConfirmed($donorId);
     }
 
-    protected function requiresSecondClick(string $key, string $heading, string $text): bool
-    {
-        $now = now()->timestamp;
-        $expiresAt = $this->pendingConfirmations[$key] ?? null;
-
-        if (is_int($expiresAt) && $expiresAt >= $now) {
-            unset($this->pendingConfirmations[$key]);
-
-            return false;
-        }
-
-        $this->pendingConfirmations[$key] = $now + 15;
-        Flux::toast(heading: $heading, text: $text, variant: 'warning');
-
-        return true;
-    }
-
-    public function sendDonorInvoiceReminderConfirmed(int $donor_id): bool
+    public function sendDonorInvoiceReminderConfirmed(int $donorId): bool
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
-
+            $donor = Donator::query()->findOrFail($donorId);
             $result = $this->donorInvoiceService->sendReminder($donor);
             $this->toastActionResult($result);
 
             return $result['variant'] === 'success';
-        } catch (\Throwable $e) {
-            Log::error('Error sending donor invoice reminder', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+        } catch (\Throwable $exception) {
+            Log::error('Error sending donor invoice reminder', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
             Flux::toast(
                 heading: 'Fehler beim Senden der Erinnerung',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -439,12 +260,12 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    #[On('bulkCreateInvoice.{tableName}')]
     public function bulkCreateInvoice(): void
     {
         $ids = $this->selectedIds();
+
         if ($ids === []) {
-            $this->toastNoSelection();
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return;
         }
@@ -454,7 +275,8 @@ class AdminDonatorTable extends PowerGridComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::find((int) $id);
+                $donor = Donator::query()->find($id);
+
                 if (! $donor) {
                     $skipped++;
 
@@ -467,15 +289,16 @@ class AdminDonatorTable extends PowerGridComponent
                     continue;
                 }
 
-                $this->createDonorInvoice((int) $id);
+                $this->createDonorInvoice($id);
                 $processed++;
-            } catch (\Throwable $e) {
-                Log::error('Bulk create invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            } catch (\Throwable $exception) {
+                Log::error('Bulk create invoice failed', ['donor_id' => $id, 'error' => $exception->getMessage()]);
                 $skipped++;
             }
         }
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $this->clearSelection();
+
         Flux::toast(
             heading: 'Aktion abgeschlossen',
             text: $processed.' Rechnung(en) erstellt, '.$skipped.' übersprungen.',
@@ -483,24 +306,27 @@ class AdminDonatorTable extends PowerGridComponent
         );
     }
 
-    #[On('bulkDownloadInvoice.{tableName}')]
     public function bulkDownloadInvoice(): ?HttpResponse
     {
         $ids = $this->selectedIds();
+
         if ($ids === []) {
-            $this->toastNoSelection();
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return null;
         }
 
         $files = [];
+
         foreach ($ids as $id) {
-            $donor = Donator::find((int) $id);
+            $donor = Donator::query()->find($id);
+
             if (! $donor) {
                 continue;
             }
 
             $downloadData = $this->donorInvoiceService->getDownloadData($donor);
+
             if (! is_array($downloadData)) {
                 continue;
             }
@@ -508,7 +334,7 @@ class AdminDonatorTable extends PowerGridComponent
             $files[] = ['path' => $downloadData['absolute_path'], 'name' => $downloadData['file_name']];
         }
 
-        if (empty($files)) {
+        if ($files === []) {
             Flux::toast(
                 heading: 'Keine PDFs gefunden',
                 text: 'Für die ausgewählten Spender:innen wurden keine Rechnungs-PDFs gefunden.',
@@ -519,13 +345,14 @@ class AdminDonatorTable extends PowerGridComponent
             return null;
         }
 
-        // Ensure temp directory exists
         Storage::disk('local')->makeDirectory('tmp');
+
         $timestamp = now()->format('Ymd_His');
         $zipRelative = 'tmp/rechnungen_'.$timestamp.'.zip';
         $zipPath = Storage::disk('local')->path($zipRelative);
 
         $zip = new ZipArchive;
+
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             Flux::toast(
                 heading: 'Fehler',
@@ -540,19 +367,19 @@ class AdminDonatorTable extends PowerGridComponent
         foreach ($files as $file) {
             $zip->addFile($file['path'], $file['name']);
         }
-        $zip->close();
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $zip->close();
+        $this->clearSelection();
 
         return response()->download($zipPath, 'Rechnungen_'.$timestamp.'.zip')->deleteFileAfterSend(true);
     }
 
-    #[On('bulkSendInvoice.{tableName}')]
     public function bulkSendInvoice(): void
     {
         $ids = $this->selectedIds();
+
         if ($ids === []) {
-            $this->toastNoSelection();
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return;
         }
@@ -562,7 +389,8 @@ class AdminDonatorTable extends PowerGridComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::find((int) $id);
+                $donor = Donator::query()->find($id);
+
                 if (! $donor) {
                     $skipped++;
 
@@ -575,19 +403,21 @@ class AdminDonatorTable extends PowerGridComponent
                     continue;
                 }
 
-                $result = $this->sendDonorInvoiceConfirmed((int) $id);
-                if ($result === true) {
+                $result = $this->sendDonorInvoiceConfirmed($id);
+
+                if ($result) {
                     $sent++;
                 } else {
                     $skipped++;
                 }
-            } catch (\Throwable $e) {
-                Log::error('Bulk send invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            } catch (\Throwable $exception) {
+                Log::error('Bulk send invoice failed', ['donor_id' => $id, 'error' => $exception->getMessage()]);
                 $skipped++;
             }
         }
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $this->clearSelection();
+
         Flux::toast(
             heading: 'Aktion abgeschlossen',
             text: $sent.' E-Mail(s) gesendet, '.$skipped.' übersprungen.',
@@ -595,12 +425,12 @@ class AdminDonatorTable extends PowerGridComponent
         );
     }
 
-    #[On('bulkSendInvoiceReminder.{tableName}')]
     public function bulkSendInvoiceReminder(): void
     {
         $ids = $this->selectedIds();
+
         if ($ids === []) {
-            $this->toastNoSelection();
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return;
         }
@@ -610,7 +440,8 @@ class AdminDonatorTable extends PowerGridComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::find((int) $id);
+                $donor = Donator::query()->find($id);
+
                 if (! $donor) {
                     $skipped++;
 
@@ -623,24 +454,184 @@ class AdminDonatorTable extends PowerGridComponent
                     continue;
                 }
 
-                $result = $this->sendDonorInvoiceReminderConfirmed((int) $id);
-                if ($result === true) {
+                $result = $this->sendDonorInvoiceReminderConfirmed($id);
+
+                if ($result) {
                     $sent++;
                 } else {
                     $skipped++;
                 }
-            } catch (\Throwable $e) {
-                Log::error('Bulk send invoice reminder failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            } catch (\Throwable $exception) {
+                Log::error('Bulk send invoice reminder failed', ['donor_id' => $id, 'error' => $exception->getMessage()]);
                 $skipped++;
             }
         }
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $this->clearSelection();
+
         Flux::toast(
             heading: 'Aktion abgeschlossen',
             text: $sent.' Erinnerung(s)-E-Mail(s) gesendet, '.$skipped.' übersprungen.',
             variant: 'success',
         );
+    }
+
+    public function exportAll(string $format): ?HttpResponse
+    {
+        $rows = [];
+
+        foreach ($this->queryForTable(ignoreSearch: true)->get() as $donor) {
+            if (! $donor instanceof Donator) {
+                continue;
+            }
+
+            $rows[] = $this->exportRow($donor);
+        }
+
+        return $this->exportRowsToDownload($rows, 'spenderinnen_gesamt', $format);
+    }
+
+    public function exportSelected(string $format): ?HttpResponse
+    {
+        $selectedIds = $this->selectedIds();
+
+        if ($selectedIds === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
+
+            return null;
+        }
+
+        $rows = [];
+
+        foreach ($this->baseQuery()->whereKey($selectedIds)->orderBy('id')->get() as $donor) {
+            if (! $donor instanceof Donator) {
+                continue;
+            }
+
+            $rows[] = $this->exportRow($donor);
+        }
+
+        return $this->exportRowsToDownload($rows, 'spenderinnen_auswahl', $format);
+    }
+
+    protected function queryForTable(bool $ignoreSearch): Builder
+    {
+        $query = $this->baseQuery();
+
+        if (! $ignoreSearch && $this->search !== '') {
+            $search = '%'.$this->search.'%';
+
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder->where('first_name', 'like', $search)
+                    ->orWhere('last_name', 'like', $search)
+                    ->orWhere('email', 'like', $search)
+                    ->orWhere('phone_number', 'like', $search)
+                    ->orWhere('country_of_residence', 'like', $search)
+                    ->orWhere('address', 'like', $search)
+                    ->orWhere('zip_code', 'like', $search)
+                    ->orWhere('city', 'like', $search)
+                    ->orWhereRaw("('DON-' || printf('25%04d', id)) like ?", [$search]);
+            });
+        }
+
+        $sortColumn = $this->resolveSortColumn();
+
+        if ($sortColumn === null) {
+            $sortColumn = 'donators.first_name';
+        }
+
+        return $query->orderBy($sortColumn, $this->sortDirection);
+    }
+
+    protected function baseQuery(): Builder
+    {
+        return Donator::query()
+            ->with(['donations', 'donations.athlete', 'donations.athlete.partner'])
+            ->withCount('donations')
+            ->select('donators.*')
+            ->selectRaw($this->donorInvoiceService->invoiceStatusCaseSql());
+    }
+
+    protected function resolveSortColumn(): ?string
+    {
+        return match ($this->sortField) {
+            'id' => 'donators.id',
+            'first_name' => 'donators.first_name',
+            'last_name' => 'donators.last_name',
+            'donations_count' => 'donations_count',
+            'created_at' => 'donators.created_at',
+            'email' => 'donators.email',
+            'phone_number' => 'donators.phone_number',
+            'country_of_residence' => 'donators.country_of_residence',
+            'address' => 'donators.address',
+            'zip_code' => 'donators.zip_code',
+            'city' => 'donators.city',
+            'invoice_status' => 'invoice_status',
+            'invoice_sent_at' => 'donators.invoice_sent_at',
+            'invoice_reminder_sent_at' => 'donators.invoice_reminder_sent_at',
+            default => null,
+        };
+    }
+
+    /**
+     * @return array<string, array{label:string, sortable:bool, sort_field?:string}>
+     */
+    protected function columnDefinitions(): array
+    {
+        return [
+            'don_id' => ['label' => 'DON-ID', 'sortable' => true, 'sort_field' => 'id'],
+            'first_name' => ['label' => 'Vorname', 'sortable' => true],
+            'last_name' => ['label' => 'Nachname', 'sortable' => true],
+            'donations_count' => ['label' => 'Anzahl Spenden', 'sortable' => true],
+            'invoice_total' => ['label' => 'Rechnungsbetrag', 'sortable' => false],
+            'created_at' => ['label' => 'Anmeldung', 'sortable' => true],
+            'email' => ['label' => 'E-Mail', 'sortable' => true],
+            'phone_number' => ['label' => 'Telefon', 'sortable' => true],
+            'country' => ['label' => 'Land', 'sortable' => true, 'sort_field' => 'country_of_residence'],
+            'address' => ['label' => 'Adresse', 'sortable' => true],
+            'zip_code' => ['label' => 'PLZ', 'sortable' => true],
+            'city' => ['label' => 'Ort', 'sortable' => true],
+            'invoice_status' => ['label' => 'Rechnung', 'sortable' => true],
+            'invoice_sent_at' => ['label' => 'Rechnung gesendet am', 'sortable' => true],
+            'invoice_reminder_sent_at' => ['label' => 'Erinnerung gesendet am', 'sortable' => true],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function defaultVisibleColumns(): array
+    {
+        return [
+            'don_id',
+            'first_name',
+            'last_name',
+            'donations_count',
+            'invoice_total',
+            'created_at',
+            'email',
+            'invoice_status',
+            'invoice_sent_at',
+            'invoice_reminder_sent_at',
+        ];
+    }
+
+    protected function requiresSecondClick(string $key, string $heading, string $text): bool
+    {
+        $now = now()->timestamp;
+        $expiresAt = $this->pendingConfirmations[$key] ?? null;
+
+        if (is_int($expiresAt) && $expiresAt >= $now) {
+            unset($this->pendingConfirmations[$key]);
+
+            return false;
+        }
+
+        $this->pendingConfirmations[$key] = $now + 15;
+
+        Flux::toast(heading: $heading, text: $text, variant: 'warning');
+
+        return true;
     }
 
     /**
@@ -660,26 +651,10 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    /**
-     * @return array<int,mixed>
-     */
-    protected function selectedIds(): array
-    {
-        return $this->checkboxValues;
-    }
-
-    protected function toastNoSelection(): void
-    {
-        Flux::toast(
-            heading: 'Keine Auswahl',
-            text: 'Bitte wähle mindestens eine:n Spender:in aus.',
-            variant: 'warning',
-        );
-    }
-
     protected function findDonorOrToast(int $donorId): ?Donator
     {
-        $donor = Donator::find($donorId);
+        $donor = Donator::query()->find($donorId);
+
         if (! $donor) {
             Flux::toast(
                 heading: 'Nicht gefunden',
@@ -692,5 +667,51 @@ class AdminDonatorTable extends PowerGridComponent
         }
 
         return $donor;
+    }
+
+    public function donorInvoiceTotal(Donator $donor): float
+    {
+        $lines = ($this->collectDonorInvoiceDataAction)($donor);
+
+        return (float) array_sum(array_column($lines, 'total'));
+    }
+
+    public function invoiceStatusLabel(Donator $donor): string
+    {
+        return $this->donorInvoiceService->formatInvoiceStatus($donor);
+    }
+
+    /**
+     * @return array<string, scalar|null>
+     */
+    protected function exportRow(Donator $donor): array
+    {
+        $sum = $this->donorInvoiceTotal($donor);
+
+        return [
+            'DON-ID' => 'DON-'.sprintf('25%04d', $donor->id),
+            'Vorname' => $donor->first_name,
+            'Nachname' => $donor->last_name,
+            'Anzahl Spenden' => $donor->donations_count,
+            'Rechnungsbetrag' => $sum,
+            'Anmeldung' => Carbon::parse($donor->created_at)->format('d.m.Y'),
+            'E-Mail' => $donor->email,
+            'Telefon' => $donor->phone_number,
+            'Land' => $donor->country_of_residence,
+            'Adresse' => $donor->address,
+            'PLZ' => $donor->zip_code,
+            'Ort' => $donor->city,
+            'Rechnung' => $this->invoiceStatusLabel($donor),
+            'Rechnung gesendet am' => $donor->invoice_sent_at ? Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : null,
+            'Zahlungserinnerung gesendet am' => $donor->invoice_reminder_sent_at ? Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : null,
+        ];
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    protected function pageIds(LengthAwarePaginator $paginator): array
+    {
+        return $paginator->getCollection()->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 }

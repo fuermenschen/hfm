@@ -13,7 +13,7 @@ it('shows Webling link when debitor_url is present', function () {
     ];
     $donor->login_token = 'test-token-123';
 
-    $html = view('powergrid.admin-donor-actions', ['row' => $donor])->render();
+    $html = view('components.admin.tables.partials.donator-row-actions', ['row' => $donor])->render();
 
     expect($html)->toContain('Rechnung in Webling anzeigen');
     expect($html)->toContain('https://webling.example.com/admin#/accounting/1/debitor/:debitor/editor/123');
@@ -28,7 +28,7 @@ it('does not show Webling link when debitor_url is missing', function () {
     $donor->webling_data = [];
     $donor->login_token = 'test-token-456';
 
-    $html = view('powergrid.admin-donor-actions', ['row' => $donor])->render();
+    $html = view('components.admin.tables.partials.donator-row-actions', ['row' => $donor])->render();
 
     expect($html)->not()->toContain('Rechnung in Webling anzeigen');
 });
@@ -49,7 +49,7 @@ it('shows reminder action when invoice is sent, overdue and not yet reminded', f
     $donor->invoice_reminder_sent_at = null;
     $donor->login_token = 'test-token-reminder-1';
 
-    $html = view('powergrid.admin-donor-actions', ['row' => $donor])->render();
+    $html = view('components.admin.tables.partials.donator-row-actions', ['row' => $donor])->render();
 
     expect($html)->toContain('Zahlungserinnerung senden');
 });
@@ -70,7 +70,7 @@ it('shows reminder action even when already reminded (single action allows resen
     $donor->invoice_reminder_sent_at = now()->subDay();
     $donor->login_token = 'test-token-reminder-2';
 
-    $html = view('powergrid.admin-donor-actions', ['row' => $donor])->render();
+    $html = view('components.admin.tables.partials.donator-row-actions', ['row' => $donor])->render();
 
     expect($html)->toContain('Zahlungserinnerung senden');
 });
