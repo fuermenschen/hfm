@@ -2,25 +2,18 @@
 
 namespace App\Components;
 
-use App\Components\Concerns\InteractsWithAdminDatatable;
 use App\Models\Athlete;
 use App\Services\AthleteDocumentService;
 use App\Services\DonationService;
 use Flux\Flux;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
-use Livewire\Component;
-use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-class AdminAthleteTable extends Component
+class AdminAthleteTable extends AbstractAdminDatatableComponent
 {
-    use InteractsWithAdminDatatable;
-    use WithPagination;
-
     public string $sortField = 'first_name';
 
     /**
@@ -38,29 +31,14 @@ class AdminAthleteTable extends Component
         $this->athleteDocumentService = $athleteDocumentService;
     }
 
-    public function mount(): void
+    protected function tableView(): string
     {
-        $this->initializeVisibleColumns();
+        return 'components.admin.tables.athlete-table';
     }
 
-    public function render(): View
+    protected function tableDataKey(): string
     {
-        $athletes = $this->queryForTable(ignoreSearch: false)->paginate($this->perPage);
-
-        foreach ($athletes->items() as $athlete) {
-            if (! $athlete instanceof Athlete) {
-                continue;
-            }
-
-            if (! array_key_exists($athlete->id, $this->roundsDoneInputs)) {
-                $this->roundsDoneInputs[$athlete->id] = $athlete->rounds_done;
-            }
-        }
-
-        return view('components.admin.tables.athlete-table', [
-            'athletes' => $athletes,
-            'pageIds' => $this->pageIds($athletes),
-        ]);
+        return 'athletes';
     }
 
     public function saveRoundsDone(int $athleteId): void
@@ -162,34 +140,20 @@ class AdminAthleteTable extends Component
         return $this->exportRowsToDownload($rows, 'sportlerinnen_auswahl', $format);
     }
 
-    protected function queryForTable(bool $ignoreSearch): Builder
+    protected function applySearch(Builder $query, string $search): void
     {
-        $query = $this->baseQuery();
-
-        if (! $ignoreSearch && $this->search !== '') {
-            $search = '%'.$this->search.'%';
-
-            $query->where(function (Builder $builder) use ($search): void {
-                $builder->where('first_name', 'like', $search)
-                    ->orWhere('last_name', 'like', $search)
-                    ->orWhere('email', 'like', $search)
-                    ->orWhere('phone_number', 'like', $search)
-                    ->orWhere('address', 'like', $search)
-                    ->orWhere('zip_code', 'like', $search)
-                    ->orWhere('city', 'like', $search)
-                    ->orWhere('comment', 'like', $search)
-                    ->orWhereHas('sportType', fn (Builder $sportTypeQuery): Builder => $sportTypeQuery->where('name', 'like', $search))
-                    ->orWhereHas('partner', fn (Builder $partnerQuery): Builder => $partnerQuery->where('name', 'like', $search));
-            });
-        }
-
-        $sortColumn = $this->resolveSortColumn();
-
-        if ($sortColumn === null) {
-            $sortColumn = 'athletes.first_name';
-        }
-
-        return $query->orderBy($sortColumn, $this->sortDirection);
+        $query->where(function (Builder $builder) use ($search): void {
+            $builder->where('first_name', 'like', $search)
+                ->orWhere('last_name', 'like', $search)
+                ->orWhere('email', 'like', $search)
+                ->orWhere('phone_number', 'like', $search)
+                ->orWhere('address', 'like', $search)
+                ->orWhere('zip_code', 'like', $search)
+                ->orWhere('city', 'like', $search)
+                ->orWhere('comment', 'like', $search)
+                ->orWhereHas('sportType', fn (Builder $sportTypeQuery): Builder => $sportTypeQuery->where('name', 'like', $search))
+                ->orWhereHas('partner', fn (Builder $partnerQuery): Builder => $partnerQuery->where('name', 'like', $search));
+        });
     }
 
     protected function baseQuery(): Builder
@@ -197,9 +161,17 @@ class AdminAthleteTable extends Component
         return Athlete::query()->with(['sportType', 'partner', 'donations'])->withCount('donations');
     }
 
-    protected function resolveSortColumn(): ?string
+    protected function defaultSortColumn(): string
     {
-        return match ($this->sortField) {
+        return 'athletes.first_name';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function sortColumns(): array
+    {
+        return [
             'first_name' => 'athletes.first_name',
             'last_name' => 'athletes.last_name',
             'verified' => 'athletes.verified',
@@ -216,8 +188,20 @@ class AdminAthleteTable extends Component
             'zip_code' => 'athletes.zip_code',
             'city' => 'athletes.city',
             'comment' => 'athletes.comment',
-            default => null,
-        };
+        ];
+    }
+
+    protected function hydrateTableState(LengthAwarePaginator $paginator): void
+    {
+        foreach ($paginator->items() as $athlete) {
+            if (! $athlete instanceof Athlete) {
+                continue;
+            }
+
+            if (! array_key_exists($athlete->id, $this->roundsDoneInputs)) {
+                $this->roundsDoneInputs[$athlete->id] = $athlete->rounds_done;
+            }
+        }
     }
 
     /**
@@ -293,13 +277,5 @@ class AdminAthleteTable extends Component
             'Ort' => $athlete->city,
             'Kommentar' => $athlete->comment,
         ];
-    }
-
-    /**
-     * @return array<int, int>
-     */
-    protected function pageIds(LengthAwarePaginator $paginator): array
-    {
-        return $paginator->getCollection()->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 }

@@ -2,22 +2,14 @@
 
 namespace App\Components;
 
-use App\Components\Concerns\InteractsWithAdminDatatable;
 use App\Models\Donation;
 use App\Services\DonationService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
-use Livewire\Component;
-use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-class AdminDonationTable extends Component
+class AdminDonationTable extends AbstractAdminDatatableComponent
 {
-    use InteractsWithAdminDatatable;
-    use WithPagination;
-
     public string $sortField = 'created_at';
 
     protected DonationService $donationService;
@@ -27,19 +19,14 @@ class AdminDonationTable extends Component
         $this->donationService = $donationService;
     }
 
-    public function mount(): void
+    protected function tableView(): string
     {
-        $this->initializeVisibleColumns();
+        return 'components.admin.tables.donation-table';
     }
 
-    public function render(): View
+    protected function tableDataKey(): string
     {
-        $donations = $this->queryForTable(ignoreSearch: false)->paginate($this->perPage);
-
-        return view('components.admin.tables.donation-table', [
-            'donations' => $donations,
-            'pageIds' => $this->pageIds($donations),
-        ]);
+        return 'donations';
     }
 
     public function exportAll(string $format): ?HttpResponse
@@ -90,33 +77,19 @@ class AdminDonationTable extends Component
         return $this->donationService->calculateActualAmount($donation);
     }
 
-    protected function queryForTable(bool $ignoreSearch): Builder
+    protected function applySearch(Builder $query, string $search): void
     {
-        $query = $this->baseQuery();
-
-        if (! $ignoreSearch && $this->search !== '') {
-            $search = '%'.$this->search.'%';
-
-            $query->where(function (Builder $builder) use ($search): void {
-                $builder->where('comment', 'like', $search)
-                    ->orWhereHas('athlete', function (Builder $athleteQuery) use ($search): void {
-                        $athleteQuery->where('first_name', 'like', $search)
-                            ->orWhere('last_name', 'like', $search);
-                    })
-                    ->orWhereHas('donator', function (Builder $donatorQuery) use ($search): void {
-                        $donatorQuery->where('first_name', 'like', $search)
-                            ->orWhere('last_name', 'like', $search);
-                    });
-            });
-        }
-
-        $sortColumn = $this->resolveSortColumn();
-
-        if ($sortColumn === null) {
-            $sortColumn = 'donations.created_at';
-        }
-
-        return $query->orderBy($sortColumn, $this->sortDirection);
+        $query->where(function (Builder $builder) use ($search): void {
+            $builder->where('comment', 'like', $search)
+                ->orWhereHas('athlete', function (Builder $athleteQuery) use ($search): void {
+                    $athleteQuery->where('first_name', 'like', $search)
+                        ->orWhere('last_name', 'like', $search);
+                })
+                ->orWhereHas('donator', function (Builder $donatorQuery) use ($search): void {
+                    $donatorQuery->where('first_name', 'like', $search)
+                        ->orWhere('last_name', 'like', $search);
+                });
+        });
     }
 
     protected function baseQuery(): Builder
@@ -124,16 +97,23 @@ class AdminDonationTable extends Component
         return Donation::query()->with(['athlete', 'donator']);
     }
 
-    protected function resolveSortColumn(): ?string
+    protected function defaultSortColumn(): string
     {
-        return match ($this->sortField) {
+        return 'donations.created_at';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function sortColumns(): array
+    {
+        return [
             'created_at' => 'donations.created_at',
             'verified' => 'donations.verified',
             'amount_per_round' => 'donations.amount_per_round',
             'amount_min' => 'donations.amount_min',
             'amount_max' => 'donations.amount_max',
-            default => null,
-        };
+        ];
     }
 
     /**
@@ -188,13 +168,5 @@ class AdminDonationTable extends Component
             'Erstellt am' => Carbon::parse($donation->created_at)->format('d.m.Y'),
             'Kommentar' => $donation->comment,
         ];
-    }
-
-    /**
-     * @return array<int, int>
-     */
-    protected function pageIds(LengthAwarePaginator $paginator): array
-    {
-        return $paginator->getCollection()->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 }
