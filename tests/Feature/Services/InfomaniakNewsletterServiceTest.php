@@ -26,7 +26,9 @@ it('creates a new subscriber with the target group when email is unknown', funct
     ]);
 
     $service = app(InfomaniakNewsletterService::class);
-    $service->registerSubscriber('Anna', 'anna@example.com');
+    $alreadyRegistered = $service->registerSubscriber('Anna', 'anna@example.com');
+
+    expect($alreadyRegistered)->toBeFalse();
 
     Http::assertSent(function ($request) {
         if ($request->url() !== 'https://api.infomaniak.com/1/newsletters/12345/subscribers') {
@@ -54,7 +56,9 @@ it('assigns an existing subscriber to the target group', function (): void {
     ]);
 
     $service = app(InfomaniakNewsletterService::class);
-    $service->registerSubscriber('Anna', 'anna@example.com');
+    $alreadyRegistered = $service->registerSubscriber('Anna', 'anna@example.com');
+
+    expect($alreadyRegistered)->toBeTrue();
 
     Http::assertSent(function ($request) {
         return $request->url() === 'https://api.infomaniak.com/1/newsletters/12345/groups/275443/subscribers/assign'
@@ -93,7 +97,9 @@ it('retries subscriber creation without fields on validation failure', function 
     ]);
 
     $service = app(InfomaniakNewsletterService::class);
-    $service->registerSubscriber('Anna', 'anna@example.com');
+    $alreadyRegistered = $service->registerSubscriber('Anna', 'anna@example.com');
+
+    expect($alreadyRegistered)->toBeFalse();
 
     Http::assertSentCount(3);
 
@@ -101,5 +107,30 @@ it('retries subscriber creation without fields on validation failure', function 
         return $request->url() === 'https://api.infomaniak.com/1/newsletters/12345/subscribers'
             && ! isset($request['fields'])
             && $request['groups'] === [275443];
+    });
+});
+
+it('unsubscribes a subscriber by email when unsubscribing', function (): void {
+    Http::fake([
+        'https://api.infomaniak.com/1/newsletters/12345/subscribers/filter' => Http::response([
+            'result' => 'success',
+            'data' => [
+                ['id' => 42, 'email' => 'anna@example.com'],
+            ],
+        ], 200),
+        'https://api.infomaniak.com/1/newsletters/12345/subscribers/unsubscribe' => Http::response([
+            'result' => 'success',
+            'data' => true,
+        ], 200),
+    ]);
+
+    $service = app(InfomaniakNewsletterService::class);
+    $service->unsubscribeSubscriber('anna@example.com');
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.infomaniak.com/1/newsletters/12345/subscribers/unsubscribe'
+            && $request->method() === 'PUT'
+            && $request['select']['all'] === false
+            && $request['select']['include'] === [42];
     });
 });

@@ -14,9 +14,15 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class LoginForm extends Component
 {
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
+
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
     #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
@@ -24,6 +30,8 @@ class LoginForm extends Component
 
     public function save(): void
     {
+        $this->protectAgainstSpam();
+
         try {
             $this->validate();
         } catch (ValidationException $e) {
@@ -111,5 +119,10 @@ class LoginForm extends Component
     public function redirectHelper(string $url): void
     {
         $this->redirect($url, navigate: true);
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

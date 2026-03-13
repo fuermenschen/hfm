@@ -3,6 +3,8 @@
 
     @csrf
 
+    <x-honeypot livewire-model="extraFields" />
+
     <flux:input icon-trailing="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" type="text"
                  autocomplete="given-name" required
     />

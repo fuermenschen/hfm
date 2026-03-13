@@ -9,9 +9,15 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class ContactForm extends Component
 {
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
+
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
     #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
@@ -27,6 +33,8 @@ class ContactForm extends Component
 
     public function save(): void
     {
+        $this->protectAgainstSpam();
+
         try {
             $this->validate();
         } catch (ValidationException $e) {
@@ -87,5 +95,10 @@ class ContactForm extends Component
     public function render()
     {
         return view('forms.contact-form');
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

@@ -52,7 +52,7 @@ class InfomaniakNewsletterService
             ->withUserAgent((string) $this->config->get('services.infomaniak_newsletter.user_agent', 'HFM Newsletter Client'));
     }
 
-    public function registerSubscriber(string $firstName, string $email): void
+    public function registerSubscriber(string $firstName, string $email): bool
     {
         $input = [
             'first_name' => trim($firstName),
@@ -73,10 +73,35 @@ class InfomaniakNewsletterService
         if ($subscriberId !== null) {
             $this->addSubscriberToGroup($subscriberId);
 
-            return;
+            return true;
         }
 
         $this->createSubscriber($input['first_name'], $input['email']);
+
+        return false;
+    }
+
+    public function unsubscribeSubscriber(string $email): void
+    {
+        $input = [
+            'email' => strtolower(trim($email)),
+        ];
+
+        $validator = Validator::make($input, [
+            'email' => ['required', 'email:rfc', 'max:255'],
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $subscriberId = $this->findSubscriberIdByEmail($input['email']);
+
+        if ($subscriberId === null) {
+            return;
+        }
+
+        $this->unsubscribeSubscriberById($subscriberId);
     }
 
     protected function findSubscriberIdByEmail(string $email): ?int
@@ -106,6 +131,18 @@ class InfomaniakNewsletterService
         $this->client
             ->post("/1/newsletters/{$this->domainId}/groups/{$this->groupId}/subscribers/assign", [
                 'subscriber_ids' => [$subscriberId],
+            ])
+            ->throw();
+    }
+
+    protected function unsubscribeSubscriberById(int $subscriberId): void
+    {
+        $this->client
+            ->put("/1/newsletters/{$this->domainId}/subscribers/unsubscribe", [
+                'select' => [
+                    'all' => false,
+                    'include' => [$subscriberId],
+                ],
             ])
             ->throw();
     }

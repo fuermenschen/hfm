@@ -14,11 +14,17 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Propaganistas\LaravelPhone\PhoneNumber;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 // added for formatting phone numbers
 
 class BecomeDonatorForm extends Component
 {
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
+
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
     #[Validate('string', message: 'Der Vorname muss ein Text sein.')]
@@ -154,6 +160,7 @@ class BecomeDonatorForm extends Component
 
     public function save(): void
     {
+        $this->protectAgainstSpam();
 
         // cross-field amount rule
         if ($this->amount_max && $this->amount_min && $this->amount_max < $this->amount_min) {
@@ -272,8 +279,10 @@ class BecomeDonatorForm extends Component
         Flux::toast(heading: 'Beiträge', text: strip_tags($message));
     }
 
-    public function mount()
+    public function mount(): void
     {
+        $this->extraFields = new HoneypotData;
+
         // fetch all athletes
         $this->athletes = Athlete::query()
             ->where('verified', true)

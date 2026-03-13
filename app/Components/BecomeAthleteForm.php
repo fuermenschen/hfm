@@ -14,9 +14,15 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class BecomeAthleteForm extends Component
 {
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
+
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
     #[Validate('string', message: 'Der Vorname muss ein Text sein.')]
@@ -100,6 +106,8 @@ class BecomeAthleteForm extends Component
 
     public function save(): void
     {
+        $this->protectAgainstSpam();
+
         try {
             $this->validate();
         } catch (ValidationException $e) {
@@ -170,6 +178,8 @@ class BecomeAthleteForm extends Component
 
     public function mount(): void
     {
+        $this->extraFields = new HoneypotData;
+
         $this->sport_types = SportType::all();
 
         $this->partners = Partner::all();
