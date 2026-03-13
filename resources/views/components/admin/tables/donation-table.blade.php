@@ -82,9 +82,17 @@
             </flux:table.columns>
 
             <flux:table.rows>
+                <flux:table.row wire:loading.delay.short wire:target="{{ $this->tableLoadingTargets() }}">
+                    <flux:table.cell colspan="99" class="text-center">
+                        <div class="flex items-center justify-center gap-2 py-4 text-sm text-zinc-500">
+                            <flux:icon.arrow-path class="size-4 animate-spin" />
+                            Tabelle wird aktualisiert...
+                        </div>
+                    </flux:table.cell>
+                </flux:table.row>
                 @forelse ($donations as $donation)
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                    <flux:table.row wire:key="donation-{{ $donation->id }}" class="{{ $rowClass }}">
+                    <flux:table.row wire:key="donation-{{ $donation->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}" class="{{ $rowClass }}">
                         <flux:table.cell>
                             <flux:field variant="inline">
                                 <flux:checkbox value="{{ $donation->id }}" />
@@ -126,8 +134,18 @@
                         @endif
                     </flux:table.row>
                 @empty
-                    <flux:table.row>
-                        <flux:table.cell colspan="99" class="text-center text-zinc-500">Keine Spenden gefunden.</flux:table.cell>
+                    <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.cell colspan="99" class="text-center text-zinc-500">
+                            <div class="mx-auto flex max-w-lg flex-col items-center gap-2 py-6">
+                                <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
+                                @if (trim($search) !== '')
+                                    <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
+                                    <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                @else
+                                    <flux:text>Keine Spenden vorhanden.</flux:text>
+                                @endif
+                            </div>
+                        </flux:table.cell>
                     </flux:table.row>
                 @endforelse
             </flux:table.rows>

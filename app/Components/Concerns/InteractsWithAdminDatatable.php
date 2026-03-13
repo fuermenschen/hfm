@@ -76,6 +76,11 @@ trait InteractsWithAdminDatatable
         return count($this->selectedIds());
     }
 
+    public function tableLoadingTargets(): string
+    {
+        return 'search,sortField,sortDirection,perPage,nextPage,previousPage,gotoPage,setPage,toggleColumn';
+    }
+
     /**
      * @return array<string, string>
      */

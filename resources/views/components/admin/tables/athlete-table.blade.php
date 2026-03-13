@@ -111,9 +111,17 @@
             </flux:table.columns>
 
             <flux:table.rows>
+                <flux:table.row wire:loading.delay.short wire:target="{{ $this->tableLoadingTargets() }}">
+                    <flux:table.cell colspan="99" class="text-center">
+                        <div class="flex items-center justify-center gap-2 py-4 text-sm text-zinc-500">
+                            <flux:icon.arrow-path class="size-4 animate-spin" />
+                            Tabelle wird aktualisiert...
+                        </div>
+                    </flux:table.cell>
+                </flux:table.row>
                 @forelse ($athletes as $athlete)
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                    <flux:table.row wire:key="athlete-{{ $athlete->id }}" class="{{ $rowClass }}">
+                    <flux:table.row wire:key="athlete-{{ $athlete->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}" class="{{ $rowClass }}">
                         <flux:table.cell>
                             <flux:field variant="inline">
                                 <flux:checkbox value="{{ $athlete->id }}" />
@@ -141,7 +149,10 @@
                             <flux:table.cell>
                                 <div class="flex items-center gap-2">
                                     <flux:input type="number" class="w-20" wire:model.blur="roundsDoneInputs.{{ $athlete->id }}" />
-                                    <flux:button variant="subtle" size="sm" wire:click="saveRoundsDone({{ $athlete->id }})">Speichern</flux:button>
+                                    <flux:button variant="subtle" size="sm" wire:click="saveRoundsDone({{ $athlete->id }})" wire:target="saveRoundsDone({{ $athlete->id }})" wire:loading.attr="disabled">
+                                        <span wire:loading.remove wire:target="saveRoundsDone({{ $athlete->id }})">Speichern</span>
+                                        <span wire:loading wire:target="saveRoundsDone({{ $athlete->id }})">Speichert...</span>
+                                    </flux:button>
                                 </div>
                             </flux:table.cell>
                         @endif
@@ -204,8 +215,18 @@
                         </flux:table.cell>
                     </flux:table.row>
                 @empty
-                    <flux:table.row>
-                        <flux:table.cell colspan="99" class="text-center text-zinc-500">Keine Sportler:innen gefunden.</flux:table.cell>
+                    <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.cell colspan="99" class="text-center text-zinc-500">
+                            <div class="mx-auto flex max-w-lg flex-col items-center gap-2 py-6">
+                                <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
+                                @if (trim($search) !== '')
+                                    <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
+                                    <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                @else
+                                    <flux:text>Keine Sportler:innen vorhanden.</flux:text>
+                                @endif
+                            </div>
+                        </flux:table.cell>
                     </flux:table.row>
                 @endforelse
             </flux:table.rows>

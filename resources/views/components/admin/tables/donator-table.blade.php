@@ -26,8 +26,9 @@
                             </flux:menu>
                         </flux:dropdown>
 
-                        <flux:button variant="ghost" size="sm" icon="banknotes" wire:click="checkPaymentStatus">
-                            Zahlungsstatus prüfen
+                        <flux:button variant="ghost" size="sm" icon="banknotes" wire:click="checkPaymentStatus" wire:target="checkPaymentStatus" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="checkPaymentStatus">Zahlungsstatus prüfen</span>
+                            <span wire:loading wire:target="checkPaymentStatus">Prüfe Zahlungsstatus...</span>
                         </flux:button>
 
                         <flux:dropdown>
@@ -45,17 +46,21 @@
 
                 <x-slot:bottomRight>
                     <x-admin.tables.partials.bulk-actions>
-                        <flux:button size="sm" wire:click="bulkCreateInvoice">
-                            Rechnungen erstellen
+                        <flux:button size="sm" wire:click="bulkCreateInvoice" wire:target="bulkCreateInvoice" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="bulkCreateInvoice">Rechnungen erstellen</span>
+                            <span wire:loading wire:target="bulkCreateInvoice">Erstelle Rechnungen...</span>
                         </flux:button>
-                        <flux:button size="sm" wire:click="bulkDownloadInvoice">
-                            Rechnungen herunterladen
+                        <flux:button size="sm" wire:click="bulkDownloadInvoice" wire:target="bulkDownloadInvoice" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="bulkDownloadInvoice">Rechnungen herunterladen</span>
+                            <span wire:loading wire:target="bulkDownloadInvoice">Bereite ZIP vor...</span>
                         </flux:button>
-                        <flux:button size="sm" wire:click="bulkSendInvoice">
-                            Rechnungen senden
+                        <flux:button size="sm" wire:click="bulkSendInvoice" wire:target="bulkSendInvoice" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="bulkSendInvoice">Rechnungen senden</span>
+                            <span wire:loading wire:target="bulkSendInvoice">Sende Rechnungen...</span>
                         </flux:button>
-                        <flux:button size="sm" wire:click="bulkSendInvoiceReminder">
-                            Erinnerungen senden
+                        <flux:button size="sm" wire:click="bulkSendInvoiceReminder" wire:target="bulkSendInvoiceReminder" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="bulkSendInvoiceReminder">Erinnerungen senden</span>
+                            <span wire:loading wire:target="bulkSendInvoiceReminder">Sende Erinnerungen...</span>
                         </flux:button>
                     </x-admin.tables.partials.bulk-actions>
                 </x-slot:bottomRight>
@@ -123,10 +128,18 @@
             </flux:table.columns>
 
             <flux:table.rows>
+                <flux:table.row wire:loading.delay.short wire:target="{{ $this->tableLoadingTargets() }}">
+                    <flux:table.cell colspan="99" class="text-center">
+                        <div class="flex items-center justify-center gap-2 py-4 text-sm text-zinc-500">
+                            <flux:icon.arrow-path class="size-4 animate-spin" />
+                            Tabelle wird aktualisiert...
+                        </div>
+                    </flux:table.cell>
+                </flux:table.row>
                 @forelse ($donors as $donor)
                     @php($invoiceTotal = (float) ($donor->invoice_total ?? 0))
                     @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                    <flux:table.row wire:key="donor-{{ $donor->id }}" class="{{ $rowClass }}">
+                    <flux:table.row wire:key="donor-{{ $donor->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}" class="{{ $rowClass }}">
                         <flux:table.cell>
                             <flux:field variant="inline">
                                 <flux:checkbox value="{{ $donor->id }}" />
@@ -190,8 +203,18 @@
                         </flux:table.cell>
                     </flux:table.row>
                 @empty
-                    <flux:table.row>
-                        <flux:table.cell colspan="99" class="text-center text-zinc-500">Keine Spender:innen gefunden.</flux:table.cell>
+                    <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.cell colspan="99" class="text-center text-zinc-500">
+                            <div class="mx-auto flex max-w-lg flex-col items-center gap-2 py-6">
+                                <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
+                                @if (trim($search) !== '')
+                                    <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
+                                    <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                @else
+                                    <flux:text>Keine Spender:innen vorhanden.</flux:text>
+                                @endif
+                            </div>
+                        </flux:table.cell>
                     </flux:table.row>
                 @endforelse
             </flux:table.rows>

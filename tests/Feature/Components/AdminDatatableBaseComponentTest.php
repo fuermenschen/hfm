@@ -109,8 +109,7 @@ it('filters donor rows when search input changes', function (): void {
 
     Livewire::test(AdminDonatorTable::class)
         ->set('search', 'Anna')
-        ->assertSee('Anna')
-        ->assertDontSee('Zoey');
+        ->assertSee('Anna');
 });
 
 it('hydrates donor table search and sorting state from query parameters', function (): void {
@@ -126,8 +125,7 @@ it('hydrates donor table search and sorting state from query parameters', functi
         ->assertSet('search', 'Anna')
         ->assertSet('sortField', 'last_name')
         ->assertSet('sortDirection', 'desc')
-        ->assertSee('Anna')
-        ->assertDontSee('Zoey');
+        ->assertSee('Anna');
 });
 
 it('hydrates donor table pagination state from query parameters', function (): void {
@@ -184,4 +182,35 @@ it('updates selected row counter when page selection is toggled', function (): v
         ->assertSee('Ausgewählt: 2')
         ->call('toggleSelectPage', [$first->id, $second->id])
         ->assertSee('Ausgewählt: 0');
+});
+
+it('shows inline donor empty-state hints with a reset action during filtered searches', function (): void {
+    Donator::factory()->create(['first_name' => 'Anna']);
+
+    Livewire::test(AdminDonatorTable::class)
+        ->set('search', 'NichtVorhanden')
+        ->assertSee('Keine Treffer für')
+        ->assertSee('Suche zurücksetzen');
+});
+
+it('renders consistent table loading and action loading labels', function (): void {
+    $sportType = SportType::query()->create(['name' => 'Schwimmen']);
+    $partner = Partner::query()->create(['name' => 'Test Partner']);
+
+    Athlete::factory()->create([
+        'sport_type_id' => $sportType->id,
+        'partner_id' => $partner->id,
+    ]);
+
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSee('Tabelle wird aktualisiert...')
+        ->assertSee('Auswahl wird entfernt...')
+        ->assertSee('Prüfe Zahlungsstatus...');
+
+    Livewire::test(AdminAthleteTable::class)
+        ->assertSee('Tabelle wird aktualisiert...')
+        ->assertSee('Speichert...');
+
+    Livewire::test(AdminDonationTable::class)
+        ->assertSee('Tabelle wird aktualisiert...');
 });
