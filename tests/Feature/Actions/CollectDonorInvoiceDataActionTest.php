@@ -1,56 +1,30 @@
 <?php
 
+use App\Actions\CollectDonorInvoiceDataAction;
 use App\Models\Athlete;
 use App\Models\Donation;
 use App\Models\Donator;
 use App\Models\Partner;
 use App\Models\SportType;
-use App\Services\DonorService;
 
-it('resolves DonorService from the container', function (): void {
-    $service = app(DonorService::class);
+it('resolves CollectDonorInvoiceDataAction from the container', function (): void {
+    $action = app(CollectDonorInvoiceDataAction::class);
 
-    expect($service)->toBeInstanceOf(DonorService::class);
+    expect($action)->toBeInstanceOf(CollectDonorInvoiceDataAction::class);
 });
-
-it('resolves the same instance (singleton)', function (): void {
-    $first = app(DonorService::class);
-    $second = app(DonorService::class);
-
-    expect(spl_object_id($first))->toBe(spl_object_id($second));
-});
-
-// Dataset for invoice line calculations
-// rounds, amount_per_round, min, max, expected_total, expected_subtotal
-// Use edge cases for min/max caps and rounding
 
 dataset('invoice_line_cases', [
-    // No caps, simple multiplication
     ['rounds' => 10, 'perRound' => 2.5, 'min' => null, 'max' => null, 'expectedTotal' => 25.00, 'expectedSubtotal' => 25.00],
-
-    // Min applies because subtotal below min
     ['rounds' => 3, 'perRound' => 2.0, 'min' => 10.0, 'max' => null, 'expectedTotal' => 10.00, 'expectedSubtotal' => 6.00],
-
-    // Max applies because subtotal above max
     ['rounds' => 20, 'perRound' => 3.0, 'min' => null, 'max' => 50.0, 'expectedTotal' => 50.00, 'expectedSubtotal' => 60.00],
-
-    // Both caps present, subtotal between -> unchanged
     ['rounds' => 5, 'perRound' => 4.0, 'min' => 10.0, 'max' => 30.0, 'expectedTotal' => 20.00, 'expectedSubtotal' => 20.00],
-
-    // Both caps present, below min -> min used
     ['rounds' => 1, 'perRound' => 5.0, 'min' => 10.0, 'max' => 30.0, 'expectedTotal' => 10.00, 'expectedSubtotal' => 5.00],
-
-    // Both caps present, above max -> max used
     ['rounds' => 20, 'perRound' => 2.0, 'min' => 10.0, 'max' => 30.0, 'expectedTotal' => 30.00, 'expectedSubtotal' => 40.00],
-
-    // Zero rounds -> subtotal 0, min may lift
     ['rounds' => 0, 'perRound' => 7.0, 'min' => null, 'max' => null, 'expectedTotal' => 0.00, 'expectedSubtotal' => 0.00],
     ['rounds' => 0, 'perRound' => 7.0, 'min' => 5.0, 'max' => null, 'expectedTotal' => 5.00, 'expectedSubtotal' => 0.00],
 ]);
 
-// Group collectInvoiceData tests
-
-describe('collectInvoiceData', function () {
+describe('collect donor invoice data', function () {
     it('calculates line totals and applies min/max caps', function (
         int $rounds,
         float $perRound,
@@ -82,8 +56,7 @@ describe('collectInvoiceData', function () {
             'amount_max' => $max,
         ]);
 
-        $service = app(DonorService::class);
-        $lines = $service->collectInvoiceData($donator);
+        $lines = app(CollectDonorInvoiceDataAction::class)($donator);
 
         expect($lines)->toHaveCount(1);
 
@@ -100,14 +73,12 @@ describe('collectInvoiceData', function () {
     })->with('invoice_line_cases');
 
     it('handles multiple donations for the same donator', function (): void {
-        // Create partner and sport types in a single query
         $partner = Partner::query()->create(['name' => 'Globex']);
-        $sportTypes = SportType::query()->insert([
+        SportType::query()->insert([
             ['name' => 'Swim'],
             ['name' => 'Bike'],
         ]);
 
-        // Create athletes in a single batch
         $athletes = Athlete::factory()->createMany([
             [
                 'first_name' => 'Bob',
@@ -129,7 +100,6 @@ describe('collectInvoiceData', function () {
 
         $donator = Donator::factory()->create();
 
-        // Create donations in a single batch
         Donation::query()->insert([
             [
                 'donator_id' => $donator->id,
@@ -147,13 +117,10 @@ describe('collectInvoiceData', function () {
             ],
         ]);
 
-        $service = app(DonorService::class);
-        $lines = $service->collectInvoiceData($donator);
+        $lines = app(CollectDonorInvoiceDataAction::class)($donator);
 
         expect($lines)->toHaveCount(2)
-            // First donation: 12 * 2 = 24 (under max 30)
             ->and($lines[0]['total'])->toBe(24.00)
-            // Second donation: 3 * 5 = 15 -> min 20 applies
             ->and($lines[1]['total'])->toBe(20.00);
     });
 });

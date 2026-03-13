@@ -2,10 +2,10 @@
 
 namespace App\Components;
 
+use App\Actions\CollectDonorInvoiceDataAction;
 use App\Jobs\CheckDonorInvoicesStatus;
 use App\Models\Donator;
 use App\Services\DonorInvoiceService;
-use App\Services\DonorService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,16 +31,16 @@ class AdminDonatorTable extends PowerGridComponent
 
     public string $tableName = 'admin-donator-table';
 
-    protected DonorService $donorService;
+    protected CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction;
 
     protected DonorInvoiceService $donorInvoiceService;
 
     /** @var array<string, int> */
     public array $pendingConfirmations = [];
 
-    public function boot(DonorService $donorService, DonorInvoiceService $donorInvoiceService): void
+    public function boot(CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction, DonorInvoiceService $donorInvoiceService): void
     {
-        $this->donorService = $donorService;
+        $this->collectDonorInvoiceDataAction = $collectDonorInvoiceDataAction;
         $this->donorInvoiceService = $donorInvoiceService;
     }
 
@@ -117,7 +117,7 @@ class AdminDonatorTable extends PowerGridComponent
                 return $donor->donations->count();
             })
             ->add('donations_sum', function (Donator $donor) {
-                $lines = $this->donorService->collectInvoiceData($donor);
+                $lines = ($this->collectDonorInvoiceDataAction)($donor);
                 $sum = array_sum(array_column($lines, 'total'));
 
                 return 'Fr. '.number_format($sum, 2, '.', "'");
