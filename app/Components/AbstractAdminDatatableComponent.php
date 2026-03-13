@@ -21,6 +21,19 @@ abstract class AbstractAdminDatatableComponent extends Component
         $this->initializeVisibleColumns();
     }
 
+    /**
+     * @return array<string, array<string, int|string>>
+     */
+    protected function queryString(): array
+    {
+        return [
+            'search' => ['except' => ''],
+            'sortField' => ['except' => $this->defaultSortField()],
+            'sortDirection' => ['except' => 'asc'],
+            'perPage' => ['except' => 10],
+        ];
+    }
+
     public function render(): View
     {
         $records = $this->queryForTable(ignoreSearch: false)->paginate($this->perPage);

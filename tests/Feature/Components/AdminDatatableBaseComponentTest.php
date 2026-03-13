@@ -113,6 +113,42 @@ it('filters donor rows when search input changes', function (): void {
         ->assertDontSee('Zoey');
 });
 
+it('hydrates donor table search and sorting state from query parameters', function (): void {
+    Donator::factory()->create(['first_name' => 'Anna', 'last_name' => 'Zeta']);
+    Donator::factory()->create(['first_name' => 'Zoey', 'last_name' => 'Alpha']);
+
+    Livewire::withQueryParams([
+        'search' => 'Anna',
+        'sortField' => 'last_name',
+        'sortDirection' => 'desc',
+    ])
+        ->test(AdminDonatorTable::class)
+        ->assertSet('search', 'Anna')
+        ->assertSet('sortField', 'last_name')
+        ->assertSet('sortDirection', 'desc')
+        ->assertSee('Anna')
+        ->assertDontSee('Zoey');
+});
+
+it('hydrates donor table pagination state from query parameters', function (): void {
+    foreach (range(1, 30) as $index) {
+        Donator::factory()->create(['first_name' => 'Name'.str_pad((string) $index, 2, '0', STR_PAD_LEFT)]);
+    }
+
+    Livewire::withQueryParams([
+        'perPage' => '25',
+        'page' => '2',
+    ])
+        ->test(AdminDonatorTable::class)
+        ->assertSet('perPage', 25)
+        ->tap(function ($component): void {
+            $paginator = $component->viewData('donors');
+
+            expect($paginator->currentPage())->toBe(2);
+            expect($component->viewData('pageIds'))->toHaveCount(5);
+        });
+});
+
 it('toggles donor sort direction when clicking the same sortable column', function (): void {
     $anna = Donator::factory()->create(['first_name' => 'Anna']);
     $zoey = Donator::factory()->create(['first_name' => 'Zoey']);
