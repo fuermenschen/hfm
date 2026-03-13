@@ -2,11 +2,10 @@
 
 namespace App\Providers;
 
+use App\Actions\GetDashboardDataAction;
 use App\Services\AthleteDocumentService;
-use App\Services\DashboardService;
 use App\Services\DonationService;
 use App\Services\DonorInvoiceService;
-use App\Services\DonorService;
 use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
@@ -30,12 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(DonorService::class);
         $this->app->singleton(DonorInvoiceService::class);
         $this->app->singleton(AthleteDocumentService::class);
         $this->app->singleton(SettingsService::class);
         $this->app->singleton(DonationService::class);
-        $this->app->singleton(DashboardService::class);
     }
 
     /**
@@ -52,9 +49,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Inject computed dashboard data via a view composer
         View::composer('pages.admin.dashboard', function ($view): void {
-            /** @var DashboardService $dashboard */
-            $dashboard = app(DashboardService::class);
-            $view->with($dashboard->getData());
+            $view->with(app(GetDashboardDataAction::class)());
         });
 
         // Global logging for notifications and mails

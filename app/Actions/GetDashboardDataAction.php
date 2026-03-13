@@ -1,23 +1,19 @@
 <?php
 
-namespace App\Services;
+namespace App\Actions;
 
 use App\Models\Athlete;
 use App\Models\Donation;
 use App\Models\Donator;
 use App\Models\Partner;
+use App\Services\DonationService;
 use Illuminate\Support\Collection;
 
-class DashboardService
+class GetDashboardDataAction
 {
     public function __construct(public DonationService $donationService) {}
 
     /**
-     * Build all data required by the admin dashboard view.
-     *
-     * We intentionally avoid returning large model collections that the view does not use.
-     * Instead, we compute metrics via database aggregates and only return lightweight data.
-     *
      * @return array{
      *     greeting: string,
      *     partners: Collection<int, Partner>,
@@ -37,17 +33,15 @@ class DashboardService
      *     mostRecentActivities: array<int, array<string, mixed>>,
      * }
      */
-    public function getData(): array
+    public function __invoke(): array
     {
         $greeting = $this->greeting();
 
-        // Partners needed for per-partner cards (id, name only)
         $partners = Partner::query()
             ->select(['id', 'name'])
             ->orderBy('name')
             ->get();
 
-        // Aggregate metrics without loading full collections
         $athleteCount = (int) Athlete::query()->count();
         $donatorCount = (int) Donator::query()->count();
         $donationCount = (int) Donation::query()->count();
@@ -60,7 +54,6 @@ class DashboardService
         $meanNumberOfDonationsDonator = $donatorCount > 0 ? (float) ($donationCount / $donatorCount) : 0.0;
         $meanDonationAmount = (float) (Donation::query()->avg('amount_per_round') ?? 0.0);
 
-        // Preload donations once to avoid repeated queries in the service
         $donations = Donation::query()->with('athlete.partner')->get();
 
         $expectedDonationAmount = $this->donationService->calculateEstimatedTotal($donations);
@@ -108,15 +101,12 @@ class DashboardService
     }
 
     /**
-     * Build a normalized list of the most recent activities from the past 7 days.
-     *
      * @return array<int, array<string, mixed>>
      */
     protected function buildRecentActivities(): array
     {
         $sevenDaysAgo = now()->subDays(7);
 
-        // Query recent entities with minimal columns
         $recentAthletes = Athlete::query()
             ->where('created_at', '>=', $sevenDaysAgo)
             ->latest()
@@ -166,7 +156,6 @@ class DashboardService
             ];
         }
 
-        // Sort by created_at ASC, keep last 10, then reverse to DESC
         usort($activities, function ($a, $b) {
             return $a['created_at'] <=> $b['created_at'];
         });
