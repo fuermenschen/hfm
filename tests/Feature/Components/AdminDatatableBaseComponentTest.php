@@ -102,3 +102,50 @@ it('keeps donor bulk action labels stable without embedded selection counters', 
         ->assertDontSee('Rechnungen senden (')
         ->assertDontSee('Erinnerungen senden (');
 });
+
+it('filters donor rows when search input changes', function (): void {
+    Donator::factory()->create(['first_name' => 'Anna']);
+    Donator::factory()->create(['first_name' => 'Zoey']);
+
+    Livewire::test(AdminDonatorTable::class)
+        ->set('search', 'Anna')
+        ->assertSee('Anna')
+        ->assertDontSee('Zoey');
+});
+
+it('toggles donor sort direction when clicking the same sortable column', function (): void {
+    $anna = Donator::factory()->create(['first_name' => 'Anna']);
+    $zoey = Donator::factory()->create(['first_name' => 'Zoey']);
+
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSet('sortField', 'first_name')
+        ->assertSet('sortDirection', 'asc')
+        ->call('sortByColumn', 'first_name')
+        ->assertSet('sortDirection', 'desc')
+        ->tap(fn ($component) => expect($component->viewData('pageIds'))->toBe([$zoey->id, $anna->id]))
+        ->call('sortByColumn', 'first_name')
+        ->assertSet('sortDirection', 'asc')
+        ->tap(fn ($component) => expect($component->viewData('pageIds'))->toBe([$anna->id, $zoey->id]));
+});
+
+it('persists donor visible columns in session across component reloads', function (): void {
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSet('visibleColumns', fn (array $columns): bool => in_array('email', $columns, true))
+        ->call('toggleColumn', 'email')
+        ->assertSet('visibleColumns', fn (array $columns): bool => ! in_array('email', $columns, true));
+
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSet('visibleColumns', fn (array $columns): bool => ! in_array('email', $columns, true));
+});
+
+it('updates selected row counter when page selection is toggled', function (): void {
+    $first = Donator::factory()->create();
+    $second = Donator::factory()->create();
+
+    Livewire::test(AdminDonatorTable::class)
+        ->assertSee('Ausgewählt: 0')
+        ->call('toggleSelectPage', [$first->id, $second->id])
+        ->assertSee('Ausgewählt: 2')
+        ->call('toggleSelectPage', [$first->id, $second->id])
+        ->assertSee('Ausgewählt: 0');
+});
