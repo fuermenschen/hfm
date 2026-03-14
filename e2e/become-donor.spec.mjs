@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Become Donator Form", () => {
-    test.skip("can submit become donator form", async ({ page }) => {
+test.describe("Become Donor Form", () => {
+    test.skip("can submit become donor form", async ({ page }) => {
         await page.goto("/spenderin-werden", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle");
         await expect(page.locator("h1")).toContainText("Spender:in werden");
@@ -17,7 +17,7 @@ test.describe("Become Donator Form", () => {
         await page.getByRole("textbox", { name: "Ort" }).fill("Bern City");
         const nonce = Date.now();
         const worker = process.env.TEST_WORKER_INDEX ?? "0";
-        const uniqueEmail = `e2e+donator-w${worker}-${nonce}@example.test`;
+        const uniqueEmail = `e2e+donor-w${worker}-${nonce}@example.test`;
         await page.getByRole("textbox", { name: "E-Mail", exact: true }).fill(uniqueEmail);
         await page.getByRole("textbox", { name: "E-Mail bestätigen" }).fill("fake@email.ch");
         // Trigger validation by blurring the confirmation field: focus phone input (placeholder varies by country)

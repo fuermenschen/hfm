@@ -3,7 +3,7 @@
 namespace App\Components;
 
 use App\Models\Athlete;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Notifications\AdminSomeoneRegistered;
 use App\Rules\ValidZipCode;
@@ -19,7 +19,7 @@ use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 // added for formatting phone numbers
 
-class BecomeDonatorForm extends Component
+class BecomeDonorForm extends Component
 {
     use UsesSpamProtection;
 
@@ -134,30 +134,6 @@ class BecomeDonatorForm extends Component
         }
     }
 
-    protected function rules(): array
-    {
-        return [
-            'zip_code' => [
-                'required',
-                new ValidZipCode($this->country_of_residence),
-            ],
-            'phone_national' => ['required', 'phone:phone_country'],
-            'amount_max' => ['nullable', 'gte:amount_min'],
-            // Ensure min boundary for amount per round is enforced
-            'amount_per_round' => ['required', 'numeric', 'min:0.05'],
-        ];
-    }
-
-    protected function messages(): array
-    {
-        return [
-            'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
-            'phone_national.phone' => 'Die Telefonnummer ist ungültig.',
-            'phone_national.required' => 'Wir benötigen deine Telefonnummer.',
-            'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
-        ];
-    }
-
     public function save(): void
     {
         $this->protectAgainstSpam();
@@ -188,12 +164,10 @@ class BecomeDonatorForm extends Component
         }
 
         try {
-            // check if the donator already exists
-            $donator = Donator::where('email', $this->email)->first();
+            $donor = Donor::where('email', $this->email)->first();
 
-            // if the donator does not exist, create a new one
-            if (! $donator) {
-                $donatorData = [
+            if (! $donor) {
+                $donorData = [
                     'first_name' => $this->first_name,
                     'last_name' => $this->last_name,
                     'address' => $this->address,
@@ -203,7 +177,7 @@ class BecomeDonatorForm extends Component
                     'phone_number' => $phoneE164,
                     'email' => $this->email,
                 ];
-                $donator = Donator::create($donatorData);
+                $donor = Donor::create($donorData);
 
                 // send notification to admin
                 if (config('app.send_notification_on_registration')) {
@@ -212,8 +186,7 @@ class BecomeDonatorForm extends Component
                 }
             }
 
-            // check if this donator already has a donation for this athlete
-            if ($donator->donations()->where('athlete_id', $this->athlete_id)->exists()) {
+            if ($donor->donations()->where('athlete_id', $this->athlete_id)->exists()) {
                 Flux::toast(
                     heading: 'Bereits angemeldet',
                     text: 'Du hast dich bereits als Spender:in für diese:n Sportler:in angemeldet. Falls du den gewählten Betrag anpassen möchtest, kontaktiere uns bitte.',
@@ -233,7 +206,7 @@ class BecomeDonatorForm extends Component
                 'amount_min' => $this->amount_min,
                 'comment' => $this->comment,
             ];
-            $donator->donations()->create($donationData);
+            $donor->donations()->create($donationData);
 
             $this->reset();
 
@@ -250,9 +223,14 @@ class BecomeDonatorForm extends Component
         }
     }
 
+    public function redirectHelper(string $url): void
+    {
+        $this->redirect($url, navigate: true);
+    }
+
     public function render()
     {
-        return view('forms.become-donator-form');
+        return view('forms.become-donor-form');
     }
 
     public function showPrivacyInfo(): void
@@ -298,8 +276,27 @@ class BecomeDonatorForm extends Component
             ->toArray();
     }
 
-    public function redirectHelper(string $url): void
+    protected function rules(): array
     {
-        $this->redirect($url, navigate: true);
+        return [
+            'zip_code' => [
+                'required',
+                new ValidZipCode($this->country_of_residence),
+            ],
+            'phone_national' => ['required', 'phone:phone_country'],
+            'amount_max' => ['nullable', 'gte:amount_min'],
+            // Ensure min boundary for amount per round is enforced
+            'amount_per_round' => ['required', 'numeric', 'min:0.05'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'zip_code.digits' => 'Die Postleitzahl ist ungültig.',
+            'phone_national.phone' => 'Die Telefonnummer ist ungültig.',
+            'phone_national.required' => 'Wir benötigen deine Telefonnummer.',
+            'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
+        ];
     }
 }

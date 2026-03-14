@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\CollectDonorInvoiceDataAction;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Settings\InvoiceSettings;
@@ -18,7 +18,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
 
     private CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction;
 
-    public function __construct(public Donator $donor)
+    public function __construct(public Donor $donor)
     {
         $this->collectDonorInvoiceDataAction = app(CollectDonorInvoiceDataAction::class);
     }

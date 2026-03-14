@@ -1,10 +1,10 @@
 <?php
 
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use App\Jobs\CreateDonorInvoice;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,12 +23,12 @@ it('skips creating invoices in bulk for donors without donations', function () {
     ]);
 
     // Donor without donations
-    $donorWithout = Donator::factory()->create([
+    $donorWithout = Donor::factory()->create([
         'email' => 'without@example.com',
     ]);
 
     // Donor with donations
-    $donorWith = Donator::factory()->create([
+    $donorWith = Donor::factory()->create([
         'email' => 'with@example.com',
     ]);
 
@@ -43,7 +43,7 @@ it('skips creating invoices in bulk for donors without donations', function () {
 
     Queue::fake();
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('checkboxValues', [$donorWithout->id, $donorWith->id])
         ->call('bulkCreateInvoice');
 

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Athlete;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -144,9 +144,9 @@ test('parameterized routes can be accessed with valid parameters', function () {
     $response = $this->get(route('show-athlete', ['login_token' => $athlete->login_token]));
     $response->assertSuccessful();
 
-    // Test donator route
-    $donator = Donator::factory()->create();
-    $response = $this->get(route('show-donator', ['login_token' => $donator->login_token]));
+    // Test donor route
+    $donor = Donor::factory()->create();
+    $response = $this->get(route('show-donor', ['login_token' => $donor->login_token]));
     $response->assertSuccessful();
 
 });

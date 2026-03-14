@@ -56,7 +56,7 @@
 
                             <span class="flex-grow">
                                 <strong class="font-semibold"> Werde Spender:in </strong> Du lässt lieber andere schwitzen? Unterstütze die Sportler:innen dabei, Spenden für die Benefizpartner:innen zu finden. Egal ob 10 oder 1000 Franken: Dein Einsatz bewegt! Bist auch du dabei als Spender:in? <x-inline-link
-                                    href="{{ route('become-donator') }}">Melde dich als Spender:in!</x-inline-link>
+                                    href="{{ route('become-donor') }}">Melde dich als Spender:in!</x-inline-link>
                             </span>
                         </li>
                     </ul>

@@ -42,10 +42,10 @@ class AthleteDetails extends Component
             'privacy_name' => $athlete->privacy_name,
             'public_id_string' => $athlete->public_id_string,
         ];
-        $donations = Donation::where('athlete_id', $athlete->id)->with('donator')->get();
+        $donations = Donation::where('athlete_id', $athlete->id)->with('donor')->get();
         $this->donations = $donations->map(function ($donation) {
             return [
-                'donator' => $donation->donator->privacy_name,
+                'donor' => $donation->donor->privacy_name,
                 'amount_per_round' => $donation->amount_per_round,
                 'amount_min' => $donation->amount_min,
                 'amount_max' => $donation->amount_max,

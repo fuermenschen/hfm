@@ -3,7 +3,7 @@
 namespace App\Components;
 
 use App\Jobs\CheckDonorInvoicesStatus;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\DonorInvoiceService;
 use App\Support\Datatable\Actions\DonorBulkActionFactory;
 use App\Support\Datatable\Actions\DonorRowActionFactory;
@@ -14,31 +14,26 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use ZipArchive;
 
-class AdminDonatorTable extends AbstractDatatableComponent
+class AdminDonorTable extends AbstractDatatableComponent
 {
     public string $sortField = 'first_name';
-
-    protected DonorInvoiceService $donorInvoiceService;
 
     /**
      * @var array<string, int>
      */
     public array $pendingConfirmations = [];
 
+    protected DonorInvoiceService $donorInvoiceService;
+
     public function boot(DonorInvoiceService $donorInvoiceService): void
     {
         $this->donorInvoiceService = $donorInvoiceService;
     }
 
-    protected function tableView(): string
-    {
-        return 'components.admin.tables.donator-table';
-    }
-
     /**
      * @return array<string, array<int, array<string, mixed>>>
      */
-    public function donorRowActionGroups(Donator $donor): array
+    public function donorRowActionGroups(Donor $donor): array
     {
         return DonorRowActionFactory::make($donor);
     }
@@ -49,11 +44,6 @@ class AdminDonatorTable extends AbstractDatatableComponent
     public function donorBulkActions(): array
     {
         return DonorBulkActionFactory::make();
-    }
-
-    protected function tableDataKey(): string
-    {
-        return 'donors';
     }
 
     public function checkPaymentStatus(): void
@@ -83,27 +73,9 @@ class AdminDonatorTable extends AbstractDatatableComponent
         }
     }
 
-    public function createDonorInvoice(int $donorId): void
-    {
-        try {
-            $donor = Donator::query()->findOrFail($donorId);
-
-            $this->toastActionResult($this->donorInvoiceService->createInvoice($donor));
-        } catch (\Throwable $exception) {
-            Log::error('Error creating donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
-
-            Flux::toast(
-                heading: 'Fehler beim Erstellen der Rechnung',
-                text: $exception->getMessage(),
-                variant: 'danger',
-                duration: 0,
-            );
-        }
-    }
-
     public function confirmDeleteDonorInvoice(int $donorId): void
     {
-        $donor = Donator::query()->find($donorId);
+        $donor = Donor::query()->find($donorId);
         $name = $donor ? $donor->privacy_name : 'diese:n Spender:in';
 
         if ($this->requiresSecondClick(
@@ -117,10 +89,28 @@ class AdminDonatorTable extends AbstractDatatableComponent
         $this->deleteDonorInvoice($donorId);
     }
 
+    protected function requiresSecondClick(string $key, string $heading, string $text): bool
+    {
+        $now = now()->timestamp;
+        $expiresAt = $this->pendingConfirmations[$key] ?? null;
+
+        if (is_int($expiresAt) && $expiresAt >= $now) {
+            unset($this->pendingConfirmations[$key]);
+
+            return false;
+        }
+
+        $this->pendingConfirmations[$key] = $now + 15;
+
+        Flux::toast(heading: $heading, text: $text, variant: 'warning');
+
+        return true;
+    }
+
     public function deleteDonorInvoice(int $donorId): void
     {
         try {
-            $donor = Donator::query()->findOrFail($donorId);
+            $donor = Donor::query()->findOrFail($donorId);
 
             Log::info('Deleting donor invoice debitor', ['donor_id' => $donorId]);
             $this->toastActionResult($this->donorInvoiceService->deleteInvoice($donor));
@@ -136,10 +126,27 @@ class AdminDonatorTable extends AbstractDatatableComponent
         }
     }
 
+    /**
+     * @param  array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}  $result
+     */
+    protected function toastActionResult(array $result): void
+    {
+        Flux::toast(
+            heading: $result['heading'],
+            text: $result['text'],
+            variant: $result['variant'],
+            duration: $result['duration'],
+        );
+
+        if ($result['refresh']) {
+            $this->dispatch('$refresh');
+        }
+    }
+
     public function downloadDonorInvoice(int $donorId): ?HttpResponse
     {
         try {
-            $donor = Donator::query()->findOrFail($donorId);
+            $donor = Donor::query()->findOrFail($donorId);
             $downloadData = $this->donorInvoiceService->getDownloadData($donor);
 
             if (! is_array($downloadData)) {
@@ -193,10 +200,28 @@ class AdminDonatorTable extends AbstractDatatableComponent
         $this->sendDonorInvoiceConfirmed($donorId);
     }
 
+    protected function findDonorOrToast(int $donorId): ?Donor
+    {
+        $donor = Donor::query()->find($donorId);
+
+        if (! $donor) {
+            Flux::toast(
+                heading: 'Nicht gefunden',
+                text: 'Die/der ausgewählte Spender:in wurde nicht gefunden.',
+                variant: 'danger',
+                duration: 0,
+            );
+
+            return null;
+        }
+
+        return $donor;
+    }
+
     public function sendDonorInvoiceConfirmed(int $donorId): bool
     {
         try {
-            $donor = Donator::query()->findOrFail($donorId);
+            $donor = Donor::query()->findOrFail($donorId);
             $result = $this->donorInvoiceService->sendInvoice($donor);
             $this->toastActionResult($result);
 
@@ -241,7 +266,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
     public function sendDonorInvoiceReminderConfirmed(int $donorId): bool
     {
         try {
-            $donor = Donator::query()->findOrFail($donorId);
+            $donor = Donor::query()->findOrFail($donorId);
             $result = $this->donorInvoiceService->sendReminder($donor);
             $this->toastActionResult($result);
 
@@ -275,7 +300,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::query()->find($id);
+                $donor = Donor::query()->find($id);
 
                 if (! $donor) {
                     $skipped++;
@@ -306,6 +331,24 @@ class AdminDonatorTable extends AbstractDatatableComponent
         );
     }
 
+    public function createDonorInvoice(int $donorId): void
+    {
+        try {
+            $donor = Donor::query()->findOrFail($donorId);
+
+            $this->toastActionResult($this->donorInvoiceService->createInvoice($donor));
+        } catch (\Throwable $exception) {
+            Log::error('Error creating donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
+            Flux::toast(
+                heading: 'Fehler beim Erstellen der Rechnung',
+                text: $exception->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
+        }
+    }
+
     public function bulkDownloadInvoice(): ?HttpResponse
     {
         $ids = $this->selectedIds();
@@ -319,7 +362,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
         $files = [];
 
         foreach ($ids as $id) {
-            $donor = Donator::query()->find($id);
+            $donor = Donor::query()->find($id);
 
             if (! $donor) {
                 continue;
@@ -389,7 +432,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::query()->find($id);
+                $donor = Donor::query()->find($id);
 
                 if (! $donor) {
                     $skipped++;
@@ -440,7 +483,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::query()->find($id);
+                $donor = Donor::query()->find($id);
 
                 if (! $donor) {
                     $skipped++;
@@ -481,7 +524,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
         $rows = [];
 
         foreach ($this->queryForTable(ignoreSearch: true)->get() as $donor) {
-            if (! $donor instanceof Donator) {
+            if (! $donor instanceof Donor) {
                 continue;
             }
 
@@ -489,6 +532,42 @@ class AdminDonatorTable extends AbstractDatatableComponent
         }
 
         return $this->exportRowsToDownload($rows, 'spenderinnen_gesamt', $format);
+    }
+
+    /**
+     * @return array<string, scalar|null>
+     */
+    protected function exportRow(Donor $donor): array
+    {
+        $sum = $this->donorInvoiceTotal($donor);
+
+        return [
+            'DON-ID' => 'DON-'.sprintf('25%04d', $donor->id),
+            'Vorname' => $donor->first_name,
+            'Nachname' => $donor->last_name,
+            'Anzahl Spenden' => $donor->donations_count,
+            'Rechnungsbetrag' => $sum,
+            'Anmeldung' => $this->formatDate($donor->created_at),
+            'E-Mail' => $donor->email,
+            'Telefon' => $donor->phone_number,
+            'Land' => $donor->country_of_residence,
+            'Adresse' => $donor->address,
+            'PLZ' => $donor->zip_code,
+            'Ort' => $donor->city,
+            'Rechnung' => $this->invoiceStatusLabel($donor),
+            'Rechnung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_sent_at),
+            'Zahlungserinnerung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_reminder_sent_at),
+        ];
+    }
+
+    public function donorInvoiceTotal(Donor $donor): float
+    {
+        return $this->donorInvoiceService->invoiceTotalForDonor($donor);
+    }
+
+    public function invoiceStatusLabel(Donor $donor): string
+    {
+        return $this->donorInvoiceService->formatInvoiceStatus($donor);
     }
 
     public function exportSelected(string $format): ?HttpResponse
@@ -504,7 +583,7 @@ class AdminDonatorTable extends AbstractDatatableComponent
         $rows = [];
 
         foreach ($this->baseQuery()->whereKey($selectedIds)->orderBy('id')->get() as $donor) {
-            if (! $donor instanceof Donator) {
+            if (! $donor instanceof Donor) {
                 continue;
             }
 
@@ -512,6 +591,25 @@ class AdminDonatorTable extends AbstractDatatableComponent
         }
 
         return $this->exportRowsToDownload($rows, 'spenderinnen_auswahl', $format);
+    }
+
+    protected function baseQuery(): Builder
+    {
+        return Donor::query()
+            ->withCount('donations')
+            ->select('donators.*')
+            ->selectSub($this->donorInvoiceService->invoiceTotalSubquery(), 'invoice_total')
+            ->selectRaw($this->donorInvoiceService->invoiceStatusCaseSql());
+    }
+
+    protected function tableView(): string
+    {
+        return 'components.admin.tables.donor-table';
+    }
+
+    protected function tableDataKey(): string
+    {
+        return 'donors';
     }
 
     /**
@@ -530,15 +628,6 @@ class AdminDonatorTable extends AbstractDatatableComponent
             'city',
             'don_id' => "('DON-' || printf('25%04d', id))",
         ];
-    }
-
-    protected function baseQuery(): Builder
-    {
-        return Donator::query()
-            ->withCount('donations')
-            ->select('donators.*')
-            ->selectSub($this->donorInvoiceService->invoiceTotalSubquery(), 'invoice_total')
-            ->selectRaw($this->donorInvoiceService->invoiceStatusCaseSql());
     }
 
     protected function defaultSortColumn(): string
@@ -609,95 +698,6 @@ class AdminDonatorTable extends AbstractDatatableComponent
             'invoice_status',
             'invoice_sent_at',
             'invoice_reminder_sent_at',
-        ];
-    }
-
-    protected function requiresSecondClick(string $key, string $heading, string $text): bool
-    {
-        $now = now()->timestamp;
-        $expiresAt = $this->pendingConfirmations[$key] ?? null;
-
-        if (is_int($expiresAt) && $expiresAt >= $now) {
-            unset($this->pendingConfirmations[$key]);
-
-            return false;
-        }
-
-        $this->pendingConfirmations[$key] = $now + 15;
-
-        Flux::toast(heading: $heading, text: $text, variant: 'warning');
-
-        return true;
-    }
-
-    /**
-     * @param  array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}  $result
-     */
-    protected function toastActionResult(array $result): void
-    {
-        Flux::toast(
-            heading: $result['heading'],
-            text: $result['text'],
-            variant: $result['variant'],
-            duration: $result['duration'],
-        );
-
-        if ($result['refresh']) {
-            $this->dispatch('$refresh');
-        }
-    }
-
-    protected function findDonorOrToast(int $donorId): ?Donator
-    {
-        $donor = Donator::query()->find($donorId);
-
-        if (! $donor) {
-            Flux::toast(
-                heading: 'Nicht gefunden',
-                text: 'Die/der ausgewählte Spender:in wurde nicht gefunden.',
-                variant: 'danger',
-                duration: 0,
-            );
-
-            return null;
-        }
-
-        return $donor;
-    }
-
-    public function donorInvoiceTotal(Donator $donor): float
-    {
-        return $this->donorInvoiceService->invoiceTotalForDonor($donor);
-    }
-
-    public function invoiceStatusLabel(Donator $donor): string
-    {
-        return $this->donorInvoiceService->formatInvoiceStatus($donor);
-    }
-
-    /**
-     * @return array<string, scalar|null>
-     */
-    protected function exportRow(Donator $donor): array
-    {
-        $sum = $this->donorInvoiceTotal($donor);
-
-        return [
-            'DON-ID' => 'DON-'.sprintf('25%04d', $donor->id),
-            'Vorname' => $donor->first_name,
-            'Nachname' => $donor->last_name,
-            'Anzahl Spenden' => $donor->donations_count,
-            'Rechnungsbetrag' => $sum,
-            'Anmeldung' => $this->formatDate($donor->created_at),
-            'E-Mail' => $donor->email,
-            'Telefon' => $donor->phone_number,
-            'Land' => $donor->country_of_residence,
-            'Adresse' => $donor->address,
-            'PLZ' => $donor->zip_code,
-            'Ort' => $donor->city,
-            'Rechnung' => $this->invoiceStatusLabel($donor),
-            'Rechnung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_sent_at),
-            'Zahlungserinnerung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_reminder_sent_at),
         ];
     }
 }

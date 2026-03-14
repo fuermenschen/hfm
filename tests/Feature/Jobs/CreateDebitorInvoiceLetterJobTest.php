@@ -1,14 +1,14 @@
 <?php
 
 use App\Jobs\CreateDonorInvoiceLetter;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use Illuminate\Http\Client\Response;
 
 it('passes properly configured QrInvoiceOptions with debtor details to the letter service', function (): void {
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'first_name' => 'Clara',
         'last_name' => 'Klein',
         'address' => 'Musterweg 5',
@@ -17,8 +17,8 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
     ]);
 
     // Pretend the debitor already exists
-    $donator->webling_data = ['debitor_id' => 456];
-    $donator->save();
+    $donor->webling_data = ['debitor_id' => 456];
+    $donor->save();
 
     // Mock LetterService to capture and assert the QrInvoiceOptions
     $letterResponse = Mockery::mock(Response::class);
@@ -29,7 +29,7 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
     $letterService = Mockery::mock(LetterService::class);
     $letterService->shouldReceive('createInvoiceLetter')
         ->once()
-        ->withArgs(function (string $title, callable $configure, int $debitorId) use ($donator): bool {
+        ->withArgs(function (string $title, callable $configure, int $debitorId) use ($donor): bool {
             expect($title)->toBe('Spendenrechnung Höhenmeter für Menschen')
                 ->and($debitorId)->toBe(456);
 
@@ -41,13 +41,13 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
             $qr = $draft->qr?->toArray() ?? [];
 
             expect($qr['debtorName'] ?? null)->toBe([
-                $donator->first_name.' '.$donator->last_name,
+                $donor->first_name.' '.$donor->last_name,
             ])
                 ->and($qr['debtorAddress1'] ?? null)->toBe([
-                    $donator->address,
+                    $donor->address,
                 ])
                 ->and($qr['debtorAddress2'] ?? null)->toBe([
-                    $donator->zip_code.' '.$donator->city,
+                    $donor->zip_code.' '.$donor->city,
                 ]);
 
             // We do not force withAmount here; it should come from settings fallback
@@ -58,5 +58,5 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
     app()->instance(LetterService::class, $letterService);
 
     // Run the job
-    (new CreateDonorInvoiceLetter($donator))->handle();
+    (new CreateDonorInvoiceLetter($donor))->handle();
 });

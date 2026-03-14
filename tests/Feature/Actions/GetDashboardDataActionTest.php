@@ -3,7 +3,7 @@
 use App\Actions\GetDashboardDataAction;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 
@@ -27,11 +27,11 @@ it('builds dashboard data with expected aggregates', function (): void {
         'verified' => false,
     ]);
 
-    $donatorOne = Donator::factory()->create();
-    $donatorTwo = Donator::factory()->create();
+    $donorOne = Donor::factory()->create();
+    $donorTwo = Donor::factory()->create();
 
     $firstDonation = Donation::query()->create([
-        'donator_id' => $donatorOne->id,
+        'donator_id' => $donorOne->id,
         'athlete_id' => $athleteOne->id,
         'amount_per_round' => 2.0,
         'amount_min' => null,
@@ -40,7 +40,7 @@ it('builds dashboard data with expected aggregates', function (): void {
     $firstDonation->forceFill(['verified' => true])->save();
 
     $secondDonation = Donation::query()->create([
-        'donator_id' => $donatorTwo->id,
+        'donator_id' => $donorTwo->id,
         'athlete_id' => $athleteTwo->id,
         'amount_per_round' => 1.0,
         'amount_min' => 10.0,
@@ -55,13 +55,13 @@ it('builds dashboard data with expected aggregates', function (): void {
             'greeting',
             'partners',
             'athleteCount',
-            'donatorCount',
+            'donorCount',
             'donationCount',
             'verifiedAthleteCount',
             'verifiedDonationCount',
             'meanNumberOfDonations',
             'meanNumberOfRounds',
-            'meanNumberOfDonationsDonator',
+            'meanNumberOfDonationsDonor',
             'meanDonationAmount',
             'expectedDonationAmount',
             'actualTotalAmount',
@@ -71,13 +71,13 @@ it('builds dashboard data with expected aggregates', function (): void {
         ])
         ->and($data['greeting'])->toBeString()->not->toBe('')
         ->and($data['athleteCount'])->toBe(2)
-        ->and($data['donatorCount'])->toBe(2)
+        ->and($data['donorCount'])->toBe(2)
         ->and($data['donationCount'])->toBe(2)
         ->and($data['verifiedAthleteCount'])->toBe(1)
         ->and($data['verifiedDonationCount'])->toBe(1)
         ->and($data['meanNumberOfDonations'])->toBe(1.0)
         ->and($data['meanNumberOfRounds'])->toBe(7.5)
-        ->and($data['meanNumberOfDonationsDonator'])->toBe(1.0)
+        ->and($data['meanNumberOfDonationsDonor'])->toBe(1.0)
         ->and($data['meanDonationAmount'])->toBe(1.5)
         ->and($data['expectedDonationAmount'])->toBe(30.0)
         ->and($data['actualTotalAmount'])->toBe(34.0)

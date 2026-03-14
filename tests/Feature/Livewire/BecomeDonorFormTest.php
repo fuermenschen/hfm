@@ -1,8 +1,8 @@
 <?php
 
-use App\Components\BecomeDonatorForm;
+use App\Components\BecomeDonorForm;
 use App\Models\Athlete;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Notifications\AdminSomeoneRegistered;
@@ -57,12 +57,12 @@ dataset('phone_validation_cases', [
 ]);
 
 test('renders successfully', function () {
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->assertStatus(200);
 })->skip('Registrierung aktuell geschlossen.');
 
 it('defaults country to CH', function () {
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->assertSet('country_of_residence', 'CH');
 })->skip('Registrierung aktuell geschlossen.');
 
@@ -80,7 +80,7 @@ it('validates ZIP per country', function (
         'verified' => true,
     ]);
 
-    $test = Livewire::test(BecomeDonatorForm::class)
+    $test = Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', $country)
         ->set('zip_code', $zip)
         ->set('first_name', 'John')
@@ -112,7 +112,7 @@ it('persists selected country', function () {
         'verified' => true,
     ]);
 
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'DE')
         ->set('first_name', 'Erika')
         ->set('last_name', 'Mustermann')
@@ -144,7 +144,7 @@ it('shows ZIP validation message in the UI when invalid', function () {
         'verified' => true,
     ]);
 
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '80001') // invalid for CH
         ->set('first_name', 'Jane')
@@ -187,7 +187,7 @@ it('validates phone per country', function (
 
     $email = 'phone-'.uniqid().'@example.test';
 
-    $test = Livewire::test(BecomeDonatorForm::class)
+    $test = Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', $country)
         ->set('zip_code', $zip)
         ->set('first_name', 'Testy')
@@ -208,18 +208,18 @@ it('validates phone per country', function (
         $this->assertDatabaseHas('donators', ['email' => $email]);
 
         // verify the phone number is formatted correctly
-        $donator = Donator::query()->where('email', $email)->first();
+        $donor = Donor::query()->where('email', $email)->first();
 
         switch ($country) {
             case 'DE':
-                $this->assertMatchesRegularExpression('/^\+49/', $donator->phone_number);
+                $this->assertMatchesRegularExpression('/^\+49/', $donor->phone_number);
                 break;
             case 'AT':
-                $this->assertMatchesRegularExpression('/^\+43/', $donator->phone_number);
+                $this->assertMatchesRegularExpression('/^\+43/', $donor->phone_number);
                 break;
             case 'CH':
             default:
-                $this->assertMatchesRegularExpression('/^\+41/', $donator->phone_number);
+                $this->assertMatchesRegularExpression('/^\+41/', $donor->phone_number);
                 break;
         }
 
@@ -239,7 +239,7 @@ it('rejects email confirmation mismatch and does not persist', function () {
         'verified' => true,
     ]);
 
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Alex')
@@ -268,7 +268,7 @@ it('requires privacy acceptance', function () {
         'verified' => true,
     ]);
 
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Maya')
@@ -298,7 +298,7 @@ it('validates amount rules and boundaries', function () {
     ]);
 
     // below min boundary fails
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Ben')
@@ -316,7 +316,7 @@ it('validates amount rules and boundaries', function () {
         ->assertHasErrors(['amount_per_round']);
 
     // boundary passes, and min/max coherence
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Cara')
@@ -343,7 +343,7 @@ it('validates amount rules and boundaries', function () {
     ]);
 
     // amount_min must be >= per-round
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Dina')
@@ -362,7 +362,7 @@ it('validates amount rules and boundaries', function () {
         ->assertHasErrors(['amount_min' => 'gte']);
 
     // amount_max must be >= amount_min
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Evan')
@@ -394,7 +394,7 @@ it('prevents duplicate donation for the same athlete', function () {
     $email = 'dup@example.com';
 
     // First registration
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Faye')
@@ -411,11 +411,11 @@ it('prevents duplicate donation for the same athlete', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    $donator = Donator::where('email', $email)->firstOrFail();
-    expect($donator->donations()->where('athlete_id', $athlete->id)->count())->toBe(1);
+    $donor = Donor::where('email', $email)->firstOrFail();
+    expect($donor->donations()->where('athlete_id', $athlete->id)->count())->toBe(1);
 
     // Second attempt with same athlete should not create duplicate
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Faye')
@@ -431,11 +431,11 @@ it('prevents duplicate donation for the same athlete', function () {
         ->set('privacy', true)
         ->call('save');
 
-    $donator->refresh();
-    expect($donator->donations()->where('athlete_id', $athlete->id)->count())->toBe(1);
+    $donor->refresh();
+    expect($donor->donations()->where('athlete_id', $athlete->id)->count())->toBe(1);
 })->skip('Registrierung aktuell geschlossen.');
 
-it('reuses donator across different athletes', function () {
+it('reuses donor across different athletes', function () {
     $partner = Partner::query()->create(['name' => 'Test Partner']);
     $sport = SportType::query()->create(['name' => 'Run']);
 
@@ -453,7 +453,7 @@ it('reuses donator across different athletes', function () {
     $email = 'reuse@example.com';
 
     // First donation
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Gina')
@@ -471,7 +471,7 @@ it('reuses donator across different athletes', function () {
         ->assertHasNoErrors();
 
     // Second donation for another athlete
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Gina')
@@ -488,10 +488,10 @@ it('reuses donator across different athletes', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    expect(Donator::where('email', $email)->count())->toBe(1);
+    expect(Donor::where('email', $email)->count())->toBe(1);
 })->skip('Registrierung aktuell geschlossen.');
 
-it('sends admin notification only for first-time donators when enabled', function () {
+it('sends admin notification only for first-time donors when enabled', function () {
     config(['app.send_notification_on_registration' => true]);
 
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -504,7 +504,7 @@ it('sends admin notification only for first-time donators when enabled', functio
 
     $email = 'notify@example.com';
 
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Hana')
@@ -526,7 +526,7 @@ it('sends admin notification only for first-time donators when enabled', functio
     });
 
     // Second donation should not trigger another admin notification
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Hana')
@@ -556,7 +556,7 @@ it('does not send admin notification when disabled', function () {
 
     $email = 'no-notify@example.com';
 
-    Livewire::test(BecomeDonatorForm::class)
+    Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
         ->set('zip_code', '8001')
         ->set('first_name', 'Ivan')

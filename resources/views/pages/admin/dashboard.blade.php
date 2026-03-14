@@ -77,17 +77,17 @@
             @endforeach
         </x-stats>
 
-        <!-- Donator -->
+        <!-- Donor -->
         <x-stats title="Spender:innen">
             <x-admin.stat-card
                 title="Registriert"
-                :value="$donatorCount"
-                route="admin.donators.index"
+                :value="$donorCount"
+                route="admin.donors.index"
             />
             <x-admin.stat-card
                 title="Durchschn. Spenden"
-                :value="round($meanNumberOfDonationsDonator, 1)"
-                route="admin.donators.index"
+                :value="round($meanNumberOfDonationsDonor, 1)"
+                route="admin.donors.index"
             />
         </x-stats>
 

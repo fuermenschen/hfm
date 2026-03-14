@@ -28,7 +28,7 @@
   <x-slot:ctas>
     <a href="#info"
        class="rounded-md bg-hfm-red px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-hfm-dark dark:hover:bg-hfm-light">Mehr dazu</a>
-    <a href="{{ route('become-donator') }}"
+    <a href="{{ route('become-donor') }}"
        class="text-xs sm:text-sm font-semibold leading-6">Spender:in werden <span aria-hidden="true">→</span></a>
   </x-slot:ctas>
 
@@ -79,7 +79,6 @@
     </div>
   </x-slot:partners>
 </x-hero>
-
 
 
 

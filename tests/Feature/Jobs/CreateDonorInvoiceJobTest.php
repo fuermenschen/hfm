@@ -3,7 +3,7 @@
 use App\Jobs\CreateDonorInvoice;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Storage;
 
 it('creates a letter after creating a donor invoice and stores flags and pdf handle', function (): void {
     // Prepare donor with one donation line
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'first_name' => 'Anna',
         'last_name' => 'Muster',
     ]);
@@ -33,7 +33,7 @@ it('creates a letter after creating a donor invoice and stores flags and pdf han
 
     /** @var Donation $donation */
     $donation = Donation::create([
-        'donator_id' => $donator->id,
+        'donator_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 10.0,
         'amount_min' => null,
@@ -76,20 +76,20 @@ it('creates a letter after creating a donor invoice and stores flags and pdf han
     app()->instance(LetterService::class, $letterService);
 
     // Execute job synchronously
-    (new CreateDonorInvoice($donator))->handle();
+    (new CreateDonorInvoice($donor))->handle();
 
     // Assert webling_data contains debitor_id and the stored PDF handle (no letter_created flag)
-    $donator->refresh();
-    expect($donator->webling_data['debitor_id'] ?? null)->toBe(98765)
-        ->and($donator->webling_data['letter_pdf']['disk'] ?? null)->toBe('local')
-        ->and(isset($donator->webling_data['letter_pdf']['path']))->toBeTrue();
+    $donor->refresh();
+    expect($donor->webling_data['debitor_id'] ?? null)->toBe(98765)
+        ->and($donor->webling_data['letter_pdf']['disk'] ?? null)->toBe('local')
+        ->and(isset($donor->webling_data['letter_pdf']['path']))->toBeTrue();
 
     // Assert file exists on fake disk
-    Storage::disk('local')->assertExists($donator->webling_data['letter_pdf']['path']);
+    Storage::disk('local')->assertExists($donor->webling_data['letter_pdf']['path']);
 });
 
 it('keeps debitor_id and no pdf handle when letter creation fails', function (): void {
-    $donator = Donator::factory()->create([
+    $donor = Donor::factory()->create([
         'first_name' => 'Ben',
         'last_name' => 'Beispiel',
     ]);
@@ -104,7 +104,7 @@ it('keeps debitor_id and no pdf handle when letter creation fails', function ():
     ]);
 
     Donation::create([
-        'donator_id' => $donator->id,
+        'donator_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 5.0,
         'comment' => 'x',
@@ -133,9 +133,9 @@ it('keeps debitor_id and no pdf handle when letter creation fails', function ():
     $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);
     app()->instance(LetterService::class, $letterService);
 
-    (new CreateDonorInvoice($donator))->handle();
+    (new CreateDonorInvoice($donor))->handle();
 
-    $donator->refresh();
-    expect($donator->webling_data['debitor_id'] ?? null)->toBe(12345)
-        ->and(isset($donator->webling_data['letter_pdf']))->toBeFalse();
+    $donor->refresh();
+    expect($donor->webling_data['debitor_id'] ?? null)->toBe(12345)
+        ->and(isset($donor->webling_data['letter_pdf']))->toBeFalse();
 });

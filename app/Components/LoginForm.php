@@ -3,7 +3,7 @@
 namespace App\Components;
 
 use App\Models\Athlete;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\User;
 use App\Notifications\NewLoginLink;
 use Exception;
@@ -55,8 +55,8 @@ class LoginForm extends Component
             $athlete = Athlete::where('email', $this->email)->first();
             $athlete_login_token = $athlete ? $athlete->login_token : '';
 
-            $donator = Donator::where('email', $this->email)->first();
-            $donator_login_token = $donator ? $donator->login_token : '';
+            $donor = Donor::where('email', $this->email)->first();
+            $donorLoginToken = $donor ? $donor->login_token : '';
 
             $user = User::where('email', $this->email)->first();
             $user_url = '';
@@ -68,15 +68,15 @@ class LoginForm extends Component
             // get the first name
             if ($athlete) {
                 $first_name = $athlete->first_name;
-            } elseif ($donator) {
-                $first_name = $donator->first_name;
+            } elseif ($donor) {
+                $first_name = $donor->first_name;
             } elseif ($user) {
                 $first_name = $user->name;
             } else {
                 $first_name = '';
             }
 
-            if (! $athlete && ! $donator && ! $user) {
+            if (! $athlete && ! $donor && ! $user) {
 
                 // add random delay to prevent timing attacks
                 $random_delay = random_int(0, 3);
@@ -86,7 +86,7 @@ class LoginForm extends Component
                 $notification = new NewLoginLink(
                     first_name: $first_name,
                     athlete_login_token: $athlete_login_token,
-                    donator_login_token: $donator_login_token,
+                    donor_login_token: $donorLoginToken,
                     user_login_url: $user_url,
                 );
 

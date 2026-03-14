@@ -63,8 +63,8 @@
                             @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
                             <flux:table.cell class="{{ $cellClass }}">
                                 @switch($columnKey)
-                                    @case('donator')
-                                        {{ $donation->donator->privacy_name }}
+                                    @case('donor')
+                                        {{ $donation->donor->privacy_name }}
                                         @break
 
                                     @case('athlete')

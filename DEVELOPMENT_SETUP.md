@@ -20,6 +20,9 @@ cd hfm
 composer install
 npm install
 
+# Generate local Boost config/guideline files
+php artisan boost:install
+
 cp .env.example .env
 php artisan key:generate
 

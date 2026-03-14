@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,10 +34,10 @@ class CheckDonorInvoicesStatus implements ShouldQueue
 
             // Update donors with matching debitor_id to 'paid'
             if (! empty($paidIds)) {
-                Donator::query()
+                Donor::query()
                     ->whereIn('webling_data->debitor_id', $paidIds)
                     ->chunkById(200, function ($donors): void {
-                        /** @var Donator $donor */
+                        /** @var Donor $donor */
                         foreach ($donors as $donor) {
                             $data = $donor->webling_data ?? [];
                             $data['payment_status'] = 'paid';
@@ -49,10 +49,10 @@ class CheckDonorInvoicesStatus implements ShouldQueue
 
             // Update donors with matching debitor_id to 'overdue' (but don't override 'paid')
             if (! empty($overdueIds)) {
-                Donator::query()
+                Donor::query()
                     ->whereIn('webling_data->debitor_id', $overdueIds)
                     ->chunkById(200, function ($donors): void {
-                        /** @var Donator $donor */
+                        /** @var Donor $donor */
                         foreach ($donors as $donor) {
                             $data = $donor->webling_data ?? [];
                             // If already marked as paid, keep it

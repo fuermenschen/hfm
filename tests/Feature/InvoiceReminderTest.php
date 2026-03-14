@@ -1,8 +1,8 @@
 <?php
 
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use App\Mail\GenericMailMessage;
-use App\Models\Donator;
+use App\Models\Donor;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -12,7 +12,7 @@ it('sends reminders in bulk only for eligible donors', function () {
     Mail::fake();
 
     // Eligible donor: invoice sent, overdue, not yet reminded, has PDF
-    $eligible = Donator::factory()->create();
+    $eligible = Donor::factory()->create();
     $eligiblePath = 'letters/rechnung_'.$eligible->id.'.pdf';
     Storage::disk('local')->put($eligiblePath, 'PDF');
     $eligible->webling_data = [
@@ -26,7 +26,7 @@ it('sends reminders in bulk only for eligible donors', function () {
     $eligible->save();
 
     // Already reminded
-    $alreadyReminded = Donator::factory()->create();
+    $alreadyReminded = Donor::factory()->create();
     $remindedPath = 'letters/rechnung_'.$alreadyReminded->id.'.pdf';
     Storage::disk('local')->put($remindedPath, 'PDF');
     $alreadyReminded->webling_data = [
@@ -41,7 +41,7 @@ it('sends reminders in bulk only for eligible donors', function () {
     $alreadyReminded->save();
 
     // Not sent yet
-    $notSent = Donator::factory()->create();
+    $notSent = Donor::factory()->create();
     $notSentPath = 'letters/rechnung_'.$notSent->id.'.pdf';
     Storage::disk('local')->put($notSentPath, 'PDF');
     $notSent->webling_data = [
@@ -55,7 +55,7 @@ it('sends reminders in bulk only for eligible donors', function () {
     $notSent->save();
 
     // Not overdue
-    $notOverdue = Donator::factory()->create();
+    $notOverdue = Donor::factory()->create();
     $notOverduePath = 'letters/rechnung_'.$notOverdue->id.'.pdf';
     Storage::disk('local')->put($notOverduePath, 'PDF');
     $notOverdue->webling_data = [
@@ -68,7 +68,7 @@ it('sends reminders in bulk only for eligible donors', function () {
     $notOverdue->invoice_sent_at = now()->subDays(5);
     $notOverdue->save();
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('checkboxValues', [$eligible->id, $alreadyReminded->id, $notSent->id, $notOverdue->id])
         ->call('bulkSendInvoiceReminder')
         ->assertStatus(200);

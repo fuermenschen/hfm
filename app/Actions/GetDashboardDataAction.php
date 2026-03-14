@@ -4,7 +4,7 @@ namespace App\Actions;
 
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Services\DonationService;
 use Illuminate\Support\Collection;
@@ -18,13 +18,13 @@ class GetDashboardDataAction
      *     greeting: string,
      *     partners: Collection<int, Partner>,
      *     athleteCount: int,
-     *     donatorCount: int,
+     *     donorCount: int,
      *     donationCount: int,
      *     verifiedAthleteCount: int,
      *     verifiedDonationCount: int,
      *     meanNumberOfDonations: float,
      *     meanNumberOfRounds: float|int|null,
-     *     meanNumberOfDonationsDonator: float,
+     *     meanNumberOfDonationsDonor: float,
      *     meanDonationAmount: float,
      *     expectedDonationAmount: float,
      *     actualTotalAmount: float,
@@ -43,7 +43,7 @@ class GetDashboardDataAction
             ->get();
 
         $athleteCount = (int) Athlete::query()->count();
-        $donatorCount = (int) Donator::query()->count();
+        $donorCount = (int) Donor::query()->count();
         $donationCount = (int) Donation::query()->count();
 
         $verifiedAthleteCount = (int) Athlete::query()->where('verified', true)->count();
@@ -51,7 +51,7 @@ class GetDashboardDataAction
 
         $meanNumberOfDonations = $athleteCount > 0 ? (float) ($donationCount / $athleteCount) : 0.0;
         $meanNumberOfRounds = Athlete::query()->avg('rounds_estimated');
-        $meanNumberOfDonationsDonator = $donatorCount > 0 ? (float) ($donationCount / $donatorCount) : 0.0;
+        $meanNumberOfDonationsDonor = $donorCount > 0 ? (float) ($donationCount / $donorCount) : 0.0;
         $meanDonationAmount = (float) (Donation::query()->avg('amount_per_round') ?? 0.0);
 
         $donations = Donation::query()->with('athlete.partner')->get();
@@ -68,13 +68,13 @@ class GetDashboardDataAction
             'greeting',
             'partners',
             'athleteCount',
-            'donatorCount',
+            'donorCount',
             'donationCount',
             'verifiedAthleteCount',
             'verifiedDonationCount',
             'meanNumberOfDonations',
             'meanNumberOfRounds',
-            'meanNumberOfDonationsDonator',
+            'meanNumberOfDonationsDonor',
             'meanDonationAmount',
             'expectedDonationAmount',
             'actualTotalAmount',
@@ -113,7 +113,7 @@ class GetDashboardDataAction
             ->limit(30)
             ->get(['id', 'first_name', 'last_name', 'created_at']);
 
-        $recentDonators = Donator::query()
+        $recentDonors = Donor::query()
             ->where('created_at', '>=', $sevenDaysAgo)
             ->latest()
             ->limit(30)
@@ -122,7 +122,7 @@ class GetDashboardDataAction
         $recentDonations = Donation::query()
             ->where('created_at', '>=', $sevenDaysAgo)
             ->with([
-                'donator:id,first_name,last_name',
+                'donor:id,first_name,last_name',
                 'athlete:id,first_name,last_name',
             ])
             ->latest()
@@ -139,18 +139,18 @@ class GetDashboardDataAction
             ];
         }
 
-        foreach ($recentDonators as $donator) {
+        foreach ($recentDonors as $donor) {
             $activities[] = [
-                'type' => 'donator',
-                'name' => $donator->privacy_name,
-                'created_at' => $donator->created_at,
+                'type' => 'donor',
+                'name' => $donor->privacy_name,
+                'created_at' => $donor->created_at,
             ];
         }
 
         foreach ($recentDonations as $donation) {
             $activities[] = [
                 'type' => 'donation',
-                'name' => $donation->donator->privacy_name,
+                'name' => $donation->donor->privacy_name,
                 'name2' => $donation->athlete->privacy_name,
                 'created_at' => $donation->created_at,
             ];

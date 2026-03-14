@@ -1,7 +1,7 @@
 <?php
 
-use App\Components\AdminDonatorTable;
-use App\Models\Donator;
+use App\Components\AdminDonorTable;
+use App\Models\Donor;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -12,8 +12,8 @@ it('downloads donor invoice letter pdf via component action', function (): void 
     $path = 'webling/to-download.pdf';
     Storage::disk('local')->put($path, 'pdf');
 
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'debitor_id' => 123,
             'letter_pdf' => [
@@ -24,7 +24,7 @@ it('downloads donor invoice letter pdf via component action', function (): void 
         ],
     ]);
 
-    Livewire::test(AdminDonatorTable::class)
-        ->call('downloadDonorInvoice', $donator->id)
+    Livewire::test(AdminDonorTable::class)
+        ->call('downloadDonorInvoice', $donor->id)
         ->assertStatus(200);
 });
