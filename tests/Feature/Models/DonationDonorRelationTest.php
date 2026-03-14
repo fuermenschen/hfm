@@ -1,22 +1,12 @@
 <?php
 
 use App\Models\Donation;
-use App\Models\Donator;
 use App\Models\Donor;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 it('maps donor model to donors table', function () {
     expect((new Donor)->getTable())->toBe('donors');
-});
-
-it('keeps donator model as compatibility shim', function () {
-    $donator = new Donator;
-
-    expect($donator)
-        ->toBeInstanceOf(Donator::class)
-        ->toBeInstanceOf(Donor::class)
-        ->and($donator->getTable())->toBe('donors');
 });
 
 it('uses donor has many relation on donor_id foreign key', function () {
