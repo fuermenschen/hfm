@@ -2,14 +2,14 @@
 
 namespace App\Actions;
 
-use App\Models\Donator;
+use App\Models\Donor;
 
 class CollectDonorInvoiceDataAction
 {
-    public function __invoke(Donator $donator): array
+    public function __invoke(Donor $donor): array
     {
-        $donator->load('donations.athlete.partner');
-        $donations = $donator->donations;
+        $donor->load('donations.athlete.partner');
+        $donations = $donor->donations;
 
         $lines = [];
 

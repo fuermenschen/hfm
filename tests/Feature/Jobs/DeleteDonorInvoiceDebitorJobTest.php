@@ -1,14 +1,14 @@
 <?php
 
 use App\Jobs\DeleteDonorInvoiceDebitor;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Storage;
 
 it('does nothing when no debitor_id present', function (): void {
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => null,
     ]);
 
@@ -17,10 +17,10 @@ it('does nothing when no debitor_id present', function (): void {
 
     // No call should be made to deleteInvoice; don't bind a mock
 
-    (new DeleteDonorInvoiceDebitor($donator))->handle();
+    (new DeleteDonorInvoiceDebitor($donor))->handle();
 
-    $donator->refresh();
-    expect($donator->webling_data)->toBeNull();
+    $donor->refresh();
+    expect($donor->webling_data)->toBeNull();
 });
 
 it('deletes letter pdf and removes references then deletes debitor and clears id on 204', function (): void {
@@ -30,8 +30,8 @@ it('deletes letter pdf and removes references then deletes debitor and clears id
     $path = 'webling/test.pdf';
     Storage::disk('local')->put($path, 'pdf');
 
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'debitor_id' => 999,
             'letter_pdf' => [
@@ -53,18 +53,18 @@ it('deletes letter pdf and removes references then deletes debitor and clears id
     $service->shouldReceive('deleteInvoice')->once()->with(999)->andReturn($deleteResponse);
     app()->instance(WeblingInvoiceService::class, $service);
 
-    (new DeleteDonorInvoiceDebitor($donator))->handle();
+    (new DeleteDonorInvoiceDebitor($donor))->handle();
 
-    $donator->refresh();
+    $donor->refresh();
     // File should be gone and references cleared
     Storage::disk('local')->assertMissing($path);
-    expect(isset($donator->webling_data['letter_pdf']))->toBeFalse()
-        ->and(isset($donator->webling_data['debitor_id']))->toBeFalse();
+    expect(isset($donor->webling_data['letter_pdf']))->toBeFalse()
+        ->and(isset($donor->webling_data['debitor_id']))->toBeFalse();
 });
 
 it('throws when deletion not successful and keeps debitor_id', function (): void {
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'debitor_id' => 321,
         ],
@@ -77,11 +77,11 @@ it('throws when deletion not successful and keeps debitor_id', function (): void
     $service->shouldReceive('deleteInvoice')->once()->with(321)->andReturn($deleteResponse);
     app()->instance(WeblingInvoiceService::class, $service);
 
-    expect(fn () => (new DeleteDonorInvoiceDebitor($donator))->handle())
+    expect(fn () => (new DeleteDonorInvoiceDebitor($donor))->handle())
         ->toThrow(RuntimeException::class);
 
-    $donator->refresh();
-    expect($donator->webling_data['debitor_id'] ?? null)->toBe(321);
+    $donor->refresh();
+    expect($donor->webling_data['debitor_id'] ?? null)->toBe(321);
 });
 
 it('deletes letter pdf even if no debitor_id is present', function (): void {
@@ -91,8 +91,8 @@ it('deletes letter pdf even if no debitor_id is present', function (): void {
     $path = 'webling/orphan.pdf';
     Storage::disk('local')->put($path, 'pdf');
 
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'letter_pdf' => [
                 'disk' => 'local',
@@ -107,18 +107,18 @@ it('deletes letter pdf even if no debitor_id is present', function (): void {
 
     // No call should be made to deleteInvoice; don't bind a mock
 
-    (new DeleteDonorInvoiceDebitor($donator))->handle();
+    (new DeleteDonorInvoiceDebitor($donor))->handle();
 
-    $donator->refresh();
+    $donor->refresh();
     // File should be gone and references cleared
     Storage::disk('local')->assertMissing($path);
-    expect(isset($donator->webling_data['letter_pdf']))->toBeFalse()
-        ->and(isset($donator->webling_data['debitor_id']))->toBeFalse();
+    expect(isset($donor->webling_data['letter_pdf']))->toBeFalse()
+        ->and(isset($donor->webling_data['debitor_id']))->toBeFalse();
 });
 
 it('treats 404 from external deletion as success and clears debitor_id', function (): void {
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'debitor_id' => 12345,
         ],
@@ -131,8 +131,8 @@ it('treats 404 from external deletion as success and clears debitor_id', functio
     $service->shouldReceive('deleteInvoice')->once()->with(12345)->andReturn($deleteResponse);
     app()->instance(WeblingInvoiceService::class, $service);
 
-    (new DeleteDonorInvoiceDebitor($donator))->handle();
+    (new DeleteDonorInvoiceDebitor($donor))->handle();
 
-    $donator->refresh();
-    expect(isset($donator->webling_data['debitor_id']))->toBeFalse();
+    $donor->refresh();
+    expect(isset($donor->webling_data['debitor_id']))->toBeFalse();
 });

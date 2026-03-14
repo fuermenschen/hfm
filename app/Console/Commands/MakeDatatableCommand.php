@@ -202,7 +202,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
             label: 'Which model should back this datatable?',
             options: array_map('class_basename', $models),
             default: $defaultShort,
-            placeholder: 'E.g. Donator',
+            placeholder: 'E.g. Donor',
             required: true,
         );
 

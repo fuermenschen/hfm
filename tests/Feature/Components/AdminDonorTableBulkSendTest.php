@@ -1,8 +1,8 @@
 <?php
 
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use App\Mail\GenericMailMessage;
-use App\Models\Donator;
+use App\Models\Donor;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -16,7 +16,7 @@ it('bulk sends invoices only for eligible donors', function (): void {
     Storage::disk('local')->put('letters/test2.pdf', 'pdf-content-2');
 
     // Eligible donors (email + existing PDF)
-    $d1 = Donator::factory()->create([
+    $d1 = Donor::factory()->create([
         'email' => 'a@example.com',
         'webling_data' => [
             'letter_pdf' => [
@@ -26,7 +26,7 @@ it('bulk sends invoices only for eligible donors', function (): void {
         ],
     ]);
 
-    $d2 = Donator::factory()->create([
+    $d2 = Donor::factory()->create([
         'email' => 'b@example.com',
         'webling_data' => [
             'letter_pdf' => [
@@ -37,13 +37,13 @@ it('bulk sends invoices only for eligible donors', function (): void {
     ]);
 
     // Missing PDF -> should be skipped
-    $d3 = Donator::factory()->create([
+    $d3 = Donor::factory()->create([
         'email' => 'c@example.com',
         'webling_data' => [],
     ]);
 
     // Already sent -> should be skipped
-    $d4 = Donator::factory()->create([
+    $d4 = Donor::factory()->create([
         'email' => 'd@example.com',
         'webling_data' => [
             'letter_pdf' => [
@@ -54,7 +54,7 @@ it('bulk sends invoices only for eligible donors', function (): void {
         'invoice_sent_at' => now(),
     ]);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('checkboxValues', [$d1->id, $d2->id, $d3->id, $d4->id])
         ->call('bulkSendInvoice')
         ->assertStatus(200);

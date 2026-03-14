@@ -85,14 +85,14 @@ class AdminDonationTable extends AbstractDatatableComponent
             'comment',
             'athlete.first_name',
             'athlete.last_name',
-            'donator.first_name',
-            'donator.last_name',
+            'donor.first_name',
+            'donor.last_name',
         ];
     }
 
     protected function baseQuery(): Builder
     {
-        return Donation::query()->with(['athlete', 'donator']);
+        return Donation::query()->with(['athlete', 'donor']);
     }
 
     protected function defaultSortColumn(): string
@@ -120,7 +120,7 @@ class AdminDonationTable extends AbstractDatatableComponent
     protected function columnDefinitions(): array
     {
         return [
-            'donator' => ['label' => 'Spender:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Spender:in'],
+            'donor' => ['label' => 'Spender:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Spender:in'],
             'athlete' => ['label' => 'Sportler:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Sportler:in'],
             'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
             'amount_per_round' => ['label' => 'Betrag pro Runde', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Betrag pro Runde', 'formatter' => 'money'],
@@ -139,7 +139,7 @@ class AdminDonationTable extends AbstractDatatableComponent
     protected function defaultVisibleColumns(): array
     {
         return [
-            'donator',
+            'donor',
             'athlete',
             'verified',
             'amount_per_round',
@@ -155,7 +155,7 @@ class AdminDonationTable extends AbstractDatatableComponent
     protected function exportRow(Donation $donation): array
     {
         return [
-            'Spender:in' => $donation->donator->privacy_name,
+            'Spender:in' => $donation->donor->privacy_name,
             'Sportler:in' => $donation->athlete->privacy_name,
             'Bestätigt' => $donation->verified ? 'Ja' : 'Nein',
             'Betrag pro Runde' => $donation->amount_per_round,

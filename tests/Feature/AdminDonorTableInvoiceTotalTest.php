@@ -1,9 +1,9 @@
 <?php
 
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,7 +15,7 @@ it('renders precomputed invoice totals in the donor table', function (): void {
     $sportType = SportType::query()->create(['name' => 'Laufen']);
     $partner = Partner::query()->create(['name' => 'HfM']);
 
-    $donor = Donator::factory()->create();
+    $donor = Donor::factory()->create();
 
     $athleteA = Athlete::factory()->create([
         'sport_type_id' => $sportType->id,
@@ -45,13 +45,13 @@ it('renders precomputed invoice totals in the donor table', function (): void {
         'amount_max' => null,
     ]);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Fr. 140.00');
 });
 
 it('renders zero as invoice total when donor has no donations', function (): void {
-    Donator::factory()->create();
+    Donor::factory()->create();
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Fr. 0.00');
 });

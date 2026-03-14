@@ -1,10 +1,10 @@
 <?php
 
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use Illuminate\Contracts\View\View;
 
 it('renders actions from view for a row', function () {
-    $component = app(AdminDonatorTable::class);
+    $component = app(AdminDonorTable::class);
 
     $row = new stdClass;
     $row->id = 123;

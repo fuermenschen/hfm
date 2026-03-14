@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\CollectDonorInvoiceDataAction;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\InvoiceSettings;
@@ -17,7 +17,7 @@ class CreateDonorInvoiceLetter implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public Donator $donor) {}
+    public function __construct(public Donor $donor) {}
 
     public function handle(): void
     {

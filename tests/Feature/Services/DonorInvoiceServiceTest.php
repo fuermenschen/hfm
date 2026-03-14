@@ -2,7 +2,7 @@
 
 use App\Jobs\CreateDonorInvoice;
 use App\Mail\GenericMailMessage;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\DonorInvoiceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -14,7 +14,7 @@ uses(RefreshDatabase::class);
 it('does not create donor invoice when debitor and letter pdf are already present', function (): void {
     Bus::fake();
 
-    $donor = Donator::factory()->create([
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'debitor_id' => 123,
             'letter_pdf' => ['disk' => 'local', 'path' => 'letters/invoice.pdf'],
@@ -35,7 +35,7 @@ it('sends donor invoice email when donor has email and stored invoice pdf', func
 
     Storage::disk('local')->put('letters/invoice.pdf', 'pdf-content');
 
-    $donor = Donator::factory()->create([
+    $donor = Donor::factory()->create([
         'email' => 'service-test@example.com',
         'webling_data' => [
             'letter_pdf' => ['disk' => 'local', 'path' => 'letters/invoice.pdf'],
@@ -55,7 +55,7 @@ it('returns danger result when sending donor invoice without email', function ()
 
     Storage::disk('local')->put('letters/invoice.pdf', 'pdf-content');
 
-    $donor = Donator::factory()->create([
+    $donor = Donor::factory()->create([
         'email' => '',
         'webling_data' => [
             'letter_pdf' => ['disk' => 'local', 'path' => 'letters/invoice.pdf'],
@@ -69,11 +69,11 @@ it('returns danger result when sending donor invoice without email', function ()
 });
 
 it('builds exclusive invoice status summary', function (): void {
-    Donator::factory()->create(['webling_data' => ['payment_status' => 'paid']]);
-    Donator::factory()->create(['webling_data' => ['payment_status' => 'overdue']]);
-    Donator::factory()->create(['invoice_sent_at' => now(), 'webling_data' => []]);
-    Donator::factory()->create(['webling_data' => ['letter_pdf' => ['disk' => 'local', 'path' => 'letters/sample.pdf']]]);
-    Donator::factory()->create(['webling_data' => []]);
+    Donor::factory()->create(['webling_data' => ['payment_status' => 'paid']]);
+    Donor::factory()->create(['webling_data' => ['payment_status' => 'overdue']]);
+    Donor::factory()->create(['invoice_sent_at' => now(), 'webling_data' => []]);
+    Donor::factory()->create(['webling_data' => ['letter_pdf' => ['disk' => 'local', 'path' => 'letters/sample.pdf']]]);
+    Donor::factory()->create(['webling_data' => []]);
 
     $summary = app(DonorInvoiceService::class)->invoiceStatusSummary();
 

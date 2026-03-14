@@ -2,17 +2,18 @@
 
 namespace App\Jobs;
 
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DeleteDonorInvoiceDebitor implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public Donator $donor) {}
+    public function __construct(public Donor $donor) {}
 
     public function handle(): void
     {
@@ -68,7 +69,7 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
             return;
         }
 
-        \Log::warning('Unexpected response when deleting Webling debitor for donor', [
+        Log::warning('Unexpected response when deleting Webling debitor for donor', [
             'donor_id' => $this->donor->id,
             'debitor_id' => $debitorId,
             'expected_statuses' => [204, 404],

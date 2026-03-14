@@ -2,19 +2,19 @@
 
 use App\Components\AdminAthleteTable;
 use App\Components\AdminDonationTable;
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use Livewire\Livewire;
 
 it('normalizes invalid donor sorting input using shared allowlist validation', function (): void {
-    $later = Donator::factory()->create(['first_name' => 'Zoe']);
-    $earlier = Donator::factory()->create(['first_name' => 'Anna']);
+    $later = Donor::factory()->create(['first_name' => 'Zoe']);
+    $earlier = Donor::factory()->create(['first_name' => 'Anna']);
 
-    $component = Livewire::test(AdminDonatorTable::class)
+    $component = Livewire::test(AdminDonorTable::class)
         ->set('sortField', 'unsupported_sort_column')
         ->set('sortDirection', 'invalid-direction');
 
@@ -53,10 +53,10 @@ it('uses shared donation table render conventions', function (): void {
         'verified' => true,
     ]);
 
-    $donator = Donator::factory()->create();
+    $donor = Donor::factory()->create();
 
     $donation = Donation::query()->create([
-        'donator_id' => $donator->id,
+        'donator_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 12,
         'amount_min' => 10,
@@ -71,7 +71,7 @@ it('uses shared donation table render conventions', function (): void {
 });
 
 it('always renders clear selection button across admin datatables', function (): void {
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Auswahl entfernen')
         ->assertSee('Ausgewählt: 0');
 
@@ -85,14 +85,14 @@ it('always renders clear selection button across admin datatables', function ():
 });
 
 it('shows create invoice row action when no invoice exists yet', function (): void {
-    Donator::factory()->create(['webling_data' => []]);
+    Donor::factory()->create(['webling_data' => []]);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Rechnung erstellen');
 });
 
 it('keeps donor bulk action labels stable without embedded selection counters', function (): void {
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Rechnungen erstellen')
         ->assertSee('Rechnungen herunterladen')
         ->assertSee('Rechnungen senden')
@@ -104,46 +104,46 @@ it('keeps donor bulk action labels stable without embedded selection counters', 
 });
 
 it('filters donor rows when search input changes', function (): void {
-    Donator::factory()->create(['first_name' => 'Anna']);
-    Donator::factory()->create(['first_name' => 'Zoey']);
+    Donor::factory()->create(['first_name' => 'Anna']);
+    Donor::factory()->create(['first_name' => 'Zoey']);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('search', 'Anna')
         ->assertSee('Anna');
 });
 
 it('sanitizes search input and escapes SQL wildcard characters', function (): void {
-    Donator::factory()->create(['first_name' => 'Anna']);
-    Donator::factory()->create(['first_name' => 'Ann%a']);
-    Donator::factory()->create(['first_name' => 'Ann_a']);
-    Donator::factory()->create(['first_name' => 'AnnXa']);
+    Donor::factory()->create(['first_name' => 'Anna']);
+    Donor::factory()->create(['first_name' => 'Ann%a']);
+    Donor::factory()->create(['first_name' => 'Ann_a']);
+    Donor::factory()->create(['first_name' => 'AnnXa']);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('search', "  Anna\n")
         ->assertSee('Anna')
         ->assertDontSee('Ann%a');
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('search', '%')
         ->assertSee('Ann%a')
         ->assertDontSee('Anna');
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('search', '_')
         ->assertSee('Ann_a')
         ->assertDontSee('AnnXa');
 });
 
 it('hydrates donor table search and sorting state from query parameters', function (): void {
-    Donator::factory()->create(['first_name' => 'Anna', 'last_name' => 'Zeta']);
-    Donator::factory()->create(['first_name' => 'Zoey', 'last_name' => 'Alpha']);
+    Donor::factory()->create(['first_name' => 'Anna', 'last_name' => 'Zeta']);
+    Donor::factory()->create(['first_name' => 'Zoey', 'last_name' => 'Alpha']);
 
     Livewire::withQueryParams([
         'search' => 'Anna',
         'sortField' => 'last_name',
         'sortDirection' => 'desc',
     ])
-        ->test(AdminDonatorTable::class)
+        ->test(AdminDonorTable::class)
         ->assertSet('search', 'Anna')
         ->assertSet('sortField', 'last_name')
         ->assertSet('sortDirection', 'desc')
@@ -152,14 +152,14 @@ it('hydrates donor table search and sorting state from query parameters', functi
 
 it('hydrates donor table pagination state from query parameters', function (): void {
     foreach (range(1, 30) as $index) {
-        Donator::factory()->create(['first_name' => 'Name'.str_pad((string) $index, 2, '0', STR_PAD_LEFT)]);
+        Donor::factory()->create(['first_name' => 'Name'.str_pad((string) $index, 2, '0', STR_PAD_LEFT)]);
     }
 
     Livewire::withQueryParams([
         'perPage' => '25',
         'page' => '2',
     ])
-        ->test(AdminDonatorTable::class)
+        ->test(AdminDonorTable::class)
         ->assertSet('perPage', 25)
         ->tap(function ($component): void {
             $paginator = $component->viewData('donors');
@@ -170,10 +170,10 @@ it('hydrates donor table pagination state from query parameters', function (): v
 });
 
 it('toggles donor sort direction when clicking the same sortable column', function (): void {
-    $anna = Donator::factory()->create(['first_name' => 'Anna']);
-    $zoey = Donator::factory()->create(['first_name' => 'Zoey']);
+    $anna = Donor::factory()->create(['first_name' => 'Anna']);
+    $zoey = Donor::factory()->create(['first_name' => 'Zoey']);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSet('sortField', 'first_name')
         ->assertSet('sortDirection', 'asc')
         ->call('sortByColumn', 'first_name')
@@ -185,17 +185,17 @@ it('toggles donor sort direction when clicking the same sortable column', functi
 });
 
 it('persists donor visible columns in session across component reloads', function (): void {
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSet('visibleColumns', fn (array $columns): bool => in_array('email', $columns, true))
         ->call('toggleColumn', 'email')
         ->assertSet('visibleColumns', fn (array $columns): bool => ! in_array('email', $columns, true));
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSet('visibleColumns', fn (array $columns): bool => ! in_array('email', $columns, true));
 });
 
 it('builds a schema-driven visible column map with metadata', function (): void {
-    $component = Livewire::test(AdminDonatorTable::class);
+    $component = Livewire::test(AdminDonorTable::class);
 
     $visibleDefinitions = $component->instance()->visibleColumnDefinitions();
     $visibleColumns = $component->get('visibleColumns');
@@ -210,7 +210,7 @@ it('builds a schema-driven visible column map with metadata', function (): void 
 });
 
 it('builds formal donor bulk action descriptors with execution callbacks', function (): void {
-    $actions = Livewire::test(AdminDonatorTable::class)
+    $actions = Livewire::test(AdminDonorTable::class)
         ->instance()
         ->donorBulkActions();
 
@@ -224,7 +224,7 @@ it('builds formal donor bulk action descriptors with execution callbacks', funct
 });
 
 it('builds donor row action groups and keeps overdue reminder visibility', function (): void {
-    $donor = Donator::factory()->create([
+    $donor = Donor::factory()->create([
         'email' => 'row-action@example.com',
         'invoice_sent_at' => now()->subDays(2),
         'webling_data' => [
@@ -235,7 +235,7 @@ it('builds donor row action groups and keeps overdue reminder visibility', funct
         ],
     ]);
 
-    $groups = Livewire::test(AdminDonatorTable::class)
+    $groups = Livewire::test(AdminDonorTable::class)
         ->instance()
         ->donorRowActionGroups($donor);
 
@@ -249,10 +249,10 @@ it('builds donor row action groups and keeps overdue reminder visibility', funct
 });
 
 it('updates selected row counter when page selection is toggled', function (): void {
-    $first = Donator::factory()->create();
-    $second = Donator::factory()->create();
+    $first = Donor::factory()->create();
+    $second = Donor::factory()->create();
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Ausgewählt: 0')
         ->call('toggleSelectPage', [$first->id, $second->id])
         ->assertSee('Ausgewählt: 2')
@@ -261,9 +261,9 @@ it('updates selected row counter when page selection is toggled', function (): v
 });
 
 it('shows inline donor empty-state hints with a reset action during filtered searches', function (): void {
-    Donator::factory()->create(['first_name' => 'Anna']);
+    Donor::factory()->create(['first_name' => 'Anna']);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('search', 'NichtVorhanden')
         ->assertSee('Keine Treffer für')
         ->assertSee('Suche zurücksetzen');
@@ -278,7 +278,7 @@ it('renders consistent table loading and action loading labels', function (): vo
         'partner_id' => $partner->id,
     ]);
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->assertSee('Tabelle wird aktualisiert...')
         ->assertSee('Auswahl wird entfernt...')
         ->assertSee('Prüfe Zahlungsstatus...');

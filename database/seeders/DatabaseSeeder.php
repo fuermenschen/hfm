@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Models\User;
@@ -74,7 +74,7 @@ class DatabaseSeeder extends Seeder
         if (config('app.env') === 'local') {
             Athlete::factory(10)->create();
             Athlete::factory(20)->verified()->create();
-            Donator::factory(150)->create();
+            Donor::factory(150)->create();
             Donation::factory(250)->create();
         }
     }

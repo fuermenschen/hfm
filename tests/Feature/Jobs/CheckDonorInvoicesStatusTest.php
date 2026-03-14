@@ -1,22 +1,22 @@
 <?php
 
 use App\Jobs\CheckDonorInvoicesStatus;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Http\Client\Response;
 
 it('marks donors as paid or overdue based on Webling index responses', function (): void {
     // Seed donors with known debitor_ids
-    /** @var Donator $paidDonor */
-    $paidDonor = Donator::factory()->create([
+    /** @var Donor $paidDonor */
+    $paidDonor = Donor::factory()->create([
         'webling_data' => ['debitor_id' => 101],
     ]);
-    /** @var Donator $overdueDonor */
-    $overdueDonor = Donator::factory()->create([
+    /** @var Donor $overdueDonor */
+    $overdueDonor = Donor::factory()->create([
         'webling_data' => ['debitor_id' => 202],
     ]);
-    /** @var Donator $unrelatedDonor */
-    $unrelatedDonor = Donator::factory()->create([
+    /** @var Donor $unrelatedDonor */
+    $unrelatedDonor = Donor::factory()->create([
         'webling_data' => ['debitor_id' => 303],
     ]);
 

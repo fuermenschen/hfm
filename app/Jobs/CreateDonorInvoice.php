@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Donator;
+use App\Models\Donor;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Bus;
@@ -11,7 +11,7 @@ class CreateDonorInvoice implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public Donator $donor) {}
+    public function __construct(public Donor $donor) {}
 
     public function handle(): void
     {

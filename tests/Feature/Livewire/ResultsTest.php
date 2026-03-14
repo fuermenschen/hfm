@@ -3,7 +3,7 @@
 use App\Components\Results;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use Livewire\Livewire;
@@ -45,13 +45,13 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'partner_id' => $c->id,
     ]);
 
-    // Create donators and donations
-    $donator1 = Donator::factory()->create();
-    $donator2 = Donator::factory()->create();
-    $donator3 = Donator::factory()->create();
+    // Create donors and donations
+    $donor1 = Donor::factory()->create();
+    $donor2 = Donor::factory()->create();
+    $donor3 = Donor::factory()->create();
 
     Donation::create([
-        'donator_id' => $donator1->id,
+        'donator_id' => $donor1->id,
         'athlete_id' => $athleteEqual->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
@@ -59,7 +59,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'comment' => null,
     ]);
     Donation::create([
-        'donator_id' => $donator2->id,
+        'donator_id' => $donor2->id,
         'athlete_id' => $athleteB->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
@@ -67,7 +67,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'comment' => null,
     ]);
     Donation::create([
-        'donator_id' => $donator3->id,
+        'donator_id' => $donor3->id,
         'athlete_id' => $athleteC->id,
         'amount_per_round' => 5.0,
         'amount_max' => null,

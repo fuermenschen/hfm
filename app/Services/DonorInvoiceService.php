@@ -6,7 +6,7 @@ use App\Jobs\CreateDonorInvoice;
 use App\Jobs\DeleteDonorInvoiceDebitor;
 use App\Mail\GenericMailMessage;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
-    public function createInvoice(Donator $donor): array
+    public function createInvoice(Donor $donor): array
     {
         $weblingData = $donor->webling_data ?? [];
         $hasDebitor = ! empty($weblingData['debitor_id']);
@@ -48,7 +48,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
-    public function deleteInvoice(Donator $donor): array
+    public function deleteInvoice(Donor $donor): array
     {
         $weblingData = $donor->webling_data ?? [];
         $hasDebitor = ! empty($weblingData['debitor_id']);
@@ -78,7 +78,7 @@ class DonorInvoiceService
     /**
      * @return array{absolute_path:string,file_name:string}|null
      */
-    public function getDownloadData(Donator $donor): ?array
+    public function getDownloadData(Donor $donor): ?array
     {
         $letterPdf = $this->letterPdfData($donor);
         if (! is_array($letterPdf)) {
@@ -102,7 +102,7 @@ class DonorInvoiceService
     /**
      * @return array<string,mixed>|null
      */
-    protected function letterPdfData(Donator $donor): ?array
+    protected function letterPdfData(Donor $donor): ?array
     {
         $weblingData = $donor->webling_data ?? [];
 
@@ -113,7 +113,7 @@ class DonorInvoiceService
         return $weblingData['letter_pdf'];
     }
 
-    protected function donorPublicId(Donator $donor): string
+    protected function donorPublicId(Donor $donor): string
     {
         return 'DON-'.sprintf('25%04d', $donor->id);
     }
@@ -121,7 +121,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
-    public function sendInvoice(Donator $donor): array
+    public function sendInvoice(Donor $donor): array
     {
         if (empty($donor->email)) {
             return [
@@ -192,7 +192,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
-    public function sendReminder(Donator $donor): array
+    public function sendReminder(Donor $donor): array
     {
         if (empty($donor->invoice_sent_at)) {
             return [
@@ -282,7 +282,7 @@ class DonorInvoiceService
         ];
     }
 
-    public function formatInvoiceStatus(Donator $donor): string
+    public function formatInvoiceStatus(Donor $donor): string
     {
         $weblingData = $donor->webling_data ?? [];
         $payment = $weblingData['payment_status'] ?? null;
@@ -306,17 +306,17 @@ class DonorInvoiceService
         return '-';
     }
 
-    public function canCreateInvoiceInBulk(Donator $donor): bool
+    public function canCreateInvoiceInBulk(Donor $donor): bool
     {
         return $donor->donations()->exists();
     }
 
-    public function canSendInvoiceInBulk(Donator $donor): bool
+    public function canSendInvoiceInBulk(Donor $donor): bool
     {
         return empty($donor->invoice_sent_at);
     }
 
-    public function canSendReminderInBulk(Donator $donor): bool
+    public function canSendReminderInBulk(Donor $donor): bool
     {
         $paymentStatus = data_get($donor->webling_data, 'payment_status');
 
@@ -331,7 +331,7 @@ class DonorInvoiceService
             ->whereColumn('donations.donator_id', 'donators.id');
     }
 
-    public function invoiceTotalForDonor(Donator $donor): float
+    public function invoiceTotalForDonor(Donor $donor): float
     {
         $precomputedInvoiceTotal = $donor->getAttribute('invoice_total');
 
@@ -390,15 +390,15 @@ class DonorInvoiceService
      */
     public function invoiceStatusSummary(): array
     {
-        $paid = Donator::query()
+        $paid = Donor::query()
             ->where('webling_data->payment_status', 'paid')
             ->count();
 
-        $overdue = Donator::query()
+        $overdue = Donor::query()
             ->where('webling_data->payment_status', 'overdue')
             ->count();
 
-        $sent = Donator::query()
+        $sent = Donor::query()
             ->whereNotNull('invoice_sent_at')
             ->where(function ($query): void {
                 $query->whereNull('webling_data->payment_status')
@@ -406,7 +406,7 @@ class DonorInvoiceService
             })
             ->count();
 
-        $created = Donator::query()
+        $created = Donor::query()
             ->whereNull('invoice_sent_at')
             ->whereNotNull('webling_data->letter_pdf')
             ->where(function ($query): void {
@@ -415,7 +415,7 @@ class DonorInvoiceService
             })
             ->count();
 
-        $notCreated = Donator::query()
+        $notCreated = Donor::query()
             ->whereNull('invoice_sent_at')
             ->whereNull('webling_data->letter_pdf')
             ->where(function ($query): void {

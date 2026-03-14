@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
 /**
- * @property Donator $donator
+ * @property Donor $donor
+ * @property Donor $donator
  * @property Athlete $athlete
  */
 class Donation extends Model
@@ -27,26 +28,25 @@ class Donation extends Model
                 return;
             }
 
-            // Ensure donator has a login token (should already be set on creating)
-            $donation->donator->generateLoginToken();
+            $donation->donor->generateLoginToken();
 
-            $donation->donator->notify(new DonationRegistered(
-                $donation->donator->first_name,
+            $donation->donor->notify(new DonationRegistered(
+                $donation->donor->first_name,
                 $donation->athlete->privacy_name,
                 $donation->id,
-                $donation->donator->login_token
+                $donation->donor->login_token
             ));
 
             $donation->athlete->notify(new AthleteNewDonation(
                 $donation->athlete->first_name,
-                $donation->donator->privacy_name,
+                $donation->donor->privacy_name,
                 $donation->athlete->public_id_string,
                 $donation->athlete->login_token
             ));
 
             // add log entry
             Log::info('Donation registered', [
-                'donator' => $donation->donator->privacy_name,
+                'donor' => $donation->donor->privacy_name,
                 'athlete' => $donation->athlete->privacy_name,
                 'amount_per_round' => $donation->amount_per_round,
                 'amount_max' => $donation->amount_max,
@@ -59,7 +59,7 @@ class Donation extends Model
             if (! app()->runningUnitTests()) {
                 // add log entry
                 Log::info('Donation deleted', [
-                    'donator' => $donation->donator->privacy_name,
+                    'donor' => $donation->donor->privacy_name,
                     'athlete' => $donation->athlete->privacy_name,
                     'amount_per_round' => $donation->amount_per_round,
                     'amount_max' => $donation->amount_max,
@@ -70,9 +70,14 @@ class Donation extends Model
         });
     }
 
+    public function donor(): BelongsTo
+    {
+        return $this->belongsTo(Donor::class, 'donator_id');
+    }
+
     public function donator(): BelongsTo
     {
-        return $this->belongsTo(Donator::class);
+        return $this->donor();
     }
 
     public function athlete(): BelongsTo

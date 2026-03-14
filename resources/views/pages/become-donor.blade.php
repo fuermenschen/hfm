@@ -31,7 +31,7 @@
         Es freut uns, dass du Spender:in werden möchtest. Indem du das Formular ausfüllst, hilfst du den Sportler:innen,
         Spenden für unsere Benefizpartner:innen zu sammeln.
 
-        @livewire('become-donator-form')
+        @livewire('become-donor-form')
         --}}
 
         <x-page-subtitle>

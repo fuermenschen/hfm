@@ -44,7 +44,7 @@
                         <div class="flex justify-between">
                             <div class="flex min-w-0 gap-x-4">
                                 <div class="min-w-0 flex-auto">
-                                    <p class="text-sm font-semibold leading-6">{{ $donation['donator'] }}</p>
+                                    <p class="text-sm font-semibold leading-6">{{ $donation['donor'] }}</p>
                                     @if (!$donation['verified'])
                                         <p class="mt-1 truncate text-xs leading-5 text-hfm-red">nicht verifiziert</p>
                                     @else

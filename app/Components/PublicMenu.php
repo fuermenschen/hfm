@@ -26,7 +26,7 @@ class PublicMenu extends Component
         ],
         [
             'name' => 'Spender:in werden',
-            'route' => 'become-donator',
+            'route' => 'become-donor',
             'active' => false,
         ],
     ];

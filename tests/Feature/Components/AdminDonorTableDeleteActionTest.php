@@ -1,7 +1,7 @@
 <?php
 
-use App\Components\AdminDonatorTable;
-use App\Models\Donator;
+use App\Components\AdminDonorTable;
+use App\Models\Donor;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Storage;
@@ -14,8 +14,8 @@ it('deletes donor invoice debitor via component action', function (): void {
     $path = 'webling/to-delete.pdf';
     Storage::disk('local')->put($path, 'pdf');
 
-    /** @var Donator $donator */
-    $donator = Donator::factory()->create([
+    /** @var Donor $donor */
+    $donor = Donor::factory()->create([
         'webling_data' => [
             'debitor_id' => 456,
             'letter_pdf' => [
@@ -34,12 +34,12 @@ it('deletes donor invoice debitor via component action', function (): void {
     $service->shouldReceive('deleteInvoice')->once()->with(456)->andReturn($deleteResponse);
     app()->instance(WeblingInvoiceService::class, $service);
 
-    Livewire::test(AdminDonatorTable::class)
-        ->call('deleteDonorInvoice', $donator->id)
+    Livewire::test(AdminDonorTable::class)
+        ->call('deleteDonorInvoice', $donor->id)
         ->assertStatus(200);
 
-    $donator->refresh();
+    $donor->refresh();
     Storage::disk('local')->assertMissing($path);
-    expect(isset($donator->webling_data['debitor_id']))->toBeFalse()
-        ->and(isset($donator->webling_data['letter_pdf']))->toBeFalse();
+    expect(isset($donor->webling_data['debitor_id']))->toBeFalse()
+        ->and(isset($donor->webling_data['letter_pdf']))->toBeFalse();
 });

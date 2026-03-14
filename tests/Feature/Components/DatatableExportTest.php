@@ -2,10 +2,10 @@
 
 use App\Components\AdminAthleteTable;
 use App\Components\AdminDonationTable;
-use App\Components\AdminDonatorTable;
+use App\Components\AdminDonorTable;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,9 +14,9 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 it('exports selected donors as csv', function (): void {
-    $donor = Donator::factory()->create();
+    $donor = Donor::factory()->create();
 
-    Livewire::test(AdminDonatorTable::class)
+    Livewire::test(AdminDonorTable::class)
         ->set('checkboxValues', [$donor->id])
         ->call('exportSelected', 'csv')
         ->assertFileDownloaded();
@@ -59,10 +59,10 @@ it('exports selected donations as csv', function (): void {
         'partner_id' => $partner->id,
     ]);
 
-    $donator = Donator::factory()->create();
+    $donor = Donor::factory()->create();
 
     $donation = Donation::query()->create([
-        'donator_id' => $donator->id,
+        'donator_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 10,
         'amount_max' => 100,

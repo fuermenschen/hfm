@@ -145,7 +145,7 @@
                             </flux:table.cell>
                         @endforeach
                         <flux:table.cell class="sticky right-0 z-10 w-14 min-w-14 align-middle border-l border-zinc-200 {{ $rowClass }} text-center dark:border-zinc-700">
-                            @include('components.admin.tables.partials.donator-row-actions', ['row' => $donor, 'actionGroups' => $this->donorRowActionGroups($donor)])
+                            @include('components.admin.tables.partials.donor-row-actions', ['row' => $donor, 'actionGroups' => $this->donorRowActionGroups($donor)])
                         </flux:table.cell>
                     </flux:table.row>
                 @empty

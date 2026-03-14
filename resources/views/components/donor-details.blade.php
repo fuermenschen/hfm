@@ -1,5 +1,5 @@
 <div>
-    <x-page-title>Hallo {{ $donator['first_name'] }}</x-page-title>
+    <x-page-title>Hallo {{ $donor['first_name'] }}</x-page-title>
 
     <div
         class="w-full max-w-2xl mx-auto text-left sm:text-center">Auf dieser Seite siehst du, für wen du alles spendest

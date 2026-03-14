@@ -3,7 +3,7 @@
 use App\Actions\CollectDonorInvoiceDataAction;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donator;
+use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 
@@ -43,20 +43,20 @@ describe('collect donor invoice data', function () {
             'rounds_done' => $rounds,
         ]);
 
-        $donator = Donator::factory()->create([
+        $donor = Donor::factory()->create([
             'first_name' => 'John',
             'last_name' => 'Smith',
         ]);
 
         Donation::query()->create([
-            'donator_id' => $donator->id,
+            'donator_id' => $donor->id,
             'athlete_id' => $athlete->id,
             'amount_per_round' => $perRound,
             'amount_min' => $min,
             'amount_max' => $max,
         ]);
 
-        $lines = app(CollectDonorInvoiceDataAction::class)($donator);
+        $lines = app(CollectDonorInvoiceDataAction::class)($donor);
 
         expect($lines)->toHaveCount(1);
 
@@ -72,7 +72,7 @@ describe('collect donor invoice data', function () {
             ->and($line['total'])->toBe(round($expectedTotal, 2));
     })->with('invoice_line_cases');
 
-    it('handles multiple donations for the same donator', function (): void {
+    it('handles multiple donations for the same donor', function (): void {
         $partner = Partner::query()->create(['name' => 'Globex']);
         SportType::query()->insert([
             ['name' => 'Swim'],
@@ -98,18 +98,18 @@ describe('collect donor invoice data', function () {
             ],
         ]);
 
-        $donator = Donator::factory()->create();
+        $donor = Donor::factory()->create();
 
         Donation::query()->insert([
             [
-                'donator_id' => $donator->id,
+                'donator_id' => $donor->id,
                 'athlete_id' => $athletes[0]->id,
                 'amount_per_round' => 2.0,
                 'amount_min' => null,
                 'amount_max' => 30.0,
             ],
             [
-                'donator_id' => $donator->id,
+                'donator_id' => $donor->id,
                 'athlete_id' => $athletes[1]->id,
                 'amount_per_round' => 5.0,
                 'amount_min' => 20.0,
@@ -117,7 +117,7 @@ describe('collect donor invoice data', function () {
             ],
         ]);
 
-        $lines = app(CollectDonorInvoiceDataAction::class)($donator);
+        $lines = app(CollectDonorInvoiceDataAction::class)($donor);
 
         expect($lines)->toHaveCount(2)
             ->and($lines[0]['total'])->toBe(24.00)

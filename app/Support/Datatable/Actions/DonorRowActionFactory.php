@@ -2,14 +2,14 @@
 
 namespace App\Support\Datatable\Actions;
 
-use App\Models\Donator;
+use App\Models\Donor;
 
 class DonorRowActionFactory
 {
     /**
      * @return array<string, array<int, array<string, mixed>>>
      */
-    public static function make(Donator $donor): array
+    public static function make(Donor $donor): array
     {
         $hasPdf = filled(data_get($donor->webling_data, 'letter_pdf.path'));
         $hasDebitor = filled(data_get($donor->webling_data, 'debitor_id'));
@@ -37,7 +37,7 @@ class DonorRowActionFactory
                 icon: 'user',
                 execute: static fn (array $payload): array => [
                     'type' => 'href',
-                    'href' => route('show-donator', ['login_token' => $payload['donor']->login_token]),
+                    'href' => route('show-donor', ['login_token' => $payload['donor']->login_token]),
                     'target' => '_blank',
                 ],
             ),
