@@ -4,15 +4,13 @@ namespace App\Components;
 
 use App\Models\Donation;
 use App\Models\Donator;
+use Flux;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
-use WireUi\Traits\Actions;
 
 class DonatorDetails extends Component
 {
-    use Actions;
-
     #[Locked]
     public Donator $donator;
 
@@ -28,9 +26,10 @@ class DonatorDetails extends Component
             $donation = $this->donator->donations->where('id', $donation_id)->first();
             if (! $donation) {
                 // show an error message
-                $this->dialog()->error(
-                    $title = 'Spende nicht gefunden!',
-                    $message = 'Die Spende konnte nicht gefunden werden. Bitte überprüfe den Link.'
+                Flux::toast(
+                    heading: 'Spende nicht gefunden!',
+                    text: 'Die Spende konnte nicht gefunden werden. Bitte überprüfe den Link.',
+                    variant: 'danger',
                 );
             } elseif (! $donation->verified) {
                 // mark the donation as verified
@@ -38,9 +37,10 @@ class DonatorDetails extends Component
                 $donation->save();
 
                 // show a success message
-                $this->dialog()->success(
-                    $title = 'Spende bestätigt!',
-                    $message = 'Deine Spende für '.$donation->athlete->privacy_name.' wurde bestätigt. Vielen Dank!'
+                Flux::toast(
+                    heading: 'Spende bestätigt!',
+                    text: 'Deine Spende für '.$donation->athlete->privacy_name.' wurde bestätigt. Vielen Dank!',
+                    variant: 'success',
                 );
             }
         }

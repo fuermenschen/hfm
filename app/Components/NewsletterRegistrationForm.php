@@ -3,14 +3,16 @@
 namespace App\Components;
 
 use App\Jobs\RegisterNewsletterSubscriber;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class NewsletterRegistrationForm extends Component
 {
-    use WithHoney;
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
 
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
     #[Validate('string', message: 'Der Vorname muss ein Text sein.')]
@@ -30,11 +32,7 @@ class NewsletterRegistrationForm extends Component
 
     public function save(): void
     {
-        if (! $this->honeyPasses()) {
-            throw ValidationException::withMessages([
-                'email' => ['Bitte überprüfe deine Angaben.'],
-            ]);
-        }
+        $this->protectAgainstSpam();
 
         $this->validate();
 
@@ -47,5 +45,10 @@ class NewsletterRegistrationForm extends Component
     public function render()
     {
         return view('forms.newsletter-registration-form');
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

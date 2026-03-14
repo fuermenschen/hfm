@@ -2,18 +2,22 @@
 
 namespace App\Components;
 
-use App\Actions\CreateAssociationDonationInvoice;
+use App\Actions\CreateAssociationDonationInvoiceAction;
 use App\Notifications\AssociationDonationMessage;
 use Exception;
+use Flux;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use WireUi\Traits\Actions;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class AssociationDonationForm extends Component
 {
-    use Actions;
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
 
     // Name der Firma (optional)
     #[Validate('nullable')]
@@ -72,8 +76,10 @@ class AssociationDonationForm extends Component
         return view('forms.association-donation-form');
     }
 
-    public function submit()
+    public function submit(CreateAssociationDonationInvoiceAction $createAssociationDonationInvoiceAction)
     {
+        $this->protectAgainstSpam();
+
         try {
             $this->validate();
         } catch (ValidationException $e) {
@@ -86,18 +92,14 @@ class AssociationDonationForm extends Component
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
-            $this->dialog([
-                'title' => $title,
-                'description' => $description,
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: $title, text: $description, variant: 'danger');
 
             return;
         }
 
         try {
 
-            $invoice = CreateAssociationDonationInvoice::run(
+            $invoice = $createAssociationDonationInvoiceAction(
                 first_name: $this->first_name,
                 last_name: $this->last_name,
                 company_name: $this->company_name,
@@ -118,25 +120,16 @@ class AssociationDonationForm extends Component
 
         } catch (Exception $e) {
 
-            $this->dialog([
-                'title' => 'Fehler',
-                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
 
             $this->reset('email');
 
             return;
         }
 
-        $this->dialog([
-            'title' => 'E-Mail versendet',
-            'description' => 'Danke für deine Nachricht. Wir melden uns bald bei dir.',
-            'icon' => 'success',
-            'onClose' => [
-                'method' => 'redirectHelper',
-            ],
-        ]);
+        Flux::toast(heading: 'E-Mail versendet', text: 'Danke für deine Nachricht. Wir melden uns bald bei dir.', variant: 'success');
+
+        $this->redirectHelper();
 
         $this->reset();
     }
@@ -144,5 +137,10 @@ class AssociationDonationForm extends Component
     public function redirectHelper(): void
     {
         $this->redirect(route('home'), navigate: true);
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

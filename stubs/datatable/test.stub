@@ -1,0 +1,9 @@
+<?php
+
+use App\Components\{{ componentClass }};
+use Livewire\Livewire;
+
+it('renders {{ componentClass }}', function (): void {
+    Livewire::test({{ componentClass }}::class)
+        ->assertSee('Ausgewählt: 0');
+});

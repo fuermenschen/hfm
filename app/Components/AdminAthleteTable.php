@@ -3,223 +3,281 @@
 namespace App\Components;
 
 use App\Models\Athlete;
+use App\Services\AthleteDocumentService;
 use App\Services\DonationService;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
-use Livewire\Attributes\On;
-use PowerComponents\LivewirePowerGrid\Button;
-use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
-use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
-use PowerComponents\LivewirePowerGrid\PowerGridComponent;
-use PowerComponents\LivewirePowerGrid\PowerGridFields;
-use PowerComponents\LivewirePowerGrid\Traits\WithExport;
-use WireUi\Traits\Actions;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-class AdminAthleteTable extends PowerGridComponent
+class AdminAthleteTable extends AbstractDatatableComponent
 {
-    use Actions;
-    use WithExport;
-
     public string $sortField = 'first_name';
 
-    public string $tableName = 'admin-athlete-table';
+    /**
+     * @var array<int, int|string|null>
+     */
+    public array $roundsDoneInputs = [];
 
-    public function setUp(): array
+    protected DonationService $donationService;
+
+    protected AthleteDocumentService $athleteDocumentService;
+
+    public function boot(DonationService $donationService, AthleteDocumentService $athleteDocumentService): void
     {
-        $this->showCheckBox();
-
-        return [
-            PowerGrid::responsive(),
-            PowerGrid::exportable('athlete')
-                ->striped()
-                ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            PowerGrid::header()
-                ->showSearchInput()
-                ->showToggleColumns(),
-            PowerGrid::footer()
-                ->showPerPage(10, [10, 25, 50, 100, 200])
-                ->showRecordCount(mode: 'short'),
-        ];
+        $this->donationService = $donationService;
+        $this->athleteDocumentService = $athleteDocumentService;
     }
 
-    public function datasource(): Builder
+    protected function tableView(): string
     {
-        return Athlete::query()->with('sportType', 'partner', 'donations');
+        return 'components.admin.tables.athlete-table';
     }
 
-    public function relationSearch(): array
+    protected function tableDataKey(): string
     {
-        return [];
+        return 'athletes';
     }
 
-    public function fields(): PowerGridFields
+    public function saveRoundsDone(int $athleteId): void
     {
-        return PowerGrid::fields()
-            ->add('verified', function (Athlete $athlete) {
-                return $athlete->verified ? 'Ja' : 'Nein';
-            })
-            ->add('sportType.name')
-            ->add('partner.name')
-            ->add('number_of_donations', fn ($athlete) => $athlete->donations->count())
-            ->add('estimated_donations', function (Athlete $athlete) {
-                $service = app(DonationService::class);
-                $calculated = $service->calculateEstimatedTotalForAthlete($athlete);
+        $value = $this->roundsDoneInputs[$athleteId] ?? null;
 
-                return 'Fr. '.number_format($calculated, 2, '.', "'");
-            })
-            ->add('actual_donations', function (Athlete $athlete) {
-                $service = app(DonationService::class);
-                $calculated = $service->calculateActualTotalForAthlete($athlete);
+        $validator = Validator::make(
+            ['rounds_done' => $value],
+            ['rounds_done' => ['required', 'integer', 'min:0']],
+            ['rounds_done.required' => 'Bitte gib eine Anzahl Runden ein.']
+        );
 
-                return 'Fr. '.number_format($calculated, 2, '.', "'");
-            })
-            ->add('created_at_formatted', fn ($athlete) => Carbon::parse($athlete->created_at)->format('d.m.Y'))
-            ->add('adult', fn ($athlete) => $athlete->adult ? 'Ja' : 'Nein');
-    }
-
-    public function columns(): array
-    {
-        return [
-
-            Column::make('Vorname', 'first_name')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Nachname', 'last_name')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Bestätigt', 'verified')
-                ->sortable(),
-
-            Column::make('Sportart', 'sportType.name', 'sport_type_id')
-                ->sortable(),
-
-            Column::make('Partner', 'partner.name', 'partner_id')
-                ->sortable(),
-
-            Column::make('Runden geschätzt', 'rounds_estimated')
-                ->sortable(),
-
-            Column::make('Runden gemacht', 'rounds_done')
-                ->sortable()
-                ->fixedOnResponsive()
-                ->editOnClick(
-                    hasPermission: true,
-                    fallback: '0'
-                ),
-
-            Column::make('Spenden', 'number_of_donations')
-                ->fixedOnResponsive(),
-
-            Column::make('Geschätzte Spenden', 'estimated_donations')
-                ->fixedOnResponsive(),
-
-            Column::make('Tatsächliche Spenden', 'actual_donations')
-                ->fixedOnResponsive(),
-
-            Column::make('Anmeldung', 'created_at_formatted', 'created_at')
-                ->sortable(),
-
-            Column::make('Erwachsen', 'adult')
-                ->sortable(),
-
-            Column::make('Telefon', 'phone_number')
-                ->sortable(),
-
-            Column::make('E-Mail', 'email')
-                ->sortable(),
-
-            Column::make('Adresse', 'address')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('PLZ', 'zip_code')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Ort', 'city')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Kommentar', 'comment')
-                ->sortable()
-                ->searchable(),
-
-            Column::action('Aktionen')
-                ->fixedOnResponsive(),
-        ];
-    }
-
-    public function filters(): array
-    {
-        return [
-        ];
-    }
-
-    // Actions
-    public function onUpdatedEditable(string|int $id, string $field, string $value): void
-    {
-        try {
-            $athlete = Athlete::findOrFail($id);
-            $athlete->$field = $value;
-            $athlete->save();
-        } catch (\Exception $e) {
-            $this->notification()->error('Fehler beim Speichern');
+        if ($validator->fails()) {
+            Flux::toast(
+                text: $validator->errors()->first('rounds_done'),
+                heading: 'Fehler beim Speichern',
+                variant: 'danger',
+            );
 
             return;
         }
-        $this->notification()->success('Erfolgreich gespeichert');
+
+        try {
+            $athlete = Athlete::query()->findOrFail($athleteId);
+            $athlete->rounds_done = (int) $validator->validated()['rounds_done'];
+            $athlete->save();
+
+            Flux::toast(text: 'Die Änderungen wurden gespeichert.', heading: 'Erfolgreich gespeichert', variant: 'success');
+        } catch (\Throwable $exception) {
+            Flux::toast(text: 'Die Änderungen konnten nicht gespeichert werden.', heading: 'Fehler beim Speichern', variant: 'danger');
+        }
     }
 
-    #[On('downloadWelcomeLetter')]
-    public function downloadWelcomeLetter($athlete_id)
+    public function downloadWelcomeLetter(int $athleteId): HttpResponse
     {
-        $athlete = Athlete::findOrfail($athlete_id);
-        $filename = $athlete->first_name.'_'.$athlete->last_name.'_Willkommensbrief.pdf';
-        $pdf = Pdf::loadView('printables.athlete_welcome_letter', compact('athlete'))
-            ->setPaper('a4', 'portrait');
+        $athlete = Athlete::query()->findOrFail($athleteId);
+        $document = $this->athleteDocumentService->buildWelcomeLetter($athlete);
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->stream();
-        }, $filename);
+        return response()->streamDownload(function () use ($document): void {
+            echo $document['pdf']->stream();
+        }, $document['filename']);
     }
 
-    #[On('downloadPersonalizedFlyerTemplate')]
-    public function downloadPersonalizedFlyerTemplate($athlete_id)
+    public function downloadPersonalizedFlyerTemplate(int $athleteId): HttpResponse
     {
-        $athlete = Athlete::findOrfail($athlete_id);
-        $filename = $athlete->first_name.'_'.$athlete->last_name.'_Flyer.pdf';
-        $pdf = Pdf::loadView('printables.athlete_personalized_flyer', compact('athlete'))
-            ->setPaper('a5', 'portrait');
+        $athlete = Athlete::query()->findOrFail($athleteId);
+        $document = $this->athleteDocumentService->buildPersonalizedFlyer($athlete);
 
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf->stream();
-        }, $filename);
+        return response()->streamDownload(function () use ($document): void {
+            echo $document['pdf']->stream();
+        }, $document['filename']);
     }
 
-    public function actions(Athlete $row): array
+    public function estimatedDonationsTotal(Athlete $athlete): float
+    {
+        return $this->donationService->calculateEstimatedTotalForAthlete($athlete);
+    }
+
+    public function actualDonationsTotal(Athlete $athlete): float
+    {
+        return $this->donationService->calculateActualTotalForAthlete($athlete);
+    }
+
+    public function exportAll(string $format): ?HttpResponse
+    {
+        $rows = [];
+
+        foreach ($this->queryForTable(ignoreSearch: true)->get() as $athlete) {
+            if (! $athlete instanceof Athlete) {
+                continue;
+            }
+
+            $rows[] = $this->exportRow($athlete);
+        }
+
+        return $this->exportRowsToDownload($rows, 'sportlerinnen_gesamt', $format);
+    }
+
+    public function exportSelected(string $format): ?HttpResponse
+    {
+        $selectedIds = $this->selectedIds();
+
+        if ($selectedIds === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine Sportler:in aus.');
+
+            return null;
+        }
+
+        $rows = [];
+
+        foreach ($this->baseQuery()->whereKey($selectedIds)->orderBy('id')->get() as $athlete) {
+            if (! $athlete instanceof Athlete) {
+                continue;
+            }
+
+            $rows[] = $this->exportRow($athlete);
+        }
+
+        return $this->exportRowsToDownload($rows, 'sportlerinnen_auswahl', $format);
+    }
+
+    /**
+     * @return array<int|string, string>
+     */
+    protected function searchableColumns(): array
     {
         return [
-            Button::add('Brief')
-                ->slot('Brief')
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('downloadWelcomeLetter', ['athlete_id' => $row->id])
-                ->tooltip('Willkommensbrief herunterladen'),
-            Button::add('Flyer')
-                ->slot('Flyer')
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('downloadPersonalizedFlyerTemplate', ['athlete_id' => $row->id])
-                ->tooltip('Personalisierten Flyer herunterladen (5x drucken)'),
-            Button::add('loginAsAthlete')
-                ->slot('Login')
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->route('show-athlete', ['login_token' => $row->login_token], '_blank')
-                ->tooltip('Als Sportlerin einloggen'),
+            'first_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'address',
+            'zip_code',
+            'city',
+            'comment',
+            'sportType.name',
+            'partner.name',
+        ];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        return Athlete::query()->with(['sportType', 'partner', 'donations'])->withCount('donations');
+    }
+
+    protected function defaultSortColumn(): string
+    {
+        return 'athletes.first_name';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function sortColumns(): array
+    {
+        return [
+            'first_name' => 'athletes.first_name',
+            'last_name' => 'athletes.last_name',
+            'verified' => 'athletes.verified',
+            'sport_type_id' => 'athletes.sport_type_id',
+            'partner_id' => 'athletes.partner_id',
+            'rounds_estimated' => 'athletes.rounds_estimated',
+            'rounds_done' => 'athletes.rounds_done',
+            'donations_count' => 'donations_count',
+            'created_at' => 'athletes.created_at',
+            'adult' => 'athletes.adult',
+            'phone_number' => 'athletes.phone_number',
+            'email' => 'athletes.email',
+            'address' => 'athletes.address',
+            'zip_code' => 'athletes.zip_code',
+            'city' => 'athletes.city',
+            'comment' => 'athletes.comment',
+        ];
+    }
+
+    protected function hydrateTableState(LengthAwarePaginator $paginator): void
+    {
+        foreach ($paginator->items() as $athlete) {
+            if (! $athlete instanceof Athlete) {
+                continue;
+            }
+
+            if (! array_key_exists($athlete->id, $this->roundsDoneInputs)) {
+                $this->roundsDoneInputs[$athlete->id] = $athlete->rounds_done;
+            }
+        }
+    }
+
+    /**
+     * @return array<string, array{label:string, sortable:bool, sort_field?:string, align?:string, width?:string, tooltip?:bool, truncate?:int, export_key?:string, formatter?:string}>
+     */
+    protected function columnDefinitions(): array
+    {
+        return [
+            'first_name' => ['label' => 'Vorname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Vorname'],
+            'last_name' => ['label' => 'Nachname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Nachname'],
+            'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
+            'sport_type' => ['label' => 'Sportart', 'sortable' => true, 'sort_field' => 'sport_type_id', 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Sportart'],
+            'partner' => ['label' => 'Partner', 'sortable' => true, 'sort_field' => 'partner_id', 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Partner'],
+            'rounds_estimated' => ['label' => 'Runden geschätzt', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-32', 'export_key' => 'Runden geschätzt'],
+            'rounds_done' => ['label' => 'Runden gemacht', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Runden gemacht', 'formatter' => 'editable_rounds'],
+            'donations_count' => ['label' => 'Spenden', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'Spenden'],
+            'estimated_total' => ['label' => 'Geschätzte Spenden', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Geschätzte Spenden', 'formatter' => 'money'],
+            'actual_total' => ['label' => 'Tatsächliche Spenden', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Tatsächliche Spenden', 'formatter' => 'money'],
+            'created_at' => ['label' => 'Anmeldung', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anmeldung', 'formatter' => 'date'],
+            'adult' => ['label' => 'Erwachsen', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Erwachsen', 'formatter' => 'yes_no'],
+            'phone_number' => ['label' => 'Telefon', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Telefon'],
+            'email' => ['label' => 'E-Mail', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'tooltip' => true, 'truncate' => 52, 'export_key' => 'E-Mail'],
+            'address' => ['label' => 'Adresse', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 44, 'export_key' => 'Adresse'],
+            'zip_code' => ['label' => 'PLZ', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-24', 'export_key' => 'PLZ'],
+            'city' => ['label' => 'Ort', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Ort'],
+            'comment' => ['label' => 'Kommentar', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 48, 'export_key' => 'Kommentar'],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function defaultVisibleColumns(): array
+    {
+        return [
+            'first_name',
+            'last_name',
+            'verified',
+            'sport_type',
+            'partner',
+            'rounds_estimated',
+            'rounds_done',
+            'donations_count',
+            'estimated_total',
+            'actual_total',
+            'created_at',
+            'email',
+        ];
+    }
+
+    /**
+     * @return array<string, scalar|null>
+     */
+    protected function exportRow(Athlete $athlete): array
+    {
+        return [
+            'Vorname' => $athlete->first_name,
+            'Nachname' => $athlete->last_name,
+            'Bestätigt' => $athlete->verified ? 'Ja' : 'Nein',
+            'Sportart' => $athlete->sportType->name,
+            'Partner' => $athlete->partner->name,
+            'Runden geschätzt' => $athlete->rounds_estimated,
+            'Runden gemacht' => $athlete->rounds_done,
+            'Spenden' => $athlete->donations_count,
+            'Geschätzte Spenden' => $this->estimatedDonationsTotal($athlete),
+            'Tatsächliche Spenden' => $this->actualDonationsTotal($athlete),
+            'Anmeldung' => $this->formatDate($athlete->created_at),
+            'Erwachsen' => $athlete->adult ? 'Ja' : 'Nein',
+            'Telefon' => $athlete->phone_number,
+            'E-Mail' => $athlete->email,
+            'Adresse' => $athlete->address,
+            'PLZ' => $athlete->zip_code,
+            'Ort' => $athlete->city,
+            'Kommentar' => $athlete->comment,
         ];
     }
 }

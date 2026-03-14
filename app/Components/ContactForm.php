@@ -4,17 +4,19 @@ namespace App\Components;
 
 use App\Notifications\ContactFormMessage;
 use Exception;
+use Flux;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
-use WireUi\Traits\Actions;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class ContactForm extends Component
 {
-    use Actions;
-    use WithHoney;
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
 
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
@@ -31,13 +33,9 @@ class ContactForm extends Component
 
     public function save(): void
     {
-        try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
+        $this->protectAgainstSpam();
 
+        try {
             $this->validate();
         } catch (ValidationException $e) {
 
@@ -49,11 +47,7 @@ class ContactForm extends Component
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
-            $this->dialog([
-                'title' => $title,
-                'description' => $description,
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: $title, text: $description, variant: 'danger');
 
             return;
         }
@@ -82,22 +76,14 @@ class ContactForm extends Component
 
         } catch (Exception $e) {
 
-            $this->dialog([
-                'title' => 'Fehler',
-                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
 
             $this->reset('email');
 
             return;
         }
 
-        $this->dialog([
-            'title' => 'E-Mail versendet',
-            'description' => 'Danke für deine Nachricht. Wir melden uns bald bei dir.',
-            'icon' => 'success',
-        ]);
+        Flux::toast(heading: 'E-Mail versendet', text: 'Danke für deine Nachricht. Wir melden uns bald bei dir.', variant: 'success');
 
         $this->reset([
             'email',
@@ -109,5 +95,10 @@ class ContactForm extends Component
     public function render()
     {
         return view('forms.contact-form');
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

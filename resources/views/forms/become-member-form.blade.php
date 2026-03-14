@@ -1,5 +1,5 @@
 <form wire:submit="submit"
-      class="flex flex-col space-y-sm sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-sm mt-sm">
+      class="flex flex-col space-y-6 sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-6 mt-6">
 
     <flux:input
         icon-trailing="user"
@@ -105,8 +105,8 @@
         wire:model.blur="comment" autocomplete="off" />
 
     <span class="sm:col-span-2">
-        <x-toggle
-            wire:model.bool.live="statutes_read"
+        <flux:checkbox
+            wire:model.live="statutes_read"
             label="Ich habe die Statuten gelesen." />
     </span>
 

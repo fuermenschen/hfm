@@ -7,6 +7,7 @@ use App\Models\Donator;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
+use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Storage;
@@ -65,7 +66,7 @@ it('creates a letter after creating a donor invoice and stores flags and pdf han
             expect($title)->toBe('Spendenrechnung Höhenmeter für Menschen')
                 ->and($debitorId)->toBe(98765);
             // Execute the configure closure to ensure it is callable
-            $builder = new \App\Services\Webling\Letter\LetterBuilder;
+            $builder = new LetterBuilder;
             $configure($builder);
 
             return true;

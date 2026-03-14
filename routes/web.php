@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\NewsletterSubscriptionController;
 use App\Models\Athlete;
+use App\Models\Donation;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -18,14 +20,20 @@ use Illuminate\Support\Facades\Route;
 
 // Main Menu
 Route::get('/', function () {
-    $athleteCount = Schema::hasTable('athletes') ? \App\Models\Athlete::count() : 0;
-    $donationCount = Schema::hasTable('donations') ? \App\Models\Donation::count() : 0;
+    $athleteCount = Schema::hasTable('athletes') ? Athlete::count() : 0;
+    $donationCount = Schema::hasTable('donations') ? Donation::count() : 0;
 
     return view('home', compact('athleteCount', 'donationCount'));
 })->name('home');
 Route::view('sportlerin-werden', 'pages.become-athlete')->name('become-athlete');
 Route::view('spenderin-werden', 'pages.become-donator')->name('become-donator');
 Route::view('newsletter', 'pages.newsletter')->name('newsletter');
+Route::get('newsletter/abmelden/{email}', [NewsletterSubscriptionController::class, 'show'])
+    ->name('newsletter.unsubscribe')
+    ->middleware('signed');
+Route::post('newsletter/abmelden/{email}', [NewsletterSubscriptionController::class, 'update'])
+    ->name('newsletter.unsubscribe.perform')
+    ->middleware('signed');
 Route::view('fragen-und-antworten', 'pages.questions-and-answers')->name('questions-and-answers');
 
 // Footer Menu

@@ -60,23 +60,20 @@
     <!-- Fonts -->
     <link rel="stylesheet" href="https://use.typekit.net/enf1jch.css"> <!-- darkmode-on -->
 
-    @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    @livewireScripts
-    @wireUiScripts
-    @fluxStyles
+    @fluxAppearance
     @stack('head')
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 
 <body class="h-full w-full bg-hfm-white dark:bg-hfm-dark text-hfm-dark dark:text-hfm-white">
-<x-dialog />
-<x-notifications />
 @yield('body')
 @persist('toast')
 <flux:toast />
 @endpersist
+@livewireScripts
 @fluxScripts
 </body>
 </html>

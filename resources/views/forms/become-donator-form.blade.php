@@ -1,7 +1,9 @@
 <form wire:submit="save"
-      class="flex flex-col space-y-sm sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-sm mt-sm">
+      class="flex flex-col space-y-6 sm:grid-cols-2 sm:grid max-w-full sm:space-y-0 sm:gap-6 mt-6">
 
     @csrf
+
+    <x-honeypot livewire-model="extraFields" />
 
     <flux:input icon-trailing="user" label="Vorname" placeholder="Francesca" wire:model.blur="first_name" type="text"
                  autocomplete="given-name" required
@@ -18,9 +20,9 @@
             <span>
                 <flux:input.group label="PLZ">
                     <flux:select wire:model.live="country_of_residence" variant="listbox">
-                        <flux:option value="CH" selected>Schweiz</flux:option>
-                        <flux:option value="DE">Deutschland</flux:option>
-                        <flux:option value="AT">Österreich</flux:option>
+                        <flux:select.option value="CH" selected>Schweiz</flux:select.option>
+                        <flux:select.option value="DE">Deutschland</flux:select.option>
+                        <flux:select.option value="AT">Österreich</flux:select.option>
                     </flux:select>
                     <flux:input
                         wire:model.blur="zip_code"
@@ -43,9 +45,9 @@
     <span>
         <flux:input.group label="Telefon">
             <flux:select wire:model.live="phone_country" variant="listbox" class="max-w-fit">
-                <flux:option value="CH">+41</flux:option>
-                <flux:option value="DE">+49</flux:option>
-                <flux:option value="AT">+43</flux:option>
+                <flux:select.option value="CH">+41</flux:select.option>
+                <flux:select.option value="DE">+49</flux:select.option>
+                <flux:select.option value="AT">+43</flux:select.option>
             </flux:select>
             <flux:input
                 class="grow"
@@ -115,11 +117,11 @@
                    wire:model.live.debounce="comment" hint="{{ strlen($comment) }}/2000" autocomplete="off" />
 
     <span class="sm:col-span-2">
-            <x-toggle wire:model.bool.live="privacy"
-                      label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
+            <flux:checkbox wire:model.live="privacy"
+                           label="Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden." />
                 <button type="button" wire:click="showPrivacyInfo"
-                        class="text-xs underline mt-xs">Was heisst das?</button>
+                        class="text-xs underline mt-3">Was heisst das?</button>
     </span>
 
-    <x-button label="Senden" type="submit" spinner="save" class="justify-self-start" />
+    <flux:button type="submit" icon="paper-airplane" class="justify-self-start">Senden</flux:button>
 </form>

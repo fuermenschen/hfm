@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Actions\CollectDonorInvoiceDataAction;
 use App\Models\Donator;
-use App\Services\DonorService;
 use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Settings\InvoiceSettings;
@@ -16,11 +16,11 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
 {
     use Queueable;
 
-    private DonorService $donorService;
+    private CollectDonorInvoiceDataAction $collectDonorInvoiceDataAction;
 
     public function __construct(public Donator $donor)
     {
-        $this->donorService = app(DonorService::class);
+        $this->collectDonorInvoiceDataAction = app(CollectDonorInvoiceDataAction::class);
     }
 
     public function handle(): void
@@ -31,7 +31,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
         }
 
         // Collect invoice data
-        $invoiceLines = $this->donorService->collectInvoiceData($this->donor);
+        $invoiceLines = ($this->collectDonorInvoiceDataAction)($this->donor);
         if (count($invoiceLines) === 0) {
             throw new \RuntimeException('No invoice lines for donor ID '.$this->donor->id);
         }

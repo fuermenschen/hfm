@@ -7,19 +7,21 @@ use App\Models\Donator;
 use App\Models\User;
 use App\Notifications\NewLoginLink;
 use Exception;
+use Flux;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Lukeraymonddowning\Honey\Traits\WithHoney;
-use WireUi\Traits\Actions;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 class LoginForm extends Component
 {
-    use Actions;
-    use WithHoney;
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
 
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
@@ -28,13 +30,9 @@ class LoginForm extends Component
 
     public function save(): void
     {
-        try {
-            if (! $this->honeyPasses()) {
-                throw ValidationException::withMessages([
-                    'spam' => ['Spam detected'],
-                ]);
-            }
+        $this->protectAgainstSpam();
 
+        try {
             $this->validate();
         } catch (ValidationException $e) {
 
@@ -46,11 +44,7 @@ class LoginForm extends Component
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
-            $this->dialog([
-                'title' => $title,
-                'description' => $description,
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: (string) $title, text: $description, variant: 'danger');
 
             return;
         }
@@ -101,22 +95,18 @@ class LoginForm extends Component
 
         } catch (Exception $e) {
 
-            $this->dialog([
-                'title' => 'Fehler',
-                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
 
             $this->reset('email');
 
             return;
         }
 
-        $this->dialog([
-            'title' => 'E-Mail versendet',
-            'description' => 'Falls die angegebene E-Mail-Adresse bekannt ist, wurde ein Login-Link versendet. Bitte überprüfe dein Postfach.',
-            'icon' => 'success',
-        ]);
+        Flux::toast(
+            heading: 'E-Mail versendet',
+            text: 'Falls die angegebene E-Mail-Adresse bekannt ist, wurde ein Login-Link versendet. Bitte überprüfe dein Postfach.',
+            variant: 'success',
+        );
 
         $this->reset('email');
     }
@@ -129,5 +119,10 @@ class LoginForm extends Component
     public function redirectHelper(string $url): void
     {
         $this->redirect($url, navigate: true);
+    }
+
+    public function mount(): void
+    {
+        $this->extraFields = new HoneypotData;
     }
 }

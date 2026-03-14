@@ -3,350 +3,149 @@
 namespace App\Components;
 
 use App\Jobs\CheckDonorInvoicesStatus;
-use App\Jobs\CreateDonorInvoice;
-use App\Jobs\DeleteDonorInvoiceDebitor;
-use App\Mail\GenericMailMessage;
 use App\Models\Donator;
-use App\Services\DonorService;
-use Flux;
-use Illuminate\Contracts\View\View;
+use App\Services\DonorInvoiceService;
+use App\Support\Datatable\Actions\DonorBulkActionFactory;
+use App\Support\Datatable\Actions\DonorRowActionFactory;
+use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Attributes\On;
-use PowerComponents\LivewirePowerGrid\Button;
-use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
-use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
-use PowerComponents\LivewirePowerGrid\PowerGridComponent;
-use PowerComponents\LivewirePowerGrid\PowerGridFields;
-use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-use WireUi\Traits\Actions;
 use ZipArchive;
 
-class AdminDonatorTable extends PowerGridComponent
+class AdminDonatorTable extends AbstractDatatableComponent
 {
-    use Actions;
-    use WithExport;
-
     public string $sortField = 'first_name';
 
-    public string $tableName = 'admin-donator-table';
+    protected DonorInvoiceService $donorInvoiceService;
 
-    protected DonorService $donorService;
+    /**
+     * @var array<string, int>
+     */
+    public array $pendingConfirmations = [];
 
-    public function boot(DonorService $donorService): void
+    public function boot(DonorInvoiceService $donorInvoiceService): void
     {
-        $this->donorService = $donorService;
+        $this->donorInvoiceService = $donorInvoiceService;
     }
 
-    public function header(): array
+    protected function tableView(): string
     {
-        return [
-            Button::add('bulk-create-invoices')
-                ->slot(__('Rechnungen erstellen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkCreateInvoice.'.$this->tableName, []),
-
-            Button::add('bulk-download-invoices')
-                ->slot(__('Rechnungen herunterladen (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkDownloadInvoice.'.$this->tableName, []),
-
-            Button::add('bulk-send-invoices')
-                ->slot(__('Rechnungen per E-Mail senden (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkSendInvoice.'.$this->tableName, []),
-
-            Button::add('bulk-send-invoice-reminders')
-                ->slot(__('Zahlungserinnerungen senden (<span x-text="window.pgBulkActions.count(\''.$this->tableName.'\')"></span>)'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('bulkSendInvoiceReminder.'.$this->tableName, []),
-
-            Button::add('check-payment-status')
-                ->slot(__('Zahlungsstatus prüfen'))
-                ->class('ml-1 px-3 py-2 text-sm rounded-md bg-hfm-dark text-hfm-white dark:bg-hfm-white dark:text-hfm-dark hover:bg-hfm-dark/90 dark:hover:bg-hfm-white/90')
-                ->dispatch('checkPaymentStatus.'.$this->tableName, []),
-        ];
-    }
-
-    public function setUp(): array
-    {
-        $this->showCheckBox();
-
-        return [
-            PowerGrid::responsive(),
-            PowerGrid::exportable('donor')
-                ->striped()
-                ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            PowerGrid::header()
-                ->showSearchInput()
-                ->showToggleColumns(),
-            PowerGrid::footer()
-                ->showPerPage(10, [10, 25, 50, 100, 200])
-                ->showRecordCount(mode: 'short'),
-        ];
-    }
-
-    public function datasource(): Builder
-    {
-        return Donator::query()
-            ->with(['donations', 'donations.athlete', 'donations.athlete.partner'])
-            ->select('donators.*')
-            ->selectRaw(
-                $this->invoiceStatusCaseSql()
-            );
-    }
-
-    protected function invoiceStatusCaseSql(): string
-    {
-        $driver = DB::connection()->getDriverName();
-
-        if ($driver === 'mysql') {
-            $paymentExpr = "JSON_UNQUOTE(JSON_EXTRACT(webling_data, '$.payment_status'))";
-            $letterExpr = "JSON_EXTRACT(webling_data, '$.letter_pdf')";
-        } else {
-            // SQLite / dqlite and other drivers fall back to SQLite-compatible JSON1 functions
-            $paymentExpr = "json_extract(webling_data, '$.payment_status')";
-            $letterExpr = "json_extract(webling_data, '$.letter_pdf')";
-        }
-
-        return "CASE\n"
-            ."                WHEN {$paymentExpr} = 'paid' THEN 'bezahlt'\n"
-            ."                WHEN {$paymentExpr} = 'overdue' THEN 'überfällig'\n"
-            ."                WHEN invoice_sent_at IS NOT NULL THEN 'gesendet'\n"
-            ."                WHEN {$letterExpr} IS NOT NULL THEN 'erstellt'\n"
-            ."                ELSE '-'\n"
-            .'                END AS invoice_status';
-    }
-
-    public function relationSearch(): array
-    {
-        return [];
-    }
-
-    public function fields(): PowerGridFields
-    {
-        return PowerGrid::fields()
-            ->add('don_id', function (Donator $donor) {
-                return 'DON-'.sprintf('25%04d', $donor->id);
-            })
-            ->add('numOfDonations', function (Donator $donor) {
-                return $donor->donations->count();
-            })
-            ->add('donations_sum', function (Donator $donor) {
-                $lines = $this->donorService->collectInvoiceData($donor);
-                $sum = array_sum(array_column($lines, 'total'));
-
-                return 'Fr. '.number_format($sum, 2, '.', "'");
-            })
-            ->add('created_at_formatted', fn ($donor) => Carbon::parse($donor->created_at)->format('d.m.Y'))
-            ->add('invoice_sent_at_formatted', fn ($donor) => $donor->invoice_sent_at ? Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i') : null)
-            ->add('invoice_reminder_sent_at_formatted', fn ($donor) => $donor->invoice_reminder_sent_at ? Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i') : null)
-            ->add('invoice_status', function (Donator $donor) {
-                $weblingData = $donor->webling_data ?? [];
-                $payment = $weblingData['payment_status'] ?? null;
-                if ($payment === 'paid') {
-                    return 'bezahlt';
-                }
-                if ($payment === 'overdue') {
-                    return 'überfällig';
-                }
-                if (! empty($donor->invoice_sent_at)) {
-                    return 'gesendet';
-                }
-                if (! empty($weblingData['letter_pdf'])) {
-                    return 'erstellt';
-                }
-
-                return '-';
-            })
-            ->add('country_of_residence', fn ($donor) => $donor->country_of_residence);
-    }
-
-    public function columns(): array
-    {
-        return [
-
-            Column::make('DON-ID', 'don_id', 'id')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Vorname', 'first_name')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Nachname', 'last_name')
-                ->sortable()
-                ->searchable()
-                ->fixedOnResponsive(),
-
-            Column::make('Anzahl Spenden', 'numOfDonations')
-                ->fixedOnResponsive(),
-
-            Column::make('Rechnungsbetrag', 'donations_sum'),
-
-            Column::make('Anmeldung', 'created_at_formatted', 'created_at')
-                ->sortable(),
-
-            Column::make('E-Mail', 'email')
-                ->sortable(),
-
-            Column::make('Telefon', 'phone_number')
-                ->sortable(),
-
-            Column::make('Land', 'country_of_residence')
-                ->sortable(),
-
-            Column::make('Adresse', 'address')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('PLZ', 'zip_code')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Ort', 'city')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Rechnung', 'invoice_status')
-                ->sortable(),
-
-            Column::make('Rechnung gesendet am', 'invoice_sent_at_formatted', 'invoice_sent_at')
-                ->sortable(),
-
-            Column::make('Zahlungserinnerung gesendet am', 'invoice_reminder_sent_at_formatted', 'invoice_reminder_sent_at')
-                ->sortable()
-                ->bodyAttribute('class', 'whitespace-nowrap'),
-
-            Column::action('Aktionen')
-                ->fixedOnResponsive(),
-
-        ];
-    }
-
-    public function filters(): array
-    {
-        return [
-        ];
-    }
-
-    #[On('createDonorInvoice')]
-    public function createDonorInvoice(int $donor_id): void
-    {
-
-        try {
-            $donor = Donator::findOrFail($donor_id);
-
-            // If a debitor already exists AND a letter PDF is present, there's nothing to do
-            $weblingData = $donor->webling_data ?? [];
-            $hasDebitor = ! empty($weblingData['debitor_id']);
-            $hasLetterPdf = ! empty($weblingData['letter_pdf']);
-            if ($hasDebitor && $hasLetterPdf) {
-                Flux::toast(
-                    heading: 'Bereits vorhanden',
-                    text: 'Für '.$donor->privacy_name.' ist bereits eine Rechnung erstellt worden. Es gibt nichts zu tun.',
-                    variant: 'warning',
-                );
-
-                return;
-            }
-            CreateDonorInvoice::dispatchSync($donor);
-            Flux::toast(
-                heading: 'Rechnung erstellt',
-                text: 'Die Rechnung für '.$donor->privacy_name.' wurde erfolgreich erstellt.',
-                variant: 'success',
-            );
-            $this->dispatch('$refresh');
-        } catch (\Throwable $e) {
-            \Log::error('Error creating donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
-            Flux::toast(
-                heading: 'Fehler beim Erstellen der Rechnung',
-                text: $e->getMessage(),
-                variant: 'danger',
-                duration: 0,
-            );
-        }
-    }
-
-    #[On('confirmDeleteDonorInvoice')]
-    public function confirmDeleteDonorInvoice(int $donor_id): void
-    {
-        $donor = Donator::find($donor_id);
-        $name = $donor ? $donor->privacy_name : 'diese:n Spender:in';
-
-        $this->dialog()->confirm([
-            'title' => 'Rechnung löschen?',
-            'description' => "Möchtest du die Rechnung für {$name} wirklich löschen? Dies entfernt auch die lokal gespeicherte PDF und löscht die Rechnung und <strong>sämtliche verknüpften Buchungen auf Webling.</strong>",
-            'icon' => 'exclamation',
-            'accept' => [
-                'label' => 'Ja, löschen',
-                'method' => 'deleteDonorInvoice',
-                'params' => $donor_id,
-            ],
-            'reject' => [
-                'label' => 'Abbrechen',
-            ],
-        ]);
-    }
-
-    public function deleteDonorInvoice(int $donor_id): void
-    {
-        try {
-            $donor = Donator::findOrFail($donor_id);
-
-            // If neither a debitor nor a letter PDF exists, there's nothing to delete
-            $weblingData = $donor->webling_data ?? [];
-            $hasDebitor = ! empty($weblingData['debitor_id']);
-            $hasLetterPdf = ! empty($weblingData['letter_pdf']);
-            if (! $hasDebitor && ! $hasLetterPdf) {
-                Flux::toast(
-                    heading: 'Nichts zu löschen',
-                    text: 'Für '.$donor->privacy_name.' sind keine Rechnungseinträge vorhanden.',
-                    variant: 'warning',
-                );
-
-                return;
-            }
-
-            \Log::info('Deleting donor invoice debitor', ['donor_id' => $donor_id]);
-            DeleteDonorInvoiceDebitor::dispatchSync($donor);
-            Flux::toast(
-                heading: 'Rechnung gelöscht',
-                text: 'Die Rechnungseinträge für '.$donor->privacy_name.' wurden gelöscht.',
-                variant: 'success',
-            );
-            $this->dispatch('$refresh');
-        } catch (\Throwable $e) {
-            \Log::error('Error deleting donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
-            Flux::toast(
-                heading: 'Fehler beim Löschen der Rechnung',
-                text: $e->getMessage(),
-                variant: 'danger',
-                duration: 0,
-            );
-        }
+        return 'components.admin.tables.donator-table';
     }
 
     /**
-     * Download the generated donor invoice letter PDF if available.
+     * @return array<string, array<int, array<string, mixed>>>
      */
-    public function downloadDonorInvoice(int $donor_id): ?HttpResponse
+    public function donorRowActionGroups(Donator $donor): array
+    {
+        return DonorRowActionFactory::make($donor);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function donorBulkActions(): array
+    {
+        return DonorBulkActionFactory::make();
+    }
+
+    protected function tableDataKey(): string
+    {
+        return 'donors';
+    }
+
+    public function checkPaymentStatus(): void
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
-            $weblingData = $donor->webling_data ?? [];
+            CheckDonorInvoicesStatus::dispatchSync();
 
-            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
+            $summary = $this->donorInvoiceService->invoiceStatusSummary();
+
+            Flux::toast(
+                heading: 'Zahlungsstatus aktualisiert',
+                text: 'Bezahlte und überfällige Rechnungen wurden abgeglichen.',
+                variant: 'success',
+            );
+
+            $this->dispatch('showPaymentStatusSummary', $summary);
+            $this->dispatch('$refresh');
+        } catch (\Throwable $exception) {
+            Log::error('Error checking payment status', ['error' => $exception->getMessage()]);
+
+            Flux::toast(
+                heading: 'Fehler beim Prüfen des Zahlungsstatus',
+                text: $exception->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
+        }
+    }
+
+    public function createDonorInvoice(int $donorId): void
+    {
+        try {
+            $donor = Donator::query()->findOrFail($donorId);
+
+            $this->toastActionResult($this->donorInvoiceService->createInvoice($donor));
+        } catch (\Throwable $exception) {
+            Log::error('Error creating donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
+            Flux::toast(
+                heading: 'Fehler beim Erstellen der Rechnung',
+                text: $exception->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
+        }
+    }
+
+    public function confirmDeleteDonorInvoice(int $donorId): void
+    {
+        $donor = Donator::query()->find($donorId);
+        $name = $donor ? $donor->privacy_name : 'diese:n Spender:in';
+
+        if ($this->requiresSecondClick(
+            key: 'delete-invoice-'.$donorId,
+            heading: 'Bitte bestätigen',
+            text: "Klicke erneut auf Löschen für {$name}, um die Rechnung inklusive Webling-Buchungen zu entfernen.",
+        )) {
+            return;
+        }
+
+        $this->deleteDonorInvoice($donorId);
+    }
+
+    public function deleteDonorInvoice(int $donorId): void
+    {
+        try {
+            $donor = Donator::query()->findOrFail($donorId);
+
+            Log::info('Deleting donor invoice debitor', ['donor_id' => $donorId]);
+            $this->toastActionResult($this->donorInvoiceService->deleteInvoice($donor));
+        } catch (\Throwable $exception) {
+            Log::error('Error deleting donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
+            Flux::toast(
+                heading: 'Fehler beim Löschen der Rechnung',
+                text: $exception->getMessage(),
+                variant: 'danger',
+                duration: 0,
+            );
+        }
+    }
+
+    public function downloadDonorInvoice(int $donorId): ?HttpResponse
+    {
+        try {
+            $donor = Donator::query()->findOrFail($donorId);
+            $downloadData = $this->donorInvoiceService->getDownloadData($donor);
+
+            if (! is_array($downloadData)) {
                 Flux::toast(
                     heading: 'Kein PDF gefunden',
-                    text: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.',
+                    text: 'Für '.$donor->privacy_name.' ist noch kein gültiges Rechnungs-PDF vorhanden.',
                     variant: 'danger',
                     duration: 0,
                 );
@@ -354,33 +153,15 @@ class AdminDonatorTable extends PowerGridComponent
                 return null;
             }
 
-            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
-            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
-
-            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
-                Flux::toast(
-                    heading: 'Datei nicht gefunden',
-                    text: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.',
-                    variant: 'danger',
-                    duration: 0,
-                );
-
-                return null;
-            }
-
-            $absolutePath = Storage::disk($disk)->path($path);
-
-            $donId = 'DON-'.sprintf('25%04d', $donor->id);
-            $fileName = 'Rechnung_'.$donId.'.pdf';
-
-            return response()->download($absolutePath, $fileName, [
+            return response()->download($downloadData['absolute_path'], $downloadData['file_name'], [
                 'Content-Type' => 'application/pdf',
             ]);
-        } catch (\Throwable $e) {
-            \Log::error('Error downloading donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
+        } catch (\Throwable $exception) {
+            Log::error('Error downloading donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+
             Flux::toast(
                 heading: 'Fehler beim Herunterladen',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -389,223 +170,43 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    public function actions(Donator $row): array
+    public function sendDonorInvoice(int $donorId): void
     {
-        // Actions are rendered from a dedicated Blade view via actionsFromView()
-        return [];
-    }
+        $donor = $this->findDonorOrToast($donorId);
 
-    #[On('checkPaymentStatus.{tableName}')]
-    public function checkPaymentStatus(): void
-    {
-        try {
-            CheckDonorInvoicesStatus::dispatchSync();
-
-            // Compute a summary of current invoice statuses (exclusive buckets)
-            $summary = $this->invoiceStatusSummary();
-
-            // Notify UI
-            Flux::toast(
-                heading: 'Zahlungsstatus aktualisiert',
-                text: 'Bezahlte und überfällige Rechnungen wurden abgeglichen.',
-                variant: 'success',
-            );
-
-            // Ask a sibling component to show the summary modal
-            $this->dispatch('showPaymentStatusSummary', $summary);
-
-            $this->dispatch('$refresh');
-        } catch (\Throwable $e) {
-            \Log::error('Error checking payment status', ['error' => $e->getMessage()]);
-            Flux::toast(
-                heading: 'Fehler beim Prüfen des Zahlungsstatus',
-                text: $e->getMessage(),
-                variant: 'danger',
-                duration: 0,
-            );
-        }
-    }
-
-    /**
-     * Build an exclusive summary matching the status precedence used in the table:
-     * paid > overdue > sent > created > not created.
-     *
-     * @return array{paid:int,overdue:int,sent:int,created:int,not_created:int}
-     */
-    protected function invoiceStatusSummary(): array
-    {
-        // Paid
-        $paid = Donator::query()
-            ->where('webling_data->payment_status', 'paid')
-            ->count();
-
-        // Overdue (but not paid)
-        $overdue = Donator::query()
-            ->where('webling_data->payment_status', 'overdue')
-            ->count();
-
-        // Sent but neither paid nor overdue
-        $sent = Donator::query()
-            ->whereNotNull('invoice_sent_at')
-            ->where(function ($q) {
-                $q->whereNull('webling_data->payment_status')
-                    ->orWhereNotIn('webling_data->payment_status', ['paid', 'overdue']);
-            })
-            ->count();
-
-        // Created (letter exists) but not sent and not paid/overdue
-        $created = Donator::query()
-            ->whereNull('invoice_sent_at')
-            ->whereNotNull('webling_data->letter_pdf')
-            ->where(function ($q) {
-                $q->whereNull('webling_data->payment_status')
-                    ->orWhereNotIn('webling_data->payment_status', ['paid', 'overdue']);
-            })
-            ->count();
-
-        // Not created: no letter, not sent, and no payment status
-        $notCreated = Donator::query()
-            ->whereNull('invoice_sent_at')
-            ->whereNull('webling_data->letter_pdf')
-            ->where(function ($q) {
-                $q->whereNull('webling_data->payment_status')
-                    ->orWhereNotIn('webling_data->payment_status', ['paid', 'overdue']);
-            })
-            ->count();
-
-        return [
-            'paid' => $paid,
-            'overdue' => $overdue,
-            'sent' => $sent,
-            'created' => $created,
-            'not_created' => $notCreated,
-        ];
-    }
-
-    public function actionsFromView(mixed $row): View
-    {
-
-        return view('powergrid.admin-donor-actions', [
-            'row' => $row,
-        ]);
-    }
-
-    public function sendDonorInvoice(int $donor_id): void
-    {
-        $donor = Donator::find($donor_id);
         if (! $donor) {
-            Flux::toast(
-                heading: 'Nicht gefunden',
-                text: 'Die/der ausgewählte Spender:in wurde nicht gefunden.',
-                variant: 'danger',
-                duration: 0,
-            );
-
             return;
         }
 
         if ($donor->invoice_sent_at) {
             $name = $donor->privacy_name ?? 'diese:n Spender:in';
 
-            $this->dialog()->confirm([
-                'title' => 'Rechnung erneut senden?',
-                'description' => "Für {$name} wurde die Rechnung bereits am ".Carbon::parse($donor->invoice_sent_at)->format('d.m.Y H:i').' gesendet. Möchtest du sie erneut senden?',
-                'icon' => 'exclamation',
-                'accept' => [
-                    'label' => 'Ja, erneut senden',
-                    'method' => 'sendDonorInvoiceConfirmed',
-                    'params' => $donor_id,
-                ],
-                'reject' => [
-                    'label' => 'Abbrechen',
-                ],
-            ]);
-
-            return;
+            if ($this->requiresSecondClick(
+                key: 'resend-invoice-'.$donorId,
+                heading: 'Rechnung erneut senden?',
+                text: "Die Rechnung für {$name} wurde bereits gesendet. Klicke erneut, um sie nochmals zu senden.",
+            )) {
+                return;
+            }
         }
 
-        $this->sendDonorInvoiceConfirmed($donor_id);
+        $this->sendDonorInvoiceConfirmed($donorId);
     }
 
-    public function sendDonorInvoiceConfirmed(int $donor_id): bool
+    public function sendDonorInvoiceConfirmed(int $donorId): bool
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
+            $donor = Donator::query()->findOrFail($donorId);
+            $result = $this->donorInvoiceService->sendInvoice($donor);
+            $this->toastActionResult($result);
 
-            if (empty($donor->email)) {
-                Flux::toast(
-                    heading: 'Keine E-Mail-Adresse',
-                    text: 'Für '.$donor->privacy_name.' ist keine E-Mail-Adresse hinterlegt.',
-                    variant: 'danger',
-                    duration: 0,
-                );
+            return $result['variant'] === 'success';
+        } catch (\Throwable $exception) {
+            Log::error('Error sending donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
 
-                return false;
-            }
-
-            $weblingData = $donor->webling_data ?? [];
-            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
-                Flux::toast(
-                    heading: 'Kein PDF gefunden',
-                    text: 'Für '.$donor->privacy_name.' ist noch kein Rechnungs-PDF vorhanden.',
-                    variant: 'danger',
-                    duration: 0,
-                );
-
-                return false;
-            }
-
-            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
-            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
-
-            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
-                Flux::toast(
-                    heading: 'Datei nicht gefunden',
-                    text: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.',
-                    variant: 'danger',
-                    duration: 0,
-                );
-
-                return false;
-            }
-
-            $donId = 'DON-'.sprintf('25%04d', $donor->id);
-            $fileName = 'Rechnung_'.$donId.'.pdf';
-
-            $subject = 'Rechnung Höhenmeter für Menschen';
-            $html = '<p>Liebe:r '.$donor->first_name.'</p>'
-                .'<p>Im Anhang findest du deine Rechnung. Vielen Dank für deine Unterstützung!</p>'
-                .'<p>Herzliche Grüsse<br>Das Team von Höhenmeter für Menschen</p>';
-
-            $mailable = new GenericMailMessage(
-                subject: $subject,
-                html: $html,
-                storageAttachments: [[
-                    'disk' => $disk,
-                    'path' => $path,
-                    'name' => $fileName,
-                    'mime' => 'application/pdf',
-                ]]
-            );
-
-            Mail::to($donor)->queue($mailable);
-
-            $donor->invoice_sent_at = now();
-            $donor->save();
-
-            Flux::toast(
-                heading: 'Rechnung gesendet',
-                text: 'Die Rechnung wurde an '.$donor->email.' gesendet.',
-                variant: 'success',
-            );
-            $this->dispatch('$refresh');
-
-            return true;
-        } catch (\Throwable $e) {
-            \Log::error('Error sending donor invoice', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
             Flux::toast(
                 heading: 'Fehler beim Senden',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -614,145 +215,43 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    public function sendDonorInvoiceReminder(int $donor_id): void
+    public function sendDonorInvoiceReminder(int $donorId): void
     {
-        $donor = Donator::find($donor_id);
-        if (! $donor) {
-            Flux::toast(
-                heading: 'Nicht gefunden',
-                text: 'Die/der ausgewählte Spender:in wurde nicht gefunden.',
-                variant: 'danger',
-                duration: 0,
-            );
+        $donor = $this->findDonorOrToast($donorId);
 
+        if (! $donor) {
             return;
         }
 
         if (! empty($donor->invoice_reminder_sent_at)) {
             $name = $donor->privacy_name ?? 'diese:n Spender:in';
 
-            $this->dialog()->confirm([
-                'title' => 'Zahlungserinnerung erneut senden?',
-                'description' => "Für {$name} wurde die Zahlungserinnerung bereits am ".Carbon::parse($donor->invoice_reminder_sent_at)->format('d.m.Y H:i').' gesendet. Möchtest du sie erneut senden?',
-                'icon' => 'exclamation',
-                'accept' => [
-                    'label' => 'Ja, erneut senden',
-                    'method' => 'sendDonorInvoiceReminderConfirmed',
-                    'params' => $donor_id,
-                ],
-                'reject' => [
-                    'label' => 'Abbrechen',
-                ],
-            ]);
-
-            return;
+            if ($this->requiresSecondClick(
+                key: 'resend-reminder-'.$donorId,
+                heading: 'Zahlungserinnerung erneut senden?',
+                text: "Für {$name} wurde bereits eine Erinnerung gesendet. Klicke erneut, um sie nochmals zu senden.",
+            )) {
+                return;
+            }
         }
 
-        $this->sendDonorInvoiceReminderConfirmed($donor_id);
+        $this->sendDonorInvoiceReminderConfirmed($donorId);
     }
 
-    public function sendDonorInvoiceReminderConfirmed(int $donor_id): bool
+    public function sendDonorInvoiceReminderConfirmed(int $donorId): bool
     {
         try {
-            $donor = Donator::findOrFail($donor_id);
+            $donor = Donator::query()->findOrFail($donorId);
+            $result = $this->donorInvoiceService->sendReminder($donor);
+            $this->toastActionResult($result);
 
-            if (empty($donor->invoice_sent_at)) {
-                Flux::toast(
-                    heading: 'Rechnung nicht gesendet',
-                    text: 'Die Rechnung wurde für '.$donor->privacy_name.' noch nicht gesendet.',
-                    variant: 'danger',
-                    duration: 0,
-                );
+            return $result['variant'] === 'success';
+        } catch (\Throwable $exception) {
+            Log::error('Error sending donor invoice reminder', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
 
-                return false;
-            }
-
-            $paymentStatus = data_get($donor->webling_data, 'payment_status');
-            if ($paymentStatus !== 'overdue') {
-                Flux::toast(
-                    heading: 'Nicht überfällig',
-                    text: 'Die Rechnung von '.$donor->privacy_name.' ist nicht als überfällig markiert.',
-                    variant: 'warning',
-                );
-
-                return false;
-            }
-
-            if (empty($donor->email)) {
-                Flux::toast(
-                    heading: 'Keine E-Mail-Adresse',
-                    text: 'Für '.$donor->privacy_name.' ist keine E-Mail-Adresse hinterlegt.',
-                    variant: 'danger',
-                    duration: 0,
-                );
-
-                return false;
-            }
-
-            $weblingData = $donor->webling_data ?? [];
-            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
-                Flux::toast(
-                    heading: 'Kein PDF gefunden',
-                    text: 'Für '.$donor->privacy_name.' ist kein Rechnungs-PDF vorhanden.',
-                    variant: 'danger',
-                    duration: 0,
-                );
-
-                return false;
-            }
-
-            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
-            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
-
-            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
-                Flux::toast(
-                    heading: 'Datei nicht gefunden',
-                    text: 'Das gespeicherte Rechnungs-PDF konnte nicht gefunden werden.',
-                    variant: 'danger',
-                    duration: 0,
-                );
-
-                return false;
-            }
-
-            $donId = 'DON-'.sprintf('25%04d', $donor->id);
-            $fileName = 'Rechnung_'.$donId.'.pdf';
-
-            $subject = 'Zahlungserinnerung – Höhenmeter für Menschen';
-            $html = '<p>Liebe:r '.$donor->first_name.'</p>'
-                .'<p>Wir möchten dich freundlich an die offene Spendenrechnung erinnern. Im Anhang findest du die Rechnung nochmals. Der Versand der Rechnung erfolgte am '.Carbon::parse($donor->invoice_sent_at)->format('d.m.Y').'.</p>'
-                .'<p>Sollte sich diese Erinnerung mit deiner Zahlung gekreuzt haben, kannst du diese Nachricht ignorieren.</p>'
-                .'<p>Vielen Dank und herzliche Grüsse<br>Das Team von Höhenmeter für Menschen</p>';
-
-            $mailable = new GenericMailMessage(
-                subject: $subject,
-                html: $html,
-                storageAttachments: [[
-                    'disk' => $disk,
-                    'path' => $path,
-                    'name' => $fileName,
-                    'mime' => 'application/pdf',
-                ]]
-            );
-
-            Mail::to($donor)->queue($mailable);
-
-            $donor->invoice_reminder_sent_at = now();
-            $donor->save();
-
-            Flux::toast(
-                heading: 'Zahlungserinnerung gesendet',
-                text: 'Die Zahlungserinnerung wurde an '.$donor->email.' gesendet.',
-                variant: 'success',
-            );
-            $this->dispatch('$refresh');
-
-            return true;
-        } catch (\Throwable $e) {
-            \Log::error('Error sending donor invoice reminder', ['error' => $e->getMessage(), 'donor_id' => $donor_id]);
             Flux::toast(
                 heading: 'Fehler beim Senden der Erinnerung',
-                text: $e->getMessage(),
+                text: $exception->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -761,16 +260,12 @@ class AdminDonatorTable extends PowerGridComponent
         }
     }
 
-    #[On('bulkCreateInvoice.{tableName}')]
     public function bulkCreateInvoice(): void
     {
-        $ids = $this->checkboxValues ?? [];
-        if (empty($ids)) {
-            Flux::toast(
-                heading: 'Keine Auswahl',
-                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
-                variant: 'warning',
-            );
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return;
         }
@@ -780,29 +275,30 @@ class AdminDonatorTable extends PowerGridComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::find((int) $id);
+                $donor = Donator::query()->find($id);
+
                 if (! $donor) {
                     $skipped++;
 
                     continue;
                 }
 
-                // Skip donors without any donations (only for bulk action)
-                if ($donor->donations()->count() === 0) {
+                if (! $this->donorInvoiceService->canCreateInvoiceInBulk($donor)) {
                     $skipped++;
 
                     continue;
                 }
 
-                $this->createDonorInvoice((int) $id);
+                $this->createDonorInvoice($id);
                 $processed++;
-            } catch (\Throwable $e) {
-                \Log::error('Bulk create invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            } catch (\Throwable $exception) {
+                Log::error('Bulk create invoice failed', ['donor_id' => $id, 'error' => $exception->getMessage()]);
                 $skipped++;
             }
         }
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $this->clearSelection();
+
         Flux::toast(
             heading: 'Aktion abgeschlossen',
             text: $processed.' Rechnung(en) erstellt, '.$skipped.' übersprungen.',
@@ -810,42 +306,35 @@ class AdminDonatorTable extends PowerGridComponent
         );
     }
 
-    #[On('bulkDownloadInvoice.{tableName}')]
     public function bulkDownloadInvoice(): ?HttpResponse
     {
-        $ids = $this->checkboxValues ?? [];
-        if (empty($ids)) {
-            Flux::toast(
-                heading: 'Keine Auswahl',
-                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
-                variant: 'warning',
-            );
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return null;
         }
 
         $files = [];
+
         foreach ($ids as $id) {
-            $donor = Donator::find((int) $id);
+            $donor = Donator::query()->find($id);
+
             if (! $donor) {
                 continue;
             }
-            $weblingData = $donor->webling_data ?? [];
-            if (! isset($weblingData['letter_pdf']) || ! is_array($weblingData['letter_pdf'])) {
+
+            $downloadData = $this->donorInvoiceService->getDownloadData($donor);
+
+            if (! is_array($downloadData)) {
                 continue;
             }
-            $disk = (string) ($weblingData['letter_pdf']['disk'] ?? 'local');
-            $path = (string) ($weblingData['letter_pdf']['path'] ?? '');
-            if ($path === '' || ! Storage::disk($disk)->exists($path)) {
-                continue;
-            }
-            $absolutePath = Storage::disk($disk)->path($path);
-            $donId = 'DON-'.sprintf('25%04d', $donor->id);
-            $destName = 'Rechnung_'.$donId.'.pdf';
-            $files[] = ['path' => $absolutePath, 'name' => $destName];
+
+            $files[] = ['path' => $downloadData['absolute_path'], 'name' => $downloadData['file_name']];
         }
 
-        if (empty($files)) {
+        if ($files === []) {
             Flux::toast(
                 heading: 'Keine PDFs gefunden',
                 text: 'Für die ausgewählten Spender:innen wurden keine Rechnungs-PDFs gefunden.',
@@ -856,13 +345,14 @@ class AdminDonatorTable extends PowerGridComponent
             return null;
         }
 
-        // Ensure temp directory exists
         Storage::disk('local')->makeDirectory('tmp');
+
         $timestamp = now()->format('Ymd_His');
         $zipRelative = 'tmp/rechnungen_'.$timestamp.'.zip';
         $zipPath = Storage::disk('local')->path($zipRelative);
 
         $zip = new ZipArchive;
+
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             Flux::toast(
                 heading: 'Fehler',
@@ -877,23 +367,19 @@ class AdminDonatorTable extends PowerGridComponent
         foreach ($files as $file) {
             $zip->addFile($file['path'], $file['name']);
         }
-        $zip->close();
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $zip->close();
+        $this->clearSelection();
 
         return response()->download($zipPath, 'Rechnungen_'.$timestamp.'.zip')->deleteFileAfterSend(true);
     }
 
-    #[On('bulkSendInvoice.{tableName}')]
     public function bulkSendInvoice(): void
     {
-        $ids = $this->checkboxValues ?? [];
-        if (empty($ids)) {
-            Flux::toast(
-                heading: 'Keine Auswahl',
-                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
-                variant: 'warning',
-            );
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return;
         }
@@ -903,33 +389,35 @@ class AdminDonatorTable extends PowerGridComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::find((int) $id);
+                $donor = Donator::query()->find($id);
+
                 if (! $donor) {
                     $skipped++;
 
                     continue;
                 }
 
-                // Skip donors that already have an invoice marked as sent to avoid unintended resends in bulk
-                if ($donor->invoice_sent_at) {
+                if (! $this->donorInvoiceService->canSendInvoiceInBulk($donor)) {
                     $skipped++;
 
                     continue;
                 }
 
-                $result = $this->sendDonorInvoiceConfirmed((int) $id);
-                if ($result === true) {
+                $result = $this->sendDonorInvoiceConfirmed($id);
+
+                if ($result) {
                     $sent++;
                 } else {
                     $skipped++;
                 }
-            } catch (\Throwable $e) {
-                \Log::error('Bulk send invoice failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            } catch (\Throwable $exception) {
+                Log::error('Bulk send invoice failed', ['donor_id' => $id, 'error' => $exception->getMessage()]);
                 $skipped++;
             }
         }
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $this->clearSelection();
+
         Flux::toast(
             heading: 'Aktion abgeschlossen',
             text: $sent.' E-Mail(s) gesendet, '.$skipped.' übersprungen.',
@@ -937,16 +425,12 @@ class AdminDonatorTable extends PowerGridComponent
         );
     }
 
-    #[On('bulkSendInvoiceReminder.{tableName}')]
     public function bulkSendInvoiceReminder(): void
     {
-        $ids = $this->checkboxValues ?? [];
-        if (empty($ids)) {
-            Flux::toast(
-                heading: 'Keine Auswahl',
-                text: 'Bitte wähle mindestens eine:n Spender:in aus.',
-                variant: 'warning',
-            );
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
 
             return;
         }
@@ -956,38 +440,264 @@ class AdminDonatorTable extends PowerGridComponent
 
         foreach ($ids as $id) {
             try {
-                $donor = Donator::find((int) $id);
+                $donor = Donator::query()->find($id);
+
                 if (! $donor) {
                     $skipped++;
 
                     continue;
                 }
 
-                // Skip donors not meeting reminder criteria
-                $paymentStatus = data_get($donor->webling_data, 'payment_status');
-                if (! empty($donor->invoice_reminder_sent_at) || empty($donor->invoice_sent_at) || $paymentStatus !== 'overdue') {
+                if (! $this->donorInvoiceService->canSendReminderInBulk($donor)) {
                     $skipped++;
 
                     continue;
                 }
 
-                $result = $this->sendDonorInvoiceReminderConfirmed((int) $id);
-                if ($result === true) {
+                $result = $this->sendDonorInvoiceReminderConfirmed($id);
+
+                if ($result) {
                     $sent++;
                 } else {
                     $skipped++;
                 }
-            } catch (\Throwable $e) {
-                \Log::error('Bulk send invoice reminder failed', ['donor_id' => $id, 'error' => $e->getMessage()]);
+            } catch (\Throwable $exception) {
+                Log::error('Bulk send invoice reminder failed', ['donor_id' => $id, 'error' => $exception->getMessage()]);
                 $skipped++;
             }
         }
 
-        $this->js('window.pgBulkActions.clearAll()');
+        $this->clearSelection();
+
         Flux::toast(
             heading: 'Aktion abgeschlossen',
             text: $sent.' Erinnerung(s)-E-Mail(s) gesendet, '.$skipped.' übersprungen.',
             variant: 'success',
         );
+    }
+
+    public function exportAll(string $format): ?HttpResponse
+    {
+        $rows = [];
+
+        foreach ($this->queryForTable(ignoreSearch: true)->get() as $donor) {
+            if (! $donor instanceof Donator) {
+                continue;
+            }
+
+            $rows[] = $this->exportRow($donor);
+        }
+
+        return $this->exportRowsToDownload($rows, 'spenderinnen_gesamt', $format);
+    }
+
+    public function exportSelected(string $format): ?HttpResponse
+    {
+        $selectedIds = $this->selectedIds();
+
+        if ($selectedIds === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine:n Spender:in aus.');
+
+            return null;
+        }
+
+        $rows = [];
+
+        foreach ($this->baseQuery()->whereKey($selectedIds)->orderBy('id')->get() as $donor) {
+            if (! $donor instanceof Donator) {
+                continue;
+            }
+
+            $rows[] = $this->exportRow($donor);
+        }
+
+        return $this->exportRowsToDownload($rows, 'spenderinnen_auswahl', $format);
+    }
+
+    /**
+     * @return array<int|string, string>
+     */
+    protected function searchableColumns(): array
+    {
+        return [
+            'first_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'country_of_residence',
+            'address',
+            'zip_code',
+            'city',
+            'don_id' => "('DON-' || printf('25%04d', id))",
+        ];
+    }
+
+    protected function baseQuery(): Builder
+    {
+        return Donator::query()
+            ->withCount('donations')
+            ->select('donators.*')
+            ->selectSub($this->donorInvoiceService->invoiceTotalSubquery(), 'invoice_total')
+            ->selectRaw($this->donorInvoiceService->invoiceStatusCaseSql());
+    }
+
+    protected function defaultSortColumn(): string
+    {
+        return 'donators.first_name';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function sortColumns(): array
+    {
+        return [
+            'id' => 'donators.id',
+            'first_name' => 'donators.first_name',
+            'last_name' => 'donators.last_name',
+            'donations_count' => 'donations_count',
+            'created_at' => 'donators.created_at',
+            'email' => 'donators.email',
+            'phone_number' => 'donators.phone_number',
+            'country_of_residence' => 'donators.country_of_residence',
+            'address' => 'donators.address',
+            'zip_code' => 'donators.zip_code',
+            'city' => 'donators.city',
+            'invoice_status' => 'invoice_status',
+            'invoice_sent_at' => 'donators.invoice_sent_at',
+            'invoice_reminder_sent_at' => 'donators.invoice_reminder_sent_at',
+        ];
+    }
+
+    /**
+     * @return array<string, array{label:string, sortable:bool, sort_field?:string, align?:string, width?:string, tooltip?:bool, truncate?:int, export_key?:string, formatter?:string}>
+     */
+    protected function columnDefinitions(): array
+    {
+        return [
+            'don_id' => ['label' => 'DON-ID', 'sortable' => true, 'sort_field' => 'id', 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'DON-ID'],
+            'first_name' => ['label' => 'Vorname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Vorname'],
+            'last_name' => ['label' => 'Nachname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Nachname'],
+            'donations_count' => ['label' => 'Anzahl Spenden', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'Anzahl Spenden'],
+            'invoice_total' => ['label' => 'Rechnungsbetrag', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Rechnungsbetrag', 'formatter' => 'money'],
+            'created_at' => ['label' => 'Anmeldung', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anmeldung', 'formatter' => 'date'],
+            'email' => ['label' => 'E-Mail', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'tooltip' => true, 'truncate' => 52, 'export_key' => 'E-Mail'],
+            'phone_number' => ['label' => 'Telefon', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Telefon'],
+            'country' => ['label' => 'Land', 'sortable' => true, 'sort_field' => 'country_of_residence', 'align' => 'left', 'width' => 'min-w-32', 'export_key' => 'Land'],
+            'address' => ['label' => 'Adresse', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-60', 'tooltip' => true, 'truncate' => 44, 'export_key' => 'Adresse'],
+            'zip_code' => ['label' => 'PLZ', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-24', 'export_key' => 'PLZ'],
+            'city' => ['label' => 'Ort', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Ort'],
+            'invoice_status' => ['label' => 'Rechnung', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Rechnung'],
+            'invoice_sent_at' => ['label' => 'Rechnung gesendet am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Rechnung gesendet am', 'formatter' => 'datetime_or_dash'],
+            'invoice_reminder_sent_at' => ['label' => 'Erinnerung gesendet am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Erinnerung gesendet am', 'formatter' => 'datetime_or_dash'],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function defaultVisibleColumns(): array
+    {
+        return [
+            'don_id',
+            'first_name',
+            'last_name',
+            'donations_count',
+            'invoice_total',
+            'created_at',
+            'email',
+            'invoice_status',
+            'invoice_sent_at',
+            'invoice_reminder_sent_at',
+        ];
+    }
+
+    protected function requiresSecondClick(string $key, string $heading, string $text): bool
+    {
+        $now = now()->timestamp;
+        $expiresAt = $this->pendingConfirmations[$key] ?? null;
+
+        if (is_int($expiresAt) && $expiresAt >= $now) {
+            unset($this->pendingConfirmations[$key]);
+
+            return false;
+        }
+
+        $this->pendingConfirmations[$key] = $now + 15;
+
+        Flux::toast(heading: $heading, text: $text, variant: 'warning');
+
+        return true;
+    }
+
+    /**
+     * @param  array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}  $result
+     */
+    protected function toastActionResult(array $result): void
+    {
+        Flux::toast(
+            heading: $result['heading'],
+            text: $result['text'],
+            variant: $result['variant'],
+            duration: $result['duration'],
+        );
+
+        if ($result['refresh']) {
+            $this->dispatch('$refresh');
+        }
+    }
+
+    protected function findDonorOrToast(int $donorId): ?Donator
+    {
+        $donor = Donator::query()->find($donorId);
+
+        if (! $donor) {
+            Flux::toast(
+                heading: 'Nicht gefunden',
+                text: 'Die/der ausgewählte Spender:in wurde nicht gefunden.',
+                variant: 'danger',
+                duration: 0,
+            );
+
+            return null;
+        }
+
+        return $donor;
+    }
+
+    public function donorInvoiceTotal(Donator $donor): float
+    {
+        return $this->donorInvoiceService->invoiceTotalForDonor($donor);
+    }
+
+    public function invoiceStatusLabel(Donator $donor): string
+    {
+        return $this->donorInvoiceService->formatInvoiceStatus($donor);
+    }
+
+    /**
+     * @return array<string, scalar|null>
+     */
+    protected function exportRow(Donator $donor): array
+    {
+        $sum = $this->donorInvoiceTotal($donor);
+
+        return [
+            'DON-ID' => 'DON-'.sprintf('25%04d', $donor->id),
+            'Vorname' => $donor->first_name,
+            'Nachname' => $donor->last_name,
+            'Anzahl Spenden' => $donor->donations_count,
+            'Rechnungsbetrag' => $sum,
+            'Anmeldung' => $this->formatDate($donor->created_at),
+            'E-Mail' => $donor->email,
+            'Telefon' => $donor->phone_number,
+            'Land' => $donor->country_of_residence,
+            'Adresse' => $donor->address,
+            'PLZ' => $donor->zip_code,
+            'Ort' => $donor->city,
+            'Rechnung' => $this->invoiceStatusLabel($donor),
+            'Rechnung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_sent_at),
+            'Zahlungserinnerung gesendet am' => $this->formatDateTimeOrNull($donor->invoice_reminder_sent_at),
+        ];
     }
 }

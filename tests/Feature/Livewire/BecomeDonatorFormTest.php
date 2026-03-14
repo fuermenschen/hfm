@@ -6,6 +6,7 @@ use App\Models\Donator;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Notifications\AdminSomeoneRegistered;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -573,5 +574,5 @@ it('does not send admin notification when disabled', function () {
         ->assertHasNoErrors();
 
     // specifically ensure no on-demand admin notification is sent
-    Notification::assertNotSentTo(new Illuminate\Notifications\AnonymousNotifiable, AdminSomeoneRegistered::class);
+    Notification::assertNotSentTo(new AnonymousNotifiable, AdminSomeoneRegistered::class);
 })->skip('Registrierung aktuell geschlossen.');

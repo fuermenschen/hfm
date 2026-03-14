@@ -8,18 +8,22 @@ use App\Models\Partner;
 use App\Notifications\AdminSomeoneRegistered;
 use App\Rules\ValidZipCode;
 use Exception;
+use Flux;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Propaganistas\LaravelPhone\PhoneNumber;
-use WireUi\Traits\Actions;
+use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
+use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
 // added for formatting phone numbers
 
 class BecomeDonatorForm extends Component
 {
-    use Actions;
+    use UsesSpamProtection;
+
+    public HoneypotData $extraFields;
 
     // Vorname
     #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
@@ -156,6 +160,7 @@ class BecomeDonatorForm extends Component
 
     public function save(): void
     {
+        $this->protectAgainstSpam();
 
         // cross-field amount rule
         if ($this->amount_max && $this->amount_min && $this->amount_max < $this->amount_min) {
@@ -209,15 +214,13 @@ class BecomeDonatorForm extends Component
 
             // check if this donator already has a donation for this athlete
             if ($donator->donations()->where('athlete_id', $this->athlete_id)->exists()) {
-                $this->dialog([
-                    'title' => 'Bereits angemeldet',
-                    'description' => 'Du hast dich bereits als Spender:in für diese:n Sportler:in angemeldet. Falls du den gewählten Betrag anpassen möchtest, kontaktiere uns bitte.',
-                    'icon' => 'warning',
-                    'onClose' => [
-                        'method' => 'redirectHelper',
-                        'params' => ['/kontakt'],
-                    ],
-                ]);
+                Flux::toast(
+                    heading: 'Bereits angemeldet',
+                    text: 'Du hast dich bereits als Spender:in für diese:n Sportler:in angemeldet. Falls du den gewählten Betrag anpassen möchtest, kontaktiere uns bitte.',
+                    variant: 'warning',
+                );
+
+                $this->redirectHelper('/kontakt');
 
                 return;
             }
@@ -234,22 +237,16 @@ class BecomeDonatorForm extends Component
 
             $this->reset();
 
-            $this->dialog([
-                'title' => 'Prüfe deine E-Mails',
-                'description' => 'Vielen Dank für deine Anmeldung zur Spende. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.',
-                'icon' => 'mail-open',
-                'onClose' => [
-                    'method' => 'redirectHelper',
-                    'params' => ['/'],
-                ],
-            ]);
+            Flux::toast(
+                heading: 'Prüfe deine E-Mails',
+                text: 'Vielen Dank für deine Anmeldung zur Spende. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.',
+                variant: 'success',
+            );
+
+            $this->redirectHelper('/');
 
         } catch (Exception $e) {
-            $this->dialog([
-                'title' => 'Fehler',
-                'description' => 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.',
-                'icon' => 'error',
-            ]);
+            Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
         }
     }
 
@@ -260,13 +257,10 @@ class BecomeDonatorForm extends Component
 
     public function showPrivacyInfo(): void
     {
-        $this->dialog([
-            'title' => 'Datenschutz',
-            'description' => "Wir benutzen deine Daten nur für die Organisation des Anlasses Höhenmeter für Menschen.
-              Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der
-              <a href='/datenschutz' target='_blank' class='underline'>Datenschutzerklärung</a>.",
-            'icon' => 'info',
-        ]);
+        Flux::toast(
+            heading: 'Datenschutz',
+            text: 'Wir benutzen deine Daten nur für die Organisation des Anlasses Höhenmeter für Menschen. Es werden niemals Daten an Dritte weitergegeben. Mehr Informationen findest du in der Datenschutzerklärung.',
+        );
     }
 
     public function showAmountInfo(): void
@@ -282,15 +276,13 @@ class BecomeDonatorForm extends Component
             $partner.
             '.';
 
-        $this->dialog([
-            'title' => 'Beiträge',
-            'description' => $message,
-            'icon' => 'heart',
-        ]);
+        Flux::toast(heading: 'Beiträge', text: strip_tags($message));
     }
 
-    public function mount()
+    public function mount(): void
     {
+        $this->extraFields = new HoneypotData;
+
         // fetch all athletes
         $this->athletes = Athlete::query()
             ->where('verified', true)

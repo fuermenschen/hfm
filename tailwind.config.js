@@ -3,8 +3,7 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 const colors = require("tailwindcss/colors");
 
 module.exports = {
-    darkMode: "media",
-    presets: [require("./vendor/wireui/wireui/tailwind.config.js")],
+    darkMode: "class",
     theme: {
         extend: {
             fontFamily: {
@@ -24,12 +23,6 @@ module.exports = {
                 "pg-primary": colors.slate,
                 "pg-secondary": colors.slate,
             },
-            spacing: {
-                xs: "0.75rem",
-                sm: "1.5rem",
-                md: "2.25rem",
-                lg: "3rem",
-            },
         },
     },
     variants: {
@@ -47,9 +40,6 @@ module.exports = {
         "./resources/**/*.php",
         "./resources/**/*.vue",
         "./resources/**/*.twig",
-        "./vendor/wireui/wireui/resources/**/*.blade.php",
-        "./vendor/wireui/wireui/ts/**/*.ts",
-        "./vendor/wireui/wireui/src/View/**/*.php",
         "./app/Livewire/**/*Table.php",
         "./app/Themes/**/*.php",
         "./vendor/power-components/livewire-powergrid/resources/views/**/*.php",

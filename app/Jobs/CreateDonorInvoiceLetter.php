@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Actions\CollectDonorInvoiceDataAction;
 use App\Models\Donator;
-use App\Services\DonorService;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\InvoiceSettings;
@@ -42,7 +42,7 @@ class CreateDonorInvoiceLetter implements ShouldQueue
         $text1 = 'Liebe:r '.($this->donor->first_name ?? '')."\n\nWir schätzen dein Engagement sehr und möchten dir herzlich danken.\nUntenstehend findest du eine Übersicht über deine Spenden.\n\n";
 
         // Compute the minimum amount (sum of all donation totals)
-        $invoiceLines = app(DonorService::class)->collectInvoiceData($this->donor);
+        $invoiceLines = app(CollectDonorInvoiceDataAction::class)($this->donor);
         $minTotal = 0.0;
         foreach ($invoiceLines as $l) {
             $minTotal += (float) ($l['total'] ?? 0.0);

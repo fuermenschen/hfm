@@ -1,12 +1,12 @@
 @extends('layouts.base')
 
 @section('body')
-    <div class="min-h-screen w-[1100px] max-w-full mx-auto flex flex-col justify-between">
+    <div class="min-h-screen w-full max-w-6xl mx-auto flex flex-col justify-between">
         <div>
             @livewire('public-menu')
 
             <div
-                class="relative m-auto p-[36px] pt-[48px] sm:justify-center sm:items-center w-full"
+                class="relative m-auto p-9 pt-12 sm:justify-center sm:items-center w-full"
                 style="--content-pt:48px; --content-pb:36px;">
                 @yield('content')
             </div>
