@@ -39,11 +39,7 @@
                         @endif
                     </flux:table.column>
                 @endforeach
-                <flux:table.column class="sticky right-0 z-10 w-14 min-w-14 align-middle border-l border-zinc-200 bg-white text-center dark:border-zinc-700 dark:bg-zinc-800">
-                    <div class="flex items-center justify-center">
-                        <flux:icon.cog-6-tooth class="size-4" />
-                    </div>
-                </flux:table.column>
+                <x-admin.tables.partials.actions-column header />
             </flux:table.columns>
 
             <flux:table.rows>
@@ -56,8 +52,7 @@
                     </flux:table.cell>
                 </flux:table.row>
                 @forelse ($athletes as $athlete)
-                    @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                    <flux:table.row wire:key="athlete-{{ $athlete->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}" class="{{ $rowClass }}">
+                    <flux:table.row wire:key="athlete-{{ $athlete->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
                         <flux:table.cell>
                             <flux:field variant="inline">
                                 <flux:checkbox value="{{ $athlete->id }}" />
@@ -154,18 +149,16 @@
                                 @endswitch
                             </flux:table.cell>
                         @endforeach
-                        <flux:table.cell class="sticky right-0 z-10 w-14 min-w-14 align-middle border-l border-zinc-200 {{ $rowClass }} text-center dark:border-zinc-700">
-                            <div class="flex items-center justify-center">
-                                <flux:dropdown>
-                                    <flux:button variant="subtle" size="xs" icon="ellipsis-horizontal" />
-                                    <flux:menu>
-                                        <flux:menu.item wire:click="downloadWelcomeLetter({{ $athlete->id }})">Brief</flux:menu.item>
-                                        <flux:menu.item wire:click="downloadPersonalizedFlyerTemplate({{ $athlete->id }})">Flyer</flux:menu.item>
-                                        <flux:menu.item :href="route('show-athlete', ['login_token' => $athlete->login_token])" target="_blank">Login</flux:menu.item>
-                                    </flux:menu>
-                                </flux:dropdown>
-                            </div>
-                        </flux:table.cell>
+                        <x-admin.tables.partials.actions-column>
+                            <flux:dropdown>
+                                <flux:button variant="subtle" size="xs" icon="ellipsis-horizontal" />
+                                <flux:menu>
+                                    <flux:menu.item wire:click="downloadWelcomeLetter({{ $athlete->id }})">Brief</flux:menu.item>
+                                    <flux:menu.item wire:click="downloadPersonalizedFlyerTemplate({{ $athlete->id }})">Flyer</flux:menu.item>
+                                    <flux:menu.item :href="route('show-athlete', ['login_token' => $athlete->login_token])" target="_blank">Login</flux:menu.item>
+                                </flux:menu>
+                            </flux:dropdown>
+                        </x-admin.tables.partials.actions-column>
                     </flux:table.row>
                 @empty
                     <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">

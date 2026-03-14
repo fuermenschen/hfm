@@ -51,8 +51,7 @@
                     </flux:table.cell>
                 </flux:table.row>
                 @forelse ($donations as $donation)
-                    @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                    <flux:table.row wire:key="donation-{{ $donation->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}" class="{{ $rowClass }}">
+                    <flux:table.row wire:key="donation-{{ $donation->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
                         <flux:table.cell>
                             <flux:field variant="inline">
                                 <flux:checkbox value="{{ $donation->id }}" />
