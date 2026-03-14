@@ -139,20 +139,23 @@ class AdminAthleteTable extends AbstractDatatableComponent
         return $this->exportRowsToDownload($rows, 'sportlerinnen_auswahl', $format);
     }
 
-    protected function applySearch(Builder $query, string $search): void
+    /**
+     * @return array<int|string, string>
+     */
+    protected function searchableColumns(): array
     {
-        $query->where(function (Builder $builder) use ($search): void {
-            $builder->where('first_name', 'like', $search)
-                ->orWhere('last_name', 'like', $search)
-                ->orWhere('email', 'like', $search)
-                ->orWhere('phone_number', 'like', $search)
-                ->orWhere('address', 'like', $search)
-                ->orWhere('zip_code', 'like', $search)
-                ->orWhere('city', 'like', $search)
-                ->orWhere('comment', 'like', $search)
-                ->orWhereHas('sportType', fn (Builder $sportTypeQuery): Builder => $sportTypeQuery->where('name', 'like', $search))
-                ->orWhereHas('partner', fn (Builder $partnerQuery): Builder => $partnerQuery->where('name', 'like', $search));
-        });
+        return [
+            'first_name',
+            'last_name',
+            'email',
+            'phone_number',
+            'address',
+            'zip_code',
+            'city',
+            'comment',
+            'sportType.name',
+            'partner.name',
+        ];
     }
 
     protected function baseQuery(): Builder

@@ -6,6 +6,7 @@ use App\Components\Concerns\InteractsWithDatatable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -54,10 +55,10 @@ abstract class AbstractDatatableComponent extends Component
         $this->normalizeSorting();
 
         $query = $this->baseQuery();
-        $search = trim($this->search);
+        $search = $this->normalizedSearchTerm($this->search);
 
         if (! $ignoreSearch && $search !== '') {
-            $this->applySearch($query, '%'.$search.'%');
+            $this->applySearch($query, $this->toEscapedLikePattern($search));
         }
 
         return $query->orderBy($this->resolvedSortColumn(), $this->sortDirection);
@@ -65,7 +66,128 @@ abstract class AbstractDatatableComponent extends Component
 
     abstract protected function baseQuery(): Builder;
 
-    abstract protected function applySearch(Builder $query, string $search): void;
+    protected function applySearch(Builder $query, string $search): void
+    {
+        $searchableColumns = $this->searchableColumns();
+
+        if ($searchableColumns === []) {
+            return;
+        }
+
+        $query->where(function (Builder $builder) use ($search, $searchableColumns): void {
+            $isFirstCondition = true;
+
+            foreach ($searchableColumns as $key => $column) {
+                if (is_int($key)) {
+                    if ($column === '') {
+                        continue;
+                    }
+
+                    $this->applySearchColumnCondition(
+                        builder: $builder,
+                        column: $column,
+                        search: $search,
+                        boolean: $isFirstCondition ? 'and' : 'or',
+                    );
+
+                    $isFirstCondition = false;
+
+                    continue;
+                }
+
+                if ($column === '') {
+                    continue;
+                }
+
+                $builder->whereRaw(
+                    sql: $column." like ? escape '\\'",
+                    bindings: [$search],
+                    boolean: $isFirstCondition ? 'and' : 'or',
+                );
+
+                $isFirstCondition = false;
+            }
+        });
+    }
+
+    /**
+     * @return array<int|string, string>
+     */
+    abstract protected function searchableColumns(): array;
+
+    protected function normalizedSearchTerm(string $search): string
+    {
+        $trimmedSearch = trim($search);
+
+        if ($trimmedSearch === '') {
+            return '';
+        }
+
+        $sanitizedSearch = Str::of($trimmedSearch)
+            ->replaceMatches('/[[:cntrl:]]/u', '')
+            ->squish()
+            ->toString();
+
+        if ($sanitizedSearch === '') {
+            return '';
+        }
+
+        return mb_substr($sanitizedSearch, 0, 120);
+    }
+
+    protected function toEscapedLikePattern(string $search): string
+    {
+        $escapedSearch = str_replace(
+            ['\\', '%', '_'],
+            ['\\\\', '\\%', '\\_'],
+            $search,
+        );
+
+        return '%'.$escapedSearch.'%';
+    }
+
+    protected function applySearchColumnCondition(Builder $builder, string $column, string $search, string $boolean): void
+    {
+        if (str_contains($column, '.')) {
+            $relation = (string) Str::beforeLast($column, '.');
+            $relationColumn = (string) Str::afterLast($column, '.');
+
+            if ($relation === '' || $relationColumn === '') {
+                throw new \LogicException(static::class." has an invalid searchable relation column [{$column}].");
+            }
+
+            $callback = function (Builder $relationQuery) use ($relationColumn, $search): void {
+                $this->applySearchColumnCondition(
+                    builder: $relationQuery,
+                    column: $relationColumn,
+                    search: $search,
+                    boolean: 'and',
+                );
+            };
+
+            if ($boolean === 'or') {
+                $builder->orWhereHas($relation, $callback);
+
+                return;
+            }
+
+            $builder->whereHas($relation, $callback);
+
+            return;
+        }
+
+        if (! preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $column)) {
+            throw new \LogicException(static::class." has an invalid searchable column [{$column}].");
+        }
+
+        $wrappedColumn = $builder->getQuery()->getGrammar()->wrap($column);
+
+        $builder->whereRaw(
+            sql: $wrappedColumn." like ? escape '\\'",
+            bindings: [$search],
+            boolean: $boolean,
+        );
+    }
 
     protected function resolvedSortColumn(): string
     {

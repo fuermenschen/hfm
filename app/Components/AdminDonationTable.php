@@ -76,19 +76,18 @@ class AdminDonationTable extends AbstractDatatableComponent
         return $this->donationService->calculateActualAmount($donation);
     }
 
-    protected function applySearch(Builder $query, string $search): void
+    /**
+     * @return array<int|string, string>
+     */
+    protected function searchableColumns(): array
     {
-        $query->where(function (Builder $builder) use ($search): void {
-            $builder->where('comment', 'like', $search)
-                ->orWhereHas('athlete', function (Builder $athleteQuery) use ($search): void {
-                    $athleteQuery->where('first_name', 'like', $search)
-                        ->orWhere('last_name', 'like', $search);
-                })
-                ->orWhereHas('donator', function (Builder $donatorQuery) use ($search): void {
-                    $donatorQuery->where('first_name', 'like', $search)
-                        ->orWhere('last_name', 'like', $search);
-                });
-        });
+        return [
+            'comment',
+            'athlete.first_name',
+            'athlete.last_name',
+            'donator.first_name',
+            'donator.last_name',
+        ];
     }
 
     protected function baseQuery(): Builder

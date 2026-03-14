@@ -100,7 +100,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
         $columnDefinitionsCode = $this->buildColumnDefinitionsCode($allColumns, $sortableColumns, $schema['types']);
         $sortColumnsCode = $this->buildSortColumnsCode($sortableColumns, $tableName);
         $defaultVisibleColumnsCode = $this->buildStringListCode($visibleColumns);
-        $applySearchBody = $this->buildApplySearchBody($searchableColumns);
+        $searchableColumnsCode = $this->buildSearchableColumnsCode($searchableColumns);
         $exportMethodsCode = $this->buildExportMethodsCode($includeExport, $allColumns);
 
         $replacements = [
@@ -114,7 +114,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
             '{{ sortColumnsCode }}' => $sortColumnsCode,
             '{{ columnDefinitionsCode }}' => $columnDefinitionsCode,
             '{{ defaultVisibleColumnsCode }}' => $defaultVisibleColumnsCode,
-            '{{ applySearchBody }}' => $applySearchBody,
+            '{{ searchableColumnsCode }}' => $searchableColumnsCode,
             '{{ exportMethodsCode }}' => $exportMethodsCode,
             '{{ responseImport }}' => $includeExport ? 'use Symfony\\Component\\HttpFoundation\\Response as HttpResponse;' : '',
             '{{ exportToolbarBlock }}' => $includeExport ? '<x-datatable.partials.export-dropdown />' : '',
@@ -726,22 +726,16 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
     /**
      * @param  array<int, string>  $columns
      */
-    protected function buildApplySearchBody(array $columns): string
+    protected function buildSearchableColumnsCode(array $columns): string
     {
         if ($columns === []) {
             return '';
         }
 
-        $first = array_shift($columns);
-        $conditions = ["\$builder->where('{$first}', 'like', \$search)"];
-
-        foreach ($columns as $column) {
-            $conditions[] = "->orWhere('{$column}', 'like', \$search)";
-        }
-
-        $conditionsCode = implode("\n                ", $conditions).';';
-
-        return "        \$query->where(function (Builder \$builder) use (\$search): void {\n                {$conditionsCode}\n        });";
+        return implode("\n            ", array_map(
+            fn (string $column): string => "'{$column}',",
+            $columns,
+        ));
     }
 
     /**

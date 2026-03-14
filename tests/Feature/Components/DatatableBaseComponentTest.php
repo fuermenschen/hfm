@@ -112,6 +112,28 @@ it('filters donor rows when search input changes', function (): void {
         ->assertSee('Anna');
 });
 
+it('sanitizes search input and escapes SQL wildcard characters', function (): void {
+    Donator::factory()->create(['first_name' => 'Anna']);
+    Donator::factory()->create(['first_name' => 'Ann%a']);
+    Donator::factory()->create(['first_name' => 'Ann_a']);
+    Donator::factory()->create(['first_name' => 'AnnXa']);
+
+    Livewire::test(AdminDonatorTable::class)
+        ->set('search', "  Anna\n")
+        ->assertSee('Anna')
+        ->assertDontSee('Ann%a');
+
+    Livewire::test(AdminDonatorTable::class)
+        ->set('search', '%')
+        ->assertSee('Ann%a')
+        ->assertDontSee('Anna');
+
+    Livewire::test(AdminDonatorTable::class)
+        ->set('search', '_')
+        ->assertSee('Ann_a')
+        ->assertDontSee('AnnXa');
+});
+
 it('hydrates donor table search and sorting state from query parameters', function (): void {
     Donator::factory()->create(['first_name' => 'Anna', 'last_name' => 'Zeta']);
     Donator::factory()->create(['first_name' => 'Zoey', 'last_name' => 'Alpha']);

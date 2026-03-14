@@ -20,9 +20,14 @@ class {{ componentClass }} extends AbstractDatatableComponent
         return '{{ tableDataKey }}';
     }
 
-    protected function applySearch(Builder $query, string $search): void
+    /**
+     * @return array<int|string, string>
+     */
+    protected function searchableColumns(): array
     {
-{{ applySearchBody }}
+        return [
+            {{ searchableColumnsCode }}
+        ];
     }
 
     protected function baseQuery(): Builder
