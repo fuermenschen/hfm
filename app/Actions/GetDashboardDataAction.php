@@ -127,7 +127,7 @@ class GetDashboardDataAction
             ])
             ->latest()
             ->limit(30)
-            ->get(['id', 'donator_id', 'athlete_id', 'created_at']);
+            ->get(['id', 'donor_id', 'athlete_id', 'created_at']);
 
         $activities = [];
 

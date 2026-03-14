@@ -56,7 +56,7 @@ it('uses shared donation table render conventions', function (): void {
     $donor = Donor::factory()->create();
 
     $donation = Donation::query()->create([
-        'donator_id' => $donor->id,
+        'donor_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 12,
         'amount_min' => 10,

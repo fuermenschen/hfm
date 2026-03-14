@@ -33,7 +33,7 @@ it('skips creating invoices in bulk for donors without donations', function () {
     ]);
 
     Donation::create([
-        'donator_id' => $donorWith->id,
+        'donor_id' => $donorWith->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 10,
         'amount_max' => 100,

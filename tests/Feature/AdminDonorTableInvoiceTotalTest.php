@@ -30,7 +30,7 @@ it('renders precomputed invoice totals in the donor table', function (): void {
     ]);
 
     Donation::query()->create([
-        'donator_id' => $donor->id,
+        'donor_id' => $donor->id,
         'athlete_id' => $athleteA->id,
         'amount_per_round' => 12,
         'amount_min' => null,
@@ -38,7 +38,7 @@ it('renders precomputed invoice totals in the donor table', function (): void {
     ]);
 
     Donation::query()->create([
-        'donator_id' => $donor->id,
+        'donor_id' => $donor->id,
         'athlete_id' => $athleteB->id,
         'amount_per_round' => 3,
         'amount_min' => 40,

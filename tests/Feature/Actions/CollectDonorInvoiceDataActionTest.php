@@ -49,7 +49,7 @@ describe('collect donor invoice data', function () {
         ]);
 
         Donation::query()->create([
-            'donator_id' => $donor->id,
+            'donor_id' => $donor->id,
             'athlete_id' => $athlete->id,
             'amount_per_round' => $perRound,
             'amount_min' => $min,
@@ -102,14 +102,14 @@ describe('collect donor invoice data', function () {
 
         Donation::query()->insert([
             [
-                'donator_id' => $donor->id,
+                'donor_id' => $donor->id,
                 'athlete_id' => $athletes[0]->id,
                 'amount_per_round' => 2.0,
                 'amount_min' => null,
                 'amount_max' => 30.0,
             ],
             [
-                'donator_id' => $donor->id,
+                'donor_id' => $donor->id,
                 'athlete_id' => $athletes[1]->id,
                 'amount_per_round' => 5.0,
                 'amount_min' => 20.0,

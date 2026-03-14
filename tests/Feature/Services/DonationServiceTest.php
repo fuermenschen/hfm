@@ -187,9 +187,9 @@ describe('calculateEstimatedTotal', function () {
         ]);
 
         // Donations with caps to exercise min/max
-        Donation::create(['donator_id' => $donor1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 10*2=20
-        Donation::create(['donator_id' => $donor2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 3.0, 'amount_min' => 20.0, 'amount_max' => null, 'comment' => null]); // 5*3=15 -> 20 (min)
-        Donation::create(['donator_id' => $donor3->id, 'athlete_id' => $a3->id, 'amount_per_round' => 1.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 50*1=50 -> 30 (max)
+        Donation::create(['donor_id' => $donor1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 10*2=20
+        Donation::create(['donor_id' => $donor2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 3.0, 'amount_min' => 20.0, 'amount_max' => null, 'comment' => null]); // 5*3=15 -> 20 (min)
+        Donation::create(['donor_id' => $donor3->id, 'athlete_id' => $a3->id, 'amount_per_round' => 1.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 50*1=50 -> 30 (max)
 
         $donations = Donation::query()->with('athlete')->get();
         $total = $this->service->calculateEstimatedTotal($donations);
@@ -235,8 +235,8 @@ describe('calculateActualTotal', function () {
         $a2->rounds_done = 1;
         $a2->save();
 
-        Donation::create(['donator_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
-        Donation::create(['donator_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10 (min)
+        Donation::create(['donor_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
+        Donation::create(['donor_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10 (min)
 
         $donations = Donation::query()->with('athlete')->get();
         $total = $this->service->calculateActualTotal($donations);
@@ -263,9 +263,9 @@ describe('calculateEstimatedTotalPerPartner', function () {
         $a2 = Athlete::create(['first_name' => 'A', 'last_name' => '2', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'pa2@example.com', 'adult' => 1, 'sport_type_id' => $this->sport->id, 'partner_id' => $this->p1->id, 'rounds_estimated' => 5]);
         $b1 = Athlete::create(['first_name' => 'B', 'last_name' => '1', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'pb1@example.com', 'adult' => 1, 'sport_type_id' => $this->sport->id, 'partner_id' => $this->p2->id, 'rounds_estimated' => 3]);
 
-        Donation::create(['donator_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 20
-        Donation::create(['donator_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 10.0, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 5*10=50 -> 40
-        Donation::create(['donator_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 10.0, 'amount_min' => 40.0, 'amount_max' => null, 'comment' => null]); // 3*10=30 -> 40
+        Donation::create(['donor_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 20
+        Donation::create(['donor_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 10.0, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 5*10=50 -> 40
+        Donation::create(['donor_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 10.0, 'amount_min' => 40.0, 'amount_max' => null, 'comment' => null]); // 3*10=30 -> 40
 
         $donations = Donation::query()->with('athlete.partner')->get();
         $totals = $this->service->calculateEstimatedTotalPerPartner($donations);
@@ -301,9 +301,9 @@ describe('calculateActualTotalPerPartner', function () {
         $b1->rounds_done = 100;
         $b1->save();
 
-        Donation::create(['donator_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
-        Donation::create(['donator_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10
-        Donation::create(['donator_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 0.5, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 100*0.5=50 -> 40
+        Donation::create(['donor_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
+        Donation::create(['donor_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10
+        Donation::create(['donor_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 0.5, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 100*0.5=50 -> 40
 
         $donations = Donation::query()->with('athlete.partner')->get();
         $totals = $this->service->calculateActualTotalPerPartner($donations);
