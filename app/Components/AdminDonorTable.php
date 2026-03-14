@@ -597,7 +597,7 @@ class AdminDonorTable extends AbstractDatatableComponent
     {
         return Donor::query()
             ->withCount('donations')
-            ->select('donators.*')
+            ->select('donors.*')
             ->selectSub($this->donorInvoiceService->invoiceTotalSubquery(), 'invoice_total')
             ->selectRaw($this->donorInvoiceService->invoiceStatusCaseSql());
     }
@@ -632,7 +632,7 @@ class AdminDonorTable extends AbstractDatatableComponent
 
     protected function defaultSortColumn(): string
     {
-        return 'donators.first_name';
+        return 'donors.first_name';
     }
 
     /**
@@ -641,20 +641,20 @@ class AdminDonorTable extends AbstractDatatableComponent
     protected function sortColumns(): array
     {
         return [
-            'id' => 'donators.id',
-            'first_name' => 'donators.first_name',
-            'last_name' => 'donators.last_name',
+            'id' => 'donors.id',
+            'first_name' => 'donors.first_name',
+            'last_name' => 'donors.last_name',
             'donations_count' => 'donations_count',
-            'created_at' => 'donators.created_at',
-            'email' => 'donators.email',
-            'phone_number' => 'donators.phone_number',
-            'country_of_residence' => 'donators.country_of_residence',
-            'address' => 'donators.address',
-            'zip_code' => 'donators.zip_code',
-            'city' => 'donators.city',
+            'created_at' => 'donors.created_at',
+            'email' => 'donors.email',
+            'phone_number' => 'donors.phone_number',
+            'country_of_residence' => 'donors.country_of_residence',
+            'address' => 'donors.address',
+            'zip_code' => 'donors.zip_code',
+            'city' => 'donors.city',
             'invoice_status' => 'invoice_status',
-            'invoice_sent_at' => 'donators.invoice_sent_at',
-            'invoice_reminder_sent_at' => 'donators.invoice_reminder_sent_at',
+            'invoice_sent_at' => 'donors.invoice_sent_at',
+            'invoice_reminder_sent_at' => 'donors.invoice_reminder_sent_at',
         ];
     }
 

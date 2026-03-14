@@ -22,7 +22,7 @@ class DonationFactory extends Factory
         $donors = Donor::all();
 
         return [
-            'donator_id' => $donors->random()->id,
+            'donor_id' => $donors->random()->id,
             'athlete_id' => $verified_athletes->random()->id,
             'amount_per_round' => fake()->randomFloat(2, 0, 100),
             'amount_max' => fake()->randomFloat(2, 0, 100),

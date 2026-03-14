@@ -51,7 +51,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
     $donor3 = Donor::factory()->create();
 
     Donation::create([
-        'donator_id' => $donor1->id,
+        'donor_id' => $donor1->id,
         'athlete_id' => $athleteEqual->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
@@ -59,7 +59,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'comment' => null,
     ]);
     Donation::create([
-        'donator_id' => $donor2->id,
+        'donor_id' => $donor2->id,
         'athlete_id' => $athleteB->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
@@ -67,7 +67,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'comment' => null,
     ]);
     Donation::create([
-        'donator_id' => $donor3->id,
+        'donor_id' => $donor3->id,
         'athlete_id' => $athleteC->id,
         'amount_per_round' => 5.0,
         'amount_max' => null,

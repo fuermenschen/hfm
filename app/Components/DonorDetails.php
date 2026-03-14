@@ -44,7 +44,7 @@ class DonorDetails extends Component
             }
         }
 
-        $donations = Donation::where('donator_id', $this->donor->id)->with('athlete')->get();
+        $donations = Donation::where('donor_id', $this->donor->id)->with('athlete')->get();
         $this->donations = $donations->map(function ($donation) {
             return [
                 'athlete' => $donation->athlete->privacy_name,

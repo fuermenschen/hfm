@@ -129,7 +129,7 @@ it('persists selected country', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    $this->assertDatabaseHas('donators', [
+    $this->assertDatabaseHas('donors', [
         'email' => 'erika@example.de',
         'country_of_residence' => 'DE',
     ]);
@@ -205,7 +205,7 @@ it('validates phone per country', function (
 
     if ($valid) {
         $test->assertHasNoErrors(['phone_national']);
-        $this->assertDatabaseHas('donators', ['email' => $email]);
+        $this->assertDatabaseHas('donors', ['email' => $email]);
 
         // verify the phone number is formatted correctly
         $donor = Donor::query()->where('email', $email)->first();
@@ -225,7 +225,7 @@ it('validates phone per country', function (
 
     } else {
         $test->assertHasErrors(['phone_national']);
-        $this->assertDatabaseMissing('donators', ['email' => $email]);
+        $this->assertDatabaseMissing('donors', ['email' => $email]);
     }
 })->with('phone_validation_cases')->skip('Registrierung aktuell geschlossen.');
 
@@ -256,7 +256,7 @@ it('rejects email confirmation mismatch and does not persist', function () {
         ->call('save')
         ->assertHasErrors(['email_confirmation' => 'same']);
 
-    $this->assertDatabaseMissing('donators', ['email' => 'alex@example.com']);
+    $this->assertDatabaseMissing('donors', ['email' => 'alex@example.com']);
 })->skip('Registrierung aktuell geschlossen.');
 
 it('requires privacy acceptance', function () {
@@ -285,7 +285,7 @@ it('requires privacy acceptance', function () {
         ->call('save')
         ->assertHasErrors(['privacy' => 'accepted']);
 
-    $this->assertDatabaseMissing('donators', ['email' => 'maya@example.com']);
+    $this->assertDatabaseMissing('donors', ['email' => 'maya@example.com']);
 })->skip('Registrierung aktuell geschlossen.');
 
 it('validates amount rules and boundaries', function () {

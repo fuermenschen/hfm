@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * @property Donor $donor
- * @property Donor $donator
  * @property Athlete $athlete
  */
 class Donation extends Model
@@ -72,12 +71,7 @@ class Donation extends Model
 
     public function donor(): BelongsTo
     {
-        return $this->belongsTo(Donor::class, 'donator_id');
-    }
-
-    public function donator(): BelongsTo
-    {
-        return $this->donor();
+        return $this->belongsTo(Donor::class, 'donor_id');
     }
 
     public function athlete(): BelongsTo
@@ -86,7 +80,7 @@ class Donation extends Model
     }
 
     protected $fillable = [
-        'donator_id',
+        'donor_id',
         'athlete_id',
         'amount_per_round',
         'amount_max',

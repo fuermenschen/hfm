@@ -22,7 +22,7 @@ class Donor extends Model
     use HasFactory;
     use Notifiable;
 
-    protected $table = 'donators';
+    protected $table = 'donors';
 
     protected $appends = [
         'privacy_name',
@@ -112,7 +112,7 @@ class Donor extends Model
 
     public function donations(): HasMany
     {
-        return $this->hasMany(Donation::class, 'donator_id');
+        return $this->hasMany(Donation::class, 'donor_id');
     }
 
     public function getPrivacyNameAttribute(): string

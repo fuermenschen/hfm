@@ -62,7 +62,7 @@ it('exports selected donations as csv', function (): void {
     $donor = Donor::factory()->create();
 
     $donation = Donation::query()->create([
-        'donator_id' => $donor->id,
+        'donor_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 10,
         'amount_max' => 100,

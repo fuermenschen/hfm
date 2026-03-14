@@ -33,7 +33,7 @@ it('creates a letter after creating a donor invoice and stores flags and pdf han
 
     /** @var Donation $donation */
     $donation = Donation::create([
-        'donator_id' => $donor->id,
+        'donor_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 10.0,
         'amount_min' => null,
@@ -104,7 +104,7 @@ it('keeps debitor_id and no pdf handle when letter creation fails', function ():
     ]);
 
     Donation::create([
-        'donator_id' => $donor->id,
+        'donor_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 5.0,
         'comment' => 'x',

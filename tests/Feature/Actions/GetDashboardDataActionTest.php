@@ -31,7 +31,7 @@ it('builds dashboard data with expected aggregates', function (): void {
     $donorTwo = Donor::factory()->create();
 
     $firstDonation = Donation::query()->create([
-        'donator_id' => $donorOne->id,
+        'donor_id' => $donorOne->id,
         'athlete_id' => $athleteOne->id,
         'amount_per_round' => 2.0,
         'amount_min' => null,
@@ -40,7 +40,7 @@ it('builds dashboard data with expected aggregates', function (): void {
     $firstDonation->forceFill(['verified' => true])->save();
 
     $secondDonation = Donation::query()->create([
-        'donator_id' => $donorTwo->id,
+        'donor_id' => $donorTwo->id,
         'athlete_id' => $athleteTwo->id,
         'amount_per_round' => 1.0,
         'amount_min' => 10.0,

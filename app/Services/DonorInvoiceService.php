@@ -328,7 +328,7 @@ class DonorInvoiceService
     public function invoiceTotalSubquery(): Builder
     {
         return $this->invoiceTotalQuery()
-            ->whereColumn('donations.donator_id', 'donators.id');
+            ->whereColumn('donations.donor_id', 'donors.id');
     }
 
     public function invoiceTotalForDonor(Donor $donor): float
@@ -340,7 +340,7 @@ class DonorInvoiceService
         }
 
         $invoiceTotal = $this->invoiceTotalQuery()
-            ->where('donations.donator_id', $donor->id)
+            ->where('donations.donor_id', $donor->id)
             ->value('invoice_total');
 
         return round((float) $invoiceTotal, 2);
