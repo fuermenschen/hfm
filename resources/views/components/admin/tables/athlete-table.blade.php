@@ -45,7 +45,7 @@
             <flux:table.rows>
                 <flux:table.row wire:loading.delay.short wire:target="{{ $this->tableLoadingTargets() }}">
                     <flux:table.cell colspan="99" class="text-center">
-                        <div class="flex items-center justify-center gap-2 py-4 text-sm text-zinc-500">
+                        <div class="flex items-center justify-center gap-2 py-4 text-sm">
                             <flux:icon.arrow-path class="size-4 animate-spin" />
                             Tabelle wird aktualisiert...
                         </div>
@@ -162,9 +162,9 @@
                     </flux:table.row>
                 @empty
                     <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
-                        <flux:table.cell colspan="99" class="text-center text-zinc-500">
+                        <flux:table.cell colspan="99" class="text-center">
                             <div class="mx-auto flex max-w-lg flex-col items-center gap-2 py-6">
-                                <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
+                                <flux:icon.magnifying-glass class="size-5" />
                                 @if (trim($search) !== '')
                                     <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
                                     <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>

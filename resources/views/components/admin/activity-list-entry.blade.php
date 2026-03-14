@@ -36,12 +36,12 @@
 
 <li>
     <div class="relative pb-8">
-        <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200 dark:bg-gray-700"
+        <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-[var(--color-base-200)] dark:bg-[var(--color-base-700)]"
               aria-hidden="true"></span>
         <div class="relative flex space-x-3">
             <div>
             <span
-                class="flex h-8 w-8 items-center justify-center rounded-full bg-hfm-white ring-4 ring-hfm-dark dark:ring-hfm-white dark:bg-hfm-dark text-hfm-red dark:text-hfm-lightred">
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-base-100)] text-[var(--color-base-700)] ring-4 ring-[var(--color-base-900)] dark:bg-[var(--color-base-800)] dark:text-[var(--color-base-200)] dark:ring-[var(--color-base-100)]">
                 {!! $activity_symbol !!}
             </span>
             </div>
