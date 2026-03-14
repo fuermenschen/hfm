@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Actions;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class CreateAssociationDonationInvoiceService
+class CreateAssociationDonationInvoiceAction
 {
     public function __invoke(
         string $first_name,

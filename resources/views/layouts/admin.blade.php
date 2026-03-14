@@ -178,7 +178,7 @@
             </div>
         </div>
 
-        <div class="lg:pl-72">
+        <div class="min-w-0 lg:pl-72">
             <div
                 class="sticky top-0 z-40 flex flex-row h-14 shrink-0 items-center gap-x-4 px-4 sm:gap-x-6 sm:px-6 lg:hidden">
                 <button type="button" class="-m-2.5 p-2.5 text-hfm-dark dark:text-hfm-white lg:hidden"
@@ -192,8 +192,8 @@
                 </button>
             </div>
 
-            <main class="py-10">
-                <div class="px-4 sm:px-6 lg:px-8">
+            <main class="min-w-0 overflow-x-hidden py-10">
+                <div class="min-w-0 px-4 sm:px-6 lg:px-8">
                     <x-admin.page-title>{{ $title }}</x-admin.page-title>
                     @yield('content')
                 </div>

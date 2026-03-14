@@ -62,7 +62,6 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    @livewireScripts
     @fluxAppearance
     @stack('head')
     <!-- CSRF Token -->
@@ -74,6 +73,7 @@
 @persist('toast')
 <flux:toast />
 @endpersist
+@livewireScripts
 @fluxScripts
 </body>
 </html>

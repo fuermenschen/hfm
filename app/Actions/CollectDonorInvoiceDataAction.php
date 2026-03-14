@@ -1,22 +1,13 @@
 <?php
 
-namespace App\Services;
+namespace App\Actions;
 
 use App\Models\Donator;
 
-/**
- * Service for donor-related operations.
- *
- * Provides helpers to collect data needed to generate a donor invoice.
- */
-class DonorService
+class CollectDonorInvoiceDataAction
 {
-    /**
-     * Collect all information required to compose a donor invoice
-     */
-    public function collectInvoiceData(Donator $donator): array
+    public function __invoke(Donator $donator): array
     {
-        // Eager load to avoid N+1 when iterating donations
         $donator->load('donations.athlete.partner');
         $donations = $donator->donations;
 
@@ -44,9 +35,6 @@ class DonorService
         return $lines;
     }
 
-    /**
-     * Apply min and max caps to an amount.
-     */
     protected function applyMinMax(float $amount, ?float $min, ?float $max): float
     {
         if ($min !== null && $amount < $min) {
