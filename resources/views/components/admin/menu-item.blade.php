@@ -11,7 +11,7 @@
         <form method="POST" action="{{ route($route) }}"
             @class([
               "group flex gap-x-3 rounded-md text-sm font-semibold leading-6",
-              "text-[var(--color-base-300)] hover:text-[var(--color-base-50)]" => !$current,
+              "text-base-300 hover:text-base-50" => !$current,
               "bg-accent text-accent-foreground" => $current,
             ])>
             @csrf
@@ -31,7 +31,7 @@
         <a href="{{ $href }}" @if(!$newTab) wire:navigate.hover @endif @if($target) target="{{ $target }}" @endif @if($newTab) rel="noopener noreferrer" @endif
             @class([
               "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
-              "text-[var(--color-base-300)] hover:text-[var(--color-base-50)]" => !$current,
+              "text-base-300 hover:text-base-50" => !$current,
               "bg-accent text-accent-foreground" => $current,
             ])>
         <span class="h6 w-6 shrink-0">

@@ -1,4 +1,4 @@
-@props(['header' => false, 'columnClass' => 'right-0 w-14 bg-[var(--color-base-50)] dark:bg-[var(--color-base-800)]'])
+@props(['header' => false, 'columnClass' => 'right-0 w-14 bg-base-50 dark:bg-base-800'])
 
 @if ($header)
     <flux:table.column sticky class="{{ $columnClass }}">

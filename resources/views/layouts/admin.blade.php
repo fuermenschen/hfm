@@ -80,7 +80,7 @@
 @endphp
 
 @section('body')
-    <div x-data="{ menuOpen: false}" class="min-h-screen bg-[var(--color-base-50)] text-[var(--color-base-900)] dark:bg-[var(--color-base-950)] dark:text-[var(--color-base-100)]">
+    <div x-data="{ menuOpen: false}" class="min-h-screen bg-base-50 text-base-900 dark:bg-base-950 dark:text-base-100">
         <!-- Off-canvas menu for mobile, show/hide based on off-canvas menu state. -->
         <div class="relative z-50 lg:hidden" role="dialog" aria-modal="true">
             <!--
@@ -93,7 +93,7 @@
                 From: "opacity-100"
                 To: "opacity-0"
             -->
-            <div class="fixed inset-0 bg-[rgb(from_var(--color-base-900)_r_g_b_/_0.8)]"
+            <div class="fixed inset-0 bg-base-800/80 backdrop-blur-md"
                  x-show="menuOpen"
                  x-transition:enter="transition-opacity ease-linear duration-300"
                  x-transition:enter-start="opacity-0"
@@ -144,7 +144,7 @@
                          @click="menuOpen = false">
                         <button type="button" class="-m-2.5 p-2.5">
                             <span class="sr-only">Close sidebar</span>
-                            <svg class="h-6 w-6 text-[var(--color-base-100)]" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            <svg class="h-6 w-6 text-base-100" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                  stroke="currentColor" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -152,7 +152,7 @@
                     </div>
 
                     <!-- Sidebar component, swap this element with another sidebar if you like -->
-                    <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-[var(--color-base-900)] px-6 pb-4">
+                    <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-base-900 px-6 pb-4">
                         <div class="flex h-16 shrink-0 items-center">
                             <img class="h-8 w-auto"
                                  src="{{ Vite::asset("resources/images/logo_dark.svg") }}"
@@ -168,7 +168,7 @@
         <!-- Static sidebar for desktop -->
         <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
             <!-- Sidebar component, swap this element with another sidebar if you like -->
-            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-[var(--color-base-900)] px-6 pb-4">
+            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-base-900 px-6 pb-4">
                 <div class="flex h-16 shrink-0 items-center">
                     <img class="h-8 w-auto" src="{{ Vite::asset("resources/images/logo_dark.svg") }}"
                          alt="Höhenmeter für Menschen">

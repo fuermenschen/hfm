@@ -35,7 +35,7 @@
                     <flux:field>
                         <span>
                             <flux:label>{{ $title }}</flux:label>
-                            <span wire:dirty wire:target="values.{{ $fqcn }}.{{ $name }}" class="ml-1 text-xs opacity-70">(ungespeichert)</span>
+                            <span wire:dirty wire:target="values.{{ $fqcn }}.{{ $name }}" class="ml-1 text-xs opacity-70 text-accent">(ungespeichert)</span>
                         </span>
 
                         <flux:input.group>
