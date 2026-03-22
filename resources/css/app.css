@@ -5,16 +5,49 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --color-accent: #1b2e47;
-    --color-accent-content: #1b2e47;
-    --color-accent-foreground: #f8fafc;
+    /* Re-assign Flux's base scale (zinc) to slate. */
+    --color-zinc-50: var(--color-slate-50);
+    --color-zinc-100: var(--color-slate-100);
+    --color-zinc-200: var(--color-slate-200);
+    --color-zinc-300: var(--color-slate-300);
+    --color-zinc-400: var(--color-slate-400);
+    --color-zinc-500: var(--color-slate-500);
+    --color-zinc-600: var(--color-slate-600);
+    --color-zinc-700: var(--color-slate-700);
+    --color-zinc-800: var(--color-slate-800);
+    --color-zinc-900: var(--color-slate-900);
+    --color-zinc-950: var(--color-slate-950);
+
+    /* Flux accent mapped to corporate red tones. */
+    --color-accent: var(--color-red-500);
+    --color-accent-content: var(--color-red-600);
+    --color-accent-foreground: var(--color-white);
+
+    /*
+     * Backend base palette aliases.
+     *
+     * Flux components are built around the zinc scale. By routing our
+     * backend styling through --color-base-* aliases, we keep templates
+     * readable and can switch the backend base palette centrally later.
+     */
+    --color-base-50: var(--color-zinc-50);
+    --color-base-100: var(--color-zinc-100);
+    --color-base-200: var(--color-zinc-200);
+    --color-base-300: var(--color-zinc-300);
+    --color-base-400: var(--color-zinc-400);
+    --color-base-500: var(--color-zinc-500);
+    --color-base-600: var(--color-zinc-600);
+    --color-base-700: var(--color-zinc-700);
+    --color-base-800: var(--color-zinc-800);
+    --color-base-900: var(--color-zinc-900);
+    --color-base-950: var(--color-zinc-950);
 }
 
 @layer theme {
     .dark {
-        --color-accent: #f8fafc;
-        --color-accent-content: #f8fafc;
-        --color-accent-foreground: #1b2e47;
+        --color-accent: var(--color-red-500);
+        --color-accent-content: var(--color-red-400);
+        --color-accent-foreground: var(--color-white);
     }
 }
 
