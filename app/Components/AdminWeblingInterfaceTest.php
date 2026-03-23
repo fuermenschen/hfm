@@ -254,13 +254,13 @@ class AdminWeblingInterfaceTest extends Component
     /** Advance from inspect_pdf to inspect_link step. */
     public function confirmPdf(): void
     {
-        if (! $this->checklistDecided) {
+        if (! $this->getChecklistDecidedProperty()) {
             Flux::toast(variant: 'danger', heading: 'Checkliste unvollständig', text: 'Bitte jeden Punkt als «OK» oder «Fehler» markieren, bevor du fortfährst.');
 
             return;
         }
 
-        if ($this->checklistHasFailures) {
+        if ($this->getChecklistHasFailuresProperty()) {
             $failedLabels = array_keys(array_filter($this->checklist, fn ($v) => $v === false));
             Log::warning('Webling interface test: PDF checklist has failures', [
                 'failed_items' => $failedLabels,
@@ -356,7 +356,7 @@ class AdminWeblingInterfaceTest extends Component
 
         $this->step = 'done';
 
-        $hasAnyIssue = $this->checklistHasFailures || $this->linkCheckResult === false;
+        $hasAnyIssue = $this->getChecklistHasFailuresProperty() || $this->linkCheckResult === false;
 
         if ($hasAnyIssue) {
             Log::error('Webling interface test completed with issues', [

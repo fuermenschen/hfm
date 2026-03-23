@@ -207,21 +207,23 @@
 
             <div class="space-y-2">
                 <flux:heading size="sm">Ergebnis der Link-Prüfung</flux:heading>
-                <div class="flex gap-2">
+                <div class="flex flex-col gap-2">
                     <flux:button
                         wire:click="confirmLink(true)"
                         wire:loading.attr="disabled"
                         wire:target="confirmLink"
-                        :variant="$linkCheckResult === true ? 'primary' : 'ghost'"
+                        :variant="$linkCheckResult === true ? 'primary' : 'outline'"
                         icon="check-circle"
-                    >Alles korrekt — aufräumen &amp; beenden</flux:button>
+                        class="w-full"
+                    >Der Link funktioniert</flux:button>
                     <flux:button
                         wire:click="confirmLink(false)"
                         wire:loading.attr="disabled"
                         wire:target="confirmLink"
-                        :variant="$linkCheckResult === false ? 'danger' : 'ghost'"
+                        :variant="$linkCheckResult === false ? 'danger' : 'outline'"
                         icon="exclamation-triangle"
-                    >Etwas stimmt nicht — trotzdem beenden</flux:button>
+                        class="w-full"
+                    >Der Link funktioniert nicht</flux:button>
                 </div>
             </div>
         </div>

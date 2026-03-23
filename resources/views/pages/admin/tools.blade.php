@@ -45,6 +45,8 @@
                 <flux:modal
                     name="webling-interface-test"
                     class="space-y-6 sm:w-full md:w-2xl"
+                    :dismissible="false"
+                    :closable="false"
                     x-on:cancel="Livewire.dispatchTo('admin-webling-interface-test', 'modal-cancelled')"
                 >
                     <div>
