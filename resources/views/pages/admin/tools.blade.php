@@ -31,6 +31,32 @@
                     @livewire('admin-association-donation-invoice-form')
                 </flux:modal>
             </flux:card>
+
+            <flux:card>
+                <div class="mb-6">
+                    <flux:heading size="lg">Webling Schnittstellen-Test</flux:heading>
+                    <flux:subheading>Testet die Webling-Schnittstelle manuell: erstellt einen Testdebitor, generiert ein PDF, ermöglicht die manuelle Prüfung und räumt danach automatisch auf.</flux:subheading>
+                </div>
+
+                <flux:modal.trigger name="webling-interface-test">
+                    <flux:button icon="beaker">Test starten</flux:button>
+                </flux:modal.trigger>
+
+                <flux:modal
+                    name="webling-interface-test"
+                    class="space-y-6 sm:w-full md:w-2xl"
+                    :dismissible="false"
+                    :closable="false"
+                    x-on:cancel="Livewire.dispatchTo('admin-webling-interface-test', 'modal-cancelled')"
+                >
+                    <div>
+                        <flux:heading size="lg">Webling Schnittstellen-Test</flux:heading>
+                        <flux:subheading>Führt einen vollständigen Test der Webling-Rechnungsschnittstelle durch.</flux:subheading>
+                    </div>
+
+                    @livewire('admin-webling-interface-test')
+                </flux:modal>
+            </flux:card>
         </div>
     @endsection
 
