@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class AdminWeblingInterfaceTest extends Component
@@ -43,17 +44,23 @@ class AdminWeblingInterfaceTest extends Component
     public ?string $errorStep = null;
 
     /**
-     * PDF inspection checklist items (keyed by id).
+     * PDF inspection checklist — each item is null (undecided), true (ok) or false (failed).
      *
-     * @var array<string, bool>
+     * @var array<string, bool|null>
      */
     public array $checklist = [
-        'name_correct' => false,
-        'address_correct' => false,
-        'amount_correct' => false,
-        'qr_present' => false,
-        'date_correct' => false,
+        'name_correct' => null,
+        'address_correct' => null,
+        'amount_correct' => null,
+        'qr_present' => null,
+        'date_correct' => null,
     ];
+
+    /**
+     * Result of the Webling direct-link check.
+     * null = not yet answered, true = ok, false = problem found.
+     */
+    public ?bool $linkCheckResult = null;
 
     /**
      * Fake test data generated for the invoice (shown in intro step).
@@ -98,10 +105,16 @@ class AdminWeblingInterfaceTest extends Component
         ];
     }
 
-    /** Whether all checklist items are ticked. */
-    public function getChecklistCompleteProperty(): bool
+    /** Whether all checklist items have been decided (none still null). */
+    public function getChecklistDecidedProperty(): bool
     {
-        return ! in_array(false, $this->checklist, true);
+        return ! in_array(null, $this->checklist, true);
+    }
+
+    /** Whether any checklist item was marked as failed. */
+    public function getChecklistHasFailuresProperty(): bool
+    {
+        return in_array(false, $this->checklist, true);
     }
 
     /**
@@ -241,20 +254,72 @@ class AdminWeblingInterfaceTest extends Component
     /** Advance from inspect_pdf to inspect_link step. */
     public function confirmPdf(): void
     {
-        if (! $this->checklistComplete) {
-            Flux::toast(variant: 'danger', heading: 'Checkliste unvollständig', text: 'Bitte alle Punkte der Checkliste abhaken, bevor du fortfährst.');
+        if (! $this->checklistDecided) {
+            Flux::toast(variant: 'danger', heading: 'Checkliste unvollständig', text: 'Bitte jeden Punkt als «OK» oder «Fehler» markieren, bevor du fortfährst.');
 
             return;
+        }
+
+        if ($this->checklistHasFailures) {
+            $failedLabels = array_keys(array_filter($this->checklist, fn ($v) => $v === false));
+            Log::warning('Webling interface test: PDF checklist has failures', [
+                'failed_items' => $failedLabels,
+                'debitor_id' => $this->debitorId,
+                'test_data' => $this->testData,
+            ]);
         }
 
         $this->step = 'inspect_link';
     }
 
-    /** Advance from inspect_link to cleanup. */
-    public function confirmLink(): void
+    /**
+     * Record the direct-link check result and advance to cleanup.
+     * $result: true = link works correctly, false = problem found.
+     */
+    public function confirmLink(bool $result): void
     {
+        $this->linkCheckResult = $result;
+
+        if (! $result) {
+            Log::warning('Webling interface test: direct link check failed', [
+                'debitor_id' => $this->debitorId,
+                'debitor_url' => $this->debitorUrl,
+                'test_data' => $this->testData,
+            ]);
+        }
+
         $this->step = 'cleanup';
         $this->runCleanup();
+    }
+
+    /**
+     * Called when the modal is dismissed mid-test (backdrop click, Escape, or X button).
+     * Runs cleanup silently and resets the wizard.
+     */
+    #[On('modal-cancelled')]
+    public function handleModalCancel(): void
+    {
+        if (in_array($this->step, ['intro', 'done', 'error'], true)) {
+            $this->restartWizard();
+
+            return;
+        }
+
+        // A test is in progress — clean up silently
+        if ($this->debitorId) {
+            try {
+                $invoiceService = app(WeblingInvoiceService::class);
+                $invoiceService->deleteInvoice($this->debitorId);
+            } catch (Exception $e) {
+                Log::error('Webling interface test: silent cleanup failed after modal dismiss', [
+                    'exception' => $e->getMessage(),
+                    'debitor_id' => $this->debitorId,
+                ]);
+            }
+        }
+
+        $this->deleteLocalPdf();
+        $this->restartWizard();
     }
 
     /** Delete the test debitor and temp PDF. */
@@ -291,19 +356,30 @@ class AdminWeblingInterfaceTest extends Component
 
         $this->step = 'done';
 
-        Flux::toast(variant: 'success', heading: 'Test abgeschlossen', text: 'Alle Testdaten wurden bereinigt.');
+        $hasAnyIssue = $this->checklistHasFailures || $this->linkCheckResult === false;
+
+        if ($hasAnyIssue) {
+            Log::error('Webling interface test completed with issues', [
+                'checklist' => $this->checklist,
+                'link_check_result' => $this->linkCheckResult,
+                'test_data' => $this->testData,
+            ]);
+            Flux::toast(variant: 'warning', heading: 'Test mit Problemen abgeschlossen', text: 'Es wurden Probleme festgestellt. Bitte den Admin kontaktieren.');
+        } else {
+            Flux::toast(variant: 'success', heading: 'Test abgeschlossen', text: 'Alle Testdaten wurden bereinigt.');
+        }
     }
 
     /** Reset the wizard to start a new test. */
     public function restartWizard(): void
     {
-        $this->reset(['step', 'debitorId', 'debitorUrl', 'tempPdfPath', 'tempPdfSize', 'errorMessage', 'errorStep']);
+        $this->reset(['step', 'debitorId', 'debitorUrl', 'tempPdfPath', 'tempPdfSize', 'errorMessage', 'errorStep', 'linkCheckResult']);
         $this->checklist = [
-            'name_correct' => false,
-            'address_correct' => false,
-            'amount_correct' => false,
-            'qr_present' => false,
-            'date_correct' => false,
+            'name_correct' => null,
+            'address_correct' => null,
+            'amount_correct' => null,
+            'qr_present' => null,
+            'date_correct' => null,
         ];
         $this->generateTestData();
         $this->step = 'intro';
@@ -314,7 +390,8 @@ class AdminWeblingInterfaceTest extends Component
         return view('components.admin.webling-interface-test', [
             'progress' => $this->getProgressProperty(),
             'checklistLabels' => $this->getChecklistLabelsProperty(),
-            'checklistComplete' => $this->getChecklistCompleteProperty(),
+            'checklistDecided' => $this->getChecklistDecidedProperty(),
+            'checklistHasFailures' => $this->getChecklistHasFailuresProperty(),
         ]);
     }
 
@@ -345,7 +422,7 @@ class AdminWeblingInterfaceTest extends Component
         $this->errorStep = $step;
         $this->errorMessage = $message;
 
-        Log::warning('Webling interface test failed at step: '.$step, ['message' => $message]);
+        Log::error('Webling interface test failed at step: '.$step, ['message' => $message, 'debitor_id' => $this->debitorId]);
     }
 
     /** Delete local temp PDF if it exists. */

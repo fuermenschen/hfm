@@ -19,7 +19,7 @@
                 @elseif ($step === 'inspect_pdf') Schritt 2 von 4: PDF herunterladen und prüfen
                 @elseif ($step === 'inspect_link') Schritt 3 von 4: Direktlink in Webling prüfen
                 @elseif ($step === 'cleanup') Schritt 4 von 4: Testdaten werden gelöscht…
-                @elseif ($step === 'done') Test erfolgreich abgeschlossen
+                @elseif ($step === 'done') Test abgeschlossen
                 @endif
             </flux:description>
         </flux:field>
@@ -102,13 +102,38 @@
             <flux:separator />
 
             <div class="space-y-3">
-                <flux:heading size="sm">2. Checkliste ausfüllen</flux:heading>
-                <div class="space-y-2">
+                <flux:heading size="sm">2. Jeden Punkt als «OK» oder «Fehler» markieren</flux:heading>
+                <flux:text class="text-sm text-zinc-500">Falls ein Punkt nicht stimmt, markiere ihn als «Fehler» — du kannst trotzdem fortfahren.</flux:text>
+
+                <div class="divide-y divide-zinc-100 dark:divide-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
                     @foreach ($checklistLabels as $key => $label)
-                        <flux:checkbox
-                            wire:model.live="checklist.{{ $key }}"
-                            :label="$label"
-                        />
+                        @php $value = $checklist[$key]; @endphp
+                        <div class="flex items-center justify-between gap-4 px-4 py-3">
+                            <div class="flex items-center gap-2 text-sm">
+                                @if ($value === true)
+                                    <flux:icon.check-circle class="size-4 text-green-500 shrink-0" />
+                                @elseif ($value === false)
+                                    <flux:icon.x-circle class="size-4 text-red-500 shrink-0" />
+                                @else
+                                    <flux:icon.question-mark-circle class="size-4 text-zinc-300 dark:text-zinc-600 shrink-0" />
+                                @endif
+                                <span @class(['text-zinc-400 dark:text-zinc-500' => $value === null, 'text-zinc-800 dark:text-zinc-200' => $value !== null])>{{ $label }}</span>
+                            </div>
+                            <div class="flex gap-1 shrink-0">
+                                <flux:button
+                                    size="xs"
+                                    wire:click="$set('checklist.{{ $key }}', true)"
+                                    :variant="$value === true ? 'primary' : 'ghost'"
+                                    icon="check"
+                                >OK</flux:button>
+                                <flux:button
+                                    size="xs"
+                                    wire:click="$set('checklist.{{ $key }}', false)"
+                                    :variant="$value === false ? 'danger' : 'ghost'"
+                                    icon="x-mark"
+                                >Fehler</flux:button>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -119,14 +144,16 @@
                 wire:click="confirmPdf"
                 variant="primary"
                 icon="arrow-right"
-                :disabled="! $checklistComplete"
+                :disabled="! $checklistDecided"
             >
                 Weiter: Direktlink prüfen
             </flux:button>
         </div>
 
-        @if (! $checklistComplete)
-            <flux:text class="text-xs text-zinc-400 text-right">Bitte alle Punkte der Checkliste abhaken, um fortzufahren.</flux:text>
+        @if (! $checklistDecided)
+            <flux:text class="text-xs text-zinc-400 text-right">Bitte jeden Punkt als «OK» oder «Fehler» markieren, um fortzufahren.</flux:text>
+        @elseif ($checklistHasFailures)
+            <flux:text class="text-xs text-amber-500 text-right">Einige Punkte wurden als fehlerhaft markiert — diese werden im Testprotokoll erfasst.</flux:text>
         @endif
 
     {{-- ============================================================ --}}
@@ -135,8 +162,14 @@
     @elseif ($step === 'inspect_link')
         <div class="space-y-4">
             <flux:callout icon="check-circle" color="green">
-                <flux:callout.heading>PDF-Prüfung bestanden</flux:callout.heading>
-                <flux:callout.text>Alle Punkte der Checkliste wurden abgehakt.</flux:callout.text>
+                <flux:callout.heading>PDF-Prüfung abgeschlossen</flux:callout.heading>
+                <flux:callout.text>
+                    @if ($checklistHasFailures)
+                        Einige Punkte wurden als fehlerhaft markiert und werden im Protokoll erfasst.
+                    @else
+                        Alle Punkte der Checkliste wurden als korrekt markiert.
+                    @endif
+                </flux:callout.text>
             </flux:callout>
 
             <div class="space-y-3">
@@ -169,10 +202,28 @@
                     </ul>
                 </div>
             </div>
-        </div>
 
-        <div class="flex justify-end gap-2 pt-2">
-            <flux:button wire:click="confirmLink" wire:loading.attr="disabled" wire:target="confirmLink" variant="danger" icon="trash">Aufräumen &amp; Test beenden</flux:button>
+            <flux:separator />
+
+            <div class="space-y-2">
+                <flux:heading size="sm">Ergebnis der Link-Prüfung</flux:heading>
+                <div class="flex gap-2">
+                    <flux:button
+                        wire:click="confirmLink(true)"
+                        wire:loading.attr="disabled"
+                        wire:target="confirmLink"
+                        :variant="$linkCheckResult === true ? 'primary' : 'ghost'"
+                        icon="check-circle"
+                    >Alles korrekt — aufräumen &amp; beenden</flux:button>
+                    <flux:button
+                        wire:click="confirmLink(false)"
+                        wire:loading.attr="disabled"
+                        wire:target="confirmLink"
+                        :variant="$linkCheckResult === false ? 'danger' : 'ghost'"
+                        icon="exclamation-triangle"
+                    >Etwas stimmt nicht — trotzdem beenden</flux:button>
+                </div>
+            </div>
         </div>
 
     {{-- ============================================================ --}}
@@ -191,22 +242,64 @@
     {{-- STEP: done                                                    --}}
     {{-- ============================================================ --}}
     @elseif ($step === 'done')
-        <div class="space-y-4">
-            <flux:callout icon="check-circle" color="green">
-                <flux:callout.heading>Webling-Schnittstelle funktioniert korrekt</flux:callout.heading>
+        @php
+            $hasAnyIssue = $checklistHasFailures || $linkCheckResult === false;
+        @endphp
+
+        @if ($hasAnyIssue)
+            <flux:callout icon="exclamation-triangle" color="yellow">
+                <flux:callout.heading>Test abgeschlossen — Probleme festgestellt</flux:callout.heading>
                 <flux:callout.text>
-                    Der vollständige Test wurde erfolgreich abgeschlossen. Debitor und temporäre Dateien wurden bereinigt.
+                    Es wurden Probleme während des Tests festgestellt und im Log erfasst.
+                    Bitte den <strong>Seitenbetreiber kontaktieren</strong> und diesen Testlauf melden.
                 </flux:callout.text>
             </flux:callout>
+        @else
+            <flux:callout icon="check-circle" color="green">
+                <flux:callout.heading>Webling-Schnittstelle funktioniert korrekt</flux:callout.heading>
+                <flux:callout.text>Der vollständige Test wurde erfolgreich abgeschlossen. Debitor und temporäre Dateien wurden bereinigt.</flux:callout.text>
+            </flux:callout>
+        @endif
 
-            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-2 text-sm">
-                <div class="font-medium text-zinc-600 dark:text-zinc-300">Testprotokoll</div>
-                <div class="space-y-1 text-zinc-500 dark:text-zinc-400">
-                    <div class="flex items-center gap-2"><flux:icon.check-circle class="size-4 text-green-500 shrink-0" /> Debitor in Webling erstellt</div>
-                    <div class="flex items-center gap-2"><flux:icon.check-circle class="size-4 text-green-500 shrink-0" /> Brief/PDF von Webling generiert und heruntergeladen</div>
-                    <div class="flex items-center gap-2"><flux:icon.check-circle class="size-4 text-green-500 shrink-0" /> PDF manuell geprüft (alle Checklistenpunkte bestanden)</div>
-                    <div class="flex items-center gap-2"><flux:icon.check-circle class="size-4 text-green-500 shrink-0" /> Direktlink in Webling manuell geprüft</div>
-                    <div class="flex items-center gap-2"><flux:icon.check-circle class="size-4 text-green-500 shrink-0" /> Testdaten vollständig bereinigt</div>
+        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-2 text-sm">
+            <div class="font-medium text-zinc-600 dark:text-zinc-300">Testprotokoll</div>
+            <div class="space-y-1 text-zinc-500 dark:text-zinc-400">
+                <div class="flex items-center gap-2">
+                    <flux:icon.check-circle class="size-4 text-green-500 shrink-0" />
+                    Debitor in Webling erstellt
+                </div>
+                <div class="flex items-center gap-2">
+                    <flux:icon.check-circle class="size-4 text-green-500 shrink-0" />
+                    Brief/PDF von Webling generiert und heruntergeladen
+                </div>
+
+                {{-- PDF checklist items --}}
+                @foreach ($checklistLabels as $key => $label)
+                    @php $value = $checklist[$key]; @endphp
+                    <div class="flex items-center gap-2">
+                        @if ($value === true)
+                            <flux:icon.check-circle class="size-4 text-green-500 shrink-0" />
+                        @else
+                            <flux:icon.x-circle class="size-4 text-red-500 shrink-0" />
+                        @endif
+                        <span @class(['text-red-600 dark:text-red-400' => $value === false])>{{ $label }}</span>
+                    </div>
+                @endforeach
+
+                {{-- Link check --}}
+                <div class="flex items-center gap-2">
+                    @if ($linkCheckResult === true)
+                        <flux:icon.check-circle class="size-4 text-green-500 shrink-0" />
+                        <span>Direktlink in Webling manuell geprüft — korrekt</span>
+                    @else
+                        <flux:icon.x-circle class="size-4 text-red-500 shrink-0" />
+                        <span class="text-red-600 dark:text-red-400">Direktlink in Webling manuell geprüft — Problem gemeldet</span>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <flux:icon.check-circle class="size-4 text-green-500 shrink-0" />
+                    Testdaten vollständig bereinigt
                 </div>
             </div>
         </div>
@@ -223,7 +316,11 @@
         <div class="space-y-4">
             <flux:callout icon="exclamation-triangle" color="red">
                 <flux:callout.heading>Fehler beim Test</flux:callout.heading>
-                <flux:callout.text>{{ $errorMessage }}</flux:callout.text>
+                <flux:callout.text>
+                    {{ $errorMessage }}
+                    <br><br>
+                    Dieser Fehler wurde automatisch geloggt. Bitte den <strong>Seitenbetreiber kontaktieren</strong> und diesen Testlauf melden.
+                </flux:callout.text>
             </flux:callout>
 
             @if ($debitorId)

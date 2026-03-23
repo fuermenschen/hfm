@@ -5,6 +5,7 @@ use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\WeblingApiSettings;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -167,29 +168,6 @@ it('transitions to error state when letter creation fails', function (): void {
         ->assertSet('debitorId', 55);
 });
 
-it('transitions from inspect_pdf to inspect_link on confirmPdf when checklist is complete', function (): void {
-    Livewire::test(AdminWeblingInterfaceTest::class)
-        ->set('step', 'inspect_pdf')
-        ->set('debitorId', 42)
-        ->set('checklist', [
-            'name_correct' => true,
-            'address_correct' => true,
-            'amount_correct' => true,
-            'qr_present' => true,
-            'date_correct' => true,
-        ])
-        ->call('confirmPdf')
-        ->assertSet('step', 'inspect_link');
-});
-
-it('does not advance from inspect_pdf when checklist is incomplete', function (): void {
-    Livewire::test(AdminWeblingInterfaceTest::class)
-        ->set('step', 'inspect_pdf')
-        ->set('debitorId', 42)
-        ->call('confirmPdf')
-        ->assertSet('step', 'inspect_pdf');
-});
-
 it('transitions to error when letter response body is empty', function (): void {
     $debitorResponse = Mockery::mock(Response::class);
     $debitorResponse->shouldReceive('status')->andReturn(201);
@@ -214,7 +192,63 @@ it('transitions to error when letter response body is empty', function (): void 
         ->assertSet('debitorId', 42);
 });
 
-it('transitions to done after successful cleanup via confirmLink', function (): void {
+it('transitions from inspect_pdf to inspect_link when all checklist items are decided', function (): void {
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_pdf')
+        ->set('debitorId', 42)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ])
+        ->call('confirmPdf')
+        ->assertSet('step', 'inspect_link');
+});
+
+it('allows advancing from inspect_pdf even when some checklist items are marked as failed', function (): void {
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_pdf')
+        ->set('debitorId', 42)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => false,
+            'amount_correct' => true,
+            'qr_present' => false,
+            'date_correct' => true,
+        ])
+        ->call('confirmPdf')
+        ->assertSet('step', 'inspect_link');
+});
+
+it('does not advance from inspect_pdf when any checklist item is undecided', function (): void {
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_pdf')
+        ->set('debitorId', 42)
+        ->call('confirmPdf')
+        ->assertSet('step', 'inspect_pdf');
+});
+
+it('logs checklist failures when advancing from inspect_pdf', function (): void {
+    Log::shouldReceive('warning')
+        ->once()
+        ->withArgs(fn ($msg, $ctx) => str_contains($msg, 'PDF checklist has failures') && in_array('address_correct', $ctx['failed_items']));
+
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_pdf')
+        ->set('debitorId', 42)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => false,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ])
+        ->call('confirmPdf');
+});
+
+it('transitions to done after successful cleanup via confirmLink with ok result', function (): void {
     $deleteResponse = Mockery::mock(Response::class);
     $deleteResponse->shouldReceive('successful')->andReturn(true);
 
@@ -228,12 +262,36 @@ it('transitions to done after successful cleanup via confirmLink', function (): 
         ->set('step', 'inspect_link')
         ->set('debitorId', 42)
         ->set('tempPdfPath', 'webling/test-uuid.pdf')
-        ->call('confirmLink')
+        ->call('confirmLink', true)
         ->assertSet('step', 'done')
         ->assertSet('debitorId', null)
-        ->assertSet('tempPdfPath', null);
+        ->assertSet('tempPdfPath', null)
+        ->assertSet('linkCheckResult', true);
 
     Storage::disk('local')->assertMissing('webling/test-uuid.pdf');
+});
+
+it('transitions to done with link failure recorded when confirmLink called with false', function (): void {
+    $deleteResponse = Mockery::mock(Response::class);
+    $deleteResponse->shouldReceive('successful')->andReturn(true);
+
+    $invoiceService = Mockery::mock(WeblingInvoiceService::class);
+    $invoiceService->shouldReceive('deleteInvoice')->once()->andReturn($deleteResponse);
+    app()->instance(WeblingInvoiceService::class, $invoiceService);
+
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_link')
+        ->set('debitorId', 42)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ])
+        ->call('confirmLink', false)
+        ->assertSet('step', 'done')
+        ->assertSet('linkCheckResult', false);
 });
 
 it('transitions to error state when cleanup deletion fails', function (): void {
@@ -248,7 +306,7 @@ it('transitions to error state when cleanup deletion fails', function (): void {
     Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'inspect_link')
         ->set('debitorId', 42)
-        ->call('confirmLink')
+        ->call('confirmLink', true)
         ->assertSet('step', 'error')
         ->assertSet('errorStep', 'cleanup');
 });
@@ -268,7 +326,7 @@ it('still deletes local pdf even when debitor deletion fails', function (): void
         ->set('step', 'inspect_link')
         ->set('debitorId', 42)
         ->set('tempPdfPath', 'webling/test-cleanup.pdf')
-        ->call('confirmLink');
+        ->call('confirmLink', true);
 
     Storage::disk('local')->assertMissing('webling/test-cleanup.pdf');
 });
@@ -301,6 +359,32 @@ it('resets to intro step with fresh test data on restartWizard', function (): vo
         ->assertSet('errorMessage', null);
 });
 
+it('handleModalCancel cleans up debitor and resets wizard when test is in progress', function (): void {
+    $invoiceService = Mockery::mock(WeblingInvoiceService::class);
+    $invoiceService->shouldReceive('deleteInvoice')->once()->with(77);
+    app()->instance(WeblingInvoiceService::class, $invoiceService);
+
+    Storage::disk('local')->put('webling/test-mid.pdf', 'pdf content');
+
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_pdf')
+        ->set('debitorId', 77)
+        ->set('tempPdfPath', 'webling/test-mid.pdf')
+        ->call('handleModalCancel')
+        ->assertSet('step', 'intro')
+        ->assertSet('debitorId', null);
+
+    Storage::disk('local')->assertMissing('webling/test-mid.pdf');
+});
+
+it('handleModalCancel simply resets when in intro step', function (): void {
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'intro')
+        ->call('handleModalCancel')
+        ->assertSet('step', 'intro')
+        ->assertSet('debitorId', null);
+});
+
 it('returns progress value 0 for intro step', function (): void {
     $component = Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'intro');
@@ -322,18 +406,44 @@ it('returns progress value 100 for done step', function (): void {
     expect($component->instance()->getProgressProperty())->toBe(100);
 });
 
-it('checklist is not complete until all items are checked', function (): void {
+it('checklist is not decided until all items are set to true or false', function (): void {
     $component = Livewire::test(AdminWeblingInterfaceTest::class);
 
-    expect($component->instance()->getChecklistCompleteProperty())->toBeFalse();
+    expect($component->instance()->getChecklistDecidedProperty())->toBeFalse();
 
     $component->set('checklist', [
         'name_correct' => true,
-        'address_correct' => true,
+        'address_correct' => false,
         'amount_correct' => true,
         'qr_present' => true,
-        'date_correct' => true,
+        'date_correct' => false,
     ]);
 
-    expect($component->instance()->getChecklistCompleteProperty())->toBeTrue();
+    expect($component->instance()->getChecklistDecidedProperty())->toBeTrue();
+});
+
+it('checklist has failures when any item is false', function (): void {
+    $component = Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => false,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ]);
+
+    expect($component->instance()->getChecklistHasFailuresProperty())->toBeTrue();
+});
+
+it('checklist has no failures when all items are true', function (): void {
+    $component = Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ]);
+
+    expect($component->instance()->getChecklistHasFailuresProperty())->toBeFalse();
 });

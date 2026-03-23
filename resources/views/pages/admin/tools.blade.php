@@ -42,7 +42,11 @@
                     <flux:button icon="beaker">Test starten</flux:button>
                 </flux:modal.trigger>
 
-                <flux:modal name="webling-interface-test" class="space-y-6 sm:w-full md:w-2xl">
+                <flux:modal
+                    name="webling-interface-test"
+                    class="space-y-6 sm:w-full md:w-2xl"
+                    x-on:cancel="Livewire.dispatchTo('admin-webling-interface-test', 'modal-cancelled')"
+                >
                     <div>
                         <flux:heading size="lg">Webling Schnittstellen-Test</flux:heading>
                         <flux:subheading>Führt einen vollständigen Test der Webling-Rechnungsschnittstelle durch.</flux:subheading>
