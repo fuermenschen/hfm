@@ -266,7 +266,8 @@ it('transitions to done after successful cleanup via confirmLink with ok result'
         ->assertSet('step', 'done')
         ->assertSet('debitorId', null)
         ->assertSet('tempPdfPath', null)
-        ->assertSet('linkCheckResult', true);
+        ->assertSet('linkCheckResult', true)
+        ->assertSet('completedFullRun', true);
 
     Storage::disk('local')->assertMissing('webling/test-uuid.pdf');
 });
@@ -345,7 +346,8 @@ it('cleans up debitor from error state via runCleanup', function (): void {
         ->set('debitorId', 99)
         ->call('runCleanup')
         ->assertSet('step', 'done')
-        ->assertSet('debitorId', null);
+        ->assertSet('debitorId', null)
+        ->assertSet('completedFullRun', false);
 });
 
 it('resets to intro step with fresh test data on restartWizard', function (): void {

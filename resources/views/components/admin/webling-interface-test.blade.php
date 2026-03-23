@@ -245,10 +245,17 @@
     {{-- ============================================================ --}}
     @elseif ($step === 'done')
         @php
-            $hasAnyIssue = $checklistHasFailures || $linkCheckResult === false;
+            $hasAnyIssue = $completedFullRun && ($checklistHasFailures || $linkCheckResult === false);
         @endphp
 
-        @if ($hasAnyIssue)
+        @if (! $completedFullRun)
+            <flux:callout icon="exclamation-triangle" color="yellow">
+                <flux:callout.heading>Test unvollständig</flux:callout.heading>
+                <flux:callout.text>
+                    Der Test wurde nicht vollständig durchgeführt. Testdaten wurden bereinigt, aber kein verlässliches Ergebnis liegt vor.
+                </flux:callout.text>
+            </flux:callout>
+        @elseif ($hasAnyIssue)
             <flux:callout icon="exclamation-triangle" color="yellow">
                 <flux:callout.heading>Test abgeschlossen — Probleme festgestellt</flux:callout.heading>
                 <flux:callout.text>

@@ -63,6 +63,12 @@ class AdminWeblingInterfaceTest extends Component
     public ?bool $linkCheckResult = null;
 
     /**
+     * Whether the wizard completed the full happy path (all steps through confirmLink).
+     * False when cleanup is triggered from the error screen mid-wizard.
+     */
+    public bool $completedFullRun = false;
+
+    /**
      * Fake test data generated for the invoice (shown in intro step).
      *
      * @var array<string, mixed>
@@ -175,7 +181,6 @@ class AdminWeblingInterfaceTest extends Component
             $this->debitorUrl = sprintf('%s/admin#/accounting/%d/debitor/:debitor/editor/%d', $baseUrl, $periodId, $this->debitorId);
 
         } catch (Exception $e) {
-            Log::error('Webling interface test: debitor creation failed', ['exception' => $e->getMessage()]);
             $this->failWith('debitor_creation', 'Fehler beim Erstellen des Debitors: '.$e->getMessage());
 
             return;
@@ -223,7 +228,6 @@ class AdminWeblingInterfaceTest extends Component
             $this->tempPdfSize = strlen($pdfBinary);
 
         } catch (Exception $e) {
-            Log::error('Webling interface test: letter creation failed', ['exception' => $e->getMessage(), 'debitor_id' => $this->debitorId]);
             $this->failWith('letter_creation', 'Fehler beim Erstellen des Briefes/PDFs: '.$e->getMessage());
 
             return;
@@ -279,6 +283,7 @@ class AdminWeblingInterfaceTest extends Component
     public function confirmLink(bool $result): void
     {
         $this->linkCheckResult = $result;
+        $this->completedFullRun = true;
 
         if (! $result) {
             Log::warning('Webling interface test: direct link check failed', [
@@ -356,9 +361,11 @@ class AdminWeblingInterfaceTest extends Component
 
         $this->step = 'done';
 
-        $hasAnyIssue = $this->getChecklistHasFailuresProperty() || $this->linkCheckResult === false;
+        $hasAnyIssue = $this->completedFullRun && ($this->getChecklistHasFailuresProperty() || $this->linkCheckResult === false);
 
-        if ($hasAnyIssue) {
+        if (! $this->completedFullRun) {
+            Flux::toast(variant: 'warning', heading: 'Test unvollständig', text: 'Der Test wurde nicht vollständig durchgeführt. Testdaten wurden bereinigt.');
+        } elseif ($hasAnyIssue) {
             Log::error('Webling interface test completed with issues', [
                 'checklist' => $this->checklist,
                 'link_check_result' => $this->linkCheckResult,
@@ -373,7 +380,7 @@ class AdminWeblingInterfaceTest extends Component
     /** Reset the wizard to start a new test. */
     public function restartWizard(): void
     {
-        $this->reset(['step', 'debitorId', 'debitorUrl', 'tempPdfPath', 'tempPdfSize', 'errorMessage', 'errorStep', 'linkCheckResult']);
+        $this->reset(['step', 'debitorId', 'debitorUrl', 'tempPdfPath', 'tempPdfSize', 'errorMessage', 'errorStep', 'linkCheckResult', 'completedFullRun']);
         $this->checklist = [
             'name_correct' => null,
             'address_correct' => null,
