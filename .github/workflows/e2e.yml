@@ -15,11 +15,11 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    permissions: { } # inherit read-only
+    permissions: {} # inherit read-only
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -30,12 +30,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Cache Composer downloads
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.composer/cache/files
           key: composer-cache-${{ hashFiles('**/composer.lock') }}
@@ -99,11 +99,11 @@ jobs:
     needs: e2e
     runs-on: ubuntu-latest
     permissions:
-      contents: write         # push to gh-pages
-      pull-requests: write    # create/update PR comment
+      contents: write # push to gh-pages
+      pull-requests: write # create/update PR comment
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download Playwright Report
         uses: actions/download-artifact@v4
@@ -148,8 +148,8 @@ jobs:
         uses: peter-evans/find-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: 'Playwright report published:'
+          comment-author: "github-actions[bot]"
+          body-includes: "Playwright report published:"
 
       - name: Update existing report comment
         if: ${{ steps.find-comment.outputs.comment-id != '' }}

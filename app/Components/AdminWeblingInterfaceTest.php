@@ -153,7 +153,7 @@ class AdminWeblingInterfaceTest extends Component
                 invoiceLines: [
                     [
                         'amount' => (float) $this->testData['amount'],
-                        'title' => 'Testspende – '.$this->testData['sport'].' für '.fake()->word(),
+                        'title' => 'Testspende – '.$this->testData['sport'].' für '.$this->testData['purpose'],
                     ],
                 ],
                 accountingPeriodId: $settings->accounting_period_id,
@@ -402,23 +402,34 @@ class AdminWeblingInterfaceTest extends Component
         ]);
     }
 
-    /** Generate realistic-but-fake Swiss test data. */
+    /** Generate realistic Swiss test data from curated examples. */
     protected function generateTestData(): void
     {
-        $faker = fake('de_CH');
+        $firstNames = ['Maja', 'Lukas', 'Nora', 'Jonas', 'Sara', 'Flurin', 'Lea', 'Noah'];
+        $lastNames = ['Keller', 'Baumgartner', 'Bühler', 'Aebischer', 'Müller', 'Schmid', 'Zürcher', 'Meier'];
+        $addresses = [
+            ['address' => 'Seefeldstrasse 118', 'zip' => '8008', 'city' => 'Zuerich'],
+            ['address' => 'Aarbergergasse 42', 'zip' => '3011', 'city' => 'Bern'],
+            ['address' => 'Leimenstrasse 55', 'zip' => '4051', 'city' => 'Basel'],
+            ['address' => 'Neustadtgasse 14', 'zip' => '8400', 'city' => 'Winterthur'],
+            ['address' => 'Pilatusstrasse 27', 'zip' => '6003', 'city' => 'Luzern'],
+            ['address' => 'Rue du Rhone 33', 'zip' => '1204', 'city' => 'Geneve'],
+        ];
+        $sports = ['Laufen', 'Radfahren', 'Schwimmen', 'Skifahren', 'Wandern', 'Klettern'];
+        $purposes = ['Trainingslager', 'Nachwuchsprojekt', 'Vereinsausruestung', 'Saisonvorbereitung', 'Jugendfoerderung', 'Infrastruktur'];
+        $amounts = [75.0, 95.0, 120.0, 150.0, 175.5, 220.0, 250.0, 320.0, 500.0];
 
-        $sports = ['Laufen', 'Radfahren', 'Schwimmen', 'Skifahren', 'Wandern'];
-        $cities = [['zip' => '8001', 'city' => 'Zürich'], ['zip' => '3001', 'city' => 'Bern'], ['zip' => '4001', 'city' => 'Basel'], ['zip' => '8400', 'city' => 'Winterthur'], ['zip' => '6001', 'city' => 'Luzern']];
-        $location = $faker->randomElement($cities);
+        $location = $addresses[random_int(0, count($addresses) - 1)];
 
         $this->testData = [
-            'first_name' => $faker->firstName(),
-            'last_name' => $faker->lastName(),
-            'address' => $faker->streetAddress(),
+            'first_name' => $firstNames[random_int(0, count($firstNames) - 1)],
+            'last_name' => $lastNames[random_int(0, count($lastNames) - 1)],
+            'address' => $location['address'],
             'zip' => $location['zip'],
             'city' => $location['city'],
-            'amount' => round($faker->numberBetween(5000, 50000) / 100, 2),
-            'sport' => $faker->randomElement($sports),
+            'sport' => $sports[random_int(0, count($sports) - 1)],
+            'purpose' => $purposes[random_int(0, count($purposes) - 1)],
+            'amount' => $amounts[random_int(0, count($amounts) - 1)],
         ];
     }
 

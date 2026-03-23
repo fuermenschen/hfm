@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Install PHP and Composer dependencies
       - name: Setup PHP
@@ -54,8 +54,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Install Node dependencies
         run: npm clean-install
@@ -72,7 +72,7 @@ jobs:
           password: ${{ secrets.INFOMANIAK_SSH_PASSWORD }}
           source: |
             public/build
-          target: '/home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch'
+          target: "/home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch"
 
       # SSH into the server and finalize the deployment
       - name: Run Laravel deployment commands on server
