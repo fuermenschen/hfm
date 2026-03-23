@@ -13,12 +13,12 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: "8.4"
           tools: composer:v2
 
       - name: Add Flux Credentials Loaded From ENV
@@ -37,7 +37,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         with:
           commit_message: fix code style
-          commit_options: '--no-verify'
+          commit_options: "--no-verify"
           file_pattern: |
             **/*
             !.github/workflows/*
