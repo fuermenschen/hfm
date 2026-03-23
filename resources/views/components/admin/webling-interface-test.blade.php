@@ -64,7 +64,7 @@
 
         <div class="flex justify-end gap-2">
             <flux:button wire:click="restartWizard" variant="ghost" icon="arrow-path">Neue Daten</flux:button>
-            <flux:button wire:click="start" variant="primary" icon="play">Test starten</flux:button>
+            <flux:button wire:click="start" wire:loading.attr="disabled" wire:target="start" variant="primary" icon="play">Test starten</flux:button>
         </div>
 
     {{-- ============================================================ --}}
@@ -172,7 +172,7 @@
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
-            <flux:button wire:click="confirmLink" variant="danger" icon="trash">Aufräumen &amp; Test beenden</flux:button>
+            <flux:button wire:click="confirmLink" wire:loading.attr="disabled" wire:target="confirmLink" variant="danger" icon="trash">Aufräumen &amp; Test beenden</flux:button>
         </div>
 
     {{-- ============================================================ --}}

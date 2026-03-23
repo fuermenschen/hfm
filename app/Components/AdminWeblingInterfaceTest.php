@@ -172,7 +172,7 @@ class AdminWeblingInterfaceTest extends Component
         try {
             $firstName = $this->testData['first_name'];
             $amountStr = 'Fr. '.number_format((float) $this->testData['amount'], 2, '.', '\'');
-            $dueStr = Carbon::now()->addDays(14)->format('d.m.Y');
+            $dueStr = $dueDate->format('d.m.Y');
 
             $letterResponse = $letterService->createInvoiceLetter(
                 'TEST Spendenrechnung HfM',
@@ -199,11 +199,15 @@ class AdminWeblingInterfaceTest extends Component
             }
 
             $pdfBinary = $letterResponse->body();
-            if ($pdfBinary) {
-                $this->tempPdfPath = 'webling/test-'.Str::uuid().'.pdf';
-                Storage::disk('local')->put($this->tempPdfPath, $pdfBinary);
-                $this->tempPdfSize = strlen($pdfBinary);
+            if (! $pdfBinary) {
+                $this->failWith('letter_creation', 'Brief/PDF wurde erstellt, aber der Inhalt ist leer. Bitte Webling-Konfiguration prüfen.');
+
+                return;
             }
+
+            $this->tempPdfPath = 'webling/test-'.Str::uuid().'.pdf';
+            Storage::disk('local')->put($this->tempPdfPath, $pdfBinary);
+            $this->tempPdfSize = strlen($pdfBinary);
 
         } catch (Exception $e) {
             Log::error('Webling interface test: letter creation failed', ['exception' => $e->getMessage(), 'debitor_id' => $this->debitorId]);
@@ -237,6 +241,12 @@ class AdminWeblingInterfaceTest extends Component
     /** Advance from inspect_pdf to inspect_link step. */
     public function confirmPdf(): void
     {
+        if (! $this->checklistComplete) {
+            Flux::toast(variant: 'danger', heading: 'Checkliste unvollständig', text: 'Bitte alle Punkte der Checkliste abhaken, bevor du fortfährst.');
+
+            return;
+        }
+
         $this->step = 'inspect_link';
     }
 

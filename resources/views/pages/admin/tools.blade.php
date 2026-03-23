@@ -45,7 +45,7 @@
                 <flux:modal name="webling-interface-test" class="space-y-6 sm:w-full md:w-2xl">
                     <div>
                         <flux:heading size="lg">Webling Schnittstellen-Test</flux:heading>
-                        <flux:subheading>Führt einen vollständigen Test der Webling-Rechungsschnittstelle durch.</flux:subheading>
+                        <flux:subheading>Führt einen vollständigen Test der Webling-Rechnungsschnittstelle durch.</flux:subheading>
                     </div>
 
                     @livewire('admin-webling-interface-test')

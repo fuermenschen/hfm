@@ -167,12 +167,51 @@ it('transitions to error state when letter creation fails', function (): void {
         ->assertSet('debitorId', 55);
 });
 
-it('transitions from inspect_pdf to inspect_link on confirmPdf', function (): void {
+it('transitions from inspect_pdf to inspect_link on confirmPdf when checklist is complete', function (): void {
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->set('step', 'inspect_pdf')
+        ->set('debitorId', 42)
+        ->set('checklist', [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ])
+        ->call('confirmPdf')
+        ->assertSet('step', 'inspect_link');
+});
+
+it('does not advance from inspect_pdf when checklist is incomplete', function (): void {
     Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'inspect_pdf')
         ->set('debitorId', 42)
         ->call('confirmPdf')
-        ->assertSet('step', 'inspect_link');
+        ->assertSet('step', 'inspect_pdf');
+});
+
+it('transitions to error when letter response body is empty', function (): void {
+    $debitorResponse = Mockery::mock(Response::class);
+    $debitorResponse->shouldReceive('status')->andReturn(201);
+    $debitorResponse->shouldReceive('json')->andReturn(42);
+
+    $invoiceService = Mockery::mock(WeblingInvoiceService::class);
+    $invoiceService->shouldReceive('createInvoiceFromParams')->once()->andReturn($debitorResponse);
+    app()->instance(WeblingInvoiceService::class, $invoiceService);
+
+    $letterResponse = Mockery::mock(Response::class);
+    $letterResponse->shouldReceive('successful')->andReturn(true);
+    $letterResponse->shouldReceive('body')->andReturn('');
+
+    $letterService = Mockery::mock(LetterService::class);
+    $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);
+    app()->instance(LetterService::class, $letterService);
+
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->call('start')
+        ->assertSet('step', 'error')
+        ->assertSet('errorStep', 'letter_creation')
+        ->assertSet('debitorId', 42);
 });
 
 it('transitions to done after successful cleanup via confirmLink', function (): void {
