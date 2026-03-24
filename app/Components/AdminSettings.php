@@ -9,6 +9,8 @@ use Livewire\Component;
 
 class AdminSettings extends Component
 {
+    public string $activeTab = 'overview';
+
     public array $classes = [];
 
     /**
