@@ -13,14 +13,20 @@ class QrInvoiceOptions
         public string $iban = '',
         public string $customerIdentification = '',
         public string $creditorName = '',
-        public string $creditorAddress1 = '',
-        public string $creditorAddress2 = '',
+        public string $creditorStreet = '',
+        public string $creditorBuildingNumber = '',
+        public string $creditorPostalCode = '',
+        public string $creditorCity = '',
         /** @var list<string> */
         public array $debtorName = [],
         /** @var list<string> */
-        public array $debtorAddress1 = [],
+        public array $debtorStreet = [],
         /** @var list<string> */
-        public array $debtorAddress2 = [],
+        public array $debtorBuildingNumber = [],
+        /** @var list<string> */
+        public array $debtorPostalCode = [],
+        /** @var list<string> */
+        public array $debtorCity = [],
         public string $additionalInformation = '',
         public bool $withAmount = false,
         public bool $hideLines = false,
@@ -35,23 +41,28 @@ class QrInvoiceOptions
      */
     public function toArray(): array
     {
-        // Fallback to settings if not set.
         $settings = app(InvoiceSettings::class);
         $iban = $this->iban !== '' ? $this->iban : ($settings->qr_iban ?? '');
         $withAmount = $this->withAmount || ($settings->qr_show_amount ?? false);
         $creditorName = $this->creditorName !== '' ? $this->creditorName : ($settings->creditor_name ?? '');
-        $creditorAddress1 = $this->creditorAddress1 !== '' ? $this->creditorAddress1 : ($settings->creditor_address1 ?? '');
-        $creditorAddress2 = $this->creditorAddress2 !== '' ? $this->creditorAddress2 : ($settings->creditor_address2 ?? '');
+        $creditorStreet = $this->creditorStreet !== '' ? $this->creditorStreet : ($settings->creditor_street ?? '');
+        $creditorBuildingNumber = $this->creditorBuildingNumber !== '' ? $this->creditorBuildingNumber : ($settings->creditor_building_number ?? '');
+        $creditorPostalCode = $this->creditorPostalCode !== '' ? $this->creditorPostalCode : ($settings->creditor_postal_code ?? '');
+        $creditorCity = $this->creditorCity !== '' ? $this->creditorCity : ($settings->creditor_city ?? '');
 
         return [
             'iban' => $iban,
             'customerIdentification' => $this->customerIdentification,
             'creditorName' => $creditorName,
-            'creditorAddress1' => $creditorAddress1,
-            'creditorAddress2' => $creditorAddress2,
+            'creditorStreet' => $creditorStreet,
+            'creditorBuildingNumber' => $creditorBuildingNumber,
+            'creditorPostalCode' => $creditorPostalCode,
+            'creditorCity' => $creditorCity,
             'debtorName' => $this->debtorName,
-            'debtorAddress1' => $this->debtorAddress1,
-            'debtorAddress2' => $this->debtorAddress2,
+            'debtorStreet' => $this->debtorStreet,
+            'debtorBuildingNumber' => $this->debtorBuildingNumber,
+            'debtorPostalCode' => $this->debtorPostalCode,
+            'debtorCity' => $this->debtorCity,
             'additionalInformation' => $this->additionalInformation,
             'withAmount' => $withAmount,
             'hideLines' => $this->hideLines,

@@ -199,8 +199,10 @@ class AdminWeblingInterfaceTest extends Component
                         ->body2("Testbetrag: {$amountStr}\nFällig bis: {$dueStr}\n\nDiese Rechnung wird nach dem Test automatisch gelöscht.\n\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen")
                         ->withQrInvoice(function ($q) use ($firstName, $amountStr): void {
                             $q->debtorName = [$firstName.' '.$this->testData['last_name']];
-                            $q->debtorAddress1 = [$this->testData['address']];
-                            $q->debtorAddress2 = [$this->testData['zip'].' '.$this->testData['city']];
+                            $q->debtorStreet = [$this->testData['address']];
+                            $q->debtorBuildingNumber = [];
+                            $q->debtorPostalCode = [$this->testData['zip']];
+                            $q->debtorCity = [$this->testData['city']];
                             $q->additionalInformation = 'Schnittstellentest HfM – '.$amountStr;
                         });
                 },
