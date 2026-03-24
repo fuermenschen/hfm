@@ -65,12 +65,12 @@ class CreateDonorInvoiceLetter implements ShouldQueue
                     $b->body1($text1)
                         ->body2($text2)
                         ->withQrInvoice(function ($q): void {
-                            // Populate debtor details; creditor/IBAN/withAmount fall back to settings
                             $fullName = trim(($this->donor->first_name ?? '').' '.($this->donor->last_name ?? ''));
                             $q->debtorName = $fullName !== '' ? [$fullName] : [];
-                            $q->debtorAddress1 = $this->donor->address ? [$this->donor->address] : [];
-                            $cityLine = trim(($this->donor->zip_code ?? '').' '.($this->donor->city ?? ''));
-                            $q->debtorAddress2 = $cityLine !== '' ? [$cityLine] : [];
+                            $q->debtorStreet = $this->donor->address ? [$this->donor->address] : [];
+                            $q->debtorBuildingNumber = [];
+                            $q->debtorPostalCode = $this->donor->zip_code ? [$this->donor->zip_code] : [];
+                            $q->debtorCity = $this->donor->city ? [$this->donor->city] : [];
                             $q->additionalInformation = 'Spendenrechnung Höhenmeter für Menschen Winterthur 2025';
                         });
                 },

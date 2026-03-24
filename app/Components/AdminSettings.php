@@ -9,6 +9,8 @@ use Livewire\Component;
 
 class AdminSettings extends Component
 {
+    public string $activeTab = 'overview';
+
     public array $classes = [];
 
     /**
@@ -23,9 +25,10 @@ class AdminSettings extends Component
      */
     public ?string $pendingClass = null;
 
-    public ?string $pendingName = null;
-
-    public mixed $pendingValue = null;
+    /**
+     * @var array<string,mixed>
+     */
+    public array $pendingValues = [];
 
     private mixed $settingsService;
 
@@ -51,67 +54,71 @@ class AdminSettings extends Component
         return view('components.admin.settings');
     }
 
-    public function saveSingle(string $class, string $name): void
+    public function saveClass(string $class): void
     {
-        $value = $this->values[$class][$name] ?? null;
+        if (! isset($this->classes[$class]['settings']) || ! is_array($this->classes[$class]['settings'])) {
+            return;
+        }
 
-        // Validate against provided rules (if any)
-        $rule = $this->classes[$class]['settings'][$name]['rules'] ?? null;
-        if (! empty($rule)) {
+        $changed = [];
+        $rules = [];
+        $attributes = [];
+
+        foreach ($this->classes[$class]['settings'] as $name => $info) {
+            $currentValue = $this->values[$class][$name] ?? null;
+            $originalValue = $info['value'] ?? null;
+
+            if ($currentValue === $originalValue) {
+                continue;
+            }
+
             $key = "values.$class.$name";
-            $attr = $this->classes[$class]['settings'][$name]['title'] ?? $name;
+            $rule = $info['rules'] ?? null;
+            if (! empty($rule)) {
+                $rules[$key] = $rule;
+                $attributes[$key] = $info['title'] ?? $name;
+            }
+
+            $changed[$name] = $this->normalizeValueForType(
+                value: $currentValue,
+                type: $info['type'] ?? null,
+            );
+        }
+
+        if ($changed === []) {
+            return;
+        }
+
+        if ($rules !== []) {
             try {
-                $this->validate([
-                    $key => $rule,
-                ], [], [
-                    $key => $attr,
-                ]);
+                $this->validate($rules, [], $attributes);
             } catch (ValidationException $e) {
-                // Show a toast with the first validation error and rethrow to keep inline errors
-                $message = $e->validator->errors()->first($key);
                 Flux::toast([
                     'heading' => 'Fehler',
-                    'text' => $message,
+                    'text' => (string) $e->validator->errors()->first(),
                     'variant' => 'danger',
                 ]);
                 throw $e;
             }
-            // Pull the possibly cast/deferred input again after validation
-            $value = $this->values[$class][$name] ?? $value;
         }
 
-        // Best-effort: normalize arrays when bound via textarea (string input)
-        $type = $this->classes[$class]['settings'][$name]['type'] ?? null;
-        if ($type === 'array' && \is_string($value)) {
-            $decoded = json_decode($value, true);
-            if (json_last_error() === JSON_ERROR_NONE && \is_array($decoded)) {
-                $value = $decoded;
-            } else {
-                // fallback: comma-separated list
-                $parts = array_map('trim', array_filter(explode(',', $value), fn ($v) => $v !== ''));
-                $value = $parts;
-            }
-        }
-
-        // Store pending state and open confirmation modal instead of saving immediately
         $this->pendingClass = $class;
-        $this->pendingName = $name;
-        $this->pendingValue = $value;
+        $this->pendingValues = $changed;
 
         Flux::modal('admin-setting-confirm')->show();
     }
 
     public function commitPending(): void
     {
-        if ($this->pendingClass === null || $this->pendingName === null) {
+        if ($this->pendingClass === null || $this->pendingValues === []) {
             return;
         }
 
+        $class = $this->pendingClass;
+
         try {
             $this->settingsService->save([
-                $this->pendingClass => [
-                    $this->pendingName => $this->pendingValue,
-                ],
+                $class => $this->pendingValues,
             ]);
         } catch (\Throwable $e) {
             Flux::toast([
@@ -124,29 +131,37 @@ class AdminSettings extends Component
             return;
         }
 
-        // Refresh current values from source of truth
-        $this->mount();
+        foreach ($this->pendingValues as $name => $value) {
+            $this->classes[$class]['settings'][$name]['value'] = $value;
+            $this->values[$class][$name] = $value;
+        }
 
-        // Close the modal and show success toast
         Flux::modal('admin-setting-confirm')->close();
-        $name = $this->pendingName;
-        Flux::toast(heading: 'Gespeichert', text: "Einstellung '$name' wurde gespeichert.", variant: 'success');
+        Flux::toast(heading: 'Gespeichert', text: 'Einstellungen wurden gespeichert.', variant: 'success');
 
-        // Clear pending state
         $this->pendingClass = null;
-        $this->pendingName = null;
-        $this->pendingValue = null;
+        $this->pendingValues = [];
     }
 
     public function cancelPending(): void
     {
         $this->pendingClass = null;
-        $this->pendingName = null;
-        $this->pendingValue = null;
+        $this->pendingValues = [];
 
         Flux::modal('admin-setting-confirm')->close();
+    }
 
-        // reset the values to the current state
-        $this->mount();
+    protected function normalizeValueForType(mixed $value, ?string $type): mixed
+    {
+        if ($type === 'array' && \is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && \is_array($decoded)) {
+                return $decoded;
+            }
+
+            return array_map('trim', array_filter(explode(',', $value), fn ($v) => $v !== ''));
+        }
+
+        return $value;
     }
 }

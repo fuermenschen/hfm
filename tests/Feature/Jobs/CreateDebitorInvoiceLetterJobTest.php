@@ -43,14 +43,17 @@ it('passes properly configured QrInvoiceOptions with debtor details to the lette
             expect($qr['debtorName'] ?? null)->toBe([
                 $donor->first_name.' '.$donor->last_name,
             ])
-                ->and($qr['debtorAddress1'] ?? null)->toBe([
+                ->and($qr['debtorStreet'] ?? null)->toBe([
                     $donor->address,
                 ])
-                ->and($qr['debtorAddress2'] ?? null)->toBe([
-                    $donor->zip_code.' '.$donor->city,
+                ->and($qr['debtorBuildingNumber'] ?? null)->toBe([])
+                ->and($qr['debtorPostalCode'] ?? null)->toBe([
+                    $donor->zip_code,
+                ])
+                ->and($qr['debtorCity'] ?? null)->toBe([
+                    $donor->city,
                 ]);
 
-            // We do not force withAmount here; it should come from settings fallback
             return true;
         })
         ->andReturn($letterResponse);

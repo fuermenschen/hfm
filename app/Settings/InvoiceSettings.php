@@ -22,14 +22,24 @@ class InvoiceSettings extends Settings
     public string $creditor_name = '';
 
     /**
-     * Default creditor address line 1 for QR invoices.
+     * Default creditor street for QR invoices.
      */
-    public string $creditor_address1 = '';
+    public string $creditor_street = '';
 
     /**
-     * Default creditor address line 2 for QR invoices.
+     * Default creditor building number for QR invoices.
      */
-    public string $creditor_address2 = '';
+    public string $creditor_building_number = '';
+
+    /**
+     * Default creditor postal code for QR invoices.
+     */
+    public string $creditor_postal_code = '';
+
+    /**
+     * Default creditor city for QR invoices.
+     */
+    public string $creditor_city = '';
 
     /**
      * Number of days until an invoice is due.
@@ -58,8 +68,10 @@ class InvoiceSettings extends Settings
             'qr_iban' => 'required|regex:/^CH\d{19}$/',
             'qr_show_amount' => 'required|boolean',
             'creditor_name' => 'nullable|string',
-            'creditor_address1' => 'nullable|string',
-            'creditor_address2' => 'nullable|string',
+            'creditor_street' => 'nullable|string',
+            'creditor_building_number' => 'nullable|string',
+            'creditor_postal_code' => 'nullable|string',
+            'creditor_city' => 'nullable|string',
             'due_days' => 'required|integer|min:1',
         ];
     }
@@ -70,8 +82,10 @@ class InvoiceSettings extends Settings
             'qr_iban' => 'QR IBAN',
             'qr_show_amount' => 'Betrag im QR anzeigen',
             'creditor_name' => 'Name der Empfängerin',
-            'creditor_address1' => 'Adresse der Empfängerin',
-            'creditor_address2' => 'PLZ Ort der Empfängerin',
+            'creditor_street' => 'Strasse der Empfängerin',
+            'creditor_building_number' => 'Hausnummer der Empfängerin',
+            'creditor_postal_code' => 'PLZ der Empfängerin',
+            'creditor_city' => 'Ort der Empfängerin',
             'due_days' => 'Anzahl Tage Zahlungsfrist',
         ];
     }
@@ -82,8 +96,10 @@ class InvoiceSettings extends Settings
             'qr_iban' => 'Die IBAN, welche für Schweizer QR-Rechnungen verwendet werden soll.',
             'qr_show_amount' => 'Wenn aktiviert, wird der Rechnungsbetrag im QR-Code vorausgefüllt.',
             'creditor_name' => 'Name des Empfängers auf einer QR-Rechnung.',
-            'creditor_address1' => 'Adresse des Empfängers für QR-Rechnungen.',
-            'creditor_address2' => 'PLZ und Ort des Empfängers für QR-Rechnungen.',
+            'creditor_street' => 'Strasse des Empfängers für QR-Rechnungen.',
+            'creditor_building_number' => 'Hausnummer des Empfängers für QR-Rechnungen.',
+            'creditor_postal_code' => 'PLZ des Empfängers für QR-Rechnungen.',
+            'creditor_city' => 'Ort des Empfängers für QR-Rechnungen.',
             'due_days' => 'Die Rechnungen sind fällig heute + X Tage.',
         ];
     }
