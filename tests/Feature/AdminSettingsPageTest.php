@@ -46,28 +46,16 @@ it('can update settings via the AdminSettings component and persists them', func
 
     $class = WeblingApiSettings::class;
 
-    // Update a string field
+    // Update multiple fields in one class and save once
     $component
         ->set("values.$class.api_url", 'https://changed.webling.ch')
-        ->call('saveSingle', $class, 'api_url')
+        ->set("values.$class.debit_account_id", '4321')
+        ->set("values.$class.api_key", 'new-secret-key-but-32-chars-long')
+        ->call('saveClass', $class)
         ->call('commitPending');
 
     expect(app(WeblingApiSettings::class)->api_url)->toBe('https://changed.webling.ch');
-
-    // Update an int field, passing a string to verify coercion
-    $component
-        ->set("values.$class.debit_account_id", '4321')
-        ->call('saveSingle', $class, 'debit_account_id')
-        ->call('commitPending');
-
     expect(app(WeblingApiSettings::class)->debit_account_id)->toBe(4321);
-
-    // Update encrypted field and ensure value is readable through settings instance
-    $component
-        ->set("values.$class.api_key", 'new-secret-key-but-32-chars-long')
-        ->call('saveSingle', $class, 'api_key')
-        ->call('commitPending');
-
     expect(app(WeblingApiSettings::class)->api_key)->toBe('new-secret-key-but-32-chars-long');
 
     // Component state refreshes after save
@@ -94,7 +82,7 @@ it('validates invalid values and shows errors without saving', function (): void
 
     Livewire::test(AdminSettings::class)
         ->set("values.$class.api_url", 'https://not-ok.other-example.com')
-        ->call('saveSingle', $class, 'api_url')
+        ->call('saveClass', $class)
         ->assertHasErrors(["values.$class.api_url" => 'regex']);
 
     // Value should remain unchanged in persisted settings

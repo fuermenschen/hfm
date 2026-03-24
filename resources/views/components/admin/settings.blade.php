@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<div class="space-y-8" data-admin-settings-root>
 
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
         @foreach ($classes as $fqcn => $meta)
@@ -6,6 +6,10 @@
                 $short = class_basename($fqcn);
                 $classTitle = $meta['title'] ?? $short;
                 $classDesc = $meta['description'] ?? null;
+                $classTargets = collect(array_keys($meta['settings'] ?? []))
+                    ->map(fn (string $name) => "values.$fqcn.$name")
+                    ->implode(',');
+                $classParam = addslashes($fqcn);
             @endphp
 
         <flux:card>
@@ -15,6 +19,7 @@
                     <flux:subheading>{{ $classDesc }}</flux:subheading>
                 @endif
                 <flux:subheading class="text-xs opacity-60">{{ $fqcn }}</flux:subheading>
+                <flux:text wire:dirty wire:target="{{ $classTargets }}" class="mt-2 text-xs text-accent">Ungespeicherte Änderungen</flux:text>
             </div>
 
             <div class="space-y-6">
@@ -24,12 +29,6 @@
                         $desc = $info['description'] ?? null;
                         $title = $info['title'] ?? $name;
                         $encrypted = $info['encrypted'] ?? false;
-                        $rules = $info['rules'] ?? null;
-                        $isRequired = false;
-                        if (is_string($rules)) { $isRequired = str_contains($rules, 'required'); }
-                        elseif (is_array($rules)) { $isRequired = in_array('required', $rules, true); }
-                        $wKey = md5($fqcn.'|'.$name);
-                        $classParam = addslashes($fqcn);
                     @endphp
 
                     <flux:field>
@@ -38,60 +37,47 @@
                             <span wire:dirty wire:target="values.{{ $fqcn }}.{{ $name }}" class="ml-1 text-xs opacity-70 text-accent">(ungespeichert)</span>
                         </span>
 
-                        <flux:input.group>
-                            @switch($type)
-                                @case('bool')
-                                    <flux:switch
+                        @switch($type)
+                            @case('bool')
+                                <flux:switch
+                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                />
+                                @break
+
+                            @case('int')
+                            @case('float')
+                            @case('double')
+                                @if ($encrypted)
+                                    <flux:input type="password"
+                                        viewable
                                         wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                        class="w-full max-w-md"
                                     />
-                                    @break
-
-                                @case('int')
-                                @case('float')
-                                @case('double')
-                                    @if ($encrypted)
-                                        <flux:input type="password"
-                                            viewable
-                                            wire:model="values.{{ $fqcn }}.{{ $name }}"
-                                            wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
-                                            class="w-full max-w-md"
-                                        />
-                                    @else
-                                        <flux:input type="number"
-                                            wire:model="values.{{ $fqcn }}.{{ $name }}"
-                                            wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
-                                            step="{{ in_array($type, ['float','double']) ? '0.01' : '1' }}"
-                                            class="w-full max-w-md"
-                                        />
-                                    @endif
-                                    @break
-
-                                @case('array')
-                                    <flux:textarea
+                                @else
+                                    <flux:input type="number"
                                         wire:model="values.{{ $fqcn }}.{{ $name }}"
-                                        wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
-                                        placeholder="JSON oder komma-getrennte Werte"
-                                        class="w-full max-w-2xl"
+                                        step="{{ in_array($type, ['float','double']) ? '0.01' : '1' }}"
+                                        class="w-full max-w-md"
                                     />
-                                    @break
+                                @endif
+                                @break
 
-                                @default
-                                    <flux:input
-                                        type="{{ $encrypted ? 'password' : 'text' }}"
-                                        wire:model="values.{{ $fqcn }}.{{ $name }}"
-                                        wire:keyup.enter="saveSingle('{{ $classParam }}','{{ $name }}')"
-                                        class="w-full max-w-2xl"
-                                        :viewable="$encrypted"
-                                    />
-                            @endswitch
+                            @case('array')
+                                <flux:textarea
+                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                    placeholder="JSON oder komma-getrennte Werte"
+                                    class="w-full max-w-2xl"
+                                />
+                                @break
 
-                            <flux:button class="shrink-0"
-                                wire:click="saveSingle('{{ $classParam }}','{{ $name }}')"
-                                wire:key="save-{{ $wKey }}"
-                            >
-                                Speichern
-                            </flux:button>
-                        </flux:input.group>
+                            @default
+                                <flux:input
+                                    type="{{ $encrypted ? 'password' : 'text' }}"
+                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                    class="w-full max-w-2xl"
+                                    :viewable="$encrypted"
+                                />
+                        @endswitch
 
                         <flux:error name="values.{{ $fqcn }}.{{ $name }}" />
 
@@ -100,6 +86,19 @@
                         @endif
                     </flux:field>
                 @endforeach
+
+                <div class="flex items-center gap-2 pt-2">
+                    <flux:button
+                        wire:click="saveClass('{{ $classParam }}')"
+                        wire:key="save-class-{{ md5($fqcn) }}"
+                        wire:target="{{ $classTargets }}"
+                        data-admin-settings-save-class-button
+                        wire:dirty.remove.attr="disabled"
+                        disabled
+                    >
+                        Änderungen speichern
+                    </flux:button>
+                </div>
             </div>
         </flux:card>
 
@@ -110,28 +109,24 @@
     <flux:modal name="admin-setting-confirm" class="min-w-104" :dismissible="false">
         @php
             $pc = $pendingClass ?? null;
-            $pn = $pendingName ?? null;
-            $meta = $pc && isset($classes[$pc]['settings'][$pn]) ? $classes[$pc]['settings'][$pn] : null;
-            $title = $meta['title'] ?? $pn;
-            $current = $pc && $pn ? ($classes[$pc]['settings'][$pn]['value'] ?? null) : null;
+            $pendingValuesMap = $pendingValues ?? [];
+            $title = $pc && isset($classes[$pc]) ? ($classes[$pc]['title'] ?? class_basename($pc)) : null;
+            $changedCount = count($pendingValuesMap);
         @endphp
         <div class="space-y-6">
             <div>
-                <flux:heading size="lg">Einstellung ändern?</flux:heading>
+                <flux:heading size="lg">Einstellungen ändern?</flux:heading>
                 <flux:text class="mt-2 space-y-2">
-                    <p>Du bist dabei, die Einstellung <strong>{{ $title }}</strong> zu ändern.</p>
+                    <p>Du bist dabei, die Einstellungen für <strong>{{ $title }}</strong> zu ändern.</p>
                     <p class="text-sm opacity-80">Dies kann Auswirkungen auf das Systemverhalten haben.</p>
-                    <div class="mt-2 text-xs opacity-70 space-y-1">
-                        <div><span class="opacity-60">Aktueller Wert:</span> <span class="font-mono">{{ is_array($current) ? json_encode($current) : (is_bool($current) ? ($current ? 'true' : 'false') : (string)($current ?? '—')) }}</span></div>
-                        <div><span class="opacity-60">Neuer Wert:</span> <span class="font-mono">{{ is_array($pendingValue) ? json_encode($pendingValue) : (is_bool($pendingValue) ? ($pendingValue ? 'true' : 'false') : (string)($pendingValue ?? '—')) }}</span></div>
-                    </div>
+                    <p class="text-xs opacity-70">{{ $changedCount }} {{ $changedCount === 1 ? 'Feld wird' : 'Felder werden' }} gespeichert.</p>
                 </flux:text>
             </div>
 
             <div class="flex gap-2">
                 <flux:spacer />
                 <flux:button variant="ghost" wire:click="cancelPending">Abbrechen</flux:button>
-                <flux:button variant="danger" wire:click="commitPending">{{ $title }} ändern</flux:button>
+                <flux:button variant="danger" wire:click="commitPending">Änderungen speichern</flux:button>
             </div>
         </div>
     </flux:modal>
