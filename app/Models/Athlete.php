@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Notification;
  * @property Donation[] $donations
  * @property SportType $sportType
  * @property Partner $partner
+ * @property DonationEvent|null $donationEvent
  * @property string $privacy_name
  * @property string $full_name
  * @property string $public_id_string
@@ -37,6 +38,7 @@ class Athlete extends Model
         'sport_type_id',
         'rounds_estimated',
         'partner_id',
+        'donation_event_id',
         'comment',
     ];
 
@@ -44,6 +46,7 @@ class Athlete extends Model
         'public_id' => 'integer',
         'rounds_estimated' => 'integer',
         'rounds_done' => 'integer',
+        'donation_event_id' => 'integer',
     ];
 
     protected $hidden = [
@@ -210,5 +213,10 @@ class Athlete extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
+    }
+
+    public function donationEvent(): BelongsTo
+    {
+        return $this->belongsTo(DonationEvent::class);
     }
 }
