@@ -15,6 +15,12 @@
                 'current' => $thisRoute === 'admin.dashboard',
             ],
             [
+                'label' => 'Anlässe',
+                'route' => 'admin.donation-events.index',
+                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V8.25A2.25 2.25 0 0 1 5.25 6h13.5A2.25 2.25 0 0 1 21 8.25v10.5M3 18.75A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75M3 18.75v-6.75A2.25 2.25 0 0 1 5.25 9.75h13.5A2.25 2.25 0 0 1 21 12v6.75" /></svg>',
+                'current' => $thisRoute === 'admin.donation-events.index',
+            ],
+            [
                 'label' => 'Sportler:innen',
                 'route' => 'admin.athletes.index',
                 'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" /></svg>',
@@ -194,6 +200,24 @@
             <main class="min-w-0 overflow-x-hidden py-10">
                 <div class="min-w-0 px-4 sm:px-6 lg:px-8">
                     <x-admin.page-title>{{ $title }}</x-admin.page-title>
+
+                    @if (($currentDonationEventIssue ?? null) !== null)
+                        @php
+                            $eventIssueMessage = match ($currentDonationEventIssue) {
+                                'missing_events_table' => 'Die Tabelle donation_events fehlt. Event-Inhalte auf öffentlichen Seiten bleiben leer.',
+                                'missing_current_event' => 'Kein aktueller Anlass definiert. Bitte in den Einstellungen den aktuellen Anlass setzen.',
+                                'current_event_not_found' => 'Der konfigurierte aktuelle Anlass existiert nicht mehr. Bitte den aktuellen Anlass neu wählen.',
+                                'current_event_unpublished' => 'Der konfigurierte aktuelle Anlass ist nicht veröffentlicht. Öffentliche Event-Inhalte bleiben leer, bis der Anlass veröffentlicht ist.',
+                                default => 'Der aktuelle Anlass ist nicht korrekt konfiguriert. Öffentliche Event-Inhalte bleiben leer.',
+                            };
+                        @endphp
+
+                        <div class="mb-6 rounded-lg border-2 border-red-500 bg-red-50 p-4 text-red-900 shadow-sm dark:border-red-400 dark:bg-red-950/40 dark:text-red-100">
+                            <div class="text-sm font-semibold uppercase tracking-wide">WICHTIGER HINWEIS: Event-Konfiguration unvollständig</div>
+                            <div class="mt-1 text-sm">{{ $eventIssueMessage }}</div>
+                        </div>
+                    @endif
+
                     @yield('content')
                 </div>
             </main>

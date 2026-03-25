@@ -155,12 +155,14 @@ class AdminAthleteTable extends AbstractDatatableComponent
             'comment',
             'sportType.name',
             'partner.name',
+            'donationEvent.title',
+            'donationEvent.slug',
         ];
     }
 
     protected function baseQuery(): Builder
     {
-        return Athlete::query()->with(['sportType', 'partner', 'donations'])->withCount('donations');
+        return Athlete::query()->with(['sportType', 'partner', 'donations', 'donationEvent'])->withCount('donations');
     }
 
     protected function defaultSortColumn(): string
@@ -190,6 +192,7 @@ class AdminAthleteTable extends AbstractDatatableComponent
             'zip_code' => 'athletes.zip_code',
             'city' => 'athletes.city',
             'comment' => 'athletes.comment',
+            'donation_event_id' => 'athletes.donation_event_id',
         ];
     }
 
@@ -217,6 +220,7 @@ class AdminAthleteTable extends AbstractDatatableComponent
             'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
             'sport_type' => ['label' => 'Sportart', 'sortable' => true, 'sort_field' => 'sport_type_id', 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Sportart'],
             'partner' => ['label' => 'Partner', 'sortable' => true, 'sort_field' => 'partner_id', 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Partner'],
+            'donation_event' => ['label' => 'Anlass', 'sortable' => true, 'sort_field' => 'donation_event_id', 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anlass'],
             'rounds_estimated' => ['label' => 'Runden geschätzt', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-32', 'export_key' => 'Runden geschätzt'],
             'rounds_done' => ['label' => 'Runden gemacht', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Runden gemacht', 'formatter' => 'editable_rounds'],
             'donations_count' => ['label' => 'Spenden', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'Spenden'],
@@ -244,6 +248,7 @@ class AdminAthleteTable extends AbstractDatatableComponent
             'verified',
             'sport_type',
             'partner',
+            'donation_event',
             'rounds_estimated',
             'rounds_done',
             'donations_count',
@@ -265,6 +270,7 @@ class AdminAthleteTable extends AbstractDatatableComponent
             'Bestätigt' => $athlete->verified ? 'Ja' : 'Nein',
             'Sportart' => $athlete->sportType->name,
             'Partner' => $athlete->partner->name,
+            'Anlass' => data_get($athlete, 'donationEvent.slug', '-'),
             'Runden geschätzt' => $athlete->rounds_estimated,
             'Runden gemacht' => $athlete->rounds_done,
             'Spenden' => $athlete->donations_count,

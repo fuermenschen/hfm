@@ -56,6 +56,7 @@
                                     $desc = $info['description'] ?? null;
                                     $title = $info['title'] ?? $name;
                                     $encrypted = $info['encrypted'] ?? false;
+                                    $options = is_array($info['options'] ?? null) ? $info['options'] : null;
                                 @endphp
 
                                 <flux:field>
@@ -65,11 +66,31 @@
                                     </span>
 
                                     @switch($type)
+                                        @case('?int')
+                                        @case('int')
+                                            @if ($options !== null)
+                                                <flux:select wire:model="values.{{ $fqcn }}.{{ $name }}" variant="listbox" class="w-full max-w-2xl">
+                                                    <flux:select.option value="">- Bitte wählen -</flux:select.option>
+                                                    @foreach($options as $optionLabel => $optionValue)
+                                                        <flux:select.option :value="(string) $optionValue">{{ $optionLabel }}</flux:select.option>
+                                                    @endforeach
+                                                </flux:select>
+                                            @elseif ($encrypted)
+                                                <flux:input type="password" viewable wire:model="values.{{ $fqcn }}.{{ $name }}" class="w-full max-w-md" />
+                                            @else
+                                                <flux:input
+                                                    type="number"
+                                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                                    step="1"
+                                                    class="w-full max-w-md"
+                                                />
+                                            @endif
+                                            @break
+
                                         @case('bool')
                                             <flux:switch wire:model="values.{{ $fqcn }}.{{ $name }}" />
                                             @break
 
-                                        @case('int')
                                         @case('float')
                                         @case('double')
                                             @if ($encrypted)

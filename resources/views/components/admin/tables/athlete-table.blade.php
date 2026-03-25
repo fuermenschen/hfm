@@ -83,6 +83,10 @@
                                         {{ $athlete->partner?->name }}
                                         @break
 
+                                    @case('donation_event')
+                                        {{ $athlete->donationEvent?->slug ?? '-' }}
+                                        @break
+
                                     @case('rounds_estimated')
                                         {{ $athlete->rounds_estimated }}
                                         @break
