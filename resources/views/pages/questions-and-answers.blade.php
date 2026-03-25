@@ -34,6 +34,12 @@
                 size="xs"
             >Hintergründe</flux:button>
         </div>
+
+        @if ($currentDonationEvent === null)
+            <div class="mx-auto mt-2 w-full max-w-3xl rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-600/60 dark:bg-amber-950/40 dark:text-amber-100">
+                Aktuell ist kein Anlass als aktiv veröffentlicht. Allgemeine Informationen auf dieser Seite bleiben korrekt, anlassbezogene Angaben können jedoch fehlen oder nicht aktuell sein.
+            </div>
+        @endif
     </div>
 
     <x-page-subtitle id="allgemein">Allgemein</x-page-subtitle>
@@ -42,9 +48,9 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
-            <span>Der Spendenlauf findet am <strong>Samstag, 12. September 2026 in Winterthur</strong> statt. Der Anlass
-            dauert von <strong>13 Uhr bis 16 Uhr</strong>. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung
-            (Brühlbergstrasse 6).</span>
+            <div class="prose prose-p:my-0 max-w-none">
+                {!! $currentDonationEvent?->contentMarkdown('faq.general_event_md') !!}
+            </div>
             <div x-data="{ pointerEvents: false, timeout: null }" @click.outside="pointerEvents = false"
                  @click="pointerEvents = true;"
                  @mouseenter="clearTimeout(timeout); timeout = setTimeout(() => pointerEvents = true, 2000)"

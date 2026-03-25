@@ -10,11 +10,27 @@
   if ($img === null || $img === '') {
     $img = (string) random_int(1, 14);
   }
+
+  $eventDate = $currentDonationEvent?->starts_at;
+  $eventDateTime = $eventDate?->format('Y-m-d');
+  $eventDateLabel = $eventDate?->translatedFormat('j. F Y');
+  $eventCity = $currentDonationEvent?->location_city;
+
+  $noActiveEventMessage = match ($currentDonationEventIssue ?? null) {
+    'missing_current_event' => 'Aktuell ist kein Anlass als aktiv konfiguriert. Wir arbeiten daran und informieren bald über den nächsten Anlass.',
+    'current_event_not_found' => 'Der aktuell konfigurierte Anlass wurde nicht gefunden. Wir aktualisieren die Seite in Kürze.',
+    'current_event_unpublished' => 'Der aktuell konfigurierte Anlass ist noch nicht veröffentlicht. Informationen folgen in Kürze.',
+    default => 'Aktuell sind keine Anlassinformationen verfügbar. Bitte versuche es später erneut.',
+  };
 @endphp
 
 <x-hero :img="$img">
   <x-slot:kicker>
-    <time datetime="2026-09-12">12. September 2026</time> in Winterthur
+    @if ($eventDateLabel !== null && $eventCity !== null)
+      <time datetime="{{ $eventDateTime }}">{{ $eventDateLabel }}</time> in {{ $eventCity }}
+    @else
+      Informationen zum nächsten Anlass
+    @endif
   </x-slot:kicker>
 
   <x-slot:title>
@@ -22,14 +38,25 @@
   </x-slot:title>
 
   <x-slot:copy>
-    Ein Spendenlauf für Winterthur. Wir rennen, fahren, rollen – für lokale Benefizpartner:innen. Bist auch du am Start?
+    @if ($currentDonationEvent !== null)
+      {!! $currentDonationEvent->contentInlineMarkdown('hero.copy_md') !!}
+    @else
+      {{ $noActiveEventMessage }}
+    @endif
   </x-slot:copy>
 
   <x-slot:ctas>
-    <a href="#info"
-       class="rounded-md bg-hfm-red px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-hfm-dark dark:hover:bg-hfm-light">Mehr dazu</a>
-    <a href="{{ route('become-donor') }}"
-       class="text-xs sm:text-sm font-semibold leading-6">Spender:in werden <span aria-hidden="true">→</span></a>
+    @if ($currentDonationEvent !== null)
+      <a href="#info"
+         class="rounded-md bg-hfm-red px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-hfm-dark dark:hover:bg-hfm-light">Mehr dazu</a>
+      <a href="{{ route('become-donor') }}"
+         class="text-xs sm:text-sm font-semibold leading-6">Spender:in werden <span aria-hidden="true">→</span></a>
+    @else
+      <a href="{{ route('newsletter') }}"
+         class="rounded-md bg-hfm-red px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-hfm-dark dark:hover:bg-hfm-light">Newsletter abonnieren</a>
+      <a href="{{ route('contact') }}"
+         class="text-xs sm:text-sm font-semibold leading-6">Kontakt <span aria-hidden="true">→</span></a>
+    @endif
   </x-slot:ctas>
 
   <x-slot:partners>
@@ -79,9 +106,6 @@
     </div>
   </x-slot:partners>
 </x-hero>
-
-
-
 
 
 

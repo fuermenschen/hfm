@@ -2,13 +2,14 @@
 
 namespace App\Components;
 
+use App\Services\CurrentDonationEventService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Livewire\Component;
 
 class PublicMenu extends Component
 {
-    public $menuItems = [
+    public array $menuItems = [
         [
             'name' => 'Startseite',
             'route' => 'home',
@@ -33,6 +34,15 @@ class PublicMenu extends Component
 
     public function mount(): void
     {
+        $hasActiveEvent = app(CurrentDonationEventService::class)->current() !== null;
+
+        if (! $hasActiveEvent) {
+            $this->menuItems = array_values(array_filter(
+                $this->menuItems,
+                fn (array $menuItem): bool => ! in_array($menuItem['route'], ['become-athlete', 'become-donor'], true),
+            ));
+        }
+
         $currentRoute = Route::currentRouteName();
 
         foreach ($this->menuItems as $key => $menuItem) {

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Actions\CollectDonorInvoiceDataAction;
 use App\Models\Donor;
+use App\Services\CurrentDonationEventService;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\InvoiceSettings;
@@ -58,20 +59,25 @@ class CreateDonorInvoiceLetter implements ShouldQueue
             .'Wir werden dich informieren, wann wir welche Beträge überweisen durften.'
             ."\n\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
+        $currentEvent = app(CurrentDonationEventService::class)->current();
+        $fallbackInvoiceInfo = 'Spendenrechnung Höhenmeter für Menschen Winterthur 2025';
+        $invoiceAdditionalInformation = $currentEvent?->contentValue('invoice.additional_information', $fallbackInvoiceInfo)
+            ?? $fallbackInvoiceInfo;
+
         try {
             $letterResponse = app(LetterService::class)->createInvoiceLetter(
                 'Spendenrechnung Höhenmeter für Menschen',
-                function (LetterBuilder $b) use ($text1, $text2): void {
+                function (LetterBuilder $b) use ($invoiceAdditionalInformation, $text1, $text2): void {
                     $b->body1($text1)
                         ->body2($text2)
-                        ->withQrInvoice(function ($q): void {
+                        ->withQrInvoice(function ($q) use ($invoiceAdditionalInformation): void {
                             $fullName = trim(($this->donor->first_name ?? '').' '.($this->donor->last_name ?? ''));
                             $q->debtorName = $fullName !== '' ? [$fullName] : [];
                             $q->debtorStreet = $this->donor->address ? [$this->donor->address] : [];
                             $q->debtorBuildingNumber = [];
                             $q->debtorPostalCode = $this->donor->zip_code ? [$this->donor->zip_code] : [];
                             $q->debtorCity = $this->donor->city ? [$this->donor->city] : [];
-                            $q->additionalInformation = 'Spendenrechnung Höhenmeter für Menschen Winterthur 2025';
+                            $q->additionalInformation = $invoiceAdditionalInformation;
                         });
                 },
                 $debitorId

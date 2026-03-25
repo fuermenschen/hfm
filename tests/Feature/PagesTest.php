@@ -40,6 +40,11 @@ test('all public routes are accessible', function () {
             continue;
         }
 
+        // Skip routes guarded by active-event middleware (tested separately)
+        if (in_array('active-event', $route->middleware())) {
+            continue;
+        }
+
         // Skip debug routes
         if (str_starts_with($route->uri, '_ignition') ||
             str_starts_with($route->uri, '_debugbar') ||
