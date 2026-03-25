@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\EventSettings;
 use App\Settings\InvoiceSettings;
 use App\Settings\WeblingApiSettings;
 use Spatie\LaravelData\Data;
@@ -16,6 +17,7 @@ return [
      * put them (manually) here.
      */
     'settings' => [
+        EventSettings::class,
         InvoiceSettings::class,
         WeblingApiSettings::class,
     ],

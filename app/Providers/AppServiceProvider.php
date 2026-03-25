@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\GetDashboardDataAction;
 use App\Services\AthleteDocumentService;
+use App\Services\CurrentDonationEventService;
 use App\Services\DonationService;
 use App\Services\DonorInvoiceService;
 use App\Services\SettingsService;
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DonorInvoiceService::class);
         $this->app->singleton(AthleteDocumentService::class);
+        $this->app->singleton(CurrentDonationEventService::class);
         $this->app->singleton(SettingsService::class);
         $this->app->singleton(DonationService::class);
     }
@@ -50,6 +52,12 @@ class AppServiceProvider extends ServiceProvider
         // Inject computed dashboard data via a view composer
         View::composer('pages.admin.dashboard', function ($view): void {
             $view->with(app(GetDashboardDataAction::class)());
+        });
+
+        View::composer('*', function ($view): void {
+            $eventService = app(CurrentDonationEventService::class);
+            $view->with('currentDonationEvent', $eventService->current());
+            $view->with('currentDonationEventIssue', $eventService->issue());
         });
 
         // Global logging for notifications and mails
