@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('slug')->unique();
             $table->string('title');
-            $table->dateTimeTz('starts_at');
-            $table->dateTimeTz('ends_at');
-            $table->dateTimeTz('registration_opens_at')->nullable();
-            $table->dateTimeTz('athlete_registration_closes_at')->nullable();
-            $table->dateTimeTz('donor_registration_closes_at')->nullable();
+            $table->string('timezone')->default('Europe/Zurich');
+            $table->dateTime('starts_at');
+            $table->dateTime('ends_at');
+            $table->dateTime('registration_opens_at')->nullable();
+            $table->dateTime('athlete_registration_closes_at')->nullable();
+            $table->dateTime('donor_registration_closes_at')->nullable();
             $table->string('location_name')->nullable();
             $table->string('location_street')->nullable();
             $table->string('location_postal_code')->nullable();

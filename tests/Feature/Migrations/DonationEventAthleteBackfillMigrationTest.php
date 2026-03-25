@@ -130,6 +130,7 @@ it('can run the athlete donation event migration down and up repeatedly', functi
     $addDonationEventIdMigration->up();
 
     expect(Schema::hasColumn('athletes', 'donation_event_id'))->toBeTrue();
+    expect(Schema::hasColumn('donation_events', 'timezone'))->toBeTrue();
     expect(Schema::hasColumn('donation_events', 'content'))->toBeTrue();
     expect(Schema::hasColumn('donation_events', 'is_published'))->toBeTrue();
 

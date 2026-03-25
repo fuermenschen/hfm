@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\LocalizedDateTime;
 use Database\Factories\DonationEventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,7 @@ class DonationEvent extends Model
     protected $fillable = [
         'slug',
         'title',
+        'timezone',
         'starts_at',
         'ends_at',
         'registration_opens_at',
@@ -32,11 +34,11 @@ class DonationEvent extends Model
     ];
 
     protected $casts = [
-        'starts_at' => 'datetime',
-        'ends_at' => 'datetime',
-        'registration_opens_at' => 'datetime',
-        'athlete_registration_closes_at' => 'datetime',
-        'donor_registration_closes_at' => 'datetime',
+        'starts_at' => LocalizedDateTime::class,
+        'ends_at' => LocalizedDateTime::class,
+        'registration_opens_at' => LocalizedDateTime::class,
+        'athlete_registration_closes_at' => LocalizedDateTime::class,
+        'donor_registration_closes_at' => LocalizedDateTime::class,
         'is_published' => 'boolean',
         'content' => 'array',
     ];
