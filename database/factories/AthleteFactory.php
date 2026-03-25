@@ -21,7 +21,7 @@ class AthleteFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'address' => fake()->streetAddress(),
-            'zip_code' => fake()->postcode(),
+            'zip_code' => fake()->numberBetween(1000, 9999),
             'city' => fake()->city(),
             'phone_number' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
