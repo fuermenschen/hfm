@@ -60,7 +60,7 @@ class CreateDonorInvoiceLetter implements ShouldQueue
             ."\n\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
         $currentEvent = app(CurrentDonationEventService::class)->current();
-        $fallbackInvoiceInfo = 'Spendenrechnung Höhenmeter für Menschen Winterthur 2025';
+        $fallbackInvoiceInfo = 'Spendenrechnung Höhenmeter für Menschen';
         $invoiceAdditionalInformation = $currentEvent?->contentValue('invoice.additional_information', $fallbackInvoiceInfo)
             ?? $fallbackInvoiceInfo;
 

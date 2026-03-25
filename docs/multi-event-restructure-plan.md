@@ -326,11 +326,6 @@
 - Public-page text fragments that need event variance should come from `donation_events.content` (markdown snippets),
   with explicit fallback copy for missing keys.
 
-### Focused follow-up document
-
-- For the concrete rollout and JSON key structure of event-scoped rich text content, see
-  `docs/donation-event-content-plan.md`.
-
 ### Compatibility plan for naming (`donors` misspelling)
 
 - Do **not** rename abruptly.

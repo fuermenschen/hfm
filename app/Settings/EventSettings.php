@@ -59,7 +59,7 @@ class EventSettings extends Settings
             ->orderByDesc('starts_at')
             ->get(['id', 'title', 'slug', 'is_published'])
             ->mapWithKeys(function (DonationEvent $event): array {
-                $suffix = $event->is_published ? '' : ' - NICHT VEROEFFENTLICHT';
+                $suffix = $event->is_published ? '' : ' - NICHT VERÖFFENTLICHT';
 
                 return [
                     sprintf('%s (%s)%s', $event->title, $event->slug, $suffix) => $event->id,

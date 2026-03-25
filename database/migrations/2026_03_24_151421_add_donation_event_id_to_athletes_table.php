@@ -65,34 +65,9 @@ return new class extends Migration
 
     protected function seedCanonicalDonationEvents(): void
     {
-        $content = [
-            'hero' => [
-                'copy_md' => 'Ein Spendenlauf für Winterthur. Wir rennen, fahren, rollen - für lokale Benefizpartner:innen. Bist auch du am Start?',
-            ],
-            'home' => [
-                'about_heading' => 'Um was geht es?',
-                'about_intro_md' => 'Höhenmeter für Menschen ist ein Spendenlauf in Winterthur. Es werden Spenden für lokale Benefizpartner:innen gesammelt.',
-                'about_body_md' => 'Der Spendenlauf ist ähnlich organisiert wie ein klassischer «Sponsorenlauf». Nur wird nicht für einen Verein gesammelt, sondern für Kinder psychisch kranker Eltern, für Menschen mit Beeinträchtigung und für Menschen in schwierigen Lebenssituationen.',
-            ],
-            'results' => [
-                'heading_md' => 'Resultate 2025',
-            ],
-            'faq' => [
-                'general_event_md' => 'Der Spendenlauf findet am **Samstag, 12. September 2026 in Winterthur** statt. Der Anlass dauert von **13 Uhr bis 16 Uhr**. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung (Brühlbergstrasse 6).',
-            ],
-            'seo' => [
-                'meta_description_md' => 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am 13. September 2025. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.',
-                'og_description_md' => 'Ein Spendenlauf in Winterthur für Winterthur am 13. September 2025.',
-            ],
-            'invoice' => [
-                'additional_information' => 'Spendenrechnung Höhenmeter für Menschen Winterthur 2025',
-            ],
-        ];
-
         DB::table('donation_events')->upsert(
             [
                 [
-                    'id' => 1,
                     'slug' => '2025',
                     'title' => 'Höhenmeter für Menschen',
                     'timezone' => 'Europe/Zurich',
@@ -107,10 +82,9 @@ return new class extends Migration
                     'location_city' => 'Winterthur',
                     'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
                     'is_published' => true,
-                    'content' => json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'content' => json_encode($this->eventContent(2025, '13. September 2025'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ],
                 [
-                    'id' => 2,
                     'slug' => '2026',
                     'title' => 'Höhenmeter für Menschen',
                     'timezone' => 'Europe/Zurich',
@@ -125,7 +99,7 @@ return new class extends Migration
                     'location_city' => 'Winterthur',
                     'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
                     'is_published' => true,
-                    'content' => json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'content' => json_encode($this->eventContent(2026, '12. September 2026'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ],
             ],
             ['slug'],
@@ -146,6 +120,36 @@ return new class extends Migration
                 'content',
             ],
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function eventContent(int $year, string $eventDateLabel): array
+    {
+        return [
+            'hero' => [
+                'copy_md' => 'Ein Spendenlauf für Winterthur. Wir rennen, fahren, rollen - für lokale Benefizpartner:innen. Bist auch du am Start?',
+            ],
+            'home' => [
+                'about_heading' => 'Um was geht es?',
+                'about_intro_md' => 'Höhenmeter für Menschen ist ein Spendenlauf in Winterthur. Es werden Spenden für lokale Benefizpartner:innen gesammelt.',
+                'about_body_md' => 'Der Spendenlauf ist ähnlich organisiert wie ein klassischer «Sponsorenlauf». Nur wird nicht für einen Verein gesammelt, sondern für Kinder psychisch kranker Eltern, für Menschen mit Beeinträchtigung und für Menschen in schwierigen Lebenssituationen.',
+            ],
+            'results' => [
+                'heading_md' => "Resultate {$year}",
+            ],
+            'faq' => [
+                'general_event_md' => "Der Spendenlauf findet am **Samstag, {$eventDateLabel} in Winterthur** statt. Der Anlass dauert von **13 Uhr bis 16 Uhr**. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung (Brühlbergstrasse 6).",
+            ],
+            'seo' => [
+                'meta_description_md' => "Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am {$eventDateLabel}. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.",
+                'og_description_md' => "Ein Spendenlauf in Winterthur für Winterthur am {$eventDateLabel}.",
+            ],
+            'invoice' => [
+                'additional_information' => "Spendenrechnung Höhenmeter für Menschen Winterthur {$year}",
+            ],
+        ];
     }
 
     protected function exportAndDeleteUnassignedAthletes(): void
