@@ -30,10 +30,10 @@ return new class extends Migration
             ->pluck('id', 'slug')
             ->all();
 
-        $event2025Id = $eventIds['2025'] ?? null;
-        $event2026Id = $eventIds['2026'] ?? null;
+        $event2025Id = (int) ($eventIds['2025'] ?? 0);
+        $event2026Id = (int) ($eventIds['2026'] ?? 0);
 
-        if (! is_int($event2025Id) || ! is_int($event2026Id)) {
+        if ($event2025Id <= 0 || $event2026Id <= 0) {
             throw new RuntimeException('Could not resolve canonical donation events for 2025 and 2026.');
         }
 
@@ -82,7 +82,7 @@ return new class extends Migration
                     'location_city' => 'Winterthur',
                     'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
                     'is_published' => true,
-                    'content' => json_encode($this->eventContent(2025, '13. September 2025'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'content' => json_encode($this->eventContent(2025, '13. September 2025', '13 Uhr bis 18 Uhr'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ],
                 [
                     'slug' => '2026',
@@ -99,7 +99,7 @@ return new class extends Migration
                     'location_city' => 'Winterthur',
                     'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
                     'is_published' => true,
-                    'content' => json_encode($this->eventContent(2026, '12. September 2026'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'content' => json_encode($this->eventContent(2026, '12. September 2026', '13 Uhr bis 16 Uhr'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ],
             ],
             ['slug'],
@@ -125,7 +125,7 @@ return new class extends Migration
     /**
      * @return array<string, mixed>
      */
-    protected function eventContent(int $year, string $eventDateLabel): array
+    protected function eventContent(int $year, string $eventDateLabel, string $eventTimeWindow): array
     {
         return [
             'hero' => [
@@ -140,7 +140,7 @@ return new class extends Migration
                 'heading_md' => "Resultate {$year}",
             ],
             'faq' => [
-                'general_event_md' => "Der Spendenlauf findet am **Samstag, {$eventDateLabel} in Winterthur** statt. Der Anlass dauert von **13 Uhr bis 16 Uhr**. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung (Brühlbergstrasse 6).",
+                'general_event_md' => "Der Spendenlauf findet am **Samstag, {$eventDateLabel} in Winterthur** statt. Der Anlass dauert von **{$eventTimeWindow}**. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung (Brühlbergstrasse 6).",
             ],
             'seo' => [
                 'meta_description_md' => "Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am {$eventDateLabel}. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.",

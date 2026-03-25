@@ -29,7 +29,7 @@ class DonationEventSeeder extends Seeder
                     'location_city' => 'Winterthur',
                     'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
                     'is_published' => true,
-                    'content' => json_encode($this->eventContent(2025, '13. September 2025'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'content' => json_encode($this->eventContent(2025, '13. September 2025', '13 Uhr bis 18 Uhr'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ],
                 [
                     'slug' => '2026',
@@ -46,7 +46,7 @@ class DonationEventSeeder extends Seeder
                     'location_city' => 'Winterthur',
                     'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
                     'is_published' => true,
-                    'content' => json_encode($this->eventContent(2026, '12. September 2026'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'content' => json_encode($this->eventContent(2026, '12. September 2026', '13 Uhr bis 16 Uhr'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                 ],
             ],
             uniqueBy: ['slug'],
@@ -72,7 +72,7 @@ class DonationEventSeeder extends Seeder
     /**
      * @return array<string, mixed>
      */
-    protected function eventContent(int $year, string $eventDateLabel): array
+    protected function eventContent(int $year, string $eventDateLabel, string $eventTimeWindow): array
     {
         return [
             'hero' => [
@@ -87,7 +87,7 @@ class DonationEventSeeder extends Seeder
                 'heading_md' => "Resultate {$year}",
             ],
             'faq' => [
-                'general_event_md' => "Der Spendenlauf findet am **Samstag, {$eventDateLabel} in Winterthur** statt. Der Anlass dauert von **13 Uhr bis 16 Uhr**. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung (Brühlbergstrasse 6).",
+                'general_event_md' => "Der Spendenlauf findet am **Samstag, {$eventDateLabel} in Winterthur** statt. Der Anlass dauert von **{$eventTimeWindow}**. Start und Ziel des Rundkurses sind bei der Brühlgut Stiftung (Brühlbergstrasse 6).",
             ],
             'seo' => [
                 'meta_description_md' => "Höhenmeter für Menschen: Ein Spendenlauf in Winterthur am {$eventDateLabel}. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.",

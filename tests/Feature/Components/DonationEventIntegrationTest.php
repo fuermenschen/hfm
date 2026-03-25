@@ -18,6 +18,8 @@ it('seeds canonical donation events idempotently', function (): void {
     expect(DonationEvent::query()->where('slug', '2026')->value('location_url'))->toBe('https://s.geo.admin.ch/yat5fpx761jk');
     expect((bool) DonationEvent::query()->where('slug', '2026')->value('is_published'))->toBeTrue();
     expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'hero.copy_md'))->not->toBeNull();
+    expect(data_get(DonationEvent::query()->where('slug', '2025')->firstOrFail()->content, 'faq.general_event_md'))->toContain('13 Uhr bis 18 Uhr');
+    expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'faq.general_event_md'))->toContain('13 Uhr bis 16 Uhr');
 });
 
 it('renders donation events in the admin donation event datatable', function (): void {
