@@ -48,7 +48,7 @@
 
         <x-faq-question-answer>
             <x-slot:question>Wann und wo findet der Anlass statt?</x-slot:question>
-            <div class="prose prose-p:my-0 max-w-none">
+            <div class="max-w-none prose prose-p:my-0 dark:prose-invert">
                 {!! $currentDonationEvent?->contentMarkdown('faq.general_event_md') !!}
             </div>
             <div x-data="{ pointerEvents: false, timeout: null }" @click.outside="pointerEvents = false"
