@@ -1,2 +1,0 @@
-### Problem Statement
-Explore strategies for implementing caching layers in Laravel to optimize the performance of rendering markdown-generated views. Determine scenarios where Blade view caching (partial caching) or Full Page caching makes sense within the app's context, and document your findings for future implementation.
