@@ -4,11 +4,18 @@
 
 @section('content')
 
+    @if (session('no_active_event_redirected'))
+        <div class="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-600/60 dark:bg-amber-950/40 dark:text-amber-100">
+            Eine Anmeldung als Sportler:in oder Spender:in ist aktuell nicht möglich, da kein aktiver Anlass veröffentlicht ist.
+        </div>
+    @endif
+
     @component('components.home-hero') @endcomponent
 
-    @component('components.home-content', ['athleteCount' => $athleteCount, 'donationCount' => $donationCount]) @endcomponent
+    @if ($currentDonationEvent !== null)
+        @component('components.home-content', ['athleteCount' => $athleteCount, 'donationCount' => $donationCount]) @endcomponent
 
-    @component('components.sponsors')
+        @component('components.sponsors')
         {{--
         <x-sponsor
             variant="large"
@@ -62,10 +69,9 @@
             </div>
         </div>
 
-    @endcomponent
+        @endcomponent
+    @endif
 
 @endsection
-
-
 
 

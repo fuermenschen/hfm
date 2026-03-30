@@ -25,8 +25,8 @@ Route::get('/', function () {
 
     return view('home', compact('athleteCount', 'donationCount'));
 })->name('home');
-Route::view('sportlerin-werden', 'pages.become-athlete')->name('become-athlete');
-Route::view('spenderin-werden', 'pages.become-donor')->name('become-donor');
+Route::view('sportlerin-werden', 'pages.become-athlete')->middleware('active-event')->name('become-athlete');
+Route::view('spenderin-werden', 'pages.become-donor')->middleware('active-event')->name('become-donor');
 Route::view('newsletter', 'pages.newsletter')->name('newsletter');
 Route::get('newsletter/abmelden/{email}', [NewsletterSubscriptionController::class, 'show'])
     ->name('newsletter.unsubscribe')
@@ -87,6 +87,7 @@ Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $
 // Authenticated Routes
 Route::middleware('auth')->group(function () {
     Route::view('admin', 'pages.admin.dashboard')->name('admin.dashboard');
+    Route::view('admin/anlaesse', 'pages.admin.donation-events')->name('admin.donation-events.index');
     Route::view('admin/sportlerinnen', 'pages.admin.athletes')->name('admin.athletes.index');
     Route::view('admin/spenderinnen', 'pages.admin.donors')->name('admin.donors.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');

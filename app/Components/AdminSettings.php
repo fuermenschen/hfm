@@ -153,6 +153,14 @@ class AdminSettings extends Component
 
     protected function normalizeValueForType(mixed $value, ?string $type): mixed
     {
+        if ($type === '?int' && $value === '') {
+            return null;
+        }
+
+        if ($type === 'int' && $value === '') {
+            return 0;
+        }
+
         if ($type === 'array' && \is_string($value)) {
             $decoded = json_decode($value, true);
             if (json_last_error() === JSON_ERROR_NONE && \is_array($decoded)) {

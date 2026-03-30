@@ -111,6 +111,16 @@ class SettingsService
                 $rulesMap = null;
             }
 
+            $optionsMap = null;
+            try {
+                if (\method_exists($class, 'options')) {
+                    $options = $class::options();
+                    $optionsMap = \is_array($options) ? $options : null;
+                }
+            } catch (Throwable $e) {
+                $optionsMap = null;
+            }
+
             $details = ['title' => null, 'description' => null];
             try {
                 if (\method_exists($class, 'settingsDetails')) {
@@ -207,6 +217,7 @@ class SettingsService
                     'encrypted' => $encrypted,
                     'title' => $titlesMap[$name] ?? null,
                     'rules' => $rulesMap[$name] ?? null,
+                    'options' => $optionsMap[$name] ?? null,
                 ];
             }
 

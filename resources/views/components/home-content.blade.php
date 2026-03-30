@@ -23,14 +23,16 @@
         <div class="px-6 lg:contents">
             <div
                 class="mx-auto max-w-2xl pb-24 pt-16 sm:pb-32 sm:pt-20 lg:ml-8 lg:mr-0 lg:w-full lg:max-w-lg lg:flex-none lg:pt-32 xl:w-1/2">
-                <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Um was geht
-                    es?</h1>
-                <p class="mt-6 text-xl leading-8">Höhenmeter für Menschen ist ein Spendenlauf in
-                    Winterthur. Es werden Spenden für lokale Benefizpartner:innen gesammelt.</p>
+                <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+                    {{ $currentDonationEvent?->contentValue('home.about_heading', '') }}
+                </h1>
+                <div class="mt-6 max-w-none text-xl leading-8 prose prose-p:my-0 dark:prose-invert">
+                    {!! $currentDonationEvent?->contentMarkdown('home.about_intro_md') !!}
+                </div>
                 <div class="mt-10 max-w-xl text-base leading-7 lg:max-w-none">
-                    <p>Der Spendenlauf ist ähnlich organisiert wie ein klassischer «Sponsorenlauf». Nur wird nicht für
-                        einen Verein gesammelt, sondern für Kinder psychisch kranker Eltern, für Menschen mit
-                        Beeinträchtigung und für Menschen in schwierigen Lebenssituationen.</p>
+                    <div class="max-w-none prose prose-p:my-0 dark:prose-invert">
+                        {!! $currentDonationEvent?->contentMarkdown('home.about_body_md') !!}
+                    </div>
                     <ul role="list" class="mt-8 space-y-8">
                         <li class="flex gap-x-3 items-start">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

@@ -70,6 +70,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Tel. 143 - Die Dargebotene Hand',
         ]);
 
+        $this->call([
+            DonationEventSeeder::class,
+        ]);
+
         // create example data
         if (config('app.env') === 'local') {
             Athlete::factory(10)->create();
