@@ -95,15 +95,27 @@
             </flux:callout>
 
             <div class="space-y-3">
-                <flux:heading size="sm">1. PDF herunterladen und prüfen</flux:heading>
-                <flux:button wire:click="downloadPdf" icon="arrow-down-tray" variant="filled">PDF herunterladen</flux:button>
+                <flux:heading size="sm">1. Automatische PDF-Prüfung</flux:heading>
+                <flux:text class="text-sm text-zinc-500">Das PDF wird automatisch geprüft. Du kannst es optional zusätzlich manuell öffnen.</flux:text>
+
+                @if ($pdfOpenUrl)
+                    <a
+                        href="{{ $pdfOpenUrl }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-1.5 text-sm text-accent underline underline-offset-2 hover:opacity-80"
+                    >
+                        <flux:icon.arrow-top-right-on-square class="size-4 shrink-0" />
+                        PDF in neuem Tab öffnen (optional)
+                    </a>
+                @endif
             </div>
 
             <flux:separator />
 
             <div class="space-y-3">
-                <flux:heading size="sm">2. Jeden Punkt als «OK» oder «Fehler» markieren</flux:heading>
-                <flux:text class="text-sm text-zinc-500">Falls ein Punkt nicht stimmt, markiere ihn als «Fehler» — du kannst trotzdem fortfahren.</flux:text>
+                <flux:heading size="sm">2. Ergebnis der automatischen Prüfung</flux:heading>
+                <flux:text class="text-sm text-zinc-500">Diese Checks werden direkt aus dem PDF-Text gelesen, inklusive des Zahlteils der QR-Rechnung.</flux:text>
 
                 <div class="divide-y divide-zinc-100 dark:divide-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
                     @foreach ($checklistLabels as $key => $label)
@@ -119,23 +131,22 @@
                                 @endif
                                 <span @class(['text-zinc-400 dark:text-zinc-500' => $value === null, 'text-zinc-800 dark:text-zinc-200' => $value !== null])>{{ $label }}</span>
                             </div>
-                            <div class="flex gap-1 shrink-0">
-                                <flux:button
-                                    size="xs"
-                                    wire:click="$set('checklist.{{ $key }}', true)"
-                                    :variant="$value === true ? 'primary' : 'ghost'"
-                                    icon="check"
-                                >OK</flux:button>
-                                <flux:button
-                                    size="xs"
-                                    wire:click="$set('checklist.{{ $key }}', false)"
-                                    :variant="$value === false ? 'danger' : 'ghost'"
-                                    icon="x-mark"
-                                >Fehler</flux:button>
-                            </div>
                         </div>
                     @endforeach
                 </div>
+
+                @if (! empty($pdfValidationIssues))
+                    <flux:callout icon="exclamation-triangle" color="red">
+                        <flux:callout.heading>Automatische PDF-Prüfung meldet Probleme</flux:callout.heading>
+                        <flux:callout.text>
+                            <ul class="list-disc list-inside space-y-0.5">
+                                @foreach ($pdfValidationIssues as $issue)
+                                    <li>{{ $issue }}</li>
+                                @endforeach
+                            </ul>
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
             </div>
         </div>
 
@@ -144,15 +155,12 @@
                 wire:click="confirmPdf"
                 variant="primary"
                 icon="arrow-right"
-                :disabled="! $checklistDecided"
             >
                 Weiter: Direktlink prüfen
             </flux:button>
         </div>
 
-        @if (! $checklistDecided)
-            <flux:text class="text-xs text-zinc-400 text-right">Bitte jeden Punkt als «OK» oder «Fehler» markieren, um fortzufahren.</flux:text>
-        @elseif ($checklistHasFailures)
+        @if ($checklistHasFailures)
             <flux:text class="text-xs text-amber-500 text-right">Einige Punkte wurden als fehlerhaft markiert — diese werden im Testprotokoll erfasst.</flux:text>
         @endif
 

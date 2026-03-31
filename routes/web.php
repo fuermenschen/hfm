@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
 use App\Http\Controllers\NewsletterSubscriptionController;
 use App\Models\Athlete;
 use App\Models\Donation;
@@ -92,6 +93,9 @@ Route::middleware('auth')->group(function () {
     Route::view('admin/spenderinnen', 'pages.admin.donors')->name('admin.donors.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
     Route::view('admin/tools', 'pages.admin.tools')->name('admin.tools');
+    Route::get('admin/tools/webling-interface-test/pdf', WeblingInterfaceTestPdfController::class)
+        ->middleware('signed')
+        ->name('admin.tools.webling-interface-test.pdf');
     Route::view('admin/einstellungen', 'pages.admin.settings')->name('admin.settings');
     Route::post('logout', function () {
         auth()->logout();

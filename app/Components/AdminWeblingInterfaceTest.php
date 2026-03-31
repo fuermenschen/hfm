@@ -2,6 +2,7 @@
 
 namespace App\Components;
 
+use App\Actions\InspectWeblingInvoicePdfAction;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
@@ -11,6 +12,7 @@ use Exception;
 use Flux;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Attributes\On;
@@ -55,6 +57,13 @@ class AdminWeblingInterfaceTest extends Component
         'qr_present' => null,
         'date_correct' => null,
     ];
+
+    /**
+     * Auto validation issues found while parsing the PDF text.
+     *
+     * @var list<string>
+     */
+    public array $pdfValidationIssues = [];
 
     /**
      * Result of the Webling direct-link check.
@@ -103,12 +112,25 @@ class AdminWeblingInterfaceTest extends Component
     public function getChecklistLabelsProperty(): array
     {
         return [
-            'name_correct' => 'Name korrekt ('.$this->testData['first_name'].' '.$this->testData['last_name'].')',
-            'address_correct' => 'Adresse korrekt ('.$this->testData['address'].', '.$this->testData['zip'].' '.$this->testData['city'].')',
-            'amount_correct' => 'Betrag korrekt (Fr. '.number_format((float) $this->testData['amount'], 2, '.', '\'').')',
-            'qr_present' => 'QR-Einzahlungsschein vorhanden',
-            'date_correct' => 'Datum und Fälligkeit korrekt',
+            'name_correct' => 'Name im Zahlteil erkannt ('.$this->testData['first_name'].' '.$this->testData['last_name'].')',
+            'address_correct' => 'Adresse im Zahlteil erkannt ('.$this->testData['address'].', '.$this->testData['zip'].' '.$this->testData['city'].')',
+            'amount_correct' => 'Betrag im PDF erkannt (Fr. '.number_format((float) $this->testData['amount'], 2, '.', '\'').')',
+            'qr_present' => 'QR-Rechnung gültig (keine Platzhalter / keine Warnung)',
+            'date_correct' => 'Fälligkeitsdatum erkannt',
         ];
+    }
+
+    public function getPdfOpenUrlProperty(): ?string
+    {
+        if (! $this->tempPdfPath || ! Storage::disk('local')->exists($this->tempPdfPath)) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute(
+            'admin.tools.webling-interface-test.pdf',
+            now()->addMinutes(15),
+            ['path' => encrypt($this->tempPdfPath)]
+        );
     }
 
     /** Whether all checklist items have been decided (none still null). */
@@ -229,6 +251,8 @@ class AdminWeblingInterfaceTest extends Component
             Storage::disk('local')->put($this->tempPdfPath, $pdfBinary);
             $this->tempPdfSize = strlen($pdfBinary);
 
+            $this->runAutomaticPdfValidation($pdfBinary, $dueDate->format('d.m.Y'));
+
         } catch (Exception $e) {
             $this->failWith('letter_creation', 'Fehler beim Erstellen des Briefes/PDFs: '.$e->getMessage());
 
@@ -240,36 +264,14 @@ class AdminWeblingInterfaceTest extends Component
         Flux::toast(variant: 'success', heading: 'Schritt 1 erfolgreich', text: 'Debitor und PDF wurden erstellt.');
     }
 
-    /** Stream the test PDF to the browser. */
-    public function downloadPdf(): mixed
-    {
-        if (! $this->tempPdfPath || ! Storage::disk('local')->exists($this->tempPdfPath)) {
-            Flux::toast(variant: 'danger', heading: 'Fehler', text: 'PDF nicht gefunden.');
-
-            return null;
-        }
-
-        $pdf = Storage::disk('local')->get($this->tempPdfPath);
-        $filename = 'webling-schnittstellentest-'.now()->format('Ymd-His').'.pdf';
-
-        return response()->streamDownload(function () use ($pdf) {
-            echo $pdf;
-        }, $filename, ['Content-Type' => 'application/pdf']);
-    }
-
     /** Advance from inspect_pdf to inspect_link step. */
     public function confirmPdf(): void
     {
-        if (! $this->getChecklistDecidedProperty()) {
-            Flux::toast(variant: 'danger', heading: 'Checkliste unvollständig', text: 'Bitte jeden Punkt als «OK» oder «Fehler» markieren, bevor du fortfährst.');
-
-            return;
-        }
-
         if ($this->getChecklistHasFailuresProperty()) {
-            $failedLabels = array_keys(array_filter($this->checklist, fn ($v) => $v === false));
-            Log::warning('Webling interface test: PDF checklist has failures', [
+            $failedLabels = array_keys(array_filter($this->checklist, static fn ($v) => $v === false));
+            Log::warning('Webling interface test: automatic PDF checks failed', [
                 'failed_items' => $failedLabels,
+                'validation_issues' => $this->pdfValidationIssues,
                 'debitor_id' => $this->debitorId,
                 'test_data' => $this->testData,
             ]);
@@ -382,7 +384,7 @@ class AdminWeblingInterfaceTest extends Component
     /** Reset the wizard to start a new test. */
     public function restartWizard(): void
     {
-        $this->reset(['step', 'debitorId', 'debitorUrl', 'tempPdfPath', 'tempPdfSize', 'errorMessage', 'errorStep', 'linkCheckResult', 'completedFullRun']);
+        $this->reset(['step', 'debitorId', 'debitorUrl', 'tempPdfPath', 'tempPdfSize', 'errorMessage', 'errorStep', 'linkCheckResult', 'completedFullRun', 'pdfValidationIssues']);
         $this->checklist = [
             'name_correct' => null,
             'address_correct' => null,
@@ -401,7 +403,27 @@ class AdminWeblingInterfaceTest extends Component
             'checklistLabels' => $this->getChecklistLabelsProperty(),
             'checklistDecided' => $this->getChecklistDecidedProperty(),
             'checklistHasFailures' => $this->getChecklistHasFailuresProperty(),
+            'pdfOpenUrl' => $this->getPdfOpenUrlProperty(),
         ]);
+    }
+
+    protected function runAutomaticPdfValidation(string $pdfBinary, string $dueDate): void
+    {
+        $result = app(InspectWeblingInvoicePdfAction::class)($pdfBinary, [
+            'name' => $this->testData['first_name'].' '.$this->testData['last_name'],
+            'address' => $this->testData['address'],
+            'zip' => $this->testData['zip'],
+            'city' => $this->testData['city'],
+            'amount' => $this->testData['amount'],
+            'due_date' => $dueDate,
+            'creditor_name' => 'Höhenmeter für Menschen',
+        ]);
+
+        foreach (array_keys($this->checklist) as $key) {
+            $this->checklist[$key] = (bool) ($result['checks'][$key] ?? false);
+        }
+
+        $this->pdfValidationIssues = $result['issues'];
     }
 
     /** Generate realistic Swiss test data from curated examples. */
