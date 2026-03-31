@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\InspectWeblingInvoicePdfAction;
 use App\Components\AdminWeblingInterfaceTest;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Services\Webling\Letter\LetterService;
@@ -59,6 +60,20 @@ it('transitions to inspect_pdf on successful start', function (): void {
     $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);
     app()->instance(LetterService::class, $letterService);
 
+    $inspector = Mockery::mock(InspectWeblingInvoicePdfAction::class);
+    $inspector->shouldReceive('__invoke')->once()->andReturn([
+        'passed' => true,
+        'checks' => [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ],
+        'issues' => [],
+    ]);
+    app()->instance(InspectWeblingInvoicePdfAction::class, $inspector);
+
     Livewire::test(AdminWeblingInterfaceTest::class)
         ->call('start')
         ->assertSet('step', 'inspect_pdf')
@@ -84,6 +99,20 @@ it('stores the debitor URL with the correct format', function (): void {
     $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);
     app()->instance(LetterService::class, $letterService);
 
+    $inspector = Mockery::mock(InspectWeblingInvoicePdfAction::class);
+    $inspector->shouldReceive('__invoke')->once()->andReturn([
+        'passed' => true,
+        'checks' => [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ],
+        'issues' => [],
+    ]);
+    app()->instance(InspectWeblingInvoicePdfAction::class, $inspector);
+
     Livewire::test(AdminWeblingInterfaceTest::class)
         ->call('start')
         ->assertSet('debitorUrl', 'https://demo.webling.ch/admin#/accounting/10/debitor/:debitor/editor/99');
@@ -107,6 +136,20 @@ it('saves pdf to local storage on success', function (): void {
     $letterService = Mockery::mock(LetterService::class);
     $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);
     app()->instance(LetterService::class, $letterService);
+
+    $inspector = Mockery::mock(InspectWeblingInvoicePdfAction::class);
+    $inspector->shouldReceive('__invoke')->once()->andReturn([
+        'passed' => true,
+        'checks' => [
+            'name_correct' => true,
+            'address_correct' => true,
+            'amount_correct' => true,
+            'qr_present' => true,
+            'date_correct' => true,
+        ],
+        'issues' => [],
+    ]);
+    app()->instance(InspectWeblingInvoicePdfAction::class, $inspector);
 
     $component = Livewire::test(AdminWeblingInterfaceTest::class)
         ->call('start');
@@ -222,18 +265,18 @@ it('allows advancing from inspect_pdf even when some checklist items are marked 
         ->assertSet('step', 'inspect_link');
 });
 
-it('does not advance from inspect_pdf when any checklist item is undecided', function (): void {
+it('advances from inspect_pdf even when checklist is undecided', function (): void {
     Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'inspect_pdf')
         ->set('debitorId', 42)
         ->call('confirmPdf')
-        ->assertSet('step', 'inspect_pdf');
+        ->assertSet('step', 'inspect_link');
 });
 
 it('logs checklist failures when advancing from inspect_pdf', function (): void {
     Log::shouldReceive('warning')
         ->once()
-        ->withArgs(fn ($msg, $ctx) => str_contains($msg, 'PDF checklist has failures') && in_array('address_correct', $ctx['failed_items']));
+        ->withArgs(fn ($msg, $ctx) => str_contains($msg, 'automatic PDF checks failed') && in_array('address_correct', $ctx['failed_items']));
 
     Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'inspect_pdf')
@@ -246,6 +289,43 @@ it('logs checklist failures when advancing from inspect_pdf', function (): void 
             'date_correct' => true,
         ])
         ->call('confirmPdf');
+});
+
+it('stores automatic pdf validation issues after a successful start', function (): void {
+    $debitorResponse = Mockery::mock(Response::class);
+    $debitorResponse->shouldReceive('status')->andReturn(201);
+    $debitorResponse->shouldReceive('json')->andReturn(42);
+
+    $invoiceService = Mockery::mock(WeblingInvoiceService::class);
+    $invoiceService->shouldReceive('createInvoiceFromParams')->once()->andReturn($debitorResponse);
+    app()->instance(WeblingInvoiceService::class, $invoiceService);
+
+    $letterResponse = Mockery::mock(Response::class);
+    $letterResponse->shouldReceive('successful')->andReturn(true);
+    $letterResponse->shouldReceive('body')->andReturn('%PDF fake');
+
+    $letterService = Mockery::mock(LetterService::class);
+    $letterService->shouldReceive('createInvoiceLetter')->once()->andReturn($letterResponse);
+    app()->instance(LetterService::class, $letterService);
+
+    $inspector = Mockery::mock(InspectWeblingInvoicePdfAction::class);
+    $inspector->shouldReceive('__invoke')->once()->andReturn([
+        'passed' => false,
+        'checks' => [
+            'name_correct' => false,
+            'address_correct' => false,
+            'amount_correct' => true,
+            'qr_present' => false,
+            'date_correct' => true,
+        ],
+        'issues' => ['QR-Rechnung ist ungültig.'],
+    ]);
+    app()->instance(InspectWeblingInvoicePdfAction::class, $inspector);
+
+    Livewire::test(AdminWeblingInterfaceTest::class)
+        ->call('start')
+        ->assertSet('checklist.qr_present', false)
+        ->assertSet('pdfValidationIssues', ['QR-Rechnung ist ungültig.']);
 });
 
 it('transitions to done after successful cleanup via confirmLink with ok result', function (): void {

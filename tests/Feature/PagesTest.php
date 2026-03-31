@@ -86,6 +86,11 @@ test('all authenticated routes are accessible when logged in', function () {
             continue;
         }
 
+        // Skip signed routes that require a valid signature query string
+        if (in_array('signed', $route->middleware(), true)) {
+            continue;
+        }
+
         // Skip debug routes
         if (str_starts_with($route->uri, '_ignition') ||
             str_starts_with($route->uri, '_debugbar') ||
