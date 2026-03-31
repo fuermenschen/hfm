@@ -21,18 +21,17 @@ class WeblingInterfaceTestPdfController extends Controller
             abort(403);
         }
 
-        abort_unless(is_string($path) && str_starts_with($path, 'webling/test-') && str_ends_with($path, '.pdf'), 403);
-        abort_unless(Storage::disk('local')->exists($path), 404);
+        abort_unless(
+            is_string($path) && preg_match('/^webling\/test-[A-Za-z0-9-]+\.pdf$/', $path) === 1,
+            403
+        );
+
+        $stream = Storage::disk('local')->readStream($path);
+        abort_unless(is_resource($stream), 404);
 
         $filename = 'webling-schnittstellentest-'.now()->format('Ymd-His').'.pdf';
 
-        return response()->streamDownload(function () use ($path): void {
-            $stream = Storage::disk('local')->readStream($path);
-
-            if (! is_resource($stream)) {
-                abort(404);
-            }
-
+        return response()->streamDownload(function () use ($stream): void {
             fpassthru($stream);
             fclose($stream);
         }, $filename, ['Content-Type' => 'application/pdf']);

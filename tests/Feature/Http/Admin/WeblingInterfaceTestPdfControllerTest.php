@@ -34,3 +34,31 @@ it('returns forbidden when the encrypted path does not match expected pattern', 
 
     $this->get($url)->assertForbidden();
 });
+
+it('returns forbidden for traversal-like encrypted paths', function (): void {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $url = URL::temporarySignedRoute(
+        'admin.tools.webling-interface-test.pdf',
+        now()->addMinutes(5),
+        ['path' => encrypt('webling/test-../../secret.pdf')]
+    );
+
+    $this->get($url)->assertForbidden();
+});
+
+it('returns not found when a validly named file does not exist', function (): void {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $url = URL::temporarySignedRoute(
+        'admin.tools.webling-interface-test.pdf',
+        now()->addMinutes(5),
+        ['path' => encrypt('webling/test-9999.pdf')]
+    );
+
+    $this->get($url)->assertNotFound();
+});
