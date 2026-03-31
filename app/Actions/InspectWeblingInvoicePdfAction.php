@@ -2,6 +2,8 @@
 
 namespace App\Actions;
 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Smalot\PdfParser\Parser;
 
 class InspectWeblingInvoicePdfAction
@@ -29,7 +31,12 @@ class InspectWeblingInvoicePdfAction
             $pages = $document->getPages();
             $pageTexts = array_map(static fn ($page): string => (string) $page->getText(), $pages);
         } catch (\Throwable $e) {
-            $issues[] = 'PDF konnte nicht automatisch gelesen werden: '.$e->getMessage();
+            Log::warning('Webling invoice PDF inspection failed', [
+                'exception' => $e->getMessage(),
+                'exception_class' => $e::class,
+            ]);
+
+            $issues[] = 'PDF konnte nicht automatisch gelesen werden.';
 
             return [
                 'passed' => false,
@@ -45,7 +52,7 @@ class InspectWeblingInvoicePdfAction
         $address = $this->normalizeText($expected['address']);
         $zipCity = $this->normalizeText(trim($expected['zip'].' '.$expected['city']));
         $dueDate = $this->normalizeText($expected['due_date']);
-        $creditorName = $this->normalizeText((string) ($expected['creditor_name'] ?? 'Hohenmeter fur Menschen'));
+        $creditorName = $this->normalizeText((string) ($expected['creditor_name'] ?? 'Höhenmeter für Menschen'));
 
         $expectedAmount = (float) $expected['amount'];
         $amountVariants = [
@@ -100,8 +107,8 @@ class InspectWeblingInvoicePdfAction
 
     protected function normalizeText(string $value): string
     {
-        $value = mb_strtolower($value);
-        $value = str_replace(['ä', 'ö', 'ü', 'é', 'è', 'ê', 'à', 'â', 'ç'], ['ae', 'oe', 'ue', 'e', 'e', 'e', 'a', 'a', 'c'], $value);
+        $value = Str::of($value)->lower()->ascii()->toString();
+        $value = str_replace(['ae', 'oe', 'ue'], ['a', 'o', 'u'], $value);
         $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
 
         return trim($value);
