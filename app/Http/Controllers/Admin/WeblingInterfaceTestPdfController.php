@@ -29,7 +29,7 @@ class WeblingInterfaceTestPdfController extends Controller
         return response()->streamDownload(function () use ($path): void {
             $stream = Storage::disk('local')->readStream($path);
 
-            if ($stream === false) {
+            if (! is_resource($stream)) {
                 abort(404);
             }
 
