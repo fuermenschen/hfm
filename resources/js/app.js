@@ -1,7 +1,5 @@
 import "./bootstrap";
 
-import.meta.glob(["../(images|files|image_templates)/**"]);
-
 function hasUnsavedAdminSettingsChanges() {
     if (!window.location.pathname.startsWith("/admin/einstellungen")) {
         return false;
