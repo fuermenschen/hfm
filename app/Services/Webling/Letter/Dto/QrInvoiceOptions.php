@@ -42,13 +42,13 @@ class QrInvoiceOptions
     public function toArray(): array
     {
         $settings = app(InvoiceSettings::class);
-        $iban = $this->iban !== '' ? $this->iban : ($settings->qr_iban ?? '');
-        $withAmount = $this->withAmount || ($settings->qr_show_amount ?? false);
-        $creditorName = $this->creditorName !== '' ? $this->creditorName : ($settings->creditor_name ?? '');
-        $creditorStreet = $this->creditorStreet !== '' ? $this->creditorStreet : ($settings->creditor_street ?? '');
-        $creditorBuildingNumber = $this->creditorBuildingNumber !== '' ? $this->creditorBuildingNumber : ($settings->creditor_building_number ?? '');
-        $creditorPostalCode = $this->creditorPostalCode !== '' ? $this->creditorPostalCode : ($settings->creditor_postal_code ?? '');
-        $creditorCity = $this->creditorCity !== '' ? $this->creditorCity : ($settings->creditor_city ?? '');
+        $iban = $this->iban !== '' ? $this->iban : $settings->qr_iban;
+        $withAmount = $this->withAmount || $settings->qr_show_amount;
+        $creditorName = $this->creditorName !== '' ? $this->creditorName : $settings->creditor_name;
+        $creditorStreet = $this->creditorStreet !== '' ? $this->creditorStreet : $settings->creditor_street;
+        $creditorBuildingNumber = $this->creditorBuildingNumber !== '' ? $this->creditorBuildingNumber : $settings->creditor_building_number;
+        $creditorPostalCode = $this->creditorPostalCode !== '' ? $this->creditorPostalCode : $settings->creditor_postal_code;
+        $creditorCity = $this->creditorCity !== '' ? $this->creditorCity : $settings->creditor_city;
 
         return [
             'iban' => $iban,

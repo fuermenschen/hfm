@@ -28,9 +28,9 @@ jobs:
           tools: composer:v2
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: package-lock.json
 
@@ -42,7 +42,7 @@ jobs:
           restore-keys: composer-cache-
 
       - name: Install Node Dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
