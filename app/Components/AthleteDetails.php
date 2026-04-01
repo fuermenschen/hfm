@@ -7,6 +7,7 @@ use App\Models\Donation;
 use Flux;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -62,7 +63,7 @@ class AthleteDetails extends Component
 
     public function downloadStorySingleDark()
     {
-        $image = ImageManager::gd()->read('./../resources/image_templates/story_single_dark.jpg');
+        $image = ImageManager::usingDriver(Driver::class)->decodePath('./../resources/image_templates/story_single_dark.jpg');
 
         // define the position and text
         $x = 539;
@@ -91,7 +92,7 @@ class AthleteDetails extends Component
 
     public function downloadStorySingleLight()
     {
-        $image = ImageManager::gd()->read('./../resources/image_templates/story_single_light.jpg');
+        $image = ImageManager::usingDriver(Driver::class)->decodePath('./../resources/image_templates/story_single_light.jpg');
 
         // define the position and text
         $x = 539;

@@ -12,11 +12,11 @@
         "ext-zip": "*",
         "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^6.1",
-        "intervention/image": "^3.7",
-        "laravel/framework": "^12.0",
+        "intervention/image": "^4.0",
+        "laravel/framework": "^13.0",
         "laravel/prompts": "^0.3.14",
         "laravel/pulse": "^1.7",
-        "laravel/tinker": "^2.9",
+        "laravel/tinker": "^3.0",
         "livewire/blaze": "^1.0",
         "livewire/flux": "^2.13",
         "livewire/flux-pro": "^2.13",
@@ -60,7 +60,7 @@
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
             "@php artisan boost:update --ansi",
-            "[ -f ./AGENTS.md ] && cp -f ./AGENTS.md ./.github/copilot-instructions.md || true"
+            "@php -r \"if (file_exists('AGENTS.md')) { is_dir('.github') || mkdir('.github', 0777, true); copy('AGENTS.md', '.github/copilot-instructions.md'); }\""
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
