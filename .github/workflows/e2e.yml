@@ -75,8 +75,13 @@ jobs:
         run: |
           set -euo pipefail
           php artisan serve --host=127.0.0.1 --port=8000 --silent &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
           npx wait-on http://127.0.0.1:8000
           npx playwright test --reporter=html --retries=1
+        retry:
+          max-attempts: 1
+          when: failure()
         env:
           APP_URL: http://127.0.0.1:8000
           APP_ENV: testing
