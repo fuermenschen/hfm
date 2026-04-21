@@ -1,4 +1,7 @@
-[![Deploy and Seed Laravel App](https://github.com/fuermenschen/hfm/actions/workflows/deploy.yml/badge.svg)](https://github.com/fuermenschen/hfm/actions/workflows/deploy.yml)
+[![Deploy](https://github.com/fuermenschen/hfm/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/fuermenschen/hfm/actions/workflows/deploy.yml)
+[![Tests](https://github.com/fuermenschen/hfm/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/fuermenschen/hfm/actions/workflows/tests.yml)
+[![Linter](https://github.com/fuermenschen/hfm/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/fuermenschen/hfm/actions/workflows/lint.yml)
+[![Security Checks](https://github.com/fuermenschen/hfm/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/fuermenschen/hfm/actions/workflows/security.yml)
 
 # Höhenmeter für Menschen
 
