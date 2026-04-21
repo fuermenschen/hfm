@@ -20,6 +20,9 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
     secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
 
   deploy:
     name: Deploy to Server
