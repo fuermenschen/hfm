@@ -19,7 +19,7 @@ class InvoiceLetterTemplate
 
         $headerHtml = '';
         if ($options['showHeader'] ?? true) {
-            $headerText = trim($draft->headerText ?? '');
+            $headerText = trim($draft->headerText);
 
             if ($headerText !== '') {
                 // If a custom header is provided, render it at normal 14px font without strong emphasis.
