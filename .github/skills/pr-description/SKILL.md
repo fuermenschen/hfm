@@ -3,19 +3,13 @@ name: pr-description
 description: "Use this skill when creating or editing pull request descriptions. Activate when the user asks to create a PR, write a PR description, or open a pull request. Covers: analyzing branch diffs, writing concise summaries, detecting multi-purpose PRs, linking issues, and structuring descriptions for reviewers. Do not use for commit messages, changelogs, or release notes."
 ---
 
-
 # Pull Request Descriptions
-
-
 
 ## When to Use This Skill
 
-
 Activate when the user asks to create a pull request, write a PR description, or review/improve an existing PR description.
 
-
 ## Gathering Context
-
 
 Before writing the description, collect information by running these commands:
 
@@ -27,7 +21,6 @@ git log --oneline main..HEAD
 git diff --stat main...HEAD
 git diff main...HEAD
 
-
 # Build GitHub file links for Details entries
 
 git rev-parse --abbrev-ref HEAD
@@ -36,9 +29,7 @@ gh repo view --json nameWithOwner -q .nameWithOwner
 
 Use `main` or the appropriate base branch. Adjust if the user specifies a different target.
 
-
 ## Core Principles
-
 
 1. **Short over long.** A description that gets fully read beats a thorough one that gets skimmed. Aim for a few focused sentences, not paragraphs.
 2. **No code in the description.** Reviewers use the diff viewer for code. The description answers _why_ and _what_, not _how_.
@@ -46,30 +37,22 @@ Use `main` or the appropriate base branch. Adjust if the user specifies a differ
 4. **Assume reviewers run locally.** If setup steps are needed after pulling the branch, call them out explicitly.
 5. **Ask when unclear.** If the commits are ambiguous or the purpose is unclear, ask the user before guessing.
 
-
 ## Structure
-
 
 Use this template as a starting point, but **drop any section that has nothing meaningful to say**. An empty section is worse than no section.
 
 ````markdown
 <1-3 sentences: what improved and why this matters>
 
-
 ## Details
-
 
 - [ImportantFile.php](https://github.com/<owner>/<repo>/blob/<branch>/path/to/ImportantFile.php) - <only if this file needs special reviewer attention>
 
-
 ## Notes
-
 
 <only if relevant: deployment steps, breaking changes, migration instructions, new env vars, risk callout, testing notes, or screenshot placeholder -- whatever genuinely helps the reviewer>
 
-
 ## Reviewer Setup
-
 
 In this PR vs `origin/main`, changes were made in <area(s)>. You likely need to run:
 
@@ -81,9 +64,7 @@ npm run build
 Fixes #<number>
 ````
 
-
 ### Section Guidelines
-
 
 - **Opening paragraph (no heading): Always present.** Do not start with `## Summary`. In 1-3 sentences, state outcomes and impact, not implementation trivia. Prefer phrasing like:
 
@@ -112,9 +93,7 @@ Fixes #<number>
     - Do **not** include these subsections by default. Only when they are genuinely important.
 - **Fixes #N**: Only include when the PR actually fixes/closes a GitHub issue. Use `Fixes #<number>` syntax (one per line if multiple). Do not fabricate issue numbers -- ask the user if unsure.
 
-
 ## Multi-Purpose PR Detection
-
 
 Analyze the commits on the branch. If they contain clearly unrelated changes (e.g. a bug fix plus an unrelated feature), **warn the user** before writing the description:
 
@@ -127,9 +106,7 @@ Analyze the commits on the branch. If they contain clearly unrelated changes (e.
 
 If the user wants a combined description, organize the summary to clearly separate the concerns.
 
-
 ## Creating the PR
-
 
 Always create PRs as **drafts** unless the user explicitly asks for a ready PR. Use the `--draft` flag:
 
@@ -137,15 +114,11 @@ Always create PRs as **drafts** unless the user explicitly asks for a ready PR. 
 gh pr create --draft --title "Short, descriptive title" --body "$(cat <<'EOF'
 <1-3 sentences: what improved and why this matters>
 
-
 ## Details
-
 
 - [ImportantFile.php](https://github.com/<owner>/<repo>/blob/<branch>/path/to/ImportantFile.php) - why reviewers should look here
 
-
 ## Reviewer Setup
-
 
 In this PR vs `origin/main`, changes were made in dependencies and frontend assets. You likely need to run:
 
@@ -160,9 +133,7 @@ EOF
 
 ```
 
-
 ## Common Mistakes to Avoid
-
 
 - Writing a commit-by-commit changelog instead of a summary.
 - Opening with a `## Summary` heading.

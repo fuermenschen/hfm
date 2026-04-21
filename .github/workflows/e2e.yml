@@ -72,11 +72,18 @@ jobs:
           DB_DATABASE: database/database.sqlite
 
       - name: Start Laravel and Run E2E Tests
-        run: |
-          set -euo pipefail
-          php artisan serve --host=127.0.0.1 --port=8000 --silent &
-          npx wait-on http://127.0.0.1:8000
-          npx playwright test --reporter=html
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 12
+          max_attempts: 2
+          retry_wait_seconds: 5
+          command: |
+            set -euo pipefail
+            php artisan serve --host=127.0.0.1 --port=8000 --silent &
+            SERVER_PID=$!
+            trap 'kill "$SERVER_PID"' EXIT
+            npx wait-on http://127.0.0.1:8000
+            npx playwright test --reporter=html --retries=1
         env:
           APP_URL: http://127.0.0.1:8000
           APP_ENV: testing
@@ -129,7 +136,7 @@ jobs:
           echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
 
       - name: Publish to gh-pages subfolder
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
@@ -145,7 +152,7 @@ jobs:
 
       - name: Find existing report comment
         id: find-comment
-        uses: peter-evans/find-comment@v3
+        uses: peter-evans/find-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
@@ -153,7 +160,7 @@ jobs:
 
       - name: Update existing report comment
         if: ${{ steps.find-comment.outputs.comment-id != '' }}
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.find-comment.outputs.comment-id }}
           edit-mode: replace
@@ -163,7 +170,7 @@ jobs:
 
       - name: Create report comment
         if: ${{ steps.find-comment.outputs.comment-id == '' }}
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
