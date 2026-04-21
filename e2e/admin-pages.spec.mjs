@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 
 const adminRoutes = [
@@ -10,25 +10,26 @@ const adminRoutes = [
     "/admin/einstellungen",
 ];
 
-function run(command) {
-    return execSync(command, { stdio: ["ignore", "pipe", "inherit"], encoding: "utf8" }).trim();
+function runArtisan(args) {
+    return execFileSync("php", ["artisan", ...args], {
+        stdio: ["ignore", "pipe", "inherit"],
+        encoding: "utf8",
+    }).trim();
 }
 
 function ensureSeededDatabase() {
-    const userCount = Number.parseInt(
-        run('php artisan tinker --execute="echo App\\\\Models\\\\User::query()->count();"'),
-        10,
-    );
+    const userCount = Number.parseInt(runArtisan(["tinker", "--execute=echo App\\Models\\User::query()->count();"]), 10);
 
     if (Number.isNaN(userCount) || userCount === 0) {
-        run("php artisan db:seed --no-interaction");
+        runArtisan(["db:seed", "--no-interaction"]);
     }
 }
 
 function signedAdminLoginUrl() {
-    return run(
-        'php artisan tinker --execute=\'$user = App\\Models\\User::query()->firstOrFail(); echo Illuminate\\Support\\Facades\\URL::temporarySignedRoute("login-uuid", now()->addMinutes(30), ["uuid" => $user->uuid]);\'',
-    );
+    return runArtisan([
+        "tinker",
+        '--execute=$user = App\\Models\\User::query()->firstOrFail(); echo Illuminate\\Support\\Facades\\URL::temporarySignedRoute("login-uuid", now()->addMinutes(30), ["uuid" => $user->uuid]);',
+    ]);
 }
 
 async function waitForImagesAndIdle(page) {
