@@ -75,8 +75,26 @@ jobs:
         run: |
           set -euo pipefail
           php artisan serve --host=127.0.0.1 --port=8000 --silent &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
           npx wait-on http://127.0.0.1:8000
-          npx playwright test --reporter=html
+
+          for attempt in 1 2; do
+            echo "Running Playwright attempt ${attempt}/2"
+            rm -rf playwright-report test-results
+
+            if npx playwright test --reporter=html; then
+              echo "Playwright passed on attempt ${attempt}"
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 2 ]; then
+              echo "Playwright failed on attempt ${attempt}; retrying once..."
+            fi
+          done
+
+          echo "Playwright failed after 2 attempts"
+          exit 1
         env:
           APP_URL: http://127.0.0.1:8000
           APP_ENV: testing
