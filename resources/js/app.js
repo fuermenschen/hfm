@@ -52,10 +52,16 @@ document.addEventListener("livewire:navigated", () => {
     initHeroLqip();
     const hash = window.location.hash;
     if (hash) {
-        const el = document.querySelector(hash);
-        if (el) {
+        let hashId = "";
+        try {
+            hashId = decodeURIComponent(hash.slice(1));
+        } catch {
+            hashId = "";
+        }
+        const element = hashId ? document.getElementById(hashId) : null;
+        if (element) {
             setTimeout(() => {
-                el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+                element.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
             }, 100);
         }
     }
