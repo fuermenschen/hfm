@@ -1,5 +1,29 @@
 import "./bootstrap";
 
+function sanitizeImageSrc(rawValue) {
+    if (typeof rawValue !== "string" || rawValue.trim() === "") {
+        return null;
+    }
+
+    let url;
+    try {
+        url = new URL(rawValue, window.location.origin);
+    } catch {
+        return null;
+    }
+
+    const isAllowedProtocol = url.protocol === "http:" || url.protocol === "https:";
+    if (!isAllowedProtocol) {
+        return null;
+    }
+
+    if (url.origin !== window.location.origin) {
+        return null;
+    }
+
+    return url.toString();
+}
+
 function hasUnsavedAdminSettingsChanges() {
     if (!window.location.pathname.startsWith("/admin/einstellungen")) {
         return false;
@@ -29,16 +53,22 @@ function initHeroLqip(scope = document) {
         if (!fullSrc) {
             return;
         }
+
+        const safeFullSrc = sanitizeImageSrc(fullSrc);
+        if (!safeFullSrc) {
+            return;
+        }
+
         const loader = new Image();
         loader.decoding = "async";
         loader.onload = () => {
-            full.src = fullSrc;
+            full.src = safeFullSrc;
             // Wait a microtask to ensure DOM applies src
             requestAnimationFrame(() => {
                 hero.classList.add("is-loaded");
             });
         };
-        loader.src = fullSrc;
+        loader.src = safeFullSrc;
     });
 }
 
