@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Validate lockfile consistency
         run: |
@@ -42,6 +44,7 @@ jobs:
           echo "Lockfile consistency check passed."
 
   composer-audit:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -55,6 +58,9 @@ jobs:
 
       - name: Validate composer files
         run: composer validate --strict --no-check-publish
+
+      - name: Add Flux Credentials Loaded From ENV
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
       - name: Audit Composer advisories (fail on medium+)
         run: |
