@@ -4,6 +4,32 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.github/copilot-instructions.md'
+      - '.github/dependabot.yml'
+      - '.github/skills/**'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CONVENTIONS.md'
+      - 'DEVELOPMENT_SETUP.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+      - '.editorconfig'
+      - '.idea/**'
+      - '.vscode/**'
+      - '.junie/**'
+      - '.ai/**'
+      - '.agents/**'
+      - 'docs/**'
+      - 'e2e/**'
+      - 'e2e-results/**'
+      - 'playwright-report/**'
+      - '.phpunit.result.cache'
+      - '.prettierignore'
+      - '.prettierrc'
+      - 'phpstan.neon'
+      - 'phpunit.xml'
   workflow_dispatch:
 
 permissions:
