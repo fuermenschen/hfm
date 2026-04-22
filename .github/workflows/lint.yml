@@ -41,7 +41,7 @@ jobs:
         run: vendor/bin/pint
 
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         with:
           commit_message: fix code style
