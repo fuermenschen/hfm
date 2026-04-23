@@ -68,44 +68,63 @@
       `location_city` (required), `location_url` (nullable).
     - `is_published` (`boolean`, default `false`) to control whether an event is publicly visible/eligible as current.
     - `content` (`json`, nullable) for event-scoped rich text (markdown) snippets used on public pages (hero copy,
-      homepage intro/body, FAQ snippets, SEO text, invoice metadata fallback text), with safe rendering and application
+      homepage intro/body, SEO text, invoice metadata fallback text), with safe rendering and application
       fallbacks.
     - timestamps.
 
-2. **`faqs`** (new)
-    - `id`, nullable `donation_event_id` FK, `audience`, `question`, `answer`, `sort_order`, `is_published`, timestamps.
-    - `donation_event_id = null` means globally valid FAQ; non-null means event-specific FAQ.
+2. **`partners`** (evolved, global catalog model)
+    - Existing table becomes global identity/content: `id`, `name`, `logo_light_path`, `logo_dark_path`,
+      `beneficiary_blurb`, `url`, timestamps.
+    - Event membership and event-specific presentation move to pivot `donation_event_partner`.
 
-3. **`external_users`** (new, replaces separate person identity concerns)
+3. **`sponsors`** (new, global catalog model)
+    - `id`, `name`, `description`, `logo_path`, `url`, timestamps.
+    - Event membership and event-specific presentation/funding metadata move to pivot `donation_event_sponsor`.
+
+4. **`faqs`** (new, reusable content model)
+    - `id`, `title`, `content_md`, timestamps.
+    - Event membership and event-specific ordering/group/publication move to pivot `donation_event_faq`.
+    - FAQs without any pivot rows are treated as globally visible fallback FAQs.
+
+5. **`donation_event_partner`** (new pivot)
+    - `donation_event_id`, `partner_id`, `sort_order`, `is_published`, timestamps.
+
+6. **`donation_event_sponsor`** (new pivot)
+    - `donation_event_id`, `sponsor_id`, `size`, `contribution_text`, `sort_order`, `is_published`, timestamps.
+
+7. **`donation_event_faq`** (new pivot)
+    - `donation_event_id`, `faq_id`, `group`, `sort_order`, `is_published`, timestamps.
+
+8. **`donation_event_sport_type`** (new pivot)
+    - `donation_event_id`, `sport_type_id`, `sort_order`, `is_enabled`, timestamps.
+
+9. **`external_users`** (new, replaces separate person identity concerns)
     - Represents a real-world external person (today split across `athletes` and `donors`).
     - Fields: `id`, `first_name`, `last_name`, `address`, `zip_code`, `city`, `country_of_residence`, `phone_number`,
       `email`, `email_verified_at`, timestamps.
     - Optional: `legacy_athlete_id`, `legacy_donor_id` (temporary migration trace columns).
 
-4. **`external_user_auth_identities`** (new)
+10. **`external_user_auth_identities`** (new)
     - For secure, flexible auth bootstraps + future magic links.
     - Fields: `id`, `external_user_id`, `type` (`static_qr`, `magic_link`, etc.), `token_hash`, `expires_at`,
       `last_used_at`, `revoked_at`, timestamps.
     - Never store raw token beyond creation response (hash only).
 
-5. **`athlete_registrations`** (new, event participation)
+11. **`athlete_registrations`** (new, event participation)
     - `id`, `donation_event_id` FK, `external_user_id` FK,
     - `sport_type_id`, `partner_id` (nullable), `rounds_estimated`, `rounds_done`, `comment`, `verified`,
     - optional `public_id` (event-local), timestamps.
 
-6. **`donations` (evolved)**
+12. **`donations` (evolved)**
     - Keep table name.
     - `id`, `donation_event_id` FK, `donor_external_user_id` FK,
     - target: `athlete_registration_id` FK nullable OR `group_id` FK nullable,
     - pledge fields: `amount_per_round`, `amount_min`, `amount_max`, `comment`, `verified`, timestamps.
 
-7. **`donation_event_partner`** (new pivot)
-    - `donation_event_id`, `partner_id`, optional display metadata.
-
-8. **`groups`** (new, event scoped)
+13. **`groups`** (new, event scoped)
     - `id`, `donation_event_id`, `name`, `description`, timestamps.
 
-9. **`group_memberships`** (new)
+14. **`group_memberships`** (new)
     - `id`, `group_id`, `athlete_registration_id`, timestamps.
 
 ### Relationships summary
@@ -116,8 +135,9 @@
 - `Donation belongsTo DonationEvent`
 - `Donation belongsTo AthleteRegistration OR Group` (XOR)
 - `DonationEvent belongsToMany Partner` through `donation_event_partner`
-- `DonationEvent hasMany Faq`
-- `Faq belongsTo DonationEvent` (nullable)
+- `DonationEvent belongsToMany Sponsor` through `donation_event_sponsor`
+- `DonationEvent belongsToMany Faq` through `donation_event_faq`
+- `DonationEvent belongsToMany SportType` through `donation_event_sport_type`
 - `DonationEvent hasMany Group`
 - `Group belongsToMany AthleteRegistration` through `group_memberships`
 
@@ -125,13 +145,16 @@
 
 - **Uniqueness**
     - `donation_events.slug` unique.
-    - `faqs`: unique (`donation_event_id`, `audience`, `sort_order`) to keep ordering stable within each event/audience
-      bucket.
+    - `partners.name` unique (global catalog identity).
+    - `sponsors.name` unique (global catalog identity).
+    - `donation_event_partner`: unique (`donation_event_id`, `partner_id`) and unique (`donation_event_id`, `sort_order`).
+    - `donation_event_sponsor`: unique (`donation_event_id`, `sponsor_id`) and unique (`donation_event_id`, `sort_order`).
+    - `donation_event_faq`: unique (`donation_event_id`, `faq_id`) and unique (`donation_event_id`, `group`, `sort_order`).
+    - `donation_event_sport_type`: unique (`donation_event_id`, `sport_type_id`) and unique (`donation_event_id`, `sort_order`).
     - `external_users.email` unique (or unique per normalized email; if historical duplicates exist, resolve in
       migration phase).
         - `athlete_registrations`: unique (`donation_event_id`, `external_user_id`).
         - `groups`: unique (`donation_event_id`, `name`).
-        - `donation_event_partner`: unique (`donation_event_id`, `partner_id`).
         - `group_memberships`: unique (`group_id`, `athlete_registration_id`).
     - `donations`: unique (`donor_external_user_id`, `donation_event_id`, `athlete_registration_id`) when athlete target
       is used; unique (`donor_external_user_id`, `donation_event_id`, `group_id`) when group target is used.
@@ -145,6 +168,12 @@
       `(athlete_registration_id IS NOT NULL AND group_id IS NULL) OR (athlete_registration_id IS NULL AND group_id IS NOT NULL)`).
     - DB check: `donations.donation_event_id` must match target event (enforced in app + migration validation; DB-level
       via trigger if needed).
+    - App check (incremental): equal-split selection is controlled by `donation_events.has_equal_split_option`; when
+      selected, athlete registration stores `partner_id = null`.
+    - App check: `athlete_registrations.partner_id` (if not null) must be linked to the same event through
+      `donation_event_partner`.
+    - App check: `athlete_registrations.sport_type_id` must be enabled for the same event through
+      `donation_event_sport_type`.
 
 - **Indexes**
     - All FKs indexed.
@@ -152,7 +181,11 @@
       `donation_events(athlete_registration_closes_at)`, `donation_events(donor_registration_closes_at)`.
     - Lookups: `athlete_registrations(donation_event_id, verified)`,
       `donations(donation_event_id, donor_external_user_id)`,
-      `external_user_auth_identities(token_hash, revoked_at, expires_at)`.
+      `external_user_auth_identities(token_hash, revoked_at, expires_at)`,
+      `donation_event_partner(donation_event_id, is_published, sort_order)`,
+      `donation_event_sponsor(donation_event_id, is_published, sort_order)`,
+      `donation_event_faq(donation_event_id, group, is_published, sort_order)`,
+      `donation_event_sport_type(donation_event_id, is_enabled, sort_order)`.
 
 ### Deletion / referential integrity
 
@@ -168,12 +201,12 @@
       deleted if they are used in any donation or membership.
     - `donations` are never cascaded‑deleted via any parent FK; deletion is restricted once created (application‑level
       and DB‑level).
-- **Foreign key strategy (configuration / link tables)**
-    - Configuration/link tables that do not themselves hold financial records (e.g. `donation_event_partner`) may use
-      `ON DELETE CASCADE` on their `donation_event_id` FK so that links are removed automatically when an unused event
-      is deleted.
-    - Where a configuration/link table is referenced by financial data (directly or indirectly), its FKs towards those
-      financial tables must use `ON DELETE RESTRICT`.
+- **Foreign key strategy (configuration / content tables)**
+    - Catalog/content identities (`partners`, `sponsors`, `faqs`, `sport_types`) are global and should not depend on
+      a single event FK.
+    - Event linkage/configuration is stored in pivots (`donation_event_partner`, `donation_event_sponsor`,
+      `donation_event_faq`, `donation_event_sport_type`) and may use `ON DELETE CASCADE` from `donation_events` to
+      clear event-scoped configuration rows.
 - **External users and identities**
     - Prefer soft-deletes for `external_users`; hard delete only before first production usage or with a strict
       compliance workflow.
@@ -195,21 +228,34 @@
 2. Prepare idempotent migration command with `--dry-run` and report output.
 3. Prepare explicit historical event date mapping source (from known years currently hardcoded in views/content).
 
-### Phase 1 — Expand schema
+### Phase 1 — Incremental content-model rollout (model-first)
 
-1. Create: `donation_events`, `faqs`, `external_users`, `external_user_auth_identities`, `athlete_registrations`,
-   `donation_event_partner`, `groups`, `group_memberships`.
+1. Create/extend event-scoped content models first (independent from identity migration):
+    - create global catalogs: `sponsors`, `faqs` and evolve `partners` into a global catalog,
+    - create event pivots: `donation_event_partner`, `donation_event_sponsor`, `donation_event_faq`,
+      `donation_event_sport_type`.
+    - add `donation_events.has_equal_split_option` (default `true`) and allow `athletes.partner_id = null` for
+      equal-split selections.
+2. Keep compatibility behavior:
+    - sponsor rendering uses event pivot rows; sponsor master data stays global,
+    - faq rendering uses event pivot rows plus global fallback FAQs without event links,
+    - if equal split is enabled for an event, registration offers "Alle zu gleichen Teilen" and persists `partner_id = null`.
+3. Keep old hardcoded/fallback content in place until admin data entry for the new models is complete.
+
+### Phase 2 — Expand schema for identity/financial refactor
+
+1. Create: `external_users`, `external_user_auth_identities`, `athlete_registrations`, `groups`, `group_memberships`.
 2. Extend `donations` with nullable `donation_event_id`, `donor_external_user_id`, `athlete_registration_id`,
    `group_id`.
 3. Keep old columns/tables for compatibility during transition.
 
-### Phase 2 — Seed historical events
+### Phase 3 — Seed historical events
 
 1. Create one `donation_events` row per historical year.
 2. If exact times are unknown for old events, store inferred defaults directly in `starts_at` / `ends_at` and keep
    migration-time provenance in migration logs/reports (not in event JSON columns).
 
-### Phase 3 — Build external identity map (`athletes` + `donors` → `external_users`)
+### Phase 4 — Build external identity map (`athletes` + `donors` → `external_users`)
 
 1. Build an index of normalized emails across `athletes` and `donors` (note: only `athletes.email` is constrained
    unique; `donors.email` may be duplicated).
@@ -225,7 +271,7 @@
    stable attributes (e.g. name, address, optional phone).
 5. Persist a mapping table (`legacy_athlete_id` / `legacy_donor_id` → `external_user_id`) or a dedicated map table.
 
-### Phase 4 — Backfill participations and donations
+### Phase 5 — Backfill participations and donations
 
 1. Determine the `donation_event` for each legacy athlete:
     - If all legacy data belongs to a single event, create one canonical `donation_events` row and assign all legacy
@@ -241,11 +287,13 @@
     - map `athlete_id` to `athlete_registration_id`,
     - set `donation_event_id` from the registration’s event (`athlete_registrations.donation_event_id`),
     - keep `group_id = null`.
-4. Fill `donation_event_partner` using the same mapping as in step 1: for each `donation_event_id`, take the distinct
-   `partner_id` values from the associated legacy athletes / registrations and insert `(donation_event_id, partner_id)`
-   rows.
+4. Backfill event pivots from legacy/hardcoded data:
+    - `donation_event_partner` rows for event-specific partner visibility/order,
+    - `donation_event_sponsor` rows for event-specific sponsor size/order/contribution text,
+    - `donation_event_faq` rows for event-specific FAQ grouping/order/publication,
+    - `donation_event_sport_type` rows for event-specific sport type availability/order.
 
-### Phase 5 — Backfill auth identities
+### Phase 6 — Backfill auth identities
 
 1. Convert legacy static tokens (`athletes.login_token`, `donors.login_token`) into `external_user_auth_identities`
    records (`type=static_qr`, long expiry or policy-based expiry).
@@ -266,7 +314,7 @@
 3. If one user had both tokens, keep both (each as its own `external_user_auth_identities` row with its own
    `token_hash`) temporarily and mark one canonical for newly generated links.
 
-### Phase 6 — Enforce constraints and cutover
+### Phase 7 — Enforce constraints and cutover
 
 1. Switch application to new reads/writes (event + external user scoped).
 2. Enforce NOT NULL + unique + XOR constraints.
@@ -317,6 +365,8 @@
 - Replace split “athlete view” vs “donor view” navigation with unified external portal sections.
 - If user has both roles, show both modules in one account context.
 - Add event switcher/selector for historical views where appropriate.
+- Incremental note: registration form rewrites (`BecomeAthleteForm`, `BecomeDonorForm`) are deferred to a dedicated
+  follow-up refactor; current rollout may include only minimal compatibility changes.
 
 ### Exports/invoicing impacts
 
@@ -357,11 +407,19 @@ write operations without conflating admin and external privileges.
 ### Minimal test additions/updates
 
 1. **Schema/constraint tests**
+    - `partners`, `sponsors`, `faqs`, `sport_types` are global catalog models.
+    - Event pivot constraints hold for `donation_event_partner`, `donation_event_sponsor`, `donation_event_faq`,
+      `donation_event_sport_type`.
+    - `donation_events.has_equal_split_option` defaults to true and `athletes.partner_id` supports null for equal split.
     - `external_users` uniqueness/dedup behavior.
     - `donations` target XOR constraint.
     - `athlete_registrations` unique per (`event`, `external_user`).
 
 2. **Feature tests**
+    - Home "Wer profitiert" renders event partners only from DB configuration.
+    - Athlete registration offers "Alle zu gleichen Teilen" when event flag is enabled and stores `partner_id = null`.
+    - Sponsor section renders sponsors configured for the event (with event-specific pivot metadata like `size`).
+    - FAQ page renders event FAQs in group/sort order, plus global fallback FAQs not linked to any event.
     - External login resolves one portal for dual-role user.
     - External guard cannot access admin routes; internal guard cannot access external write endpoints unless explicitly
       allowed.
@@ -402,14 +460,15 @@ write operations without conflating admin and external privileges.
 
 ## Recommendation
 
-Adopt **multi-event + unified external identity**:
+Adopt **incremental multi-event rollout + unified external identity**:
 
-- Create `donation_events` and `athlete_registrations` for correct event scoping.
-- Replace split athlete/donor person identity with `external_users`.
-- Keep admins in `users` under internal guard; use separate external guard for participant-facing auth.
-- Preserve QR convenience, but treat static tokens as bootstrap and require short-lived auth for write actions.
+1. Deliver content models first (`partners`, `sponsors`, `faqs`, `sport_types`) plus event pivots to remove hardcoded
+   page content and keep scope small.
+2. Then continue with identity/financial migration (`external_users`, `athlete_registrations`, donation refactor).
+3. Keep admins in `users` under internal guard; use separate external guard for participant-facing auth.
+4. Preserve QR convenience, but treat static tokens as bootstrap and require short-lived auth for write actions.
 
-**Risk**: Medium-High (identity merge + auth refactor + migration quality).
-**Effort**: High (schema, migration tooling, route/auth refactor, UI portal unification).
-**Why this is still recommended**: it fixes the core dual-role UX/security problem early, and prevents compounding
-complexity when write operations (profile changes, confirmations, invitations) are introduced.
+**Risk**: Medium in early increments, rising to Medium-High for identity merge and auth refactor.
+**Effort**: High overall, but with lower-risk slices that are deployable independently.
+**Why this is recommended**: it reduces migration blast radius now while still converging on the same long-term
+multi-event + unified external identity architecture.
