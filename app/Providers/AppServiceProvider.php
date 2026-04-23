@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Actions\GetDashboardDataAction;
+use App\Models\Faq;
+use App\Models\Partner;
+use App\Models\Sponsor;
 use App\Services\AthleteDocumentService;
 use App\Services\CurrentDonationEventService;
 use App\Services\DonationService;
@@ -56,8 +59,78 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view): void {
             $eventService = app(CurrentDonationEventService::class);
-            $view->with('currentDonationEvent', $eventService->current());
+            $currentDonationEvent = $eventService->current();
+
+            $currentEventPartners = collect();
+            $currentEventSponsors = collect();
+            $currentEventFaqs = collect();
+
+            if ($currentDonationEvent !== null) {
+                $currentEventPartners = Partner::query()
+                    ->join('donation_event_partner', 'donation_event_partner.partner_id', '=', 'partners.id')
+                    ->where('donation_event_partner.donation_event_id', $currentDonationEvent->id)
+                    ->where('donation_event_partner.is_published', true)
+                    ->select('partners.*')
+                    ->orderBy('donation_event_partner.sort_order')
+                    ->orderBy('name')
+                    ->get();
+
+                $currentEventSponsors = Sponsor::query()
+                    ->join('donation_event_sponsor', 'donation_event_sponsor.sponsor_id', '=', 'sponsors.id')
+                    ->where('donation_event_sponsor.donation_event_id', $currentDonationEvent->id)
+                    ->where('donation_event_sponsor.is_published', true)
+                    ->select('sponsors.*')
+                    ->selectRaw('donation_event_sponsor.size as size')
+                    ->orderBy('donation_event_sponsor.sort_order')
+                    ->orderBy('sponsors.name')
+                    ->get();
+
+                $currentEventFaqs = Faq::query()
+                    ->leftJoin('donation_event_faq', function ($join) use ($currentDonationEvent): void {
+                        $join->on('donation_event_faq.faq_id', '=', 'faqs.id')
+                            ->where('donation_event_faq.donation_event_id', '=', $currentDonationEvent->id);
+                    })
+                    ->where(function ($query) use ($currentDonationEvent): void {
+                        $query
+                            ->whereExists(function ($subquery) use ($currentDonationEvent): void {
+                                $subquery
+                                    ->selectRaw('1')
+                                    ->from('donation_event_faq as current_event_faq')
+                                    ->whereColumn('current_event_faq.faq_id', 'faqs.id')
+                                    ->where('current_event_faq.donation_event_id', $currentDonationEvent->id)
+                                    ->where('current_event_faq.is_published', true);
+                            })
+                            ->orWhereNotExists(function ($subquery): void {
+                                $subquery
+                                    ->selectRaw('1')
+                                    ->from('donation_event_faq as any_event_faq')
+                                    ->whereColumn('any_event_faq.faq_id', 'faqs.id');
+                            });
+                    })
+                    ->select('faqs.*')
+                    ->selectRaw('COALESCE(donation_event_faq.`group`, ?) as group_name', ['general'])
+                    ->selectRaw('COALESCE(donation_event_faq.sort_order, 9999) as group_sort_order')
+                    ->orderBy('group_name')
+                    ->orderBy('group_sort_order')
+                    ->orderBy('faqs.title')
+                    ->get();
+            } else {
+                // No active event: show globally visible FAQs (those with no pivot entry for any event).
+                $currentEventFaqs = Faq::query()
+                    ->leftJoin('donation_event_faq', 'donation_event_faq.faq_id', '=', 'faqs.id')
+                    ->whereNull('donation_event_faq.id')
+                    ->select('faqs.*')
+                    ->selectRaw('? as group_name', ['general'])
+                    ->selectRaw('9999 as group_sort_order')
+                    ->orderBy('faqs.title')
+                    ->get();
+            }
+
+            $view->with('currentDonationEvent', $currentDonationEvent);
             $view->with('currentDonationEventIssue', $eventService->issue());
+            $view->with('currentEventPartners', $currentEventPartners);
+            $view->with('currentEventSponsors', $currentEventSponsors);
+            $view->with('currentEventFaqs', $currentEventFaqs);
         });
 
         // Global logging for notifications and mails
