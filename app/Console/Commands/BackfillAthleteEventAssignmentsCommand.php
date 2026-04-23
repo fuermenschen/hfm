@@ -151,6 +151,10 @@ class BackfillAthleteEventAssignmentsCommand extends Command
             $recommended[] = 'athlete-assignments';
         }
 
+        if ($this->hasPendingAssetCopies()) {
+            $recommended[] = 'content-assets';
+        }
+
         $eventPartnerCount = (int) DB::table('donation_event_partner')->count();
         if ($eventPartnerCount === 0) {
             $recommended[] = 'content-partners';
@@ -195,43 +199,7 @@ class BackfillAthleteEventAssignmentsCommand extends Command
         $this->newLine();
         $this->components->info('Part: content-assets');
 
-        /** @var array<int, array{source: string, target: string}> $sourceEntries */
-        $sourceEntries = $this->canonicalAssetSourcePaths();
-
-        if (Schema::hasTable('partners')) {
-            $partnerEntries = DB::table('partners')
-                ->whereNotNull('logo_light_filename')
-                ->pluck('logo_light_filename')
-                ->merge(DB::table('partners')->whereNotNull('logo_dark_filename')->pluck('logo_dark_filename'))
-                ->filter(fn (mixed $f): bool => is_string($f) && $f !== '')
-                ->map(fn (string $filename): array => ['source' => 'resources/images/'.$filename, 'target' => 'partners'])
-                ->values()
-                ->all();
-
-            $sourceEntries = array_merge($sourceEntries, $partnerEntries);
-        }
-
-        if (Schema::hasTable('sponsors')) {
-            $sponsorEntries = DB::table('sponsors')
-                ->whereNotNull('logo_filename')
-                ->pluck('logo_filename')
-                ->filter(fn (mixed $f): bool => is_string($f) && $f !== '')
-                ->map(fn (string $filename): array => ['source' => 'resources/images/sponsor_logos/'.$filename, 'target' => 'sponsors'])
-                ->values()
-                ->all();
-
-            $sourceEntries = array_merge($sourceEntries, $sponsorEntries);
-        }
-
-        // Deduplicate by source path
-        $seen = [];
-        $uniqueEntries = [];
-        foreach ($sourceEntries as $entry) {
-            if (! isset($seen[$entry['source']])) {
-                $seen[$entry['source']] = true;
-                $uniqueEntries[] = $entry;
-            }
-        }
+        $uniqueEntries = $this->assetSourceEntries();
 
         File::ensureDirectoryExists(storage_path('app/public/partners'));
         File::ensureDirectoryExists(storage_path('app/public/sponsors'));
@@ -279,6 +247,79 @@ class BackfillAthleteEventAssignmentsCommand extends Command
         $this->line('Assets missing at source: '.$missingSource);
 
         return true;
+    }
+
+    protected function hasPendingAssetCopies(): bool
+    {
+        foreach ($this->assetSourceEntries() as $entry) {
+            $sourceAbsolutePath = base_path($entry['source']);
+            $targetAbsolutePath = storage_path('app/public/'.$entry['target'].'/'.basename($entry['source']));
+
+            if (! File::exists($sourceAbsolutePath)) {
+                continue;
+            }
+
+            if (! File::exists($targetAbsolutePath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, array{source: string, target: string}>
+     */
+    protected function assetSourceEntries(): array
+    {
+        /** @var array<int, array{source: string, target: string}> $sourceEntries */
+        $sourceEntries = $this->canonicalAssetSourcePaths();
+
+        if (Schema::hasTable('partners')) {
+            $partnerEntries = DB::table('partners')
+                ->whereNotNull('logo_light_filename')
+                ->pluck('logo_light_filename')
+                ->merge(DB::table('partners')->whereNotNull('logo_dark_filename')->pluck('logo_dark_filename'))
+                ->filter(fn (mixed $f): bool => is_string($f) && $f !== '')
+                ->map(fn (string $filename): array => ['source' => 'resources/images/'.$filename, 'target' => 'partners'])
+                ->values()
+                ->all();
+
+            $sourceEntries = array_merge($sourceEntries, $partnerEntries);
+        }
+
+        if (Schema::hasTable('sponsors')) {
+            $sponsorEntries = DB::table('sponsors')
+                ->whereNotNull('logo_filename')
+                ->pluck('logo_filename')
+                ->filter(fn (mixed $f): bool => is_string($f) && $f !== '')
+                ->map(fn (string $filename): array => ['source' => 'resources/images/sponsor_logos/'.$filename, 'target' => 'sponsors'])
+                ->values()
+                ->all();
+
+            $sourceEntries = array_merge($sourceEntries, $sponsorEntries);
+        }
+
+        return $this->deduplicateAssetSourceEntries($sourceEntries);
+    }
+
+    /**
+     * @param  array<int, array{source: string, target: string}>  $sourceEntries
+     * @return array<int, array{source: string, target: string}>
+     */
+    protected function deduplicateAssetSourceEntries(array $sourceEntries): array
+    {
+        $seen = [];
+        $uniqueEntries = [];
+        foreach ($sourceEntries as $entry) {
+            $key = $entry['target'].'|'.$entry['source'];
+            if (! isset($seen[$key])) {
+                $seen[$key] = true;
+                $uniqueEntries[] = $entry;
+            }
+        }
+
+        return $uniqueEntries;
     }
 
     /**
