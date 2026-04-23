@@ -54,7 +54,7 @@ class Results extends Component
     {
         // One initial query for ALL athletes with needed relations
         $allAthletes = Athlete::query()
-            ->with(['sportType:id,name', 'partner:id,name', 'donations'])
+            ->with(['sportType:id,name', 'partner:id,name', 'donationEvent:id,has_equal_split_option', 'donations'])
             ->get();
 
         // Totals (prefer in-memory where possible)
@@ -91,7 +91,7 @@ class Results extends Component
             })
             ->sortKeys();
 
-        // Special rule: If there's a partner named 'alle zu gleichen Teilen', split evenly among others.
+        // Legacy special rule: If there's a partner named 'alle zu gleichen Teilen', split evenly among others.
         $equalShareName = 'alle zu gleichen Teilen';
         if ($perPartner->has($equalShareName)) {
             $amountToSplit = (float) $perPartner->get($equalShareName, 0.0);
@@ -107,6 +107,65 @@ class Results extends Component
                 $perPartner = collect();
             }
         }
+
+        // New rule: for each event with equal split enabled, distribute those donations
+        // only among the partners active in that event (i.e. athletes with a partner in that event).
+        // This prevents cross-event bleed when multiple events have different partner sets.
+        $allAthletes
+            ->groupBy('donation_event_id')
+            ->each(function ($eventAthletes, mixed $eventId) use (&$perPartner, $donations, $donationService, $partners): void {
+                if (! $eventId) {
+                    return;
+                }
+
+                $event = $eventAthletes->first()?->donationEvent;
+                if ($event === null || ! (bool) $event->has_equal_split_option) {
+                    return;
+                }
+
+                // Athletes in this event who selected "equal split" (no partner assigned)
+                $equalSplitAthleteIds = array_flip(
+                    $eventAthletes
+                        ->whereNull('partner_id')
+                        ->pluck('id')
+                        ->map(fn (mixed $id): int => (int) $id)
+                        ->all()
+                );
+
+                if ($equalSplitAthleteIds === []) {
+                    return;
+                }
+
+                $eventEqualAmount = $donations
+                    ->filter(fn (Donation $d): bool => isset($equalSplitAthleteIds[(int) $d->athlete_id]))
+                    ->sum(fn (Donation $d): float => $donationService->calculateActualAmount($d));
+
+                if ($eventEqualAmount <= 0.0) {
+                    return;
+                }
+
+                // Only distribute to partners that appear in this event's athlete registrations
+                $eventPartnerNameSet = array_flip(
+                    $eventAthletes
+                        ->pluck('partner_id')
+                        ->filter()
+                        ->unique()
+                        ->map(fn (mixed $id): string => (string) ($partners->get((int) $id) ?? ''))
+                        ->filter(fn (string $name): bool => $name !== '')
+                        ->values()
+                        ->all()
+                );
+
+                $targetCount = count($eventPartnerNameSet);
+                if ($targetCount <= 0) {
+                    return;
+                }
+
+                $share = $eventEqualAmount / $targetCount;
+                $perPartner = $perPartner->map(function (float $amount, string $partnerName) use ($share, $eventPartnerNameSet): float {
+                    return isset($eventPartnerNameSet[$partnerName]) ? $amount + $share : $amount;
+                });
+            });
 
         return [
             'totals' => [

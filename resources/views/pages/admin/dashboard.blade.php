@@ -55,7 +55,7 @@
             @foreach ($partners as $partner)
                 <x-admin.stat-card
                     title="{{ $partner->name }}"
-                    :value="'Fr. '.round($estimatedAmounts[$partner->id], 2)"
+                    :value="'Fr. '.round($estimatedAmounts[$partner->id] ?? 0, 2)"
                     route="admin.donations.index"
                 />
             @endforeach
@@ -71,7 +71,7 @@
             @foreach ($partners as $partner)
                 <x-admin.stat-card
                     title="{{ $partner->name }}"
-                    :value="'Fr. '.round($actualAmounts[$partner->id], 2)"
+                    :value="'Fr. '.round($actualAmounts[$partner->id] ?? 0, 2)"
                     route="admin.donations.index"
                 />
             @endforeach

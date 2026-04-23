@@ -6,6 +6,7 @@ use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Notifications\AdminSomeoneRegistered;
+use App\Services\CurrentDonationEventService;
 use Exception;
 use Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -91,9 +92,10 @@ class BecomeAthleteForm extends Component
     // Partner
     public ?Collection $partners = null;
 
-    #[Validate('required', message: 'Bitte wähle eine:n Partner:in.')]
-    #[Validate('exists:partners,id', message: 'Partner:in existiert nicht.')]
-    public int $partner_id = 0;
+    #[Validate('nullable')]
+    public ?int $partner_id = null;
+
+    public bool $allowEqualSplitOption = true;
 
     // Kommentar
     #[Validate('nullable')]
@@ -126,6 +128,26 @@ class BecomeAthleteForm extends Component
         }
 
         try {
+
+            if ($this->partner_id === null) {
+                Flux::toast(heading: 'Bitte wähle eine Option.', text: 'Wähle eine:n Benefizpartner:in oder "Alle zu gleichen Teilen".', variant: 'danger');
+
+                return;
+            }
+
+            if ($this->partner_id === 0) {
+                if (! $this->allowEqualSplitOption) {
+                    Flux::toast(heading: 'Ungültige Auswahl', text: 'Diese Auswahl ist für den aktuellen Anlass nicht verfügbar.', variant: 'danger');
+
+                    return;
+                }
+
+                $this->partner_id = null;
+            } elseif (! $this->partners?->contains('id', $this->partner_id)) {
+                Flux::toast(heading: 'Ungültige Auswahl', text: 'Die gewählte Partner:in ist für den aktuellen Anlass nicht verfügbar.', variant: 'danger');
+
+                return;
+            }
 
             Athlete::create($this->all());
 
@@ -180,9 +202,22 @@ class BecomeAthleteForm extends Component
     {
         $this->extraFields = new HoneypotData;
 
+        $currentDonationEvent = app(CurrentDonationEventService::class)->current();
+        $this->allowEqualSplitOption = (bool) ($currentDonationEvent?->has_equal_split_option ?? true);
+
         $this->sport_types = SportType::all();
 
-        $this->partners = Partner::all();
+        $this->partners = Partner::query()
+            ->when($currentDonationEvent !== null, function ($query) use ($currentDonationEvent): void {
+                $query
+                    ->join('donation_event_partner', 'donation_event_partner.partner_id', '=', 'partners.id')
+                    ->where('donation_event_partner.donation_event_id', $currentDonationEvent->id)
+                    ->where('donation_event_partner.is_published', true)
+                    ->select('partners.*')
+                    ->orderBy('donation_event_partner.sort_order');
+            })
+            ->orderBy('partners.name')
+            ->get();
     }
 
     public function updating($propertyName): void
