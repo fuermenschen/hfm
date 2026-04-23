@@ -40,63 +40,27 @@ class EventContentFaqsBackfillSeeder extends Seeder
         ];
 
         foreach ($timingRows as $row) {
-            $faq = Faq::query()->updateOrCreate(
-                [
-                    'title' => $row['title'],
-                    'content_md' => $row['content_md'],
-                ],
-                [
-                    'title' => $row['title'],
-                    'content_md' => $row['content_md'],
-                ],
-            );
-
-            DB::table('donation_event_faq')->upsert(
-                [
-                    [
-                        'donation_event_id' => $row['donation_event_id'],
-                        'faq_id' => $faq->id,
-                        'group' => $row['group'],
-                        'sort_order' => $row['sort_order'],
-                        'is_published' => $row['is_published'],
-                        'updated_at' => now(),
-                        'created_at' => now(),
-                    ],
-                ],
-                ['donation_event_id', 'faq_id'],
-                ['group', 'sort_order', 'is_published', 'updated_at'],
+            $this->upsertFaqByEventSlot(
+                eventId: $row['donation_event_id'],
+                group: $row['group'],
+                sortOrder: $row['sort_order'],
+                title: $row['title'],
+                contentMarkdown: $row['content_md'],
+                isPublished: $row['is_published'],
             );
         }
 
         $extractedRows = $this->hardcodedFaqRows();
 
         foreach ($extractedRows as $row) {
-            $faq = Faq::query()->updateOrCreate(
-                [
-                    'title' => $row['title'],
-                    'content_md' => $row['content_md'],
-                ],
-                [
-                    'title' => $row['title'],
-                    'content_md' => $row['content_md'],
-                ],
-            );
-
             foreach ([(int) $eventIds['2025'], (int) $eventIds['2026']] as $eventId) {
-                DB::table('donation_event_faq')->upsert(
-                    [
-                        [
-                            'donation_event_id' => $eventId,
-                            'faq_id' => $faq->id,
-                            'group' => $row['group'],
-                            'sort_order' => $row['sort_order'],
-                            'is_published' => true,
-                            'updated_at' => now(),
-                            'created_at' => now(),
-                        ],
-                    ],
-                    ['donation_event_id', 'faq_id'],
-                    ['group', 'sort_order', 'is_published', 'updated_at'],
+                $this->upsertFaqByEventSlot(
+                    eventId: $eventId,
+                    group: $row['group'],
+                    sortOrder: $row['sort_order'],
+                    title: $row['title'],
+                    contentMarkdown: $row['content_md'],
+                    isPublished: true,
                 );
             }
         }
@@ -119,6 +83,56 @@ class EventContentFaqsBackfillSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
         }
+    }
+
+    protected function upsertFaqByEventSlot(
+        int $eventId,
+        string $group,
+        int $sortOrder,
+        string $title,
+        string $contentMarkdown,
+        bool $isPublished,
+    ): void {
+        $existingPivot = DB::table('donation_event_faq')
+            ->where('donation_event_id', $eventId)
+            ->where('group', $group)
+            ->where('sort_order', $sortOrder)
+            ->first();
+
+        $faqId = is_object($existingPivot) ? (int) $existingPivot->faq_id : null;
+
+        if ($faqId !== null) {
+            Faq::query()
+                ->whereKey($faqId)
+                ->update([
+                    'title' => $title,
+                    'content_md' => $contentMarkdown,
+                    'updated_at' => now(),
+                ]);
+        } else {
+            $faq = Faq::query()->firstOrCreate(
+                ['title' => $title, 'content_md' => $contentMarkdown],
+                ['title' => $title, 'content_md' => $contentMarkdown],
+            );
+
+            $faqId = (int) $faq->id;
+        }
+
+        DB::table('donation_event_faq')->upsert(
+            [
+                [
+                    'donation_event_id' => $eventId,
+                    'faq_id' => $faqId,
+                    'group' => $group,
+                    'sort_order' => $sortOrder,
+                    'is_published' => $isPublished,
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ],
+            ],
+            ['donation_event_id', 'faq_id'],
+            ['group', 'sort_order', 'is_published', 'updated_at'],
+        );
     }
 
     /**
