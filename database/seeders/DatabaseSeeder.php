@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Athlete;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
@@ -53,26 +54,12 @@ class DatabaseSeeder extends Seeder
             'name' => 'Andere (bitte spezifizieren)',
         ]);
 
-        // create partners
-        Partner::create([
-            'name' => 'alle zu gleichen Teilen',
-        ]);
+        DonationEvent::factory(2)->create();
 
-        Partner::create([
-            'name' => 'Brühlgut Stiftung Winterthur',
-        ]);
-
-        Partner::create([
-            'name' => 'Institut Kinderseele Schweiz',
-        ]);
-
-        Partner::create([
-            'name' => 'Tel. 143 - Die Dargebotene Hand',
-        ]);
-
-        $this->call([
-            DonationEventSeeder::class,
-        ]);
+        Partner::query()->create(['name' => 'Partner A']);
+        Partner::query()->create(['name' => 'Partner B']);
+        Partner::query()->create(['name' => 'Partner C']);
+        Partner::query()->create(['name' => 'Partner D']);
 
         // create example data
         if (config('app.env') === 'local') {

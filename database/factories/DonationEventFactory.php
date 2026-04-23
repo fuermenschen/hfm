@@ -17,7 +17,7 @@ class DonationEventFactory extends Factory
      */
     public function definition(): array
     {
-        $year = (int) fake()->unique()->randomElement([2025, 2026, 2027]);
+        $year = (int) fake()->unique()->numberBetween(2030, 2099);
 
         return [
             'slug' => (string) $year,

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Notification;
 /**
  * @property Donation[] $donations
  * @property SportType $sportType
- * @property Partner $partner
+ * @property Partner|null $partner
  * @property DonationEvent|null $donationEvent
  * @property string $privacy_name
  * @property string $full_name

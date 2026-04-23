@@ -7,19 +7,41 @@ use App\Models\DonationEvent;
 use App\Models\Partner;
 use App\Models\SportType;
 use Database\Seeders\DonationEventSeeder;
+use Database\Seeders\EventContentBackfillSeeder;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 it('seeds canonical donation events idempotently', function (): void {
     $this->seed(DonationEventSeeder::class);
     $this->seed(DonationEventSeeder::class);
+    $this->seed(EventContentBackfillSeeder::class);
+    $this->seed(EventContentBackfillSeeder::class);
 
     expect(DonationEvent::query()->count())->toBe(2);
     expect(DonationEvent::query()->orderBy('slug')->pluck('slug')->all())->toBe(['2025', '2026']);
     expect(DonationEvent::query()->where('slug', '2026')->value('location_url'))->toBe('https://s.geo.admin.ch/yat5fpx761jk');
     expect((bool) DonationEvent::query()->where('slug', '2026')->value('is_published'))->toBeTrue();
     expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'hero.copy_md'))->not->toBeNull();
-    expect(data_get(DonationEvent::query()->where('slug', '2025')->firstOrFail()->content, 'faq.general_event_md'))->toContain('13 Uhr bis 18 Uhr');
-    expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'faq.general_event_md'))->toContain('13 Uhr bis 16 Uhr');
+    expect(data_get(DonationEvent::query()->where('slug', '2025')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull();
+    expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull();
+
+    $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
+    $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
+
+    $faq2025 = DB::table('faqs')
+        ->join('donation_event_faq', 'donation_event_faq.faq_id', '=', 'faqs.id')
+        ->where('donation_event_faq.donation_event_id', $event2025->id)
+        ->where('faqs.title', 'Wann und wo findet der Anlass statt?')
+        ->value('faqs.content_md');
+
+    $faq2026 = DB::table('faqs')
+        ->join('donation_event_faq', 'donation_event_faq.faq_id', '=', 'faqs.id')
+        ->where('donation_event_faq.donation_event_id', $event2026->id)
+        ->where('faqs.title', 'Wann und wo findet der Anlass statt?')
+        ->value('faqs.content_md');
+
+    expect($faq2025)->toContain('13 Uhr bis 18 Uhr');
+    expect($faq2026)->toContain('13 Uhr bis 16 Uhr');
 });
 
 it('renders donation events in the admin donation event datatable', function (): void {
@@ -46,6 +68,7 @@ it('renders donation events in the admin donation event datatable', function ():
 
 it('shows athlete event in the admin athlete datatable', function (): void {
     $this->seed(DonationEventSeeder::class);
+    $this->seed(EventContentBackfillSeeder::class);
 
     $sportType = SportType::query()->create(['name' => 'Laufen']);
     $partner = Partner::query()->create(['name' => 'Partner']);
