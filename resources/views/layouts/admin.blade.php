@@ -21,6 +21,24 @@
                 'current' => $thisRoute === 'admin.donation-events.index',
             ],
             [
+                'label' => 'Partner:innen',
+                'route' => 'admin.partners.index',
+                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.742-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.036.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.58-5.965-1.584A6.062 6.062 0 0 1 6 18.75m12 0a5.971 5.971 0 0 0-.94-3.197M6 18.75a5.971 5.971 0 0 1 .94-3.197m0 0a3 3 0 0 1 4.682-2.72m-4.682 2.72A9.094 9.094 0 0 1 3 18.72m9-5.969a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 3a2.25 2.25 0 1 0-4.5 0 2.25 2.25 0 0 0 4.5 0Zm-13.5 0a2.25 2.25 0 1 0-4.5 0 2.25 2.25 0 0 0 4.5 0Z" /></svg>',
+                'current' => $thisRoute === 'admin.partners.index',
+            ],
+            [
+                'label' => 'Sponsor:innen',
+                'route' => 'admin.sponsors.index',
+                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688 0-1.24-.56-1.24-1.248v-6.185c0-.69.552-1.248 1.24-1.248h7.232c.689 0 1.248.558 1.248 1.248v6.185c0 .688-.559 1.248-1.248 1.248H10.34Zm-6.716-1.213a.75.75 0 0 1 0-1.5h3.324a.75.75 0 0 1 0 1.5H3.624Zm0-3.31a.75.75 0 0 1 0-1.5h3.324a.75.75 0 0 1 0 1.5H3.624Zm0-3.31a.75.75 0 0 1 0-1.5h3.324a.75.75 0 0 1 0 1.5H3.624ZM11.5 18.75a.75.75 0 0 1 1.5 0V21a.75.75 0 0 1-1.5 0v-2.25Z" /></svg>',
+                'current' => $thisRoute === 'admin.sponsors.index',
+            ],
+            [
+                'label' => 'FAQs',
+                'route' => 'admin.faqs.index',
+                'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 9.75a3.375 3.375 0 1 1 6.75 0c0 1.36-.793 2.535-1.941 3.085-.9.432-1.434 1.21-1.434 2.165v.093m.008 3h.008M21 12c0 4.97-4.03 9-9 9a8.96 8.96 0 0 1-4.966-1.494L3 21l1.495-4.034A8.96 8.96 0 0 1 3 12c0-4.97 4.03-9 9-9s9 4.03 9 9Z" /></svg>',
+                'current' => $thisRoute === 'admin.faqs.index',
+            ],
+            [
                 'label' => 'Sportler:innen',
                 'route' => 'admin.athletes.index',
                 'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" /></svg>',

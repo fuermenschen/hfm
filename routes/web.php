@@ -89,6 +89,9 @@ Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $
 Route::middleware('auth')->group(function () {
     Route::view('admin', 'pages.admin.dashboard')->name('admin.dashboard');
     Route::view('admin/anlaesse', 'pages.admin.donation-events')->name('admin.donation-events.index');
+    Route::view('admin/partner', 'pages.admin.partners')->name('admin.partners.index');
+    Route::view('admin/sponsoren', 'pages.admin.sponsors')->name('admin.sponsors.index');
+    Route::view('admin/faqs', 'pages.admin.faqs')->name('admin.faqs.index');
     Route::view('admin/sportlerinnen', 'pages.admin.athletes')->name('admin.athletes.index');
     Route::view('admin/spenderinnen', 'pages.admin.donors')->name('admin.donors.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
