@@ -1,0 +1,738 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE_FILE="$ROOT_DIR/docker-compose.upgrade-lab.yml"
+
+TARGET_COMMIT=""
+DUMP_PATH=""
+DUMP_PATH_ABS=""
+AUTO_DEPLOY_STEPS="true"
+MANUAL_COMMANDS_FILE=""
+MANUAL_COMMANDS_FILE_ABS=""
+BASELINE_CHECKLIST_FILE=""
+BASELINE_CHECKLIST_FILE_ABS=""
+TARGET_CHECKLIST_FILE=""
+TARGET_CHECKLIST_FILE_ABS=""
+BASELINE_COMMIT="main"
+RUN_ID="$(date +%Y%m%d%H%M%S)"
+KEEP_RUNNING=0
+PAUSE_AFTER_BASELINE=0
+PAUSE_BEFORE_UPGRADE_CHECKS=0
+UNRESOLVED_EXPORT_PATH=""
+MANUAL_GATE_BLOCKERS=""
+
+usage() {
+    cat <<'EOF'
+Usage:
+  scripts/upgrade-lab --target=<sha-or-branch> --dump-path=<path> [--baseline=<sha-or-branch>] [--auto-deploy-steps=true|false] [--manual-commands-file=<path>] [--baseline-checklist-file=<path>] [--target-checklist-file=<path>] [--run-id=<id>] [--pause-after-baseline] [--pause-before-upgrade-checks] [--keep-running]
+
+Options:
+  --target        Target revision to rehearse after baseline (required)
+  --commit        Alias for --target (kept for compatibility)
+  --dump-path     SQL dump path (required)
+  --baseline      Baseline revision to rehearse first (default: main)
+  --auto-deploy-steps  Execute migrate + backfill + idempotency rerun in target phase (default: true)
+  --manual-commands-file  File with one shell command per line to run in app container after deploy steps
+  --baseline-checklist-file  Manual checklist results for baseline phase (key=value)
+  --target-checklist-file  Manual checklist results for target phase (key=value)
+  --run-id        Run identifier used for project, volume, and report paths
+  --pause-after-baseline  Pause after baseline checks before switching to target
+  --pause-before-upgrade-checks  Pause after upgrade execution before target checks
+  --keep-running  Keep containers and worktree after completion
+  --help          Show this help
+
+Notes:
+  - Reports are written to storage/upgrade-lab/reports/<run-id>/.
+  - Dump source is mandatory; seed mode is intentionally disabled.
+  - WP6 can run target deploy workflow automatically with --auto-deploy-steps=true.
+  - WP6 enforces manual checklists for baseline and target phases.
+  - Mail is routed to Mailpit in the lab stack for login-link checks.
+  - Uses Sail on Linux/macOS when available, otherwise falls back to docker compose.
+EOF
+}
+
+fail() {
+    printf 'ERROR: %s\n' "$1" >&2
+    exit 1
+}
+
+is_sail_supported() {
+    case "$(uname -s)" in
+        Linux*|Darwin*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+is_absolute_path() {
+    local path="$1"
+
+    if [[ "$path" == /* ]]; then
+        return 0
+    fi
+
+    if [[ "$path" =~ ^[A-Za-z]:[\\/].* ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+resolve_path() {
+    local path="$1"
+
+    if is_absolute_path "$path"; then
+        printf '%s' "$path"
+        return
+    fi
+
+    printf '%s/%s' "$ROOT_DIR" "$path"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --target=*) TARGET_COMMIT="${1#*=}" ;;
+        --commit=*) TARGET_COMMIT="${1#*=}" ;;
+        --dump-path=*) DUMP_PATH="${1#*=}" ;;
+        --baseline=*) BASELINE_COMMIT="${1#*=}" ;;
+        --auto-deploy-steps=*) AUTO_DEPLOY_STEPS="${1#*=}" ;;
+        --manual-commands-file=*) MANUAL_COMMANDS_FILE="${1#*=}" ;;
+        --baseline-checklist-file=*) BASELINE_CHECKLIST_FILE="${1#*=}" ;;
+        --target-checklist-file=*) TARGET_CHECKLIST_FILE="${1#*=}" ;;
+        --run-id=*) RUN_ID="${1#*=}" ;;
+        --pause-after-baseline) PAUSE_AFTER_BASELINE=1 ;;
+        --pause-before-upgrade-checks) PAUSE_BEFORE_UPGRADE_CHECKS=1 ;;
+        --keep-running) KEEP_RUNNING=1 ;;
+        --help) usage; exit 0 ;;
+        *) fail "Unknown option: $1" ;;
+    esac
+
+    shift
+done
+
+[[ -n "$TARGET_COMMIT" ]] || fail "--target (or --commit alias) is required"
+
+[[ -n "$DUMP_PATH" ]] || fail "--dump-path is required"
+DUMP_PATH_ABS="$(resolve_path "$DUMP_PATH")"
+[[ -f "$DUMP_PATH_ABS" ]] || fail "Dump file not found: $DUMP_PATH_ABS"
+[[ -r "$DUMP_PATH_ABS" ]] || fail "Dump file is not readable: $DUMP_PATH_ABS"
+
+if [[ "$AUTO_DEPLOY_STEPS" != "true" && "$AUTO_DEPLOY_STEPS" != "false" ]]; then
+    fail "--auto-deploy-steps must be true or false"
+fi
+
+if [[ -n "$MANUAL_COMMANDS_FILE" ]]; then
+    MANUAL_COMMANDS_FILE_ABS="$(resolve_path "$MANUAL_COMMANDS_FILE")"
+    [[ -f "$MANUAL_COMMANDS_FILE_ABS" ]] || fail "Manual commands file not found: $MANUAL_COMMANDS_FILE_ABS"
+    [[ -r "$MANUAL_COMMANDS_FILE_ABS" ]] || fail "Manual commands file is not readable: $MANUAL_COMMANDS_FILE_ABS"
+fi
+
+if [[ -n "$BASELINE_CHECKLIST_FILE" ]]; then
+    BASELINE_CHECKLIST_FILE_ABS="$(resolve_path "$BASELINE_CHECKLIST_FILE")"
+    [[ -f "$BASELINE_CHECKLIST_FILE_ABS" ]] || fail "Baseline checklist file not found: $BASELINE_CHECKLIST_FILE_ABS"
+    [[ -r "$BASELINE_CHECKLIST_FILE_ABS" ]] || fail "Baseline checklist file is not readable: $BASELINE_CHECKLIST_FILE_ABS"
+fi
+
+if [[ -n "$TARGET_CHECKLIST_FILE" ]]; then
+    TARGET_CHECKLIST_FILE_ABS="$(resolve_path "$TARGET_CHECKLIST_FILE")"
+    [[ -f "$TARGET_CHECKLIST_FILE_ABS" ]] || fail "Target checklist file not found: $TARGET_CHECKLIST_FILE_ABS"
+    [[ -r "$TARGET_CHECKLIST_FILE_ABS" ]] || fail "Target checklist file is not readable: $TARGET_CHECKLIST_FILE_ABS"
+fi
+
+command -v git >/dev/null || fail "git is required"
+command -v docker >/dev/null || fail "docker is required"
+command -v composer >/dev/null || fail "composer is required"
+command -v npm >/dev/null || fail "npm is required"
+
+git -C "$ROOT_DIR" rev-parse --verify "$TARGET_COMMIT^{commit}" >/dev/null 2>&1 || fail "Cannot resolve commit: $TARGET_COMMIT"
+git -C "$ROOT_DIR" rev-parse --verify "$BASELINE_COMMIT^{commit}" >/dev/null 2>&1 || fail "Cannot resolve baseline: $BASELINE_COMMIT"
+
+WORKTREE_DIR="$ROOT_DIR/.upgrade-lab/worktrees/$RUN_ID"
+REPORT_DIR="$ROOT_DIR/storage/upgrade-lab/reports/$RUN_ID"
+REPORT_FILE="$REPORT_DIR/report.md"
+BASELINE_CHECKLIST_TEMPLATE_FILE="$REPORT_DIR/baseline-checklist.template"
+TARGET_CHECKLIST_TEMPLATE_FILE="$REPORT_DIR/target-checklist.template"
+
+BASELINE_PHP_EXTENSIONS_FILE="$REPORT_DIR/baseline-php-extensions.txt"
+BASELINE_APACHE_MODULES_FILE="$REPORT_DIR/baseline-apache-modules.txt"
+BASELINE_DB_SETTINGS_FILE="$REPORT_DIR/baseline-db-settings.txt"
+TARGET_PHP_EXTENSIONS_FILE="$REPORT_DIR/target-php-extensions.txt"
+TARGET_APACHE_MODULES_FILE="$REPORT_DIR/target-apache-modules.txt"
+TARGET_DB_SETTINGS_FILE="$REPORT_DIR/target-db-settings.txt"
+
+mkdir -p "$REPORT_DIR"
+
+export UPGRADE_LAB_PROJECT_NAME="hfm-upgrade-$RUN_ID"
+export UPGRADE_LAB_APP_SOURCE="$WORKTREE_DIR"
+export UPGRADE_LAB_DB_VOLUME="hfm-upgrade-db-$RUN_ID"
+export UPGRADE_LAB_APP_PORT="${UPGRADE_LAB_APP_PORT:-18080}"
+export UPGRADE_LAB_DB_PORT="${UPGRADE_LAB_DB_PORT:-13306}"
+export UPGRADE_LAB_DB_DATABASE="${UPGRADE_LAB_DB_DATABASE:-hfm_upgrade_lab}"
+export UPGRADE_LAB_DB_USERNAME="${UPGRADE_LAB_DB_USERNAME:-hfm}"
+export UPGRADE_LAB_DB_PASSWORD="${UPGRADE_LAB_DB_PASSWORD:-hfm_password}"
+export UPGRADE_LAB_DB_ROOT_PASSWORD="${UPGRADE_LAB_DB_ROOT_PASSWORD:-root_password}"
+export UPGRADE_LAB_MAILPIT_IMAGE="${UPGRADE_LAB_MAILPIT_IMAGE:-axllent/mailpit:latest}"
+export UPGRADE_LAB_MAILPIT_SMTP_PORT="${UPGRADE_LAB_MAILPIT_SMTP_PORT:-11025}"
+export UPGRADE_LAB_MAILPIT_UI_PORT="${UPGRADE_LAB_MAILPIT_UI_PORT:-18025}"
+export COMPOSE_PROJECT_NAME="$UPGRADE_LAB_PROJECT_NAME"
+
+MAILPIT_UI_URL="http://localhost:$UPGRADE_LAB_MAILPIT_UI_PORT"
+
+USE_SAIL=0
+if [[ -x "$ROOT_DIR/vendor/bin/sail" ]] && is_sail_supported; then
+    USE_SAIL=1
+fi
+
+compose_cmd() {
+    if [[ "$USE_SAIL" -eq 1 ]]; then
+        "$ROOT_DIR/vendor/bin/sail" -f "$COMPOSE_FILE" "$@"
+        return
+    fi
+
+    docker compose --project-name "$UPGRADE_LAB_PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
+}
+
+cleanup() {
+    if [[ "$KEEP_RUNNING" -eq 0 ]]; then
+        compose_cmd down --volumes --remove-orphans >/dev/null 2>&1 || true
+        git -C "$ROOT_DIR" worktree remove --force "$WORKTREE_DIR" >/dev/null 2>&1 || true
+    fi
+}
+
+run_dump_setup() {
+    local reset_sql
+
+    printf 'Importing dump for phase from %s\n' "$DUMP_PATH_ABS"
+
+    compose_cmd exec -T db sh -lc 'cat > /tmp/upgrade-lab-dump.sql' < "$DUMP_PATH_ABS"
+
+    reset_sql="DROP DATABASE IF EXISTS \`$UPGRADE_LAB_DB_DATABASE\`; CREATE DATABASE \`$UPGRADE_LAB_DB_DATABASE\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    compose_cmd exec -T db mariadb --user=root --password="$UPGRADE_LAB_DB_ROOT_PASSWORD" --execute "$reset_sql"
+    compose_cmd exec -T db sh -lc "mariadb --user='$UPGRADE_LAB_DB_USERNAME' --password='$UPGRADE_LAB_DB_PASSWORD' '$UPGRADE_LAB_DB_DATABASE' < /tmp/upgrade-lab-dump.sql"
+    compose_cmd exec -T db rm -f /tmp/upgrade-lab-dump.sql
+
+    compose_cmd exec -T app php artisan migrate --no-interaction
+}
+
+prepare_worktree_runtime_artifacts() {
+    composer install --working-dir="$WORKTREE_DIR" --no-interaction --prefer-dist --optimize-autoloader
+
+    if [[ -f "$WORKTREE_DIR/package-lock.json" ]]; then
+        npm ci --prefix "$WORKTREE_DIR"
+    else
+        npm install --prefix "$WORKTREE_DIR"
+    fi
+
+    npm run --prefix "$WORKTREE_DIR" build
+}
+
+run_target_deploy_steps() {
+    local migrate_log backfill_log_first backfill_log_second
+
+    if [[ "$AUTO_DEPLOY_STEPS" != "true" ]]; then
+        return
+    fi
+
+    migrate_log="$REPORT_DIR/target-migrate.log"
+    backfill_log_first="$REPORT_DIR/target-backfill-pass-1.log"
+    backfill_log_second="$REPORT_DIR/target-backfill-pass-2.log"
+
+    compose_cmd exec -T app php artisan migrate --no-interaction | tee "$migrate_log"
+
+    compose_cmd exec -T app php artisan hfm:backfill:event-content \
+        --part=events \
+        --part=athlete-assignments \
+        --part=content-assets \
+        --part=content-partners \
+        --part=content-sponsors \
+        --part=content-faqs \
+        --part=content-sport-types \
+        --no-interaction | tee "$backfill_log_first"
+
+    compose_cmd exec -T app php artisan hfm:backfill:event-content \
+        --part=events \
+        --part=athlete-assignments \
+        --part=content-assets \
+        --part=content-partners \
+        --part=content-sponsors \
+        --part=content-faqs \
+        --part=content-sport-types \
+        --no-interaction | tee "$backfill_log_second"
+
+    UNRESOLVED_EXPORT_PATH="$(
+        {
+            grep -Eo 'storage/app/exports/[^[:space:]]+\.json' "$backfill_log_first" || true
+            grep -Eo 'storage/app/exports/[^[:space:]]+\.json' "$backfill_log_second" || true
+        } | tail -n 1
+    )"
+}
+
+run_manual_upgrade_commands() {
+    local manual_log line trimmed
+
+    if [[ -z "$MANUAL_COMMANDS_FILE_ABS" ]]; then
+        return
+    fi
+
+    manual_log="$REPORT_DIR/target-manual-commands.log"
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        trimmed="${line#${line%%[![:space:]]*}}"
+
+        if [[ -z "$trimmed" || "$trimmed" == \#* ]]; then
+            continue
+        fi
+
+        {
+            printf '>>> %s\n' "$trimmed"
+            compose_cmd exec -T app sh -lc "$trimmed"
+            printf '\n'
+        } | tee -a "$manual_log"
+    done < "$MANUAL_COMMANDS_FILE_ABS"
+}
+
+collect_db_version() {
+    compose_cmd exec -T db mariadb --user="$UPGRADE_LAB_DB_USERNAME" --password="$UPGRADE_LAB_DB_PASSWORD" --execute='SELECT VERSION();' | sed -n '2p'
+}
+
+collect_http_status() {
+    compose_cmd exec -T app php -r '$headers = @get_headers("http://localhost/"); echo $headers[0] ?? "NO_RESPONSE";'
+}
+
+collect_mailpit_status() {
+    compose_cmd exec -T app php -r '$body = @file_get_contents("http://mailpit:8025/api/v1/messages"); if ($body === false) { fwrite(STDERR, "mailpit unreachable"); exit(2); } $data = json_decode($body, true); if (! is_array($data)) { fwrite(STDERR, "mailpit invalid response"); exit(3); } $total = $data["total"] ?? (isset($data["messages"]) && is_array($data["messages"]) ? count($data["messages"]) : "unknown"); echo "reachable,total=".$total;'
+}
+
+collect_phase_parity_artifacts() {
+    local phase="$1"
+    local php_extensions_file apache_modules_file db_settings_file
+
+    case "$phase" in
+        baseline)
+            php_extensions_file="$BASELINE_PHP_EXTENSIONS_FILE"
+            apache_modules_file="$BASELINE_APACHE_MODULES_FILE"
+            db_settings_file="$BASELINE_DB_SETTINGS_FILE"
+            ;;
+        target)
+            php_extensions_file="$TARGET_PHP_EXTENSIONS_FILE"
+            apache_modules_file="$TARGET_APACHE_MODULES_FILE"
+            db_settings_file="$TARGET_DB_SETTINGS_FILE"
+            ;;
+        *)
+            fail "Unknown parity phase: $phase"
+            ;;
+    esac
+
+    compose_cmd exec -T app php -m | sort > "$php_extensions_file"
+    compose_cmd exec -T app sh -lc 'apache2ctl -M 2>/dev/null' | sort > "$apache_modules_file"
+    compose_cmd exec -T db mariadb \
+        --user="$UPGRADE_LAB_DB_USERNAME" \
+        --password="$UPGRADE_LAB_DB_PASSWORD" \
+        --batch --skip-column-names \
+        --execute='SELECT "sql_mode", @@sql_mode UNION ALL SELECT "character_set_server", @@character_set_server UNION ALL SELECT "collation_server", @@collation_server UNION ALL SELECT "time_zone", @@time_zone UNION ALL SELECT "system_time_zone", @@system_time_zone;' \
+        > "$db_settings_file"
+}
+
+append_gate_blocker() {
+    local message="$1"
+
+    if [[ -z "$MANUAL_GATE_BLOCKERS" ]]; then
+        MANUAL_GATE_BLOCKERS="$message"
+        return
+    fi
+
+    MANUAL_GATE_BLOCKERS+=$'\n'
+    MANUAL_GATE_BLOCKERS+="$message"
+}
+
+normalize_check_status() {
+    local status="$1"
+
+    status="${status#${status%%[![:space:]]*}}"
+    status="${status%${status##*[![:space:]]}}"
+    status="${status,,}"
+
+    printf '%s' "$status"
+}
+
+check_label() {
+    case "$1" in
+        home) printf 'Home page content (/)' ;;
+        faq) printf 'FAQ page content (/fragen-und-antworten)' ;;
+        registration_guards) printf 'Registration guards' ;;
+        admin) printf 'Admin access (/admin)' ;;
+        logs) printf 'Logs clean (no critical errors)' ;;
+        mailpit_email) printf 'Login-link email received in Mailpit' ;;
+        *) printf '%s' "$1" ;;
+    esac
+}
+
+write_checklist_template() {
+    local file_path="$1"
+
+    {
+        echo '# status values: pass or fail'
+        echo 'home=pass'
+        echo 'faq=pass'
+        echo 'registration_guards=pass'
+        echo 'admin=pass'
+        echo 'logs=pass'
+        echo 'mailpit_email=pass'
+        echo 'notes='
+    } > "$file_path"
+}
+
+collect_phase_manual_checklist() {
+    local prefix="$1"
+    local phase_label="$2"
+    local checklist_file="$3"
+    local notes=""
+    local key line trimmed status input
+    local keys=(home faq registration_guards admin logs mailpit_email)
+
+    for key in "${keys[@]}"; do
+        printf -v "${prefix}_${key}" '%s' ""
+    done
+    printf -v "${prefix}_notes" '%s' ""
+
+    if [[ -n "$checklist_file" ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            trimmed="${line#${line%%[![:space:]]*}}"
+
+            if [[ -z "$trimmed" || "$trimmed" == \#* ]]; then
+                continue
+            fi
+
+            if [[ "$trimmed" == notes=* ]]; then
+                notes="${trimmed#notes=}"
+                continue
+            fi
+
+            key="${trimmed%%=*}"
+            status="${trimmed#*=}"
+            status="$(normalize_check_status "$status")"
+
+            case "$key" in
+                home|faq|registration_guards|admin|logs|mailpit_email)
+                    printf -v "${prefix}_${key}" '%s' "$status"
+                    ;;
+                *)
+                    ;;
+            esac
+        done < "$checklist_file"
+
+        printf -v "${prefix}_notes" '%s' "$notes"
+    else
+        if [[ ! -t 0 ]]; then
+            fail "$phase_label manual checklist required. Use --${phase_label,,}-checklist-file in non-interactive mode."
+        fi
+
+        printf '%s manual checklist\n' "$phase_label"
+        printf 'Use pass/fail for each check.\n'
+
+        for key in "${keys[@]}"; do
+            while true; do
+                printf '%s: ' "$(check_label "$key")"
+                read -r input
+                status="$(normalize_check_status "$input")"
+
+                if [[ "$status" == "pass" || "$status" == "fail" ]]; then
+                    printf -v "${prefix}_${key}" '%s' "$status"
+                    break
+                fi
+
+                printf 'Please enter pass or fail.\n'
+            done
+        done
+
+        printf 'Notes (optional): '
+        read -r notes
+        printf -v "${prefix}_notes" '%s' "$notes"
+    fi
+
+    for key in "${keys[@]}"; do
+        local status_var="${prefix}_${key}"
+        status="${!status_var:-}"
+        status="$(normalize_check_status "$status")"
+
+        if [[ "$status" != "pass" && "$status" != "fail" ]]; then
+            fail "$phase_label checklist missing or invalid value for '$key'. Allowed: pass|fail"
+        fi
+
+        printf -v "${prefix}_${key}" '%s' "$status"
+    done
+}
+
+report_manual_checklist_section() {
+    local prefix="$1"
+    local phase_label="$2"
+    local notes_var="${prefix}_notes"
+    local home_var="${prefix}_home"
+    local faq_var="${prefix}_faq"
+    local registration_var="${prefix}_registration_guards"
+    local admin_var="${prefix}_admin"
+    local logs_var="${prefix}_logs"
+    local mailpit_var="${prefix}_mailpit_email"
+
+    {
+        echo "### Manual checklist ($phase_label)"
+        echo
+        echo "- Home page content (/): ${!home_var}"
+        echo "- FAQ page content (/fragen-und-antworten): ${!faq_var}"
+        echo "- Registration guards: ${!registration_var}"
+        echo "- Admin access (/admin): ${!admin_var}"
+        echo "- Logs clean (no critical errors): ${!logs_var}"
+        echo "- Login-link email received in Mailpit: ${!mailpit_var}"
+
+        if [[ -n "${!notes_var}" ]]; then
+            echo "- Notes: ${!notes_var}"
+        fi
+
+        echo
+    } >> "$REPORT_FILE"
+}
+
+evaluate_manual_checklist_gate() {
+    local prefix="$1"
+    local phase_label="$2"
+    local key
+    local keys=(home faq registration_guards admin logs mailpit_email)
+
+    for key in "${keys[@]}"; do
+        local status_var="${prefix}_${key}"
+
+        if [[ "${!status_var}" != "pass" ]]; then
+            append_gate_blocker "$phase_label checklist failed: $(check_label "$key")"
+        fi
+    done
+}
+
+write_checklist_template "$BASELINE_CHECKLIST_TEMPLATE_FILE"
+write_checklist_template "$TARGET_CHECKLIST_TEMPLATE_FILE"
+
+trap cleanup EXIT
+
+if [[ -e "$WORKTREE_DIR" ]]; then
+    fail "Worktree path already exists: $WORKTREE_DIR"
+fi
+
+git -C "$ROOT_DIR" worktree add --detach "$WORKTREE_DIR" "$BASELINE_COMMIT" >/dev/null
+
+if [[ ! -f "$WORKTREE_DIR/.env" ]]; then
+    cp "$WORKTREE_DIR/.env.example" "$WORKTREE_DIR/.env"
+fi
+
+prepare_worktree_runtime_artifacts
+
+{
+    echo "# Upgrade Lab WP6 Report"
+    echo
+    echo "- Run ID: $RUN_ID"
+    echo "- Baseline commit: $BASELINE_COMMIT"
+    echo "- Target commit: $TARGET_COMMIT"
+    echo "- Data source: dump"
+    echo "- Dump path: $DUMP_PATH_ABS"
+    echo "- Auto deploy steps: $AUTO_DEPLOY_STEPS"
+    if [[ -n "$MANUAL_COMMANDS_FILE_ABS" ]]; then
+        echo "- Manual commands file: $MANUAL_COMMANDS_FILE_ABS"
+    fi
+    if [[ -n "$BASELINE_CHECKLIST_FILE_ABS" ]]; then
+        echo "- Baseline checklist file: $BASELINE_CHECKLIST_FILE_ABS"
+    else
+        echo "- Baseline checklist template: $BASELINE_CHECKLIST_TEMPLATE_FILE"
+    fi
+    if [[ -n "$TARGET_CHECKLIST_FILE_ABS" ]]; then
+        echo "- Target checklist file: $TARGET_CHECKLIST_FILE_ABS"
+    else
+        echo "- Target checklist template: $TARGET_CHECKLIST_TEMPLATE_FILE"
+    fi
+    echo "- App source path: $WORKTREE_DIR"
+    echo
+} > "$REPORT_FILE"
+
+compose_cmd up --detach --build
+
+compose_cmd exec -T app php artisan key:generate --force --no-interaction
+
+compose_cmd exec -T app php artisan about
+run_dump_setup
+
+BASELINE_PHP_VERSION="$(compose_cmd exec -T app php -v | head -n 1)"
+BASELINE_APACHE_VERSION="$(compose_cmd exec -T app apache2 -v | sed -n '1p')"
+BASELINE_DB_VERSION="$(collect_db_version)"
+BASELINE_HTTP_STATUS="$(collect_http_status)"
+BASELINE_MAILPIT_STATUS="$(collect_mailpit_status)"
+collect_phase_parity_artifacts "baseline"
+
+{
+    echo "## Baseline phase"
+    echo
+    echo "- Checked revision: $BASELINE_COMMIT"
+    echo
+    echo "### Runtime snapshot"
+    echo
+    echo "- PHP: $BASELINE_PHP_VERSION"
+    echo "- Apache: $BASELINE_APACHE_VERSION"
+    echo "- MariaDB: $BASELINE_DB_VERSION"
+    echo "- HTTP / status: $BASELINE_HTTP_STATUS"
+    echo
+    echo "### Runtime parity artifacts"
+    echo
+    echo "- PHP extensions snapshot: $BASELINE_PHP_EXTENSIONS_FILE"
+    echo "- Apache modules snapshot: $BASELINE_APACHE_MODULES_FILE"
+    echo "- Database settings snapshot: $BASELINE_DB_SETTINGS_FILE"
+    echo
+    echo "### Mail capture"
+    echo
+    echo "- SMTP endpoint: localhost:$UPGRADE_LAB_MAILPIT_SMTP_PORT"
+    echo "- Mailpit UI: $MAILPIT_UI_URL"
+    echo "- Mailpit API check: $BASELINE_MAILPIT_STATUS"
+    echo "- Manual verification: trigger a login-link email and confirm it appears in Mailpit UI."
+    echo
+} >> "$REPORT_FILE"
+
+if [[ "$BASELINE_HTTP_STATUS" != *"200"* ]]; then
+    append_gate_blocker "Baseline HTTP smoke failed for '/' (status: $BASELINE_HTTP_STATUS)"
+fi
+
+collect_phase_manual_checklist "BASELINE" "baseline" "$BASELINE_CHECKLIST_FILE_ABS"
+report_manual_checklist_section "BASELINE" "baseline"
+evaluate_manual_checklist_gate "BASELINE" "Baseline"
+
+if [[ "$PAUSE_AFTER_BASELINE" -eq 1 ]]; then
+    printf 'Baseline phase complete. Press Enter to continue with target phase...'
+    read -r _
+fi
+
+git -C "$WORKTREE_DIR" checkout --detach "$TARGET_COMMIT" >/dev/null
+
+prepare_worktree_runtime_artifacts
+
+compose_cmd exec -T app php artisan about
+run_target_deploy_steps
+run_manual_upgrade_commands
+
+if [[ "$PAUSE_BEFORE_UPGRADE_CHECKS" -eq 1 ]]; then
+    printf 'Upgrade execution complete. Press Enter to continue with target checks...'
+    read -r _
+fi
+
+TARGET_PHP_VERSION="$(compose_cmd exec -T app php -v | head -n 1)"
+TARGET_APACHE_VERSION="$(compose_cmd exec -T app apache2 -v | sed -n '1p')"
+TARGET_DB_VERSION="$(collect_db_version)"
+TARGET_HTTP_STATUS="$(collect_http_status)"
+TARGET_MAILPIT_STATUS="$(collect_mailpit_status)"
+collect_phase_parity_artifacts "target"
+
+{
+    echo "### Upgrade execution"
+    echo
+    echo "- Auto deploy steps enabled: $AUTO_DEPLOY_STEPS"
+    if [[ "$AUTO_DEPLOY_STEPS" == "true" ]]; then
+        echo "- Migrate log: $REPORT_DIR/target-migrate.log"
+        echo "- Backfill pass 1 log: $REPORT_DIR/target-backfill-pass-1.log"
+        echo "- Backfill pass 2 log: $REPORT_DIR/target-backfill-pass-2.log"
+    fi
+    if [[ -n "$UNRESOLVED_EXPORT_PATH" ]]; then
+        echo "- Unresolved export path: $UNRESOLVED_EXPORT_PATH"
+    else
+        echo "- Unresolved export path: none reported"
+    fi
+    if [[ -n "$MANUAL_COMMANDS_FILE_ABS" ]]; then
+        echo "- Manual commands file: $MANUAL_COMMANDS_FILE_ABS"
+        echo "- Manual commands log: $REPORT_DIR/target-manual-commands.log"
+    fi
+    echo
+} >> "$REPORT_FILE"
+
+{
+    echo "## Target phase"
+    echo
+    echo "- Checked revision: $TARGET_COMMIT"
+    echo
+    echo "### Runtime snapshot"
+    echo
+    echo "- PHP: $TARGET_PHP_VERSION"
+    echo "- Apache: $TARGET_APACHE_VERSION"
+    echo "- MariaDB: $TARGET_DB_VERSION"
+    echo "- HTTP / status: $TARGET_HTTP_STATUS"
+    echo
+    echo "### Runtime parity artifacts"
+    echo
+    echo "- PHP extensions snapshot: $TARGET_PHP_EXTENSIONS_FILE"
+    echo "- Apache modules snapshot: $TARGET_APACHE_MODULES_FILE"
+    echo "- Database settings snapshot: $TARGET_DB_SETTINGS_FILE"
+    echo
+    echo "### Mail capture"
+    echo
+    echo "- SMTP endpoint: localhost:$UPGRADE_LAB_MAILPIT_SMTP_PORT"
+    echo "- Mailpit UI: $MAILPIT_UI_URL"
+    echo "- Mailpit API check: $TARGET_MAILPIT_STATUS"
+    echo "- Manual verification: trigger a login-link email and confirm it appears in Mailpit UI."
+    echo
+} >> "$REPORT_FILE"
+
+if [[ "$TARGET_HTTP_STATUS" != *"200"* ]]; then
+    append_gate_blocker "Target HTTP smoke failed for '/' (status: $TARGET_HTTP_STATUS)"
+fi
+
+collect_phase_manual_checklist "TARGET" "target" "$TARGET_CHECKLIST_FILE_ABS"
+report_manual_checklist_section "TARGET" "target"
+evaluate_manual_checklist_gate "TARGET" "Target"
+
+{
+    echo "## Comparison"
+    echo
+    echo "- Baseline HTTP status: $BASELINE_HTTP_STATUS"
+    echo "- Target HTTP status: $TARGET_HTTP_STATUS"
+    echo "- Baseline Mailpit check: $BASELINE_MAILPIT_STATUS"
+    echo "- Target Mailpit check: $TARGET_MAILPIT_STATUS"
+    echo
+} >> "$REPORT_FILE"
+
+GATE_STATUS="PASS"
+
+if [[ -n "$MANUAL_GATE_BLOCKERS" ]]; then
+    GATE_STATUS="FAIL"
+fi
+
+{
+    echo "## Gate result"
+    echo
+    echo "- Status: $GATE_STATUS"
+
+    if [[ "$GATE_STATUS" == "PASS" ]]; then
+        echo "- Blockers: none"
+    else
+        echo "- Blockers:"
+        while IFS= read -r blocker; do
+            [[ -z "$blocker" ]] && continue
+            echo "  - $blocker"
+        done <<< "$MANUAL_GATE_BLOCKERS"
+    fi
+
+    if [[ -n "$UNRESOLVED_EXPORT_PATH" ]]; then
+        echo "- Unresolved export reference: $UNRESOLVED_EXPORT_PATH"
+    else
+        echo "- Unresolved export reference: none reported"
+    fi
+
+    echo
+} >> "$REPORT_FILE"
+
+if [[ "$GATE_STATUS" == "PASS" ]]; then
+    printf 'Upgrade lab WP6 completed successfully. Report: %s\n' "$REPORT_FILE"
+else
+    printf 'Upgrade lab WP6 failed gate checks. Report: %s\n' "$REPORT_FILE"
+fi
+
+printf 'Mailpit UI is available at: %s\n' "$MAILPIT_UI_URL"
+
+if [[ "$KEEP_RUNNING" -eq 1 ]]; then
+    printf 'Environment kept running. Project: %s\n' "$UPGRADE_LAB_PROJECT_NAME"
+fi
+
+if [[ "$GATE_STATUS" != "PASS" ]]; then
+    exit 1
+fi

@@ -20,19 +20,28 @@ The goal remains split into two concerns:
 - Event-content backfill command with parts:
     - `php artisan hfm:backfill:event-content` in `app/Console/Commands/BackfillAthleteEventAssignmentsCommand.php`.
 - Backfill seeders created for partners/sponsors/faqs/sport types.
-- Public page reads partially switched to model-backed content:
-    - home hero/sponsor blocks and FAQ page.
-- Tests added for core integration and migration behavior.
+- Public rendering switch completed for DB-driven event content:
+    - home hero partners, home beneficiary content, sponsors section, FAQ page.
+- FAQ fallback semantics fixed:
+    - no cross-event leakage,
+    - global fallback FAQs are only truly unassigned FAQs.
+- Asset rollout safety implemented:
+    - `content-assets` is now recommended in non-interactive mode when target files are missing.
+- FAQ backfill idempotency hardened with stable event/group/sort slot mapping.
+- FAQ extractor cleanup completed:
+    - one-off extractor removed from runtime codebase.
+- Tests added/updated for integration, migration behavior, command behavior, and rendering parity.
 
 ### 1.2 Still open in this PR
 
-- Fix FAQ fallback query semantics to avoid cross-event leakage.
-- Ensure `content-assets` is included in recommended non-interactive run where needed.
-- Finish replacing remaining hardcoded beneficiary copy in home content section.
 - Implement admin list-only datatables/pages for partners/sponsors/faqs (if kept in this PR scope).
-- Harden FAQ backfill idempotency strategy (stable identity key).
-- Finalize deployment runbook and verification checklist for production.
-- Define and document a reusable upgrade simulation environment (commit-selectable + data source selectable).
+- Build reusable upgrade simulation environment (commit-selectable + dump-only data mode).
+- Verify and document runtime parity for rehearsal environment:
+    - PHP version,
+    - MariaDB version,
+    - enabled PHP extensions,
+    - supporting service versions.
+- Execute full rehearsal gate and record go/no-go output.
 
 ### 1.3 Out of scope (unchanged)
 
@@ -124,23 +133,24 @@ Example:
 
 ### 4.1 Blocking before merge/deploy
 
-1. FAQ query correctness
-    - Prevent event-specific FAQ rows from other events appearing as fallback.
-    - Validate behavior for:
-        - current event published,
-        - current event missing,
-        - global FAQ without pivot.
+1. Upgrade simulation environment
+    - Create reusable isolated environment with:
+        - selectable app revision (`--commit=<sha-or-branch>`),
+        - mandatory dump input (`--dump-path=...`),
+        - optional dump path (`--dump-path=...`).
 
-2. Asset rollout safety
-    - Ensure logo copy step is reliably executed during production rollout.
-    - Add test coverage for missing source + existing target behavior.
+2. Runtime parity validation
+    - Check and document exact production-aligned versions:
+        - PHP,
+        - MariaDB,
+        - PHP extensions,
+        - queue/cache/mail dependencies used in production.
 
-3. Home beneficiary parity
-    - Remove remaining hardcoded beneficiary text from `resources/views/components/home-content.blade.php`.
-    - Render from event-partner relation/content source only.
-
-4. FAQ backfill idempotency hardening
-    - Use stable identity key strategy to avoid duplicates if copy changes over time.
+3. Full rehearsal execution + sign-off
+    - Baseline on live/main commit.
+    - Upgrade to target branch commit.
+    - Migrate + run explicit backfill parts + rerun for idempotency.
+    - Complete manual matrix and store a concise go/no-go report.
 
 ### 4.2 Strongly recommended in this PR
 
@@ -151,11 +161,10 @@ Example:
 
 2. Add admin access tests + rendering tests for these pages.
 
-3. Extend command tests to cover non-interactive recommendation behavior.
+3. Keep these as a separate commit set so they can be deferred without blocking release rehearsal.
 
 ### 4.3 Can be follow-up if needed
 
-- Optional FAQ extraction tooling cleanup (extractor currently exists but should remain non-critical for runtime).
 - Additional UX improvements for content management.
 
 ---
@@ -284,9 +293,7 @@ Before production release, run a full rehearsal in an isolated environment that 
 Provide a one-command (or scripted) environment where you can choose:
 
 1. Which application revision to boot (`main`, feature branch, specific commit SHA).
-2. Which data source to use:
-    - generated test data, or
-    - production dump import (sanitized as needed).
+2. Which production-like dump to use (`--dump-path=...`, sanitized as needed).
 
 This environment is the mandatory pre-deploy validation gate for this migration.
 
@@ -301,7 +308,7 @@ This environment is the mandatory pre-deploy validation gate for this migration.
     - queue/cache/mail service dependencies used in production
 - Include a small bootstrap script with parameters like:
     - `--commit=<sha-or-branch>`
-    - `--data-source=seed|dump`
+    - `--dump-path=<path-to-dump.sql>`
     - `--dump-path=<path>` (required when `dump` is selected)
 
 ### 6.3 Rehearsal flow (must pass)
@@ -352,28 +359,37 @@ To keep review and conflict handling manageable, split by concern:
 
 This structure improves cherry-picking/reverts and reduces blast radius during review.
 
+Current status:
+
+1. Docs-only commit(s): done.
+2. Schema/model/factory commit(s): done.
+3. Backfill command + seeders + migration cleanup: done.
+4. Public rendering switch + related tests: done.
+5. Admin datatables + admin tests: done (implemented as a separate, non-committed change set in this branch).
+6. Lockfile updates: done as separate chore commit.
+
 ---
 
 ## 8) Verification Checklist
 
-### 7.1 Build/test
+### 8.1 Build/test
 
 - `php artisan migrate:fresh --seed --no-interaction`
 - `php artisan test --compact` (or targeted suites for touched areas)
 
-### 7.2 Backfill idempotency
+### 8.2 Backfill idempotency
 
 - Run event-content backfill command twice.
 - Confirm second run does not duplicate pivot or catalog rows.
 - Confirm unresolved export behavior is stable.
 
-### 7.3 Runtime parity
+### 8.3 Runtime parity
 
 - `/` renders correct partners/sponsors for current event.
 - `/fragen-und-antworten` renders event-correct FAQs plus only valid global fallback.
 - Logos resolve from `storage/app/public/partners` and `storage/app/public/sponsors`.
 
-### 7.4 Admin
+### 8.4 Admin
 
 - Admin pages remain auth-protected.
 - New list pages (if included) render seeded/backfilled content.
@@ -383,7 +399,7 @@ This structure improves cherry-picking/reverts and reduces blast radius during r
 - Rehearsal completed in isolated environment using:
     - baseline commit (`main`/live commit), and
     - target feature commit.
-- Data source mode tested (`seed` or `dump`) and documented.
+- Dump-only rehearsal path tested and documented.
 - Runtime versions (PHP, MariaDB, extensions, etc.) verified against production and documented.
 - Baseline vs upgraded manual check matrix reviewed and signed off.
 

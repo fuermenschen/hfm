@@ -1,0 +1,88 @@
+name: upgrade-lab-ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      dump_url:
+        description: "HTTPS URL to sanitized SQL dump"
+        required: true
+        type: string
+      baseline_ref:
+        description: "Baseline git ref for rehearsal comparison"
+        required: false
+        default: "main"
+        type: string
+  workflow_call:
+    inputs:
+      dump_url:
+        required: true
+        type: string
+      baseline_ref:
+        required: false
+        default: "main"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Add Flux Credentials Loaded From ENV
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Download SQL dump
+        run: |
+          mkdir -p storage/upgrade-lab/dumps
+          curl -fL "${{ inputs.dump_url || github.event.inputs.dump_url }}" -o storage/upgrade-lab/dumps/ci.sql
+
+      - name: Resolve baseline ref
+        id: baseline
+        run: |
+          BASELINE_REF="${{ inputs.baseline_ref || github.event.inputs.baseline_ref || 'main' }}"
+          echo "value=$BASELINE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Run upgrade lab rehearsal smoke (dump mode)
+        run: |
+          scripts/upgrade-lab \
+            --baseline="${{ steps.baseline.outputs.value }}" \
+            --target=HEAD \
+            --dump-path=storage/upgrade-lab/dumps/ci.sql \
+            --baseline-checklist-file=.github/upgrade-lab/checklists/baseline.ci-smoke.env \
+            --target-checklist-file=.github/upgrade-lab/checklists/target.ci-smoke.env \
+            --run-id=ci-${{ github.run_id }}
+
+      - name: Upload rehearsal artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upgrade-lab-report-${{ github.run_id }}
+          path: storage/upgrade-lab/reports/ci-${{ github.run_id }}/
