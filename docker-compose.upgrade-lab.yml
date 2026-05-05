@@ -8,7 +8,7 @@ services:
       - "${UPGRADE_LAB_APP_PORT:-18080}:80"
     environment:
       APP_ENV: local
-      APP_DEBUG: true
+      APP_DEBUG: "false"
       APP_URL: "http://localhost:${UPGRADE_LAB_APP_PORT:-18080}"
       DB_CONNECTION: mysql
       DB_HOST: db
@@ -21,11 +21,13 @@ services:
       MAIL_PORT: 1025
       MAIL_USERNAME: ""
       MAIL_PASSWORD: ""
-      MAIL_ENCRYPTION: "null"
+      MAIL_ENCRYPTION: ""
       MAIL_FROM_ADDRESS: "upgrade-lab@example.test"
       MAIL_FROM_NAME: "HFM Upgrade Lab"
     volumes:
       - "${UPGRADE_LAB_APP_SOURCE:-.}:/var/www/html"
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -56,8 +58,7 @@ services:
     volumes:
       - upgrade-lab-db-data:/var/lib/mysql
     healthcheck:
-      test:
-        ["CMD", "mariadb-admin", "ping", "--host=127.0.0.1", "--user=$$MARIADB_USER", "--password=$$MARIADB_PASSWORD"]
+      test: ["CMD-SHELL", "mariadb-admin ping --host=127.0.0.1 --user=$$MARIADB_USER --password=$$MARIADB_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 10

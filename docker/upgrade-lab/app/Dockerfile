@@ -26,9 +26,12 @@ RUN apt-get update \
         pdo_mysql \
         zip \
     && a2enmod headers rewrite \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY docker/upgrade-lab/app/vhost.conf /etc/apache2/sites-available/000-default.conf
+COPY docker/upgrade-lab/app/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 WORKDIR /var/www/html

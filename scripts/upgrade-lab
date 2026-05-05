@@ -142,11 +142,12 @@ fi
 
 command -v git >/dev/null || fail "git is required"
 command -v docker >/dev/null || fail "docker is required"
-command -v composer >/dev/null || fail "composer is required"
-command -v npm >/dev/null || fail "npm is required"
 
 git -C "$ROOT_DIR" rev-parse --verify "$TARGET_COMMIT^{commit}" >/dev/null 2>&1 || fail "Cannot resolve commit: $TARGET_COMMIT"
 git -C "$ROOT_DIR" rev-parse --verify "$BASELINE_COMMIT^{commit}" >/dev/null 2>&1 || fail "Cannot resolve baseline: $BASELINE_COMMIT"
+
+TARGET_COMMIT_SHA="$(git -C "$ROOT_DIR" rev-parse --verify "$TARGET_COMMIT^{commit}")"
+BASELINE_COMMIT_SHA="$(git -C "$ROOT_DIR" rev-parse --verify "$BASELINE_COMMIT^{commit}")"
 
 WORKTREE_DIR="$ROOT_DIR/.upgrade-lab/worktrees/$RUN_ID"
 REPORT_DIR="$ROOT_DIR/storage/upgrade-lab/reports/$RUN_ID"
@@ -215,16 +216,36 @@ run_dump_setup() {
     compose_cmd exec -T app php artisan migrate --no-interaction
 }
 
-prepare_worktree_runtime_artifacts() {
-    composer install --working-dir="$WORKTREE_DIR" --no-interaction --prefer-dist --optimize-autoloader
+wait_for_app() {
+    local max_attempts=60
+    local attempt=0
 
-    if [[ -f "$WORKTREE_DIR/package-lock.json" ]]; then
-        npm ci --prefix "$WORKTREE_DIR"
+    printf 'Waiting for app container to accept commands...\n'
+
+    while [[ $attempt -lt $max_attempts ]]; do
+        if compose_cmd exec -T app true >/dev/null 2>&1; then
+            printf 'App container ready.\n'
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+
+    fail "Timed out waiting for app container after $((max_attempts * 2))s"
+}
+
+prepare_worktree_runtime_artifacts() {
+    compose_cmd exec -T app sh -c 'find vendor -mindepth 1 -delete 2>/dev/null; find node_modules -mindepth 1 -delete 2>/dev/null; true'
+    compose_cmd exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
+
+    if compose_cmd exec -T app test -f package-lock.json; then
+        compose_cmd exec -T app npm ci
     else
-        npm install --prefix "$WORKTREE_DIR"
+        compose_cmd exec -T app npm install
     fi
 
-    npm run --prefix "$WORKTREE_DIR" build
+    compose_cmd exec -T app npm run build
 }
 
 run_target_deploy_steps() {
@@ -517,20 +538,22 @@ if [[ -e "$WORKTREE_DIR" ]]; then
     fail "Worktree path already exists: $WORKTREE_DIR"
 fi
 
-git -C "$ROOT_DIR" worktree add --detach "$WORKTREE_DIR" "$BASELINE_COMMIT" >/dev/null
+git -C "$ROOT_DIR" worktree add --detach "$WORKTREE_DIR" "$BASELINE_COMMIT_SHA" >/dev/null
 
 if [[ ! -f "$WORKTREE_DIR/.env" ]]; then
     cp "$WORKTREE_DIR/.env.example" "$WORKTREE_DIR/.env"
 fi
 
-prepare_worktree_runtime_artifacts
+if [[ -f "$ROOT_DIR/auth.json" ]]; then
+    cp "$ROOT_DIR/auth.json" "$WORKTREE_DIR/auth.json"
+fi
 
 {
     echo "# Upgrade Lab WP6 Report"
     echo
     echo "- Run ID: $RUN_ID"
-    echo "- Baseline commit: $BASELINE_COMMIT"
-    echo "- Target commit: $TARGET_COMMIT"
+    echo "- Baseline commit: $BASELINE_COMMIT ($BASELINE_COMMIT_SHA)"
+    echo "- Target commit: $TARGET_COMMIT ($TARGET_COMMIT_SHA)"
     echo "- Data source: dump"
     echo "- Dump path: $DUMP_PATH_ABS"
     echo "- Auto deploy steps: $AUTO_DEPLOY_STEPS"
@@ -553,9 +576,24 @@ prepare_worktree_runtime_artifacts
 
 compose_cmd up --detach --build
 
+wait_for_app
+
+prepare_worktree_runtime_artifacts
+
 compose_cmd exec -T app php artisan key:generate --force --no-interaction
 
 compose_cmd exec -T app php artisan about
+
+APP_URL="http://localhost:$UPGRADE_LAB_APP_PORT"
+
+printf '\n=== URLs ===\n'
+printf '  App:       %s/\n' "$APP_URL"
+printf '  Admin:     %s/admin\n' "$APP_URL"
+printf '  FAQ:       %s/fragen-und-antworten\n' "$APP_URL"
+printf '  Mailpit UI: %s\n' "$MAILPIT_UI_URL"
+printf '  Mailpit SMTP: localhost:%s\n' "$UPGRADE_LAB_MAILPIT_SMTP_PORT"
+printf '  DB:        localhost:%s\n\n' "$UPGRADE_LAB_DB_PORT"
+
 run_dump_setup
 
 BASELINE_PHP_VERSION="$(compose_cmd exec -T app php -v | head -n 1)"
@@ -601,11 +639,17 @@ report_manual_checklist_section "BASELINE" "baseline"
 evaluate_manual_checklist_gate "BASELINE" "Baseline"
 
 if [[ "$PAUSE_AFTER_BASELINE" -eq 1 ]]; then
-    printf 'Baseline phase complete. Press Enter to continue with target phase...'
+    printf '\n=== Baseline phase complete ===\n'
+    printf '  App:       %s/\n' "$APP_URL"
+    printf '  Admin:     %s/admin\n' "$APP_URL"
+    printf '  FAQ:       %s/fragen-und-antworten\n' "$APP_URL"
+    printf '  Mailpit:   %s\n' "$MAILPIT_UI_URL"
+    printf '  DB:        localhost:%s\n\n' "$UPGRADE_LAB_DB_PORT"
+    printf 'Press Enter to continue with target phase...'
     read -r _
 fi
 
-git -C "$WORKTREE_DIR" checkout --detach "$TARGET_COMMIT" >/dev/null
+git -C "$WORKTREE_DIR" checkout --detach "$TARGET_COMMIT_SHA" >/dev/null
 
 prepare_worktree_runtime_artifacts
 
@@ -614,7 +658,13 @@ run_target_deploy_steps
 run_manual_upgrade_commands
 
 if [[ "$PAUSE_BEFORE_UPGRADE_CHECKS" -eq 1 ]]; then
-    printf 'Upgrade execution complete. Press Enter to continue with target checks...'
+    printf '\n=== Upgrade execution complete ===\n'
+    printf '  App:       %s/\n' "$APP_URL"
+    printf '  Admin:     %s/admin\n' "$APP_URL"
+    printf '  FAQ:       %s/fragen-und-antworten\n' "$APP_URL"
+    printf '  Mailpit:   %s\n' "$MAILPIT_UI_URL"
+    printf '  DB:        localhost:%s\n\n' "$UPGRADE_LAB_DB_PORT"
+    printf 'Press Enter to continue with target checks...'
     read -r _
 fi
 
