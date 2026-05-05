@@ -1,6 +1,6 @@
 # Reusable Upgrade Simulation Environment Plan
 
-This document expands step 6 of `docs/event-content-pr-implementation-plan.md` into an implementation-ready plan.
+This document expands step 6 of `docs/plans/event-content-pr-implementation-plan.md` into an implementation-ready plan.
 
 ## 1) Goal and gate definition
 

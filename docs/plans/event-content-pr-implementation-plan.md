@@ -1,6 +1,6 @@
 # Event Content PR Implementation Plan
 
-This plan covers the event-content slice of `docs/multi-event-restructure-plan.md`.
+This plan covers the event-content slice of `docs/plans/multi-event-restructure-plan.md`.
 
 The goal remains split into two concerns:
 
@@ -414,4 +414,4 @@ This PR is done when:
 3. Migrations remain schema-only.
 4. Key regressions are covered by tests.
 5. Upgrade simulation rehearsal passes in isolated environment with documented runtime parity.
-6. Remaining out-of-scope architecture work stays in `docs/multi-event-restructure-plan.md`.
+6. Remaining out-of-scope architecture work stays in `docs/plans/multi-event-restructure-plan.md`.
