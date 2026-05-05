@@ -20,6 +20,11 @@ class EventContentPartnersBackfillSeeder extends Seeder
             return;
         }
 
+        // Rename legacy partner so updateOrCreate reuses the existing record
+        Partner::query()
+            ->where('name', 'Brühlgut Stiftung Winterthur')
+            ->update(['name' => 'Brühlgut Stiftung']);
+
         $rows = [
             [
                 'donation_event_id' => (int) $eventIds['2025'],
@@ -89,5 +94,14 @@ class EventContentPartnersBackfillSeeder extends Seeder
                 ['sort_order', 'is_published', 'updated_at'],
             );
         }
+
+        // Delete the legacy "alle zu gleichen Teilen" meta partner. It is obsolete
+        // because equal-split is now represented by athletes having a nullable
+        // partner_id and events controlling availability via has_equal_split_option.
+        // The athletes table FK is ON DELETE SET NULL, so any old references are
+        // safely migrated to the new representation automatically.
+        Partner::query()
+            ->where('name', 'alle zu gleichen Teilen')
+            ->delete();
     }
 }

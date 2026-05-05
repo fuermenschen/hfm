@@ -260,9 +260,10 @@ run_target_deploy_steps() {
     backfill_log_second="$REPORT_DIR/target-backfill-pass-2.log"
 
     compose_cmd exec -T app php artisan migrate --no-interaction | tee "$migrate_log"
+    compose_cmd exec -T app php artisan storage:link --no-interaction
 
-    compose_cmd exec -T app php artisan hfm:backfill:event-content \
-        --part=events \
+    compose_cmd exec -T app php artisan hfm:backfill:event-content \\
+        --part=events \\
         --part=athlete-assignments \
         --part=content-assets \
         --part=content-partners \
