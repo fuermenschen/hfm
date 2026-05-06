@@ -22,13 +22,79 @@ class GetCurrentEventPublicDataAction
     {
         $cacheKey = 'event_public_data_'.($event->id ?? 'none');
 
-        return Cache::remember($cacheKey, now()->addMinute(), function () use ($event): array {
-            $partners = $this->partners($event);
-            $sponsors = $this->sponsors($event);
-            $faqs = $this->faqs($event);
-
-            return compact('partners', 'sponsors', 'faqs');
+        /** @var array{partners: array<int, array<string, mixed>>, sponsors: array<int, array<string, mixed>>, faqs: array<int, array<string, mixed>>} $cached */
+        $cached = Cache::remember($cacheKey, now()->addMinute(), function () use ($event): array {
+            return [
+                'partners' => $this->partners($event)->map(fn (Partner $p) => $p->toArray())->values()->all(),
+                'sponsors' => $this->sponsors($event)->map(fn (Sponsor $s) => $s->toArray())->values()->all(),
+                'faqs' => $this->faqs($event)->map(fn (Faq $f) => $f->toArray())->values()->all(),
+            ];
         });
+
+        return [
+            'partners' => $this->hydratePartners($cached['partners']),
+            'sponsors' => $this->hydrateSponsors($cached['sponsors']),
+            'faqs' => $this->hydrateFaqs($cached['faqs']),
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return Collection<int, Partner>
+     */
+    protected function hydratePartners(array $rows): Collection
+    {
+        return Partner::hydrate($rows);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return Collection<int, Sponsor>
+     */
+    protected function hydrateSponsors(array $rows): Collection
+    {
+        $sponsors = Sponsor::hydrate($rows);
+        $indexed = $sponsors->values();
+
+        foreach (array_values($rows) as $i => $row) {
+            $sponsor = $indexed->get($i);
+            if ($sponsor === null) {
+                continue;
+            }
+
+            if (array_key_exists('size', $row)) {
+                $sponsor->setAttribute('size', $row['size']);
+            }
+        }
+
+        return $sponsors;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return Collection<int, Faq>
+     */
+    protected function hydrateFaqs(array $rows): Collection
+    {
+        $faqs = Faq::hydrate($rows);
+        $indexed = $faqs->values();
+
+        foreach (array_values($rows) as $i => $row) {
+            $faq = $indexed->get($i);
+            if ($faq === null) {
+                continue;
+            }
+
+            if (array_key_exists('group_name', $row)) {
+                $faq->setAttribute('group_name', $row['group_name']);
+            }
+
+            if (array_key_exists('group_sort_order', $row)) {
+                $faq->setAttribute('group_sort_order', $row['group_sort_order']);
+            }
+        }
+
+        return $faqs;
     }
 
     /**

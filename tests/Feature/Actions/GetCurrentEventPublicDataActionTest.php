@@ -112,15 +112,21 @@ it('returns only global faqs when no event is given', function (): void {
     expect($result['faqs']->first()->group_sort_order)->toBe(9999);
 });
 
-it('memoizes results per request', function (): void {
-    $event = DonationEvent::factory()->create();
-    $partner = Partner::factory()->create();
-    $event->partners()->attach($partner->id, ['sort_order' => 1, 'is_published' => true]);
+it('returns correct data for each event when the same instance is called with different events', function (): void {
+    $event1 = DonationEvent::factory()->create();
+    $event2 = DonationEvent::factory()->create();
+
+    $partner1 = Partner::factory()->create();
+    $partner2 = Partner::factory()->create();
+
+    $event1->partners()->attach($partner1->id, ['sort_order' => 1, 'is_published' => true]);
+    $event2->partners()->attach($partner2->id, ['sort_order' => 1, 'is_published' => true]);
 
     $action = new GetCurrentEventPublicDataAction;
 
-    $first = $action($event);
-    $second = $action($event);
+    $result1 = $action($event1);
+    $result2 = $action($event2);
 
-    expect($first['partners'])->toBe($second['partners']);
+    expect($result1['partners']->pluck('id')->all())->toBe([$partner1->id]);
+    expect($result2['partners']->pluck('id')->all())->toBe([$partner2->id]);
 });

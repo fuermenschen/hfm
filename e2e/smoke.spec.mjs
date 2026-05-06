@@ -17,7 +17,7 @@ const publicRoutes = [
 async function waitForImagesAndIdle(page) {
     await page.waitForLoadState("networkidle");
     // Wait until all images on the page are fully loaded
-    await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0));
+    await page.waitForFunction(() => Array.from(document.images).filter((img) => img.hasAttribute("src") && !img.src.startsWith("data:")).every((img) => img.complete && img.naturalWidth > 0));
     // If a hero blur-up is present, wait for it to finish
     const hasHero = await page.$(".hfm-hero");
     if (hasHero) {
