@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
-use App\Models\Athlete;
-use App\Models\Donation;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -20,12 +20,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Main Menu
-Route::get('/', function () {
-    $athleteCount = Schema::hasTable('athletes') ? Athlete::count() : 0;
-    $donationCount = Schema::hasTable('donations') ? Donation::count() : 0;
-
-    return view('home', compact('athleteCount', 'donationCount'));
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('sportlerin-werden', 'pages.become-athlete')->middleware('active-event')->name('become-athlete');
 Route::view('spenderin-werden', 'pages.become-donor')->middleware('active-event')->name('become-donor');
 Route::view('newsletter', 'pages.newsletter')->name('newsletter');
@@ -35,7 +30,7 @@ Route::get('newsletter/abmelden/{email}', [NewsletterSubscriptionController::cla
 Route::post('newsletter/abmelden/{email}', [NewsletterSubscriptionController::class, 'update'])
     ->name('newsletter.unsubscribe.perform')
     ->middleware('signed');
-Route::view('fragen-und-antworten', 'pages.questions-and-answers')->name('questions-and-answers');
+Route::get('fragen-und-antworten', [FaqController::class, 'index'])->name('questions-and-answers');
 
 // Footer Menu
 Route::view('login', 'pages.login')->name('login');

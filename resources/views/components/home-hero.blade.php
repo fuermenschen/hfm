@@ -11,6 +11,8 @@
     $img = (string) random_int(1, 14);
   }
 
+  $currentEventPartners ??= collect();
+
   $eventDate = $currentDonationEvent?->starts_at;
   $eventDateTime = $eventDate?->format('Y-m-d');
   $eventDateLabel = $eventDate?->translatedFormat('j. F Y');

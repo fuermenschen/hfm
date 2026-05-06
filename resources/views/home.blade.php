@@ -10,10 +10,10 @@
         </div>
     @endif
 
-    @component('components.home-hero') @endcomponent
+    @component('components.home-hero', ['currentEventPartners' => $currentEventPartners]) @endcomponent
 
     @if ($currentDonationEvent !== null)
-        @component('components.home-content', ['athleteCount' => $athleteCount, 'donationCount' => $donationCount]) @endcomponent
+        @component('components.home-content', ['athleteCount' => $athleteCount, 'donationCount' => $donationCount, 'currentEventPartners' => $currentEventPartners]) @endcomponent
 
         @if ($currentEventSponsors->isNotEmpty())
             @component('components.sponsors')
