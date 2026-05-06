@@ -4,10 +4,12 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
+        "build:ai": "vite build -l error",
         "prettier": "prettier",
         "e2e:install": "playwright install",
         "e2e": "playwright test",
-        "e2e:headed": "playwright test --headed"
+        "e2e:headed": "playwright test --headed",
+        "e2e:ai": "npx playwright test --reporter=junit"
     },
     "devDependencies": {
         "@playwright/test": "^1.59.0",
