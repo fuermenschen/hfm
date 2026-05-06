@@ -82,7 +82,7 @@
             "vendor/bin/pint --dirty -q"
         ],
         "test:sca:ai": [
-            "vendor/bin/phpstan --output-format=json"
+            "vendor/bin/phpstan --error-format=json"
         ],
         "test:pest:ai": [
             "php artisan test --parallel --compact --colors=never"

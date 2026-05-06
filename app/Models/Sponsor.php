@@ -29,7 +29,7 @@ class Sponsor extends Model
 
     public function logoUrl(): ?string
     {
-        if (! is_string($this->logo_filename) || $this->logo_filename === '') {
+        if ($this->logo_filename === '') {
             return null;
         }
 

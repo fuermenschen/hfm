@@ -130,7 +130,7 @@ class BecomeAthleteForm extends Component
         try {
 
             if ($this->partner_id === null) {
-                Flux::toast(heading: 'Bitte wähle eine Option.', text: 'Wähle eine:n Benefizpartner:in oder "Alle zu gleichen Teilen".', variant: 'danger');
+                Flux::toast(heading: 'Bitte wähle eine Option.', text: 'Wähle eine:n Benefizpartner:in oder "'.ucfirst(__('app.equal_split')).'".', variant: 'danger');
 
                 return;
             }
@@ -203,7 +203,7 @@ class BecomeAthleteForm extends Component
         $this->extraFields = new HoneypotData;
 
         $currentDonationEvent = app(CurrentDonationEventService::class)->current();
-        $this->allowEqualSplitOption = (bool) ($currentDonationEvent?->has_equal_split_option ?? true);
+        $this->allowEqualSplitOption = (bool) ($currentDonationEvent->has_equal_split_option ?? true);
 
         $this->sport_types = SportType::all();
 

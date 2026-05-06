@@ -130,7 +130,7 @@ class BecomeDonorForm extends Component
         $athlete = Athlete::find($this->athlete_id);
         if ($athlete) {
             $this->currentAthlete = $athlete->privacy_name;
-            $this->currentPartner = $athlete->partner?->name ?? 'alle Benefizpartner:innen zu gleichen Teilen';
+            $this->currentPartner = $athlete->partner->name ?? __('app.equal_split_full');
             $this->currentRounds = $athlete->rounds_estimated;
         }
     }

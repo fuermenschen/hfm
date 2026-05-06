@@ -78,7 +78,7 @@
                 <flux:radio disabled value="0" label="Keine Partner:innen verfügbar" />
             @else
                 @if ($allowEqualSplitOption)
-                    <flux:radio value="0" label="Alle zu gleichen Teilen" />
+                    <flux:radio value="0" :label="ucfirst(__('app.equal_split'))" />
                 @endif
                 @foreach ($partners as $partner)
                     <flux:radio value="{{ $partner->id }}" label="{{ $partner->name }}" />
