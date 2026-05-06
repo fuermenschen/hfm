@@ -6,8 +6,13 @@ use Database\Factories\SponsorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property string $size
+ * @property Pivot $pivot
+ */
 class Sponsor extends Model
 {
     /** @use HasFactory<SponsorFactory> */

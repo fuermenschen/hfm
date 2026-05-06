@@ -20,7 +20,7 @@ class GetCurrentEventPublicDataAction
      */
     public function __invoke(?DonationEvent $event): array
     {
-        $cacheKey = 'event_public_data_'.($event?->id ?? 'none');
+        $cacheKey = 'event_public_data_'.($event->id ?? 'none');
 
         return Cache::remember($cacheKey, now()->addMinute(), function () use ($event): array {
             $partners = $this->partners($event);
@@ -63,7 +63,7 @@ class GetCurrentEventPublicDataAction
             ->get();
 
         $sponsors->each(function (Sponsor $sponsor): void {
-            $sponsor->setAttribute('size', $sponsor->pivot->size);
+            $sponsor->setAttribute('size', $sponsor->pivot->getAttribute('size'));
         });
 
         return $sponsors;
@@ -93,8 +93,8 @@ class GetCurrentEventPublicDataAction
             ->get();
 
         $eventFaqs->each(function (Faq $faq): void {
-            $faq->setAttribute('group_name', $faq->pivot->group ?? 'general');
-            $faq->setAttribute('group_sort_order', $faq->pivot->sort_order ?? 9999);
+            $faq->setAttribute('group_name', $faq->pivot->getAttribute('group') ?? 'general');
+            $faq->setAttribute('group_sort_order', $faq->pivot->getAttribute('sort_order') ?? 9999);
         });
 
         $globalFaqs = $this->globalFaqs();

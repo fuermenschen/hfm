@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -51,6 +52,7 @@ class DonationEvent extends Model
         return $this->hasMany(Athlete::class);
     }
 
+    /** @return BelongsToMany<Partner, $this, Pivot, 'pivot'> */
     public function partners(): BelongsToMany
     {
         return $this->belongsToMany(Partner::class, 'donation_event_partner')
@@ -58,6 +60,7 @@ class DonationEvent extends Model
             ->withTimestamps();
     }
 
+    /** @return BelongsToMany<Sponsor, $this, Pivot, 'pivot'> */
     public function sponsors(): BelongsToMany
     {
         return $this->belongsToMany(Sponsor::class, 'donation_event_sponsor')
@@ -65,6 +68,7 @@ class DonationEvent extends Model
             ->withTimestamps();
     }
 
+    /** @return BelongsToMany<Faq, $this, Pivot, 'pivot'> */
     public function faqs(): BelongsToMany
     {
         return $this->belongsToMany(Faq::class, 'donation_event_faq')
