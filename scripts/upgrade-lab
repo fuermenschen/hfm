@@ -583,6 +583,8 @@ prepare_worktree_runtime_artifacts
 
 compose_cmd exec -T app php artisan key:generate --force --no-interaction
 
+compose_cmd exec -T app php artisan down --no-interaction
+
 compose_cmd exec -T app php artisan about
 
 APP_URL="http://localhost:$UPGRADE_LAB_APP_PORT"
@@ -596,6 +598,8 @@ printf '  Mailpit SMTP: localhost:%s\n' "$UPGRADE_LAB_MAILPIT_SMTP_PORT"
 printf '  DB:        localhost:%s\n\n' "$UPGRADE_LAB_DB_PORT"
 
 run_dump_setup
+
+compose_cmd exec -T app php artisan up --no-interaction
 
 BASELINE_PHP_VERSION="$(compose_cmd exec -T app php -v | head -n 1)"
 BASELINE_APACHE_VERSION="$(compose_cmd exec -T app apache2 -v | sed -n '1p')"
@@ -650,6 +654,8 @@ if [[ "$PAUSE_AFTER_BASELINE" -eq 1 ]]; then
     read -r _
 fi
 
+compose_cmd exec -T app php artisan down --no-interaction
+
 git -C "$WORKTREE_DIR" checkout --detach "$TARGET_COMMIT_SHA" >/dev/null
 
 prepare_worktree_runtime_artifacts
@@ -657,6 +663,8 @@ prepare_worktree_runtime_artifacts
 compose_cmd exec -T app php artisan about
 run_target_deploy_steps
 run_manual_upgrade_commands
+
+compose_cmd exec -T app php artisan up --no-interaction
 
 if [[ "$PAUSE_BEFORE_UPGRADE_CHECKS" -eq 1 ]]; then
     printf '\n=== Upgrade execution complete ===\n'
