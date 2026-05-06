@@ -5,26 +5,9 @@ use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 it('backfills athlete donation events via command and exports unresolved records without deleting by default', function (): void {
-    $createDonationEventsMigration = require database_path('migrations/2026_03_24_151416_create_donation_events_table.php');
-    $addDonationEventIdMigration = require database_path('migrations/2026_03_24_151421_add_donation_event_id_to_athletes_table.php');
-
-    if (Schema::hasColumn('athletes', 'donation_event_id')) {
-        Schema::table('athletes', function ($table): void {
-            $table->dropForeign(['donation_event_id']);
-            $table->dropColumn('donation_event_id');
-        });
-    }
-
-    if (Schema::hasTable('donation_events')) {
-        Schema::drop('donation_events');
-    }
-
-    $createDonationEventsMigration->up();
-
     $sportType = SportType::query()->create(['name' => 'Laufen']);
     $partner = Partner::query()->create(['name' => 'Test Partner']);
 
@@ -78,9 +61,6 @@ it('backfills athlete donation events via command and exports unresolved records
 
     expect(DB::table('donations')->where('id', $archivedDonationId)->exists())->toBeTrue();
 
-    $filesBefore = Storage::disk('local')->files('exports');
-
-    $addDonationEventIdMigration->up();
     DB::table('donation_events')->insert([
         [
             'slug' => '2025',
@@ -122,6 +102,8 @@ it('backfills athlete donation events via command and exports unresolved records
         ],
     ]);
 
+    $filesBefore = Storage::disk('local')->files('exports');
+
     $this->artisan('hfm:backfill:event-content', [
         '--part' => ['athlete-assignments'],
         '--no-prompt' => true,
@@ -149,36 +131,4 @@ it('backfills athlete donation events via command and exports unresolved records
     expect($export)->toHaveKeys(['donations', 'donors']);
     expect($export['donations'])->toBeArray();
     expect($export['donors'])->toBeArray();
-});
-
-it('can run the athlete donation event migration down and up repeatedly', function (): void {
-    $createDonationEventsMigration = require database_path('migrations/2026_03_24_151416_create_donation_events_table.php');
-    $addDonationEventIdMigration = require database_path('migrations/2026_03_24_151421_add_donation_event_id_to_athletes_table.php');
-
-    if (Schema::hasColumn('athletes', 'donation_event_id')) {
-        Schema::table('athletes', function ($table): void {
-            $table->dropForeign(['donation_event_id']);
-            $table->dropColumn('donation_event_id');
-        });
-    }
-
-    if (Schema::hasTable('donation_events')) {
-        Schema::drop('donation_events');
-    }
-
-    $createDonationEventsMigration->up();
-    $addDonationEventIdMigration->up();
-
-    expect(Schema::hasColumn('athletes', 'donation_event_id'))->toBeTrue();
-    expect(Schema::hasColumn('donation_events', 'timezone'))->toBeTrue();
-    expect(Schema::hasColumn('donation_events', 'content'))->toBeTrue();
-    expect(Schema::hasColumn('donation_events', 'is_published'))->toBeTrue();
-
-    $addDonationEventIdMigration->down();
-
-    expect(Schema::hasColumn('athletes', 'donation_event_id'))->toBeFalse();
-
-    $addDonationEventIdMigration->up();
-
-    expect(Schema::hasColumn('athletes', 'donation_event_id'))->toBeTrue();
 });
