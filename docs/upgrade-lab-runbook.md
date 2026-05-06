@@ -9,50 +9,43 @@ This runbook describes how to execute the reusable upgrade rehearsal gate.
 - Frontend assets built (`npm run build`)
 - Flux credentials configured when required by this repository
 
-## 2) Quick start (dump-only)
+## 2) Quick start
 
 ```bash
 scripts/upgrade-lab \
   --baseline=main \
   --target=<target-sha-or-branch> \
-  --dump-path=storage/upgrade-lab/dumps/260424-live_data.sql \
-  --baseline-checklist-file=storage/upgrade-lab/checklists/baseline.pass.env \
-  --target-checklist-file=storage/upgrade-lab/checklists/target.pass.env
+  --dump-path=storage/upgrade-lab/dumps/260424-live_data.sql
 ```
+
+The script runs interactively by default — it pauses after baseline checks and after deploy so you can visually verify
+and run any release-specific commands on the container.
 
 ## 3) Operator flow
 
 1. Run the command with baseline, target, and dump path.
-2. Complete manual baseline checks and mark them in checklist file.
-3. Let deploy automation run (or disable via `--auto-deploy-steps=false`).
-4. Optionally execute extra commands with `--manual-commands-file`.
-5. Complete manual target checks and mark checklist.
-6. Review `storage/upgrade-lab/reports/<run-id>/report.md` and gate status.
+2. Complete baseline checklist (interactive pass/fail prompts).
+3. Press Enter to continue to target phase.
+4. Target deploy runs automatically (mirrors production: down, migrate, storage:link, optimize, up).
+5. Run any release-specific commands (backfills, data migrations) on the container during the pause.
+6. Press Enter to proceed with upgrade checks.
+7. Complete target checklist (interactive pass/fail prompts).
+8. Review `storage/upgrade-lab/reports/<run-id>/report.md` and gate status.
 
-## 4) Checklist format
+## 4) Options
 
-Checklist keys are documented in `docs/upgrade-lab-checklist.md`.
-
-Each checklist value must be `pass` or `fail`:
-
-```text
-home=pass
-faq=pass
-registration_guards=pass
-admin=pass
-logs=pass
-mailpit_email=pass
-notes=
-```
+- `--baseline=<ref>` — Baseline revision (default: `main`)
+- `--run-id=<id>` — Custom run identifier
+- `--no-interaction` — Skip all pauses and auto-pass all checklists (for automated testing)
+- `--keep-running` — Keep containers and worktree after completion
+- `--commit=<ref>` — Alias for `--target`
 
 ## 5) Artifacts generated
 
 For each run id, artifacts are stored under `storage/upgrade-lab/reports/<run-id>/`:
 
 - `report.md`
-- baseline and target checklist templates
-- migrate/backfill logs (when deploy automation enabled)
-- manual command logs (when provided)
+- `target-migrate.log`
 - runtime parity snapshots:
     - `*-php-extensions.txt`
     - `*-apache-modules.txt`
@@ -87,14 +80,3 @@ For each run id, artifacts are stored under `storage/upgrade-lab/reports/<run-id
 - Read `report.md` blockers section.
 - Inspect target logs in the same report directory.
 - Fix issue and rerun with a new `--run-id`.
-
-## 7) CI usage
-
-Use the `upgrade-lab-ci` workflow to run dump-mode rehearsal smoke and upload report artifacts.
-Provide a sanitized dump URL through the workflow `dump_url` input.
-Optionally set `baseline_ref` (defaults to `main`).
-
-Important:
-
-- CI uses placeholder checklist files for non-interactive smoke runs.
-- Manual checklist verification is still required in human-operated release rehearsals.

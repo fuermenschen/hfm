@@ -52,27 +52,15 @@ Upgrade rehearsals are dump-only. Provide a SQL dump for every run:
 scripts/upgrade-lab --baseline=main --target=<feature-sha-or-branch> --dump-path=storage/upgrade-lab/dumps/260424-live_data.sql
 ```
 
-WP4 options for upgrade execution:
+The script is an interactive wizard. It always pauses after baseline checks and after target deploy so you can verify and run release-specific commands (backfills, data migrations) directly on the container.
 
-- Auto-run target deploy workflow (migrate + event-content backfill + idempotency rerun): `--auto-deploy-steps=true`
-- Inject additional manual upgrade commands from file: `--manual-commands-file=storage/upgrade-lab/manual-commands.txt`
-- Pause before target checks: `--pause-before-upgrade-checks`
+Key options:
 
-WP5 manual gate checklist:
+- `--no-interaction` — skip all pauses and auto-pass checklists (for automated testing)
+- `--keep-running` — keep containers and worktree after completion
+- `--run-id=<id>` — custom run identifier
 
-- Provide checklist result files with:
-    - `--baseline-checklist-file=<path>`
-    - `--target-checklist-file=<path>`
-- Checklist format is documented in `docs/upgrade-lab-checklist.md`.
-- Full operations/troubleshooting runbook: `docs/upgrade-lab-runbook.md`.
-
-CI-friendly rehearsal:
-
-- Workflow: `.github/workflows/upgrade-lab-ci.yml`
-- It runs a dump-mode **smoke** rehearsal and uploads artifacts from `storage/upgrade-lab/reports/`.
-- Start it with `dump_url` pointing to a sanitized SQL dump.
-- Optionally pass `baseline_ref` (defaults to `main`).
-- CI uses placeholder checklist files; required manual gate verification remains a human release step.
+Checklist items (prompted interactively for pass/fail): public_pages, faq, registration_guards, mailpit_email, admin_pages, logs. Full list documented in `docs/upgrade-lab-checklist.md`.
 
 This command boots a production-parity runtime baseline for rehearsal work (PHP 8.4, Apache 2.4, MariaDB 10.11.16)
 and writes a run report to `storage/upgrade-lab/reports/<run-id>/report.md`.

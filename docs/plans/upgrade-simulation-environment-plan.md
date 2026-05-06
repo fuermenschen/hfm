@@ -4,22 +4,20 @@ This document expands step 6 of `docs/plans/event-content-pr-implementation-plan
 
 ## 1) Goal and gate definition
 
-Create a reusable, scripted "upgrade lab" that is mandatory before production deployments involving migrations and
-backfills.
+Create a reusable, scripted "upgrade lab" that is mandatory before production deployments involving migrations.
 
 The gate passes only when all of the following are true:
 
 1. Baseline checks pass on the live-equivalent revision.
-2. Upgrade checks pass on the target revision after migrations/backfills.
-3. Idempotency checks pass (backfill can run twice without duplication side effects).
-4. Runtime versions and core config are validated against production.
-5. A run report is generated and archived.
+2. Upgrade checks pass on the target revision after deploy.
+3. Runtime versions and core config are validated against production.
+4. A run report is generated and archived.
 
 The gate is intentionally semi-automated:
 
-- Automation handles environment setup, baseline/upgrade command execution, and report scaffolding.
-- Humans perform structured manual checks before and after upgrade.
-- Optional manual command hooks are available for release-specific actions.
+- Automation handles environment setup, deploy execution, and report scaffolding.
+- Humans perform structured manual checks before and after upgrade via interactive prompts.
+- Release-specific commands (backfills, data migrations) are run manually during the post-deploy pause.
 
 ## 2) Tooling decision (use Sail, with production-parity containers)
 
@@ -47,15 +45,13 @@ Also capture and verify:
 - Apache modules needed by Laravel routing and headers (minimum: `rewrite`, `headers`).
 - Queue/cache/mail dependencies used in production release flow.
 
-## 4) Artifacts to add
+## 4) Artifacts
 
 1. `docker-compose.upgrade-lab.yml`
-    - Services: `app`, `db`, optional `redis`, and `mailpit` (enabled by default for rehearsal usability).
+    - Services: `app`, `db`, and `mailpit`.
     - Named volumes for DB persistence per rehearsal run.
     - Health checks for `app` and `db`.
-    - Stable local endpoints:
-        - app: `http://localhost:<app-port>`
-        - Mailpit UI: `http://localhost:18025` (or configured port)
+    - Stable local endpoints for app, Mailpit UI, Mailpit SMTP, DB.
 
 2. `docker/upgrade-lab/app/Dockerfile`
     - Base image with PHP 8.4 + Apache 2.4.
@@ -67,26 +63,15 @@ Also capture and verify:
     - Laravel-friendly rewrite behavior.
 
 4. `scripts/upgrade-lab`
-    - Main orchestration script with required parameters:
-        - `--target=<sha-or-branch>`
-        - `--dump-path=<path>`
-    - Optional:
-        - `--baseline=<sha-or-branch>` (default: current live/main)
-        - `--run-id=<id>`
-        - `--auto-deploy-steps=true|false`
-        - `--pause-before-upgrade-checks`
-        - `--manual-commands-file=<path>`
-        - `--keep-running`
+    - Main orchestration script.
+    - Required: `--target=<sha-or-branch>`, `--dump-path=<path>`
+    - Optional: `--baseline=<ref>` (default: `main`), `--run-id=<id>`, `--no-interaction`, `--keep-running`
 
-5. `scripts/upgrade-lab-checks`
-    - Executes smoke checks, key command checks, and log scans.
-    - Writes machine-readable and human-readable results.
-
-6. `docs/upgrade-lab-runbook.md`
+5. `docs/upgrade-lab-runbook.md`
     - Operational runbook for engineers and release managers.
 
-7. `docs/upgrade-lab-checklist.md`
-    - Operator checklist used during manual baseline and post-upgrade verification.
+6. `docs/upgrade-lab-checklist.md`
+    - Documents the checklist items prompted during baseline and target phases.
 
 ## 5) Environment lifecycle model
 
@@ -97,6 +82,8 @@ Each rehearsal run gets an isolated run id:
 - Report folder: `storage/upgrade-lab/reports/<run-id>/`
 
 This prevents cross-run data leakage and supports parallel rehearsals.
+
+Stale worktrees are pruned automatically at the start of each run via `git worktree prune`.
 
 ## 5.1) Mail capture for login links and notifications
 
@@ -132,38 +119,30 @@ Security policy for dump mode:
 - Never write dump credentials into repo files.
 - Keep dump handling outside committed config.
 
-## 7) Scripted rehearsal flow (required)
+## 7) Rehearsal flow
 
-This flow is designed around two manual check windows and one automation window.
+The script is an interactive wizard. It always pauses after baseline checks and after target deploy so the operator can verify and run manual commands.
 
 ### Phase 1: Baseline
 
 1. Start lab stack on baseline revision (`main` or live SHA).
 2. Load SQL dump into baseline revision.
-3. Record runtime parity snapshot:
-    - `php -v`
-    - `apache2 -v`
-    - MariaDB `SELECT VERSION();`
-    - key `php -m` output
-4. Execute baseline checks:
-    - `/` renders expected event content blocks.
-    - `/fragen-und-antworten` renders grouped/event-correct FAQ content.
-    - `/admin` loads for authenticated user.
-    - login-link or equivalent user email arrives in Mailpit and is readable.
-    - logs have no critical errors.
-5. Operator confirms baseline checklist in report (`pass` or `fail` per item).
+3. Record runtime parity snapshot.
+4. Execute baseline checks (HTTP smoke).
+5. Prompt operator for checklist items (interactive pass/fail).
+6. Pause — operator verifies baseline in browser and Mailpit.
 
 ### Phase 2: Upgrade
 
 1. Switch to target revision (`--target`).
-2. Execute deploy workflow steps automatically when `--auto-deploy-steps=true`:
-    - `php artisan migrate --no-interaction`
-    - explicit backfill parts in production order
-    - same backfill command a second time (idempotency)
-3. If `--manual-commands-file` is provided, execute those commands in order and log outcomes.
-4. If `--pause-before-upgrade-checks` is set, pause and print next-step instructions so operator can run additional manual
-   commands.
-5. Re-run smoke/manual checks and compare against baseline.
+2. Execute deploy steps automatically, mirroring production:
+     - `php artisan down`
+     - `php artisan migrate --no-interaction`
+     - `php artisan storage:link --no-interaction`
+     - `php artisan optimize`
+     - `php artisan up --no-interaction`
+3. Pause — operator runs any release-specific commands (backfills, data migrations) on the container.
+4. Re-run checks and compare against baseline.
 
 ### Phase 3: Gate output
 
@@ -173,8 +152,7 @@ Generate `storage/upgrade-lab/reports/<run-id>/report.md` containing:
 - dump reference,
 - runtime version snapshot,
 - pass/fail status per check,
-- unresolved-athlete export path (if present),
-- Mailpit verification result (including email subject/time),
+- Mailpit verification result,
 - blockers and required follow-up actions.
 
 Exit code rules:
@@ -182,36 +160,35 @@ Exit code rules:
 - `0` only when all mandatory checks pass.
 - non-zero when any gate check fails.
 
-## 8) Suggested command contract
+### Non-interactive mode
 
-Primary entrypoint:
+Use `--no-interaction` to skip all pauses and auto-pass all checklist items. This is intended for automated testing only — the checklist gate is meaningless in this mode since no real verification occurs.
+
+## 8) Command contract
 
 ```bash
 scripts/upgrade-lab \
   --target=<target-sha-or-branch> \
   --dump-path=/absolute/path/to/dump.sql \
   [--baseline=<main-or-live-sha>] \
-  [--auto-deploy-steps=true|false] \
-  [--pause-before-upgrade-checks] \
-  [--manual-commands-file=./scripts/upgrade-lab-manual.txt] \
-  [--run-id=<timestamp-or-ticket>]
+  [--run-id=<timestamp-or-ticket>] \
+  [--no-interaction] \
+  [--keep-running]
 ```
 
-Alternative compatibility mode (recommended while migrating from WP1 script naming):
-
-- `--commit` can remain supported as alias for `--target` until old docs/scripts are updated.
+- `--commit` is supported as an alias for `--target`.
 
 Expected operator experience:
 
 1. Start one command with baseline, target, and dump-path inputs.
-2. Perform baseline manual checks in browser + Mailpit.
-3. Let scripted deploy workflow run (or disable and run manually).
-4. Optionally run extra manual upgrade commands.
-5. Perform post-upgrade manual checks in browser + Mailpit.
-6. Review generated pass/fail report for go/no-go.
+2. Complete baseline checklist (interactive pass/fail prompts).
+3. Verify baseline in browser + Mailpit, press Enter.
+4. Deploy runs automatically (mirrors production).
+5. Run any release-specific commands on the container, press Enter.
+6. Complete target checklist (interactive pass/fail prompts).
+7. Review generated pass/fail report for go/no-go.
 
-Internally, commands should run through Sail equivalents (for example, `./vendor/bin/sail artisan ...`) to keep
-execution consistent.
+Release-specific commands (backfills, data migrations) are run by the operator directly on the container during the post-deploy pause — they must not be hardcoded into the script.
 
 ## 9) Reusability and maintenance policy
 
@@ -220,95 +197,41 @@ execution consistent.
 3. Store past reports for auditability and release retrospectives.
 4. Review pinned image versions quarterly and after production runtime changes.
 
-## 10) Implementation checklist
+## 10) Work packages (all implemented)
 
-1. Add Sail dependency and publish baseline Sail assets if not already present.
-2. Introduce dedicated upgrade-lab Compose and Docker artifacts.
-3. Add Mailpit service wiring and lab mail environment defaults.
-4. Implement `scripts/upgrade-lab` with baseline/target orchestration and structured exit codes.
-5. Implement `scripts/upgrade-lab-checks` and report generation (including manual check capture fields).
-6. Implement optional automated deploy-step execution + optional manual command hooks.
-7. Validate with dump mode using a sanitized production-like dump.
-8. Dry-run against live-equivalent commit + current feature commit.
-9. Require an attached report before production release approval.
-
-## 11) Work packages (explicit)
-
-### WP1 - Runtime scaffold + Mailpit (implemented)
-
-Scope:
+### WP1 - Runtime scaffold + Mailpit
 
 - Provision isolated lab stack with pinned runtime targets (PHP 8.4, Apache 2.4, MariaDB 10.11.16).
 - Provide scripted bootstrap entrypoint (`scripts/upgrade-lab`) for dump-based rehearsal.
 - Route app mail to Mailpit and expose inbox UI for login-link verification.
 - Emit a basic run report with runtime snapshot and Mailpit endpoint details.
 
-Acceptance:
-
-- `scripts/upgrade-lab --commit=<sha> --dump-path=<path>` completes successfully.
-- `/` smoke status is successful.
-- Report includes PHP/Apache/MariaDB versions and Mailpit connectivity details.
-
-### WP2 - Baseline -> upgrade two-phase orchestration (implemented)
-
-Scope:
+### WP2 - Baseline -> upgrade two-phase orchestration
 
 - Run baseline revision and target revision in one orchestrated rehearsal.
-- Standardize primary flags around `--baseline` + `--target` (keep `--commit` alias temporarily).
-- Add explicit pause point between baseline checks and upgrade execution.
-
-Acceptance:
-
-- One command produces baseline and post-upgrade sections in the same report.
+- Interactive pauses after baseline checks and after target deploy.
 - Baseline and target commits are both recorded and compared.
 
-### WP3 - Data source mode (`dump`) (implemented)
-
-Scope:
+### WP3 - Data source mode (`dump`)
 
 - Implement dump mode (`--dump-path=...`) with validation and import.
 - Add post-import normalization for safe local rehearsal (no real outbound side effects).
 
-Acceptance:
+### WP4 - Deploy workflow mirroring
 
-- Dump mode fails fast when `--dump-path` is missing/invalid.
-- Dump mode imports successfully and proceeds to checks.
+- Target deploy mirrors production deploy sequence: down, migrate, storage:link, optimize, up.
+- Release-specific commands are run manually by the operator during the interactive pause.
+- No hardcoded backfill or data migration commands in the script.
 
-### WP4 - Deploy workflow automation + manual hooks (implemented)
+### WP5 - Structured checks + gate report
 
-Scope:
+- Interactive pass/fail checklist for baseline and target phases.
+- Capture required items (public pages, FAQ, registration guards, Mailpit email, admin pages, logs).
+- `--no-interaction` auto-passes all checks for automated testing.
+- Produce explicit go/no-go report with blockers.
 
-- Add `--auto-deploy-steps=true|false` for migration/backfill execution.
-- Execute production-order backfill and mandatory idempotency second run when enabled.
-- Add optional `--manual-commands-file` and `--pause-before-upgrade-checks` hooks.
+### WP6 - Hardening and team adoption
 
-Acceptance:
-
-- Automated mode executes workflow steps with logged pass/fail.
-- Operator can inject additional manual commands before final checks.
-
-### WP5 - Structured manual checks + gate report (implemented)
-
-Scope:
-
-- Add reusable checklist template for baseline and post-upgrade manual checks.
-- Capture required matrix items (`/`, `/fragen-und-antworten`, registration guards, `/admin`, logs, Mailpit email).
-- Produce explicit go/no-go report with blockers and unresolved export references.
-
-Acceptance:
-
-- Final report contains per-check pass/fail and reviewer notes.
-- Exit code is `0` only when all required gate checks pass.
-
-### WP6 - Hardening and team adoption (implemented)
-
-Scope:
-
-- Add runtime parity details (PHP extension snapshot, selected DB settings, Apache module snapshot).
-- Add runbook refinements and troubleshooting playbook.
-- Add CI-friendly dump-mode rehearsal path and artifact retention of reports.
-
-Acceptance:
-
-- Team can run repeatable rehearsals with documented recovery steps.
-- CI can run a non-interactive dump rehearsal smoke and persist report artifacts.
+- Runtime parity details (PHP extension snapshot, DB settings, Apache module snapshot).
+- Runbook and troubleshooting playbook.
+- Automatic stale worktree cleanup via `git worktree prune`.

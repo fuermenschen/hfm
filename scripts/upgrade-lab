@@ -8,46 +8,38 @@ COMPOSE_FILE="$ROOT_DIR/docker-compose.upgrade-lab.yml"
 TARGET_COMMIT=""
 DUMP_PATH=""
 DUMP_PATH_ABS=""
-AUTO_DEPLOY_STEPS="true"
-MANUAL_COMMANDS_FILE=""
-MANUAL_COMMANDS_FILE_ABS=""
-BASELINE_CHECKLIST_FILE=""
-BASELINE_CHECKLIST_FILE_ABS=""
-TARGET_CHECKLIST_FILE=""
-TARGET_CHECKLIST_FILE_ABS=""
 BASELINE_COMMIT="main"
 RUN_ID="$(date +%Y%m%d%H%M%S)"
 KEEP_RUNNING=0
-PAUSE_AFTER_BASELINE=0
-PAUSE_BEFORE_UPGRADE_CHECKS=0
-UNRESOLVED_EXPORT_PATH=""
+NO_INTERACTION=0
 MANUAL_GATE_BLOCKERS=""
 
 usage() {
     cat <<'EOF'
 Usage:
-  scripts/upgrade-lab --target=<sha-or-branch> --dump-path=<path> [--baseline=<sha-or-branch>] [--auto-deploy-steps=true|false] [--manual-commands-file=<path>] [--baseline-checklist-file=<path>] [--target-checklist-file=<path>] [--run-id=<id>] [--pause-after-baseline] [--pause-before-upgrade-checks] [--keep-running]
+  scripts/upgrade-lab --target=<sha-or-branch> --dump-path=<path> [options]
+
+Required:
+  --target        Target revision to rehearse after baseline
+  --dump-path     SQL dump path
 
 Options:
-  --target        Target revision to rehearse after baseline (required)
-  --commit        Alias for --target (kept for compatibility)
-  --dump-path     SQL dump path (required)
   --baseline      Baseline revision to rehearse first (default: main)
-  --auto-deploy-steps  Execute migrate + backfill + idempotency rerun in target phase (default: true)
-  --manual-commands-file  File with one shell command per line to run in app container after deploy steps
-  --baseline-checklist-file  Manual checklist results for baseline phase (key=value)
-  --target-checklist-file  Manual checklist results for target phase (key=value)
-  --run-id        Run identifier used for project, volume, and report paths
-  --pause-after-baseline  Pause after baseline checks before switching to target
-  --pause-before-upgrade-checks  Pause after upgrade execution before target checks
+  --run-id        Run identifier for project, volume, and report paths
+  --no-interaction  Skip interactive pauses and auto-pass all checklists
   --keep-running  Keep containers and worktree after completion
+  --commit        Alias for --target (kept for compatibility)
   --help          Show this help
 
 Notes:
   - Reports are written to storage/upgrade-lab/reports/<run-id>/.
   - Dump source is mandatory; seed mode is intentionally disabled.
-  - WP6 can run target deploy workflow automatically with --auto-deploy-steps=true.
-  - WP6 enforces manual checklists for baseline and target phases.
+  - Target deploy mirrors production: down, migrate, storage:link, optimize, up.
+  - The script always pauses after baseline checks and after deploy for
+    manual verification. Use --no-interaction to skip pauses and auto-pass
+    checklists (useful for automated testing).
+  - Release-specific commands (backfills, data migrations) are run manually
+    on the container during the post-deploy pause.
   - Mail is routed to Mailpit in the lab stack for login-link checks.
   - Uses Sail on Linux/macOS when available, otherwise falls back to docker compose.
 EOF
@@ -96,13 +88,8 @@ while [[ $# -gt 0 ]]; do
         --commit=*) TARGET_COMMIT="${1#*=}" ;;
         --dump-path=*) DUMP_PATH="${1#*=}" ;;
         --baseline=*) BASELINE_COMMIT="${1#*=}" ;;
-        --auto-deploy-steps=*) AUTO_DEPLOY_STEPS="${1#*=}" ;;
-        --manual-commands-file=*) MANUAL_COMMANDS_FILE="${1#*=}" ;;
-        --baseline-checklist-file=*) BASELINE_CHECKLIST_FILE="${1#*=}" ;;
-        --target-checklist-file=*) TARGET_CHECKLIST_FILE="${1#*=}" ;;
         --run-id=*) RUN_ID="${1#*=}" ;;
-        --pause-after-baseline) PAUSE_AFTER_BASELINE=1 ;;
-        --pause-before-upgrade-checks) PAUSE_BEFORE_UPGRADE_CHECKS=1 ;;
+        --no-interaction) NO_INTERACTION=1 ;;
         --keep-running) KEEP_RUNNING=1 ;;
         --help) usage; exit 0 ;;
         *) fail "Unknown option: $1" ;;
@@ -118,28 +105,6 @@ DUMP_PATH_ABS="$(resolve_path "$DUMP_PATH")"
 [[ -f "$DUMP_PATH_ABS" ]] || fail "Dump file not found: $DUMP_PATH_ABS"
 [[ -r "$DUMP_PATH_ABS" ]] || fail "Dump file is not readable: $DUMP_PATH_ABS"
 
-if [[ "$AUTO_DEPLOY_STEPS" != "true" && "$AUTO_DEPLOY_STEPS" != "false" ]]; then
-    fail "--auto-deploy-steps must be true or false"
-fi
-
-if [[ -n "$MANUAL_COMMANDS_FILE" ]]; then
-    MANUAL_COMMANDS_FILE_ABS="$(resolve_path "$MANUAL_COMMANDS_FILE")"
-    [[ -f "$MANUAL_COMMANDS_FILE_ABS" ]] || fail "Manual commands file not found: $MANUAL_COMMANDS_FILE_ABS"
-    [[ -r "$MANUAL_COMMANDS_FILE_ABS" ]] || fail "Manual commands file is not readable: $MANUAL_COMMANDS_FILE_ABS"
-fi
-
-if [[ -n "$BASELINE_CHECKLIST_FILE" ]]; then
-    BASELINE_CHECKLIST_FILE_ABS="$(resolve_path "$BASELINE_CHECKLIST_FILE")"
-    [[ -f "$BASELINE_CHECKLIST_FILE_ABS" ]] || fail "Baseline checklist file not found: $BASELINE_CHECKLIST_FILE_ABS"
-    [[ -r "$BASELINE_CHECKLIST_FILE_ABS" ]] || fail "Baseline checklist file is not readable: $BASELINE_CHECKLIST_FILE_ABS"
-fi
-
-if [[ -n "$TARGET_CHECKLIST_FILE" ]]; then
-    TARGET_CHECKLIST_FILE_ABS="$(resolve_path "$TARGET_CHECKLIST_FILE")"
-    [[ -f "$TARGET_CHECKLIST_FILE_ABS" ]] || fail "Target checklist file not found: $TARGET_CHECKLIST_FILE_ABS"
-    [[ -r "$TARGET_CHECKLIST_FILE_ABS" ]] || fail "Target checklist file is not readable: $TARGET_CHECKLIST_FILE_ABS"
-fi
-
 command -v git >/dev/null || fail "git is required"
 command -v docker >/dev/null || fail "docker is required"
 
@@ -152,8 +117,6 @@ BASELINE_COMMIT_SHA="$(git -C "$ROOT_DIR" rev-parse --verify "$BASELINE_COMMIT^{
 WORKTREE_DIR="$ROOT_DIR/.upgrade-lab/worktrees/$RUN_ID"
 REPORT_DIR="$ROOT_DIR/storage/upgrade-lab/reports/$RUN_ID"
 REPORT_FILE="$REPORT_DIR/report.md"
-BASELINE_CHECKLIST_TEMPLATE_FILE="$REPORT_DIR/baseline-checklist.template"
-TARGET_CHECKLIST_TEMPLATE_FILE="$REPORT_DIR/target-checklist.template"
 
 BASELINE_PHP_EXTENSIONS_FILE="$REPORT_DIR/baseline-php-extensions.txt"
 BASELINE_APACHE_MODULES_FILE="$REPORT_DIR/baseline-apache-modules.txt"
@@ -163,6 +126,8 @@ TARGET_APACHE_MODULES_FILE="$REPORT_DIR/target-apache-modules.txt"
 TARGET_DB_SETTINGS_FILE="$REPORT_DIR/target-db-settings.txt"
 
 mkdir -p "$REPORT_DIR"
+
+git -C "$ROOT_DIR" worktree prune
 
 export UPGRADE_LAB_PROJECT_NAME="hfm-upgrade-$RUN_ID"
 export UPGRADE_LAB_APP_SOURCE="$WORKTREE_DIR"
@@ -248,70 +213,15 @@ prepare_worktree_runtime_artifacts() {
     compose_cmd exec -T app npm run build
 }
 
-run_target_deploy_steps() {
-    local migrate_log backfill_log_first backfill_log_second
-
-    if [[ "$AUTO_DEPLOY_STEPS" != "true" ]]; then
-        return
-    fi
+run_target_deploy() {
+    local migrate_log
 
     migrate_log="$REPORT_DIR/target-migrate.log"
-    backfill_log_first="$REPORT_DIR/target-backfill-pass-1.log"
-    backfill_log_second="$REPORT_DIR/target-backfill-pass-2.log"
 
     compose_cmd exec -T app php artisan migrate --no-interaction | tee "$migrate_log"
     compose_cmd exec -T app php artisan storage:link --no-interaction
-
-    compose_cmd exec -T app php artisan hfm:backfill:event-content \
-        --part=events \
-        --part=athlete-assignments \
-        --part=content-assets \
-        --part=content-partners \
-        --part=content-sponsors \
-        --part=content-faqs \
-        --part=content-sport-types \
-        --no-interaction | tee "$backfill_log_first"
-
-    compose_cmd exec -T app php artisan hfm:backfill:event-content \
-        --part=events \
-        --part=athlete-assignments \
-        --part=content-assets \
-        --part=content-partners \
-        --part=content-sponsors \
-        --part=content-faqs \
-        --part=content-sport-types \
-        --no-interaction | tee "$backfill_log_second"
-
-    UNRESOLVED_EXPORT_PATH="$(
-        {
-            grep -Eo 'storage/app/exports/[^[:space:]]+\.json' "$backfill_log_first" || true
-            grep -Eo 'storage/app/exports/[^[:space:]]+\.json' "$backfill_log_second" || true
-        } | tail -n 1
-    )"
-}
-
-run_manual_upgrade_commands() {
-    local manual_log line trimmed
-
-    if [[ -z "$MANUAL_COMMANDS_FILE_ABS" ]]; then
-        return
-    fi
-
-    manual_log="$REPORT_DIR/target-manual-commands.log"
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        trimmed="${line#${line%%[![:space:]]*}}"
-
-        if [[ -z "$trimmed" || "$trimmed" == \#* ]]; then
-            continue
-        fi
-
-        {
-            printf '>>> %s\n' "$trimmed"
-            compose_cmd exec -T app sh -lc "$trimmed"
-            printf '\n'
-        } | tee -a "$manual_log"
-    done < "$MANUAL_COMMANDS_FILE_ABS"
+    compose_cmd exec -T app php artisan optimize
+    compose_cmd exec -T app php artisan up --no-interaction
 }
 
 collect_db_version() {
@@ -380,98 +290,57 @@ normalize_check_status() {
 
 check_label() {
     case "$1" in
-        home) printf 'Home page content (/)' ;;
+        public_pages) printf 'Public pages render correctly' ;;
         faq) printf 'FAQ page content (/fragen-und-antworten)' ;;
         registration_guards) printf 'Registration guards' ;;
-        admin) printf 'Admin access (/admin)' ;;
-        logs) printf 'Logs clean (no critical errors)' ;;
         mailpit_email) printf 'Login-link email received in Mailpit' ;;
+        admin_pages) printf 'Admin pages load correctly (/admin)' ;;
+        logs) printf 'Logs clean (no critical errors)' ;;
         *) printf '%s' "$1" ;;
     esac
 }
 
-write_checklist_template() {
-    local file_path="$1"
-
-    {
-        echo '# status values: pass or fail'
-        echo 'home=pass'
-        echo 'faq=pass'
-        echo 'registration_guards=pass'
-        echo 'admin=pass'
-        echo 'logs=pass'
-        echo 'mailpit_email=pass'
-        echo 'notes='
-    } > "$file_path"
-}
-
-collect_phase_manual_checklist() {
+collect_phase_checklist() {
     local prefix="$1"
     local phase_label="$2"
-    local checklist_file="$3"
     local notes=""
-    local key line trimmed status input
-    local keys=(home faq registration_guards admin logs mailpit_email)
+    local key status input
+    local keys=(public_pages faq registration_guards mailpit_email admin_pages logs)
 
     for key in "${keys[@]}"; do
         printf -v "${prefix}_${key}" '%s' ""
     done
     printf -v "${prefix}_notes" '%s' ""
 
-    if [[ -n "$checklist_file" ]]; then
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            trimmed="${line#${line%%[![:space:]]*}}"
-
-            if [[ -z "$trimmed" || "$trimmed" == \#* ]]; then
-                continue
-            fi
-
-            if [[ "$trimmed" == notes=* ]]; then
-                notes="${trimmed#notes=}"
-                continue
-            fi
-
-            key="${trimmed%%=*}"
-            status="${trimmed#*=}"
-            status="$(normalize_check_status "$status")"
-
-            case "$key" in
-                home|faq|registration_guards|admin|logs|mailpit_email)
-                    printf -v "${prefix}_${key}" '%s' "$status"
-                    ;;
-                *)
-                    ;;
-            esac
-        done < "$checklist_file"
-
-        printf -v "${prefix}_notes" '%s' "$notes"
-    else
-        if [[ ! -t 0 ]]; then
-            fail "$phase_label manual checklist required. Use --${phase_label,,}-checklist-file in non-interactive mode."
-        fi
-
-        printf '%s manual checklist\n' "$phase_label"
-        printf 'Use pass/fail for each check.\n'
-
+    if [[ "$NO_INTERACTION" -eq 1 ]]; then
         for key in "${keys[@]}"; do
-            while true; do
-                printf '%s: ' "$(check_label "$key")"
-                read -r input
-                status="$(normalize_check_status "$input")"
-
-                if [[ "$status" == "pass" || "$status" == "fail" ]]; then
-                    printf -v "${prefix}_${key}" '%s' "$status"
-                    break
-                fi
-
-                printf 'Please enter pass or fail.\n'
-            done
+            printf -v "${prefix}_${key}" '%s' "pass"
         done
-
-        printf 'Notes (optional): '
-        read -r notes
-        printf -v "${prefix}_notes" '%s' "$notes"
+        printf -v "${prefix}_notes" '%s' "auto-passed (--no-interaction)"
+        return
     fi
+
+    printf '%s checklist\n' "$phase_label"
+    printf 'Use pass/fail for each check.\n'
+
+    for key in "${keys[@]}"; do
+        while true; do
+            printf '%s: ' "$(check_label "$key")"
+            read -r input
+            status="$(normalize_check_status "$input")"
+
+            if [[ "$status" == "pass" || "$status" == "fail" ]]; then
+                printf -v "${prefix}_${key}" '%s' "$status"
+                break
+            fi
+
+            printf 'Please enter pass or fail.\n'
+        done
+    done
+
+    printf 'Notes (optional): '
+    read -r notes
+    printf -v "${prefix}_notes" '%s' "$notes"
 
     for key in "${keys[@]}"; do
         local status_var="${prefix}_${key}"
@@ -486,26 +355,26 @@ collect_phase_manual_checklist() {
     done
 }
 
-report_manual_checklist_section() {
+report_checklist_section() {
     local prefix="$1"
     local phase_label="$2"
     local notes_var="${prefix}_notes"
-    local home_var="${prefix}_home"
+    local public_pages_var="${prefix}_public_pages"
     local faq_var="${prefix}_faq"
     local registration_var="${prefix}_registration_guards"
-    local admin_var="${prefix}_admin"
-    local logs_var="${prefix}_logs"
     local mailpit_var="${prefix}_mailpit_email"
+    local admin_pages_var="${prefix}_admin_pages"
+    local logs_var="${prefix}_logs"
 
     {
-        echo "### Manual checklist ($phase_label)"
+        echo "### Checklist ($phase_label)"
         echo
-        echo "- Home page content (/): ${!home_var}"
+        echo "- Public pages render correctly: ${!public_pages_var}"
         echo "- FAQ page content (/fragen-und-antworten): ${!faq_var}"
         echo "- Registration guards: ${!registration_var}"
-        echo "- Admin access (/admin): ${!admin_var}"
-        echo "- Logs clean (no critical errors): ${!logs_var}"
         echo "- Login-link email received in Mailpit: ${!mailpit_var}"
+        echo "- Admin pages load correctly (/admin): ${!admin_pages_var}"
+        echo "- Logs clean (no critical errors): ${!logs_var}"
 
         if [[ -n "${!notes_var}" ]]; then
             echo "- Notes: ${!notes_var}"
@@ -515,11 +384,11 @@ report_manual_checklist_section() {
     } >> "$REPORT_FILE"
 }
 
-evaluate_manual_checklist_gate() {
+evaluate_checklist_gate() {
     local prefix="$1"
     local phase_label="$2"
     local key
-    local keys=(home faq registration_guards admin logs mailpit_email)
+    local keys=(public_pages faq registration_guards mailpit_email admin_pages logs)
 
     for key in "${keys[@]}"; do
         local status_var="${prefix}_${key}"
@@ -529,9 +398,6 @@ evaluate_manual_checklist_gate() {
         fi
     done
 }
-
-write_checklist_template "$BASELINE_CHECKLIST_TEMPLATE_FILE"
-write_checklist_template "$TARGET_CHECKLIST_TEMPLATE_FILE"
 
 trap cleanup EXIT
 
@@ -550,27 +416,14 @@ if [[ -f "$ROOT_DIR/auth.json" ]]; then
 fi
 
 {
-    echo "# Upgrade Lab WP6 Report"
+    echo "# Upgrade Lab Report"
     echo
     echo "- Run ID: $RUN_ID"
     echo "- Baseline commit: $BASELINE_COMMIT ($BASELINE_COMMIT_SHA)"
     echo "- Target commit: $TARGET_COMMIT ($TARGET_COMMIT_SHA)"
     echo "- Data source: dump"
     echo "- Dump path: $DUMP_PATH_ABS"
-    echo "- Auto deploy steps: $AUTO_DEPLOY_STEPS"
-    if [[ -n "$MANUAL_COMMANDS_FILE_ABS" ]]; then
-        echo "- Manual commands file: $MANUAL_COMMANDS_FILE_ABS"
-    fi
-    if [[ -n "$BASELINE_CHECKLIST_FILE_ABS" ]]; then
-        echo "- Baseline checklist file: $BASELINE_CHECKLIST_FILE_ABS"
-    else
-        echo "- Baseline checklist template: $BASELINE_CHECKLIST_TEMPLATE_FILE"
-    fi
-    if [[ -n "$TARGET_CHECKLIST_FILE_ABS" ]]; then
-        echo "- Target checklist file: $TARGET_CHECKLIST_FILE_ABS"
-    else
-        echo "- Target checklist template: $TARGET_CHECKLIST_TEMPLATE_FILE"
-    fi
+    echo "- No-interaction mode: $NO_INTERACTION"
     echo "- App source path: $WORKTREE_DIR"
     echo
 } > "$REPORT_FILE"
@@ -639,18 +492,18 @@ if [[ "$BASELINE_HTTP_STATUS" != *"200"* ]]; then
     append_gate_blocker "Baseline HTTP smoke failed for '/' (status: $BASELINE_HTTP_STATUS)"
 fi
 
-collect_phase_manual_checklist "BASELINE" "baseline" "$BASELINE_CHECKLIST_FILE_ABS"
-report_manual_checklist_section "BASELINE" "baseline"
-evaluate_manual_checklist_gate "BASELINE" "Baseline"
+collect_phase_checklist "BASELINE" "Baseline"
+report_checklist_section "BASELINE" "baseline"
+evaluate_checklist_gate "BASELINE" "Baseline"
 
-if [[ "$PAUSE_AFTER_BASELINE" -eq 1 ]]; then
+if [[ "$NO_INTERACTION" -eq 0 ]]; then
     printf '\n=== Baseline phase complete ===\n'
     printf '  App:       %s/\n' "$APP_URL"
     printf '  Admin:     %s/admin\n' "$APP_URL"
     printf '  FAQ:       %s/fragen-und-antworten\n' "$APP_URL"
     printf '  Mailpit:   %s\n' "$MAILPIT_UI_URL"
     printf '  DB:        localhost:%s\n\n' "$UPGRADE_LAB_DB_PORT"
-    printf 'Press Enter to continue with target phase...'
+    printf 'Press Enter to continue with target phase...\n'
     read -r _
 fi
 
@@ -661,19 +514,19 @@ git -C "$WORKTREE_DIR" checkout --detach "$TARGET_COMMIT_SHA" >/dev/null
 prepare_worktree_runtime_artifacts
 
 compose_cmd exec -T app php artisan about
-run_target_deploy_steps
-run_manual_upgrade_commands
+run_target_deploy
 
-compose_cmd exec -T app php artisan up --no-interaction
-
-if [[ "$PAUSE_BEFORE_UPGRADE_CHECKS" -eq 1 ]]; then
-    printf '\n=== Upgrade execution complete ===\n'
+if [[ "$NO_INTERACTION" -eq 0 ]]; then
+    printf '\n=== Target deploy complete — run manual commands ===\n'
     printf '  App:       %s/\n' "$APP_URL"
     printf '  Admin:     %s/admin\n' "$APP_URL"
-    printf '  FAQ:       %s/fragen-und-antworten\n' "$APP_URL"
     printf '  Mailpit:   %s\n' "$MAILPIT_UI_URL"
-    printf '  DB:        localhost:%s\n\n' "$UPGRADE_LAB_DB_PORT"
-    printf 'Press Enter to continue with target checks...'
+    printf '  Container: docker exec -it %s-app-1 bash\n' "$UPGRADE_LAB_PROJECT_NAME"
+    printf '\n'
+    printf '  Run any release-specific commands (backfills, data migrations)\n'
+    printf '  directly on the container now. This step is optional.\n'
+    printf '\n'
+    printf 'Press Enter to proceed with upgrade checks...\n'
     read -r _
 fi
 
@@ -687,21 +540,8 @@ collect_phase_parity_artifacts "target"
 {
     echo "### Upgrade execution"
     echo
-    echo "- Auto deploy steps enabled: $AUTO_DEPLOY_STEPS"
-    if [[ "$AUTO_DEPLOY_STEPS" == "true" ]]; then
-        echo "- Migrate log: $REPORT_DIR/target-migrate.log"
-        echo "- Backfill pass 1 log: $REPORT_DIR/target-backfill-pass-1.log"
-        echo "- Backfill pass 2 log: $REPORT_DIR/target-backfill-pass-2.log"
-    fi
-    if [[ -n "$UNRESOLVED_EXPORT_PATH" ]]; then
-        echo "- Unresolved export path: $UNRESOLVED_EXPORT_PATH"
-    else
-        echo "- Unresolved export path: none reported"
-    fi
-    if [[ -n "$MANUAL_COMMANDS_FILE_ABS" ]]; then
-        echo "- Manual commands file: $MANUAL_COMMANDS_FILE_ABS"
-        echo "- Manual commands log: $REPORT_DIR/target-manual-commands.log"
-    fi
+    echo "- Deploy steps: down, migrate, storage:link, optimize, up"
+    echo "- Migrate log: $REPORT_DIR/target-migrate.log"
     echo
 } >> "$REPORT_FILE"
 
@@ -736,9 +576,9 @@ if [[ "$TARGET_HTTP_STATUS" != *"200"* ]]; then
     append_gate_blocker "Target HTTP smoke failed for '/' (status: $TARGET_HTTP_STATUS)"
 fi
 
-collect_phase_manual_checklist "TARGET" "target" "$TARGET_CHECKLIST_FILE_ABS"
-report_manual_checklist_section "TARGET" "target"
-evaluate_manual_checklist_gate "TARGET" "Target"
+collect_phase_checklist "TARGET" "Target"
+report_checklist_section "TARGET" "target"
+evaluate_checklist_gate "TARGET" "Target"
 
 {
     echo "## Comparison"
@@ -771,19 +611,13 @@ fi
         done <<< "$MANUAL_GATE_BLOCKERS"
     fi
 
-    if [[ -n "$UNRESOLVED_EXPORT_PATH" ]]; then
-        echo "- Unresolved export reference: $UNRESOLVED_EXPORT_PATH"
-    else
-        echo "- Unresolved export reference: none reported"
-    fi
-
     echo
 } >> "$REPORT_FILE"
 
 if [[ "$GATE_STATUS" == "PASS" ]]; then
-    printf 'Upgrade lab WP6 completed successfully. Report: %s\n' "$REPORT_FILE"
+    printf 'Upgrade lab completed successfully. Report: %s\n' "$REPORT_FILE"
 else
-    printf 'Upgrade lab WP6 failed gate checks. Report: %s\n' "$REPORT_FILE"
+    printf 'Upgrade lab failed gate checks. Report: %s\n' "$REPORT_FILE"
 fi
 
 printf 'Mailpit UI is available at: %s\n' "$MAILPIT_UI_URL"
