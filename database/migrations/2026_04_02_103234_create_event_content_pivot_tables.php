@@ -20,7 +20,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['donation_event_id', 'partner_id'], 'dep_event_partner_unique');
-            $table->unique(['donation_event_id', 'sort_order'], 'dep_event_sort_unique');
             $table->index(['donation_event_id', 'is_published', 'sort_order'], 'dep_event_pub_sort_idx');
         });
 
@@ -35,7 +34,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['donation_event_id', 'sponsor_id'], 'des_event_sponsor_unique');
-            $table->unique(['donation_event_id', 'sort_order'], 'des_event_sort_unique');
             $table->index(['donation_event_id', 'is_published', 'sort_order'], 'des_event_pub_sort_idx');
         });
 
@@ -49,7 +47,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['donation_event_id', 'faq_id'], 'def_event_faq_unique');
-            $table->unique(['donation_event_id', 'group', 'sort_order'], 'def_event_group_sort_unique');
             $table->index(['donation_event_id', 'group', 'is_published', 'sort_order'], 'def_event_group_pub_sort_idx');
         });
 
@@ -62,7 +59,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['donation_event_id', 'sport_type_id'], 'dest_event_sport_type_unique');
-            $table->unique(['donation_event_id', 'sort_order'], 'dest_event_sort_unique');
             $table->index(['donation_event_id', 'is_enabled', 'sort_order'], 'dest_event_enabled_sort_idx');
         });
     }

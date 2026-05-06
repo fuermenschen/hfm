@@ -161,6 +161,13 @@ class Results extends Component
                     return;
                 }
 
+                // Ensure every target partner has an entry so the share is never dropped.
+                foreach (array_keys($eventPartnerNameSet) as $name) {
+                    if (! $perPartner->has($name)) {
+                        $perPartner->put($name, 0.0);
+                    }
+                }
+
                 $share = $eventEqualAmount / $targetCount;
                 $perPartner = $perPartner->map(function (float $amount, string $partnerName) use ($share, $eventPartnerNameSet): float {
                     return isset($eventPartnerNameSet[$partnerName]) ? $amount + $share : $amount;

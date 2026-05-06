@@ -45,7 +45,7 @@ class EventContentSponsorsBackfillSeeder extends Seeder
             [
                 'donation_event_id' => (int) $event2025Id,
                 'name' => 'Veloplus',
-                'description' => 'Veloplus unterstützt uns mit Gutscheinen über insgesamt Fr. 150.-, die wir an unsere Sportlker:innen abgeben können. Herzlichen Dank!',
+                'description' => 'Veloplus unterstützt uns mit Gutscheinen über insgesamt Fr. 150.-, die wir an unsere Sportler:innen abgeben können. Herzlichen Dank!',
                 'logo_filename' => 'veloplus.svg',
                 'size' => 'small',
                 'contribution_text' => 'Gutscheine für Sportler:innen.',

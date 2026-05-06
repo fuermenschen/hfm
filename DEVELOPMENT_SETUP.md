@@ -60,7 +60,7 @@ Key options:
 - `--keep-running` — keep containers and worktree after completion
 - `--run-id=<id>` — custom run identifier
 
-Checklist items (prompted interactively for pass/fail): public_pages, faq, registration_guards, mailpit_email, admin_pages, logs. Full list documented in `docs/upgrade-lab-checklist.md`.
+Checklist items (prompted interactively for pass/fail): public_pages, faq, registration_guards, mailpit_email, admin_pages, logs. Full list documented in `docs/upgrade-lab-runbook.md`.
 
 This command boots a production-parity runtime baseline for rehearsal work (PHP 8.4, Apache 2.4, MariaDB 10.11.16)
 and writes a run report to `storage/upgrade-lab/reports/<run-id>/report.md`.
