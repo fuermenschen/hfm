@@ -31,6 +31,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^4.1",
+        "driftingly/rector-laravel": "^2.3",
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.3",
@@ -41,6 +42,7 @@
         "peckphp/peck": "^0.3.0",
         "pestphp/pest": "^4.4",
         "pestphp/pest-plugin-browser": "^4.3",
+        "rector/rector": "^2.4",
         "spatie/laravel-ignition": "^2.11"
     },
     "autoload": {
@@ -76,6 +78,7 @@
         "precommit": [
             "vendor/bin/pint --dirty",
             "vendor/bin/peck",
+            "vendor/bin/rector process --clear-cache",
             "npm run build",
             "vendor/bin/phpstan",
             "php artisan test --parallel",
@@ -83,7 +86,8 @@
         ],
         "lint:ai": [
             "vendor/bin/pint --dirty -q",
-            "vendor/bin/peck -q"
+            "vendor/bin/peck -q",
+            "vendor/bin/rector process --clear-cache --no-diffs --ansi"
         ],
         "test:sca:ai": [
             "vendor/bin/phpstan --error-format=json"
