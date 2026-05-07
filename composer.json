@@ -38,6 +38,7 @@
         "laravel/sail": "^1.57",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9",
+        "peckphp/peck": "^0.3.0",
         "pestphp/pest": "^4.4",
         "pestphp/pest-plugin-browser": "^4.3",
         "spatie/laravel-ignition": "^2.11"
@@ -74,13 +75,15 @@
         ],
         "precommit": [
             "vendor/bin/pint --dirty",
+            "vendor/bin/peck",
             "npm run build",
             "vendor/bin/phpstan",
             "php artisan test --parallel",
             "npm run e2e"
         ],
         "lint:ai": [
-            "vendor/bin/pint --dirty -q"
+            "vendor/bin/pint --dirty -q",
+            "vendor/bin/peck -q"
         ],
         "test:sca:ai": [
             "vendor/bin/phpstan --error-format=json"
