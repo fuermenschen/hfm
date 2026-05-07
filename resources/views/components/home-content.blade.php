@@ -72,40 +72,23 @@
                     <p class="mt-6">Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der Benefizpartner:innen
                         von deinem Einsatz profitiert.</p>
                     <ul role="list" class="mt-8 space-y-8">
-                        <li class="flex gap-x-3">
-                            <span>
-                                <strong class="font-semibold"> Brühlgut Stiftung </strong> Die Brühlgut Stiftung begleitet und fördert Menschen mit Beeinträchtigung.
-                                <x-inline-link href="https://www.xn--brhlgut-o2a.ch/"
-                                               target="_blank">Brühlgut Stiftung</x-inline-link>
-                            </span>
-                        </li>
-                        {{--
-                        <li class="flex gap-x-3">
-                            <span>
-                                <strong class="font-semibold"> Institut Kinderseele Schweiz </strong> Das Institut Kinderseele Schweiz unterstützt Familien mit psychisch kranken Eltern mit Beratungen und weiteren Angeboten.
-                                <x-inline-link href="https://www.kinderseele.ch" target="_blank">Institut Kinderseele Schweiz</x-inline-link>
-                            </span>
-                        </li>
-                        <li class="flex gap-x-3">
-                            <span>
-                                <strong class="font-semibold">Tel. 143 &ndash; Die Dargebotene Hand</strong> Die Dargebotene Hand ist die bekannteste Anlaufstelle für emotionale Erste Hilfe in der Schweiz und im Fürstentum Liechtenstein.
-                                <x-inline-link href="https://www.143.ch"
-                                               target="_blank">Tel. 143 &ndash; Die Dargebotene Hand</x-inline-link>
-                            </span>
-                        </li>
-                        --}}
-                        <li class="flex gap-x-3">
-                            <span class="w-full rounded-md border border-slate-300/70 dark:border-slate-600/60 bg-slate-100/80 dark:bg-slate-800/50 p-3 animate-pulse">
-                                <span class="block h-3 w-1/2 rounded bg-slate-300 dark:bg-slate-500"></span>
-                                <span class="mt-2 block h-3 w-4/5 rounded bg-slate-300/90 dark:bg-slate-500/90"></span>
-                            </span>
-                        </li>
-                        <li class="flex gap-x-3">
-                            <span class="w-full rounded-md border border-slate-300/70 dark:border-slate-600/60 bg-slate-100/80 dark:bg-slate-800/50 p-3 animate-pulse">
-                                <span class="block h-3 w-1/2 rounded bg-slate-300 dark:bg-slate-500"></span>
-                                <span class="mt-2 block h-3 w-4/5 rounded bg-slate-300/90 dark:bg-slate-500/90"></span>
-                            </span>
-                        </li>
+                        @forelse ($currentEventPartners as $partner)
+                            <li class="flex gap-x-3">
+                                <span>
+                                    <strong class="font-semibold"> {{ $partner->name }} </strong>
+                                    @if (filled($partner->beneficiary_blurb))
+                                        {{ $partner->beneficiary_blurb }}
+                                    @endif
+                                    @if (filled($partner->url))
+                                        <x-inline-link href="{{ $partner->url }}" target="_blank">{{ $partner->name }}</x-inline-link>
+                                    @endif
+                                </span>
+                            </li>
+                        @empty
+                            <li class="flex gap-x-3">
+                                <span class="text-sm text-slate-600 dark:text-slate-300">Aktuell sind keine Benefizpartner:innen für diesen Anlass publiziert.</span>
+                            </li>
+                        @endforelse
                     </ul>
 
                 </div>

@@ -19,18 +19,19 @@
     $writer = new PngWriter;
     $qrCodeDataUri = $writer->write($qrCode)->getDataUri();
 
+    $partnerDisplayName = $athlete->partner?->name;
     $partnerName = "";
 
-    if (str_contains($athlete->partner->name, "alle")) {
+    if ($partnerDisplayName === null || str_contains($partnerDisplayName, "alle")) {
         $partnerName = "alle drei Benefizpartner:innen zu gleichen Teilen";
-    } elseif (str_contains($athlete->partner->name, "Brühlgut")) {
+    } elseif (str_contains($partnerDisplayName, "Brühlgut")) {
         $partnerName = "die Brühlgut Stiftung";
-    } elseif (str_contains($athlete->partner->name, "Kinderseele")) {
+    } elseif (str_contains($partnerDisplayName, "Kinderseele")) {
         $partnerName = "das Institut Kinderseele Schweiz";
-    } elseif (str_contains($athlete->partner->name, "143")) {
+    } elseif (str_contains($partnerDisplayName, "143")) {
         $partnerName = "die Dargebotene Hand (Tel 143)";
     } else {
-        throw new Exception("Unknown partner name: " . $athlete->partner->name);
+        $partnerName = 'den gewählten Benefizpartner:innen';
     }
 
     $letterheadAsset = Vite::asset("resources/images/letterhead_hfm.svg");

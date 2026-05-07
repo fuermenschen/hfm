@@ -35,9 +35,11 @@
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.3",
         "laravel/pint": "^1.28",
+        "laravel/sail": "^1.57",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9",
         "pestphp/pest": "^4.4",
+        "pestphp/pest-plugin-browser": "^4.3",
         "spatie/laravel-ignition": "^2.11"
     },
     "autoload": {
@@ -76,6 +78,25 @@
             "vendor/bin/phpstan",
             "php artisan test --parallel",
             "npm run e2e"
+        ],
+        "lint:ai": [
+            "vendor/bin/pint --dirty -q"
+        ],
+        "test:sca:ai": [
+            "vendor/bin/phpstan --error-format=json"
+        ],
+        "test:pest:ai": [
+            "php artisan test --parallel --compact --colors=never"
+        ],
+        "test:e2e:ai": [
+            "npm run e2e:ai"
+        ],
+        "precommit:ai": [
+            "@lint:ai",
+            "npm run build:ai",
+            "@test:sca:ai",
+            "@test:pest:ai",
+            "@test:e2e:ai"
         ]
     },
     "extra": {

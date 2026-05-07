@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DonationEvent;
 use App\Settings\EventSettings;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class CurrentDonationEventService
@@ -30,27 +31,39 @@ class CurrentDonationEventService
     protected function resolve(): array
     {
         return once(function (): array {
-            if (! Schema::hasTable('donation_events')) {
-                return ['event' => null, 'issue' => 'missing_events_table'];
-            }
+            /** @var array{event_id: ?int, issue: ?string} $cached */
+            $cached = Cache::remember('current_donation_event', now()->addMinute(), function (): array {
+                if (! Schema::hasTable('donation_events')) {
+                    return ['event_id' => null, 'issue' => 'missing_events_table'];
+                }
 
-            $eventId = app(EventSettings::class)->current_event_id;
+                $eventId = app(EventSettings::class)->current_event_id;
 
-            if (! is_int($eventId) || $eventId < 1) {
-                return ['event' => null, 'issue' => 'missing_current_event'];
-            }
+                if (! is_int($eventId) || $eventId < 1) {
+                    return ['event_id' => null, 'issue' => 'missing_current_event'];
+                }
 
-            $event = DonationEvent::query()->find($eventId);
+                $event = DonationEvent::query()->find($eventId);
 
-            if (! $event instanceof DonationEvent) {
-                return ['event' => null, 'issue' => 'current_event_not_found'];
-            }
+                if (! $event instanceof DonationEvent) {
+                    return ['event_id' => null, 'issue' => 'current_event_not_found'];
+                }
 
-            if (! $event->is_published) {
-                return ['event' => null, 'issue' => 'current_event_unpublished'];
-            }
+                if (! $event->is_published) {
+                    return ['event_id' => null, 'issue' => 'current_event_unpublished'];
+                }
 
-            return ['event' => $event, 'issue' => null];
+                return ['event_id' => $event->id, 'issue' => null];
+            });
+
+            $event = is_int($cached['event_id'])
+                ? DonationEvent::query()->find($cached['event_id'])
+                : null;
+
+            return [
+                'event' => $event instanceof DonationEvent ? $event : null,
+                'issue' => $cached['issue'],
+            ];
         });
     }
 }

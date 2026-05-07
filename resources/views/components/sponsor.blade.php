@@ -1,7 +1,6 @@
-@props(['variant' => 'medium', 'logo', 'title', 'description', 'url'])
+@props(['variant' => 'medium', 'logoUrl' => null, 'title', 'description', 'url'])
 
 @php
-    use Illuminate\Support\Facades\Vite;
     use Illuminate\Support\Str;
 
     $modalId = 'sponsor-modal-' . Str::slug($title);
@@ -17,7 +16,7 @@
         class="p-6 bg-white/50 rounded-lg shadow-lg cursor-pointer aspect-[2/1] flex items-center justify-center mx-auto"
         x-data="{}"
         x-on:click="$flux.modal('{{ $modalId }}').show()">
-        <img src="{{ Vite::asset('resources/images/sponsor_logos/' . $logo . '.svg') }}"
+        <img src="{{ $logoUrl }}"
              alt="{{ $title }} Logo"
              class="w-full h-auto object-contain mx-auto">
 
@@ -41,5 +40,3 @@
         </div>
     </flux:modal>
 </div>
-
-

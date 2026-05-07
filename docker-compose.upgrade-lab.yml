@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/upgrade-lab/app/Dockerfile
+    image: hfm-upgrade-lab-app:php84-apache24
+    ports:
+      - "${UPGRADE_LAB_APP_PORT:-18080}:80"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "false"
+      APP_URL: "http://localhost:${UPGRADE_LAB_APP_PORT:-18080}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${UPGRADE_LAB_DB_DATABASE:-hfm_upgrade_lab}"
+      DB_USERNAME: "${UPGRADE_LAB_DB_USERNAME:-hfm}"
+      DB_PASSWORD: "${UPGRADE_LAB_DB_PASSWORD:-hfm_password}"
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      MAIL_ENCRYPTION: ""
+      MAIL_FROM_ADDRESS: "upgrade-lab@example.test"
+      MAIL_FROM_NAME: "HFM Upgrade Lab"
+    volumes:
+      - "${UPGRADE_LAB_APP_SOURCE:-.}:/var/www/html"
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "php", "-v"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  mailpit:
+    image: "${UPGRADE_LAB_MAILPIT_IMAGE:-axllent/mailpit:latest}"
+    ports:
+      - "${UPGRADE_LAB_MAILPIT_SMTP_PORT:-11025}:1025"
+      - "${UPGRADE_LAB_MAILPIT_UI_PORT:-18025}:8025"
+
+  db:
+    image: mariadb:10.11.16
+    ports:
+      - "${UPGRADE_LAB_DB_PORT:-13306}:3306"
+    environment:
+      MARIADB_DATABASE: "${UPGRADE_LAB_DB_DATABASE:-hfm_upgrade_lab}"
+      MARIADB_USER: "${UPGRADE_LAB_DB_USERNAME:-hfm}"
+      MARIADB_PASSWORD: "${UPGRADE_LAB_DB_PASSWORD:-hfm_password}"
+      MARIADB_ROOT_PASSWORD: "${UPGRADE_LAB_DB_ROOT_PASSWORD:-root_password}"
+      MARIADB_AUTO_UPGRADE: "0"
+    volumes:
+      - upgrade-lab-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping --host=127.0.0.1 --user=$$MARIADB_USER --password=$$MARIADB_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  upgrade-lab-db-data:
+    name: "${UPGRADE_LAB_DB_VOLUME:-hfm-upgrade-db-default}"

@@ -11,6 +11,8 @@
     $img = (string) random_int(1, 14);
   }
 
+  $currentEventPartners ??= collect();
+
   $eventDate = $currentDonationEvent?->starts_at;
   $eventDateTime = $eventDate?->format('Y-m-d');
   $eventDateLabel = $eventDate?->translatedFormat('j. F Y');
@@ -22,6 +24,8 @@
     'current_event_unpublished' => 'Der aktuell konfigurierte Anlass ist noch nicht veröffentlicht. Informationen folgen in Kürze.',
     default => 'Aktuell sind keine Anlassinformationen verfügbar. Bitte versuche es später erneut.',
   };
+
+  $heroPartners = $currentEventPartners->filter(fn ($partner) => $partner->shouldDisplayLogo());
 @endphp
 
 <x-hero :img="$img">
@@ -60,54 +64,20 @@
   </x-slot:ctas>
 
   <x-slot:partners>
-    <div class="grid grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4 w-full mx-auto">
-      <h3 class="col-span-3 text-xs sm:text-sm opacity-90">Unsere Benefizpartner:innen</h3>
+    @if ($currentDonationEvent !== null && $heroPartners->isNotEmpty())
+      <div class="grid grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4 w-full mx-auto">
+        <h3 class="col-span-3 text-xs sm:text-sm opacity-90">Unsere Benefizpartner:innen</h3>
 
-      <x-home-hero-partner class="partner-logo"
-                           assetUrl="resources/images/bruehlgut_light.svg"
-                           assetUrlDark="resources/images/bruehlgut_dark.svg"
-                           imgAlt="Logo Brühlgut Stiftung"
-                           beneficiaryName="Brühlgut Stiftung"
-                           beneficiaryUrl="https://www.xn--brhlgut-o2a.ch/" />
-
-      {{--
-      <x-home-hero-partner class="partner-logo"
-                           assetUrl="resources/images/iks_light.svg"
-                           assetUrlDark="resources/images/iks_dark.svg"
-                           imgAlt="Logo Institut Kinderseele Schweiz"
-                           beneficiaryName="Institut Kinderseele Schweiz"
-                           beneficiaryUrl="https://kinderseele.ch" />
-
-      <x-home-hero-partner class="partner-logo"
-                           assetUrl="resources/images/143_light.svg"
-                           assetUrlDark="resources/images/143_dark.svg"
-                           imgAlt="Logo Tel. 143 &ndash; Die Dargebotene Hand"
-                           beneficiaryName="Tel. 143 &ndash; Die Dargebotene Hand"
-                           beneficiaryUrl="https://143.ch" />
-      --}}
-
-      <div class="max-h-12 max-w-32 w-full aspect-video rounded-md border border-white/35 bg-white/10 p-2 animate-pulse" aria-hidden="true">
-        <div class="h-full w-full rounded bg-white/15 flex items-center justify-center">
-          <div class="w-4/5 space-y-1.5">
-            <div class="h-1.5 rounded bg-white/45"></div>
-            <div class="h-1.5 w-3/4 rounded bg-white/30"></div>
-          </div>
-        </div>
+        @foreach ($heroPartners as $partner)
+          <x-home-hero-partner class="partner-logo"
+                               :assetUrl="$partner->logoLightUrl()"
+                               :assetUrlDark="$partner->logoDarkUrl()"
+                               :imgAlt="'Logo '.$partner->name"
+                               :beneficiaryUrl="$partner->url" />
+        @endforeach
       </div>
-
-      <div class="max-h-12 max-w-32 w-full aspect-video rounded-md border border-white/35 bg-white/10 p-2 animate-pulse" aria-hidden="true">
-        <div class="h-full w-full rounded bg-white/15 flex items-center justify-center">
-          <div class="w-4/5 space-y-1.5">
-            <div class="h-1.5 rounded bg-white/45"></div>
-            <div class="h-1.5 w-3/4 rounded bg-white/30"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    @endif
   </x-slot:partners>
 </x-hero>
-
-
-
 
 

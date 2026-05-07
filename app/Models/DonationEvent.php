@@ -6,7 +6,9 @@ use App\Casts\LocalizedDateTime;
 use Database\Factories\DonationEventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -30,6 +32,7 @@ class DonationEvent extends Model
         'location_city',
         'location_url',
         'is_published',
+        'has_equal_split_option',
         'content',
     ];
 
@@ -40,12 +43,37 @@ class DonationEvent extends Model
         'athlete_registration_closes_at' => LocalizedDateTime::class,
         'donor_registration_closes_at' => LocalizedDateTime::class,
         'is_published' => 'boolean',
+        'has_equal_split_option' => 'boolean',
         'content' => 'array',
     ];
 
     public function athletes(): HasMany
     {
         return $this->hasMany(Athlete::class);
+    }
+
+    /** @return BelongsToMany<Partner, $this, Pivot, 'pivot'> */
+    public function partners(): BelongsToMany
+    {
+        return $this->belongsToMany(Partner::class, 'donation_event_partner')
+            ->withPivot(['sort_order', 'is_published'])
+            ->withTimestamps();
+    }
+
+    /** @return BelongsToMany<Sponsor, $this, Pivot, 'pivot'> */
+    public function sponsors(): BelongsToMany
+    {
+        return $this->belongsToMany(Sponsor::class, 'donation_event_sponsor')
+            ->withPivot(['size', 'contribution_text', 'sort_order', 'is_published'])
+            ->withTimestamps();
+    }
+
+    /** @return BelongsToMany<Faq, $this, Pivot, 'pivot'> */
+    public function faqs(): BelongsToMany
+    {
+        return $this->belongsToMany(Faq::class, 'donation_event_faq')
+            ->withPivot(['group', 'sort_order', 'is_published'])
+            ->withTimestamps();
     }
 
     public function contentValue(string $path, ?string $default = null): ?string

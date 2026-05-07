@@ -8,7 +8,14 @@ test("front page renders", async ({ page }) => {
 
     // Ensure network is idle and all images are loaded before taking screenshots
     await page.waitForLoadState("networkidle");
-    await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0));
+    // Skip inline data: URIs (SVG placeholders) and <img data-src="..."> with no src attribute.
+    // Browsers resolve img.src to the page URL when no src attribute is present, so we use
+    // hasAttribute("src") to detect genuinely src-less images before checking naturalWidth.
+    await page.waitForFunction(() =>
+        Array.from(document.images)
+            .filter((img) => img.hasAttribute("src") && !img.src.startsWith("data:"))
+            .every((img) => img.complete && img.naturalWidth > 0),
+    );
     // Ensure hero blur-up finished
     await page.waitForSelector(".hfm-hero.is-loaded", { state: "visible", timeout: 10000 });
 
@@ -33,7 +40,11 @@ test("front page renders", async ({ page }) => {
     });
 
     await page.waitForLoadState("networkidle");
-    await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0));
+    await page.waitForFunction(() =>
+        Array.from(document.images)
+            .filter((img) => img.hasAttribute("src") && !img.src.startsWith("data:"))
+            .every((img) => img.complete && img.naturalWidth > 0),
+    );
 
     const fullPageScreenshot = await page.screenshot({ fullPage: true });
     await test.info().attach("frontpage-full", {

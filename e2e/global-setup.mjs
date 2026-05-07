@@ -25,7 +25,8 @@ export default async function globalSetup() {
         : `${envContent.trimEnd()}\nDEBUGBAR_ENABLED=false\n`;
     writeFileSync(envPath, updated, "utf8");
 
-    // Disable debugbar for the current process and clear cached config
+    // Disable debugbar for the current process and clear cached config + app cache
     process.env.DEBUGBAR_ENABLED = "false";
     run("php artisan config:clear");
+    run("php artisan cache:clear");
 }

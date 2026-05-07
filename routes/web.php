@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
-use App\Models\Athlete;
-use App\Models\Donation;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -20,12 +20,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Main Menu
-Route::get('/', function () {
-    $athleteCount = Schema::hasTable('athletes') ? Athlete::count() : 0;
-    $donationCount = Schema::hasTable('donations') ? Donation::count() : 0;
-
-    return view('home', compact('athleteCount', 'donationCount'));
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::view('sportlerin-werden', 'pages.become-athlete')->middleware('active-event')->name('become-athlete');
 Route::view('spenderin-werden', 'pages.become-donor')->middleware('active-event')->name('become-donor');
 Route::view('newsletter', 'pages.newsletter')->name('newsletter');
@@ -35,7 +30,7 @@ Route::get('newsletter/abmelden/{email}', [NewsletterSubscriptionController::cla
 Route::post('newsletter/abmelden/{email}', [NewsletterSubscriptionController::class, 'update'])
     ->name('newsletter.unsubscribe.perform')
     ->middleware('signed');
-Route::view('fragen-und-antworten', 'pages.questions-and-answers')->name('questions-and-answers');
+Route::get('fragen-und-antworten', [FaqController::class, 'index'])->name('questions-and-answers');
 
 // Footer Menu
 Route::view('login', 'pages.login')->name('login');
@@ -89,6 +84,9 @@ Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $
 Route::middleware('auth')->group(function () {
     Route::view('admin', 'pages.admin.dashboard')->name('admin.dashboard');
     Route::view('admin/anlaesse', 'pages.admin.donation-events')->name('admin.donation-events.index');
+    Route::view('admin/partner', 'pages.admin.partners')->name('admin.partners.index');
+    Route::view('admin/sponsoren', 'pages.admin.sponsors')->name('admin.sponsors.index');
+    Route::view('admin/faqs', 'pages.admin.faqs')->name('admin.faqs.index');
     Route::view('admin/sportlerinnen', 'pages.admin.athletes')->name('admin.athletes.index');
     Route::view('admin/spenderinnen', 'pages.admin.donors')->name('admin.donors.index');
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');

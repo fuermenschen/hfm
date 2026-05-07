@@ -34,7 +34,7 @@ function signedAdminLoginUrl() {
 
 async function waitForImagesAndIdle(page) {
     await page.waitForLoadState("networkidle");
-    await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete && img.naturalWidth > 0));
+    await page.waitForFunction(() => Array.from(document.images).filter((img) => img.hasAttribute("src") && !img.src.startsWith("data:")).every((img) => img.complete && img.naturalWidth > 0));
 }
 
 async function slowScroll(page) {

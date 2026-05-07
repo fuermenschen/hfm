@@ -7,6 +7,7 @@ use App\Models\Donor;
 use App\Models\Partner;
 use App\Notifications\AdminSomeoneRegistered;
 use App\Rules\ValidZipCode;
+use App\Services\CurrentDonationEventService;
 use Exception;
 use Flux;
 use Illuminate\Support\Facades\Notification;
@@ -129,7 +130,7 @@ class BecomeDonorForm extends Component
         $athlete = Athlete::find($this->athlete_id);
         if ($athlete) {
             $this->currentAthlete = $athlete->privacy_name;
-            $this->currentPartner = $athlete->partner->name;
+            $this->currentPartner = $athlete->partner->name ?? __('app.equal_split_full');
             $this->currentRounds = $athlete->rounds_estimated;
         }
     }
@@ -270,9 +271,19 @@ class BecomeDonorForm extends Component
             ->toArray();
 
         // fetch all partners
+        $currentDonationEvent = app(CurrentDonationEventService::class)->current();
+
         $this->partners = Partner::query()
-            ->orderBy('name')
-            ->get(['id', 'name'])
+            ->when($currentDonationEvent !== null, function ($query) use ($currentDonationEvent): void {
+                $query
+                    ->join('donation_event_partner', 'donation_event_partner.partner_id', '=', 'partners.id')
+                    ->where('donation_event_partner.donation_event_id', $currentDonationEvent->id)
+                    ->where('donation_event_partner.is_published', true)
+                    ->select('partners.id', 'partners.name')
+                    ->orderBy('donation_event_partner.sort_order');
+            })
+            ->orderBy('partners.name')
+            ->get(['partners.id', 'partners.name'])
             ->toArray();
     }
 

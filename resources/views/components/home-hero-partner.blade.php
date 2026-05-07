@@ -1,11 +1,21 @@
-@php use Illuminate\Support\Facades\Vite; @endphp
 @props(['assetUrl', 'assetUrlDark', 'imgAlt', 'beneficiaryUrl'])
 
-<a href="{{$beneficiaryUrl}}" target="_blank" rel="noopener noreferrer">
-    <img src="{{ Vite::asset($assetUrl) }}"
+@if (is_string($beneficiaryUrl) && $beneficiaryUrl !== '')
+<a {{ $attributes }} href="{{$beneficiaryUrl}}" target="_blank" rel="noopener noreferrer">
+    <img src="{{ $assetUrl }}"
          alt="{{$imgAlt}}"
          class="max-h-12 max-w-32 w-full aspect-video dark:hidden" />
-    <img src="{{ Vite::asset($assetUrlDark) }}"
+    <img src="{{ $assetUrlDark }}"
          alt="{{$imgAlt}}"
          class="max-h-12 max-w-32 w-full aspect-video hidden dark:block" />
 </a>
+@else
+<span {{ $attributes }}>
+    <img src="{{ $assetUrl }}"
+         alt="{{$imgAlt}}"
+         class="max-h-12 max-w-32 w-full aspect-video dark:hidden" />
+    <img src="{{ $assetUrlDark }}"
+         alt="{{$imgAlt}}"
+         class="max-h-12 max-w-32 w-full aspect-video hidden dark:block" />
+</span>
+@endif

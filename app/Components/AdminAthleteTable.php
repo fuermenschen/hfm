@@ -269,7 +269,7 @@ class AdminAthleteTable extends AbstractDatatableComponent
             'Nachname' => $athlete->last_name,
             'Bestätigt' => $athlete->verified ? 'Ja' : 'Nein',
             'Sportart' => $athlete->sportType->name,
-            'Partner' => $athlete->partner->name,
+            'Partner' => $athlete->partner->name ?? ucfirst(__('app.equal_split')),
             'Anlass' => data_get($athlete, 'donationEvent.slug', '-'),
             'Runden geschätzt' => $athlete->rounds_estimated,
             'Runden gemacht' => $athlete->rounds_done,

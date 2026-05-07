@@ -56,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view): void {
             $eventService = app(CurrentDonationEventService::class);
+
             $view->with('currentDonationEvent', $eventService->current());
             $view->with('currentDonationEventIssue', $eventService->issue());
         });

@@ -3,18 +3,19 @@
 @props(['athlete'])
 
 @php
+    $partnerDisplayName = $athlete->partner?->name;
     $partnerName = "";
 
-    if (str_contains($athlete->partner->name, "alle")) {
-    $partnerName = "allen drei Benefizpartner:innen zu gleichen Teilen";
-    } elseif (str_contains($athlete->partner->name, "Brühlgut")) {
-    $partnerName = "der Brühlgut Stiftung";
-    } elseif (str_contains($athlete->partner->name, "Kinderseele")) {
-    $partnerName = "dem Institut Kinderseele Schweiz";
-    } elseif (str_contains($athlete->partner->name, "143")) {
-    $partnerName = "der Dargebotenen Hand (Tel 143)";
+    if ($partnerDisplayName === null || str_contains($partnerDisplayName, "alle")) {
+        $partnerName = "allen drei Benefizpartner:innen zu gleichen Teilen";
+    } elseif (str_contains($partnerDisplayName, "Brühlgut")) {
+        $partnerName = "der Brühlgut Stiftung";
+    } elseif (str_contains($partnerDisplayName, "Kinderseele")) {
+        $partnerName = "dem Institut Kinderseele Schweiz";
+    } elseif (str_contains($partnerDisplayName, "143")) {
+        $partnerName = "der Dargebotenen Hand (Tel 143)";
     } else {
-    throw new Exception("Unknown partner name: " . $athlete->partner->name);
+        $partnerName = 'den gewählten Benefizpartner:innen';
     }
 
 
