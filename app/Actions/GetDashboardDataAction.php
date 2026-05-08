@@ -66,7 +66,24 @@ class GetDashboardDataAction
 
         $mostRecentActivities = $this->buildRecentActivities();
 
-        return ['greeting' => $greeting, 'partners' => $partners, 'athleteCount' => $athleteCount, 'donorCount' => $donorCount, 'donationCount' => $donationCount, 'verifiedAthleteCount' => $verifiedAthleteCount, 'verifiedDonationCount' => $verifiedDonationCount, 'meanNumberOfDonations' => $meanNumberOfDonations, 'meanNumberOfRounds' => $meanNumberOfRounds, 'meanNumberOfDonationsDonor' => $meanNumberOfDonationsDonor, 'meanDonationAmount' => $meanDonationAmount, 'expectedDonationAmount' => $expectedDonationAmount, 'actualTotalAmount' => $actualTotalAmount, 'estimatedAmounts' => $estimatedAmounts, 'actualAmounts' => $actualAmounts, 'mostRecentActivities' => $mostRecentActivities];
+        return compact(
+            'greeting',
+            'partners',
+            'athleteCount',
+            'donorCount',
+            'donationCount',
+            'verifiedAthleteCount',
+            'verifiedDonationCount',
+            'meanNumberOfDonations',
+            'meanNumberOfRounds',
+            'meanNumberOfDonationsDonor',
+            'meanDonationAmount',
+            'expectedDonationAmount',
+            'actualTotalAmount',
+            'estimatedAmounts',
+            'actualAmounts',
+            'mostRecentActivities',
+        );
     }
 
     protected function greeting(): string

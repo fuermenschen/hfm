@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Rector\CodeQuality\Rector\FuncCall\CompactToVariablesRector;
 use Rector\Config\RectorConfig;
 use Rector\Renaming\Rector\Name\RenameClassRector;
 use Rector\Set\ValueObject\SetList;
@@ -24,6 +25,7 @@ return static function (RectorConfig $rectorConfig): void {
         RenameClassRector::class,
         AddClosureVoidReturnTypeWhereNoReturnRector::class,
         SafeDeclareStrictTypesRector::class,
+        CompactToVariablesRector::class,
         __DIR__.'/vendor/*',
         __DIR__.'/node_modules/*',
         __DIR__.'/storage/*',
