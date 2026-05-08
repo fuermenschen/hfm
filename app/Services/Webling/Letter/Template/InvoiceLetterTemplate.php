@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Webling\Letter\Template;
 
 use App\Services\Webling\Letter\Dto\LetterDraft;
@@ -24,7 +26,7 @@ class InvoiceLetterTemplate
             if ($headerText !== '') {
                 // If a custom header is provided, render it at normal 14px font without strong emphasis.
                 $escaped = nl2br(e($headerText));
-                $headerHtml = "<div><span style=\"font-size: 14px;\">{$escaped}</span></div>";
+                $headerHtml = sprintf('<div><span style="font-size: 14px;">%s</span></div>', $escaped);
             } else {
                 // Default header when none is provided.
                 $headerHtml = '<div style="line-height: 1.25;">'

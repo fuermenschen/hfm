@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
@@ -39,8 +41,8 @@ class AthleteNewDonation extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Ein:e Spender:in hat sich für dich registriert!')
-            ->greeting("Hallo $this->first_name,")
-            ->line("Soeben hat sich $this->donor_name als Spender:in für dich registriert.")
+            ->greeting(sprintf('Hallo %s,', $this->first_name))
+            ->line(sprintf('Soeben hat sich %s als Spender:in für dich registriert.', $this->donor_name))
             ->line('Wenn du dich einloggst, siehst du, wer alles für dich spenden wird.')
             ->action('Login', route('show-athlete', $this->login_token))
             ->line('Vielen Dank, dass du so fleissig mithilfst, spenden zu sammeln! Wir freuen uns schon auf deine nächste:n Spender:innen von dir!')

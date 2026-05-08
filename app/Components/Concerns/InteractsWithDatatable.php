@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components\Concerns;
 
 use App\Support\Datatable\DatatableValueFormatter;
@@ -241,7 +243,7 @@ trait InteractsWithDatatable
 
     protected function valueFormatter(): DatatableValueFormatter
     {
-        return $this->datatableValueFormatter ??= app(DatatableValueFormatter::class);
+        return $this->datatableValueFormatter ??= resolve(DatatableValueFormatter::class);
     }
 
     public function sortByColumn(string $column): void
@@ -359,13 +361,13 @@ trait InteractsWithDatatable
         Storage::disk('local')->makeDirectory('tmp');
 
         $timestamp = now()->format('Ymd_His');
-        $relativePath = "tmp/{$filePrefix}_{$timestamp}.{$format}";
+        $relativePath = sprintf('tmp/%s_%s.%s', $filePrefix, $timestamp, $format);
         $absolutePath = Storage::disk('local')->path($relativePath);
 
         $writer = SimpleExcelWriter::create($absolutePath);
         $writer->addRows($rows);
         $writer->close();
 
-        return response()->download($absolutePath, "{$filePrefix}_{$timestamp}.{$format}")->deleteFileAfterSend(true);
+        return response()->download($absolutePath, sprintf('%s_%s.%s', $filePrefix, $timestamp, $format))->deleteFileAfterSend(true);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Services\CurrentDonationEventService;
@@ -34,7 +36,7 @@ class PublicMenu extends Component
 
     public function mount(): void
     {
-        $hasActiveEvent = app(CurrentDonationEventService::class)->current() !== null;
+        $hasActiveEvent = resolve(CurrentDonationEventService::class)->current() !== null;
 
         if (! $hasActiveEvent) {
             $this->menuItems = array_values(array_filter(

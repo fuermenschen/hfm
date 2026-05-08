@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Datatable\Actions;
 
 use App\Models\Donor;
@@ -34,64 +36,64 @@ class DonorRowActionFactory
                 key: 'donor-login',
                 group: 'Spender:in',
                 label: 'Als Spender einloggen',
-                icon: 'user',
                 execute: static fn (array $payload): array => [
                     'type' => 'href',
                     'href' => route('show-donor', ['login_token' => $payload['donor']->login_token]),
                     'target' => '_blank',
                 ],
+                icon: 'user',
             ),
             new DatatableActionDefinition(
                 key: 'invoice-create',
                 group: 'Rechnung',
                 label: 'Rechnung erstellen',
-                icon: 'document-plus',
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'createDonorInvoice('.$payload['donor']->id.')'],
+                icon: 'document-plus',
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_create'],
             ),
             new DatatableActionDefinition(
                 key: 'invoice-download',
                 group: 'Rechnung',
                 label: 'Rechnung herunterladen',
-                icon: 'document-arrow-down',
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'downloadDonorInvoice('.$payload['donor']->id.')'],
+                icon: 'document-arrow-down',
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_download'],
             ),
             new DatatableActionDefinition(
                 key: 'invoice-send',
                 group: 'Rechnung',
                 label: 'Rechnung senden',
-                icon: 'paper-airplane',
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'sendDonorInvoice('.$payload['donor']->id.')'],
+                icon: 'paper-airplane',
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_send'],
             ),
             new DatatableActionDefinition(
                 key: 'invoice-send-reminder',
                 group: 'Rechnung',
                 label: 'Zahlungserinnerung senden',
-                icon: 'bell-alert',
                 execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'sendDonorInvoiceReminder('.$payload['donor']->id.')'],
+                icon: 'bell-alert',
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_send_reminder'],
             ),
             new DatatableActionDefinition(
                 key: 'invoice-show-webling',
                 group: 'Rechnung',
                 label: 'Rechnung in Webling anzeigen',
-                icon: 'arrow-top-right-on-square',
                 execute: static fn (array $payload): array => [
                     'type' => 'href',
                     'href' => (string) $payload['debitor_url'],
                     'target' => '_blank',
                 ],
+                icon: 'arrow-top-right-on-square',
                 visibleWhen: static fn (array $payload): bool => filled($payload['debitor_url']),
             ),
             new DatatableActionDefinition(
                 key: 'invoice-delete',
                 group: 'Rechnung',
                 label: 'Rechnung löschen',
+                execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'confirmDeleteDonorInvoice('.$payload['donor']->id.')'],
                 icon: 'trash',
                 variant: 'danger',
-                execute: static fn (array $payload): array => ['type' => 'wire', 'click' => 'confirmDeleteDonorInvoice('.$payload['donor']->id.')'],
                 visibleWhen: static fn (array $payload): bool => (bool) $payload['can_delete'],
             ),
         ];

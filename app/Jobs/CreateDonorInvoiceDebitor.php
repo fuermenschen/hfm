@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\Actions\CollectDonorInvoiceDataAction;
@@ -20,7 +22,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
 
     public function __construct(public Donor $donor)
     {
-        $this->collectDonorInvoiceDataAction = app(CollectDonorInvoiceDataAction::class);
+        $this->collectDonorInvoiceDataAction = resolve(CollectDonorInvoiceDataAction::class);
     }
 
     public function handle(): void
@@ -32,7 +34,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
 
         // Collect invoice data
         $invoiceLines = ($this->collectDonorInvoiceDataAction)($this->donor);
-        if (count($invoiceLines) === 0) {
+        if ($invoiceLines === []) {
             throw new \RuntimeException('No invoice lines for donor ID '.$this->donor->id);
         }
 
@@ -59,8 +61,8 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
         }
 
         // remove lines with zero amount
-        $lines = array_filter($lines, fn ($l) => $l['amount'] > 0);
-        if (count($lines) === 0) {
+        $lines = array_filter($lines, fn (array $l): bool => $l['amount'] > 0);
+        if ($lines === []) {
             throw new \RuntimeException('No non-zero amount invoice lines for donor ID '.$this->donor->id);
         }
 
@@ -81,11 +83,11 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
             $this->donor->first_name.' '.$this->donor->last_name,
             $this->donor->address,
             $prefixedZip.' '.($this->donor->city),
-        ], fn ($v) => trim((string) $v) !== ''));
+        ], fn ($v): bool => trim((string) $v) !== ''));
 
         // Settings
-        $settings = app(WeblingApiSettings::class);
-        $dueDays = app(InvoiceSettings::class)->due_days;
+        $settings = resolve(WeblingApiSettings::class);
+        $dueDays = resolve(InvoiceSettings::class)->due_days;
         $dueDate = $dueDays ? now()->addDays($dueDays) : now()->addDays(14);
 
         $dto = InvoiceCreateData::fromArray([
@@ -98,7 +100,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
         ]);
 
         // Create the debitor/invoice
-        $response = app(WeblingInvoiceService::class)->createInvoice($dto);
+        $response = resolve(WeblingInvoiceService::class)->createInvoice($dto);
 
         if ($response->status() === 201) {
             $weblingData = $this->donor->webling_data ?? [];
@@ -107,6 +109,7 @@ class CreateDonorInvoiceDebitor implements ShouldQueue
             if (is_array($debitorId) && isset($debitorId['id'])) {
                 $debitorId = $debitorId['id'];
             }
+
             $debitorId = (int) $debitorId;
 
             $weblingData['debitor_id'] = $debitorId;

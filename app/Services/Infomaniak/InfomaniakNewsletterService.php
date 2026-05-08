@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Infomaniak;
 
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
@@ -29,17 +31,11 @@ class InfomaniakNewsletterService
             $baseUrl = 'https://'.$baseUrl;
         }
 
-        if ($token === '') {
-            throw new InvalidArgumentException('Missing Infomaniak newsletter token configuration.');
-        }
+        throw_if($token === '', InvalidArgumentException::class, 'Missing Infomaniak newsletter token configuration.');
 
-        if (! is_numeric((string) $domainId)) {
-            throw new InvalidArgumentException('Missing INFOMANIAK_NEWSLETTER_DOMAIN_ID configuration.');
-        }
+        throw_unless(is_numeric((string) $domainId), InvalidArgumentException::class, 'Missing INFOMANIAK_NEWSLETTER_DOMAIN_ID configuration.');
 
-        if (! is_numeric((string) $groupId)) {
-            throw new InvalidArgumentException('Invalid INFOMANIAK_NEWSLETTER_GROUP_ID configuration.');
-        }
+        throw_unless(is_numeric((string) $groupId), InvalidArgumentException::class, 'Invalid INFOMANIAK_NEWSLETTER_GROUP_ID configuration.');
 
         $this->domainId = (int) $domainId;
         $this->groupId = (int) $groupId;
@@ -64,9 +60,7 @@ class InfomaniakNewsletterService
             'email' => ['required', 'email:rfc', 'max:255'],
         ]);
 
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
+        throw_if($validator->fails(), ValidationException::class, $validator);
 
         $subscriberId = $this->findSubscriberIdByEmail($input['email']);
 
@@ -91,9 +85,7 @@ class InfomaniakNewsletterService
             'email' => ['required', 'email:rfc', 'max:255'],
         ]);
 
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
+        throw_if($validator->fails(), ValidationException::class, $validator);
 
         $subscriberId = $this->findSubscriberIdByEmail($input['email']);
 
@@ -107,7 +99,7 @@ class InfomaniakNewsletterService
     protected function findSubscriberIdByEmail(string $email): ?int
     {
         $response = $this->client
-            ->post("/1/newsletters/{$this->domainId}/subscribers/filter", [
+            ->post(sprintf('/1/newsletters/%d/subscribers/filter', $this->domainId), [
                 'filter' => [
                     'search' => $email,
                 ],
@@ -118,7 +110,7 @@ class InfomaniakNewsletterService
         $subscribers = $response->json('data', []);
 
         foreach ($subscribers as $subscriber) {
-            if (isset($subscriber['email']) && strtolower((string) $subscriber['email']) === $email) {
+            if (isset($subscriber['email']) && strtolower($subscriber['email']) === $email) {
                 return (int) $subscriber['id'];
             }
         }
@@ -129,7 +121,7 @@ class InfomaniakNewsletterService
     protected function addSubscriberToGroup(int $subscriberId): void
     {
         $this->client
-            ->post("/1/newsletters/{$this->domainId}/groups/{$this->groupId}/subscribers/assign", [
+            ->post(sprintf('/1/newsletters/%d/groups/%d/subscribers/assign', $this->domainId, $this->groupId), [
                 'subscriber_ids' => [$subscriberId],
             ])
             ->throw();
@@ -138,7 +130,7 @@ class InfomaniakNewsletterService
     protected function unsubscribeSubscriberById(int $subscriberId): void
     {
         $this->client
-            ->put("/1/newsletters/{$this->domainId}/subscribers/unsubscribe", [
+            ->put(sprintf('/1/newsletters/%d/subscribers/unsubscribe', $this->domainId), [
                 'select' => [
                     'all' => false,
                     'include' => [$subscriberId],
@@ -159,15 +151,13 @@ class InfomaniakNewsletterService
 
         try {
             $this->client
-                ->post("/1/newsletters/{$this->domainId}/subscribers", $payload)
+                ->post(sprintf('/1/newsletters/%d/subscribers', $this->domainId), $payload)
                 ->throw();
-        } catch (RequestException $exception) {
-            if ($exception->response->status() !== 422) {
-                throw $exception;
-            }
+        } catch (RequestException $requestException) {
+            throw_if($requestException->response->status() !== 422, $requestException);
 
             $this->client
-                ->post("/1/newsletters/{$this->domainId}/subscribers", [
+                ->post(sprintf('/1/newsletters/%d/subscribers', $this->domainId), [
                     'email' => $email,
                     'groups' => [$this->groupId],
                 ])

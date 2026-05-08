@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use App\Services\CurrentDonationEventService;
@@ -16,9 +18,8 @@ class EnsureActivePublishedEvent
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (app(CurrentDonationEventService::class)->current() === null) {
-            return redirect()
-                ->route('home')
+        if (resolve(CurrentDonationEventService::class)->current() === null) {
+            return to_route('home')
                 ->with('no_active_event_redirected', true);
         }
 

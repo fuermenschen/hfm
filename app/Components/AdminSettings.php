@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Services\SettingsService;
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
@@ -34,7 +38,7 @@ class AdminSettings extends Component
 
     public function __construct()
     {
-        $this->settingsService = app(SettingsService::class);
+        $this->settingsService = resolve(SettingsService::class);
     }
 
     public function mount(): void
@@ -49,7 +53,7 @@ class AdminSettings extends Component
         }
     }
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('components.admin.settings');
     }
@@ -72,7 +76,7 @@ class AdminSettings extends Component
                 continue;
             }
 
-            $key = "values.$class.$name";
+            $key = sprintf('values.%s.%s', $class, $name);
             $rule = $info['rules'] ?? null;
             if (! empty($rule)) {
                 $rules[$key] = $rule;
@@ -120,10 +124,10 @@ class AdminSettings extends Component
             $this->settingsService->save([
                 $class => $this->pendingValues,
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Flux::toast([
                 'heading' => 'Fehler',
-                'text' => 'Speichern fehlgeschlagen: '.$e->getMessage(),
+                'text' => 'Speichern fehlgeschlagen: '.$throwable->getMessage(),
                 'variant' => 'danger',
             ]);
             Flux::modal('admin-setting-confirm')->close();
@@ -167,7 +171,7 @@ class AdminSettings extends Component
                 return $decoded;
             }
 
-            return array_map('trim', array_filter(explode(',', $value), fn ($v) => $v !== ''));
+            return array_map('trim', array_filter(explode(',', $value), fn ($v): bool => $v !== ''));
         }
 
         return $value;

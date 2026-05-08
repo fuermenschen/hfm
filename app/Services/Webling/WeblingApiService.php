@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Webling;
 
 use App\Settings\WeblingApiSettings;
@@ -19,13 +21,11 @@ class WeblingApiService
 
     public function __construct(public WeblingApiSettings $settings, public ConfigRepository $config)
     {
-        $baseUrl = (string) $this->settings->api_url;
-        $apiKey = (string) $this->settings->api_key;
+        $baseUrl = $this->settings->api_url;
+        $apiKey = $this->settings->api_key;
         $options = (array) $this->config->get('services.webling.options', []);
 
-        if ($baseUrl === '' || $apiKey === '') {
-            throw new InvalidArgumentException('Webling configuration is missing. Please set WEBLING_BASE_URL and WEBLING_API_KEY in settings.');
-        }
+        throw_if($baseUrl === '' || $apiKey === '', InvalidArgumentException::class, 'Webling configuration is missing. Please set WEBLING_BASE_URL and WEBLING_API_KEY in settings.');
 
         // Build a PendingRequest with base URL, headers and timeouts
         $this->client = Http::baseUrl(rtrim($baseUrl, '/').'/api/1/')

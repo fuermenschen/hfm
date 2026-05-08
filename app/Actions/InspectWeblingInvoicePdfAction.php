@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Smalot\PdfParser\Page;
 use Smalot\PdfParser\Parser;
 
 class InspectWeblingInvoicePdfAction
@@ -29,11 +32,11 @@ class InspectWeblingInvoicePdfAction
         try {
             $document = $this->parser->parseContent($pdfBinary);
             $pages = $document->getPages();
-            $pageTexts = array_map(static fn ($page): string => (string) $page->getText(), $pages);
-        } catch (\Throwable $e) {
+            $pageTexts = array_map(static fn (Page $page): string => $page->getText(), $pages);
+        } catch (\Throwable $throwable) {
             Log::warning('Webling invoice PDF inspection failed', [
-                'exception' => $e->getMessage(),
-                'exception_class' => $e::class,
+                'exception' => $throwable->getMessage(),
+                'exception_class' => $throwable::class,
             ]);
 
             $issues[] = 'PDF konnte nicht automatisch gelesen werden.';
@@ -58,7 +61,7 @@ class InspectWeblingInvoicePdfAction
         $amountVariants = [
             $this->normalizeText(number_format($expectedAmount, 2, '.', '').' CHF'),
             $this->normalizeText('CHF '.number_format($expectedAmount, 2, '.', '')),
-            $this->normalizeText('Fr. '.number_format($expectedAmount, 2, '.', '\'')),
+            $this->normalizeText('Fr. '.number_format($expectedAmount, 2, '.', "'")),
         ];
 
         $checks['name_correct'] = $fullName !== '' && str_contains($lastPageText, $fullName);
@@ -119,12 +122,6 @@ class InspectWeblingInvoicePdfAction
      */
     protected function containsAny(string $haystack, array $needles): bool
     {
-        foreach ($needles as $needle) {
-            if ($needle !== '' && str_contains($haystack, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($needles, fn ($needle): bool => $needle !== '' && str_contains($haystack, $needle));
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Athlete;
@@ -66,7 +68,7 @@ class Results extends Component
 
         // Build donations list from already loaded athletes to avoid extra queries
         $donations = $allAthletes->flatMap(function (Athlete $athlete) {
-            return collect($athlete->donations)->map(function (Donation $donation) use ($athlete) {
+            return collect($athlete->donations)->map(function (Donation $donation) use ($athlete): Donation {
                 // Ensure the donation has the athlete relation (with partner) set to avoid N+1 later
                 $donation->setRelation('athlete', $athlete);
 
@@ -181,7 +183,7 @@ class Results extends Component
                 'rounds' => $roundsTotal,
                 'elevation_m' => $elevationTotal,
                 'donations_total' => $donationsTotal,
-                'per_partner' => $perPartner->toArray(),
+                'per_partner' => $perPartner->all(),
             ],
         ];
     }

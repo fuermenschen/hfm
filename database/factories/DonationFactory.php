@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Athlete;
@@ -18,7 +20,7 @@ class DonationFactory extends Factory
      */
     public function definition(): array
     {
-        $verified_athletes = Athlete::where('verified', 1)->get();
+        $verified_athletes = Athlete::query()->where('verified', 1)->get();
         $donors = Donor::all();
 
         return [

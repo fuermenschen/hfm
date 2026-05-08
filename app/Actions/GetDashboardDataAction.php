@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Models\Athlete;
@@ -64,24 +66,7 @@ class GetDashboardDataAction
 
         $mostRecentActivities = $this->buildRecentActivities();
 
-        return compact(
-            'greeting',
-            'partners',
-            'athleteCount',
-            'donorCount',
-            'donationCount',
-            'verifiedAthleteCount',
-            'verifiedDonationCount',
-            'meanNumberOfDonations',
-            'meanNumberOfRounds',
-            'meanNumberOfDonationsDonor',
-            'meanDonationAmount',
-            'expectedDonationAmount',
-            'actualTotalAmount',
-            'estimatedAmounts',
-            'actualAmounts',
-            'mostRecentActivities',
-        );
+        return ['greeting' => $greeting, 'partners' => $partners, 'athleteCount' => $athleteCount, 'donorCount' => $donorCount, 'donationCount' => $donationCount, 'verifiedAthleteCount' => $verifiedAthleteCount, 'verifiedDonationCount' => $verifiedDonationCount, 'meanNumberOfDonations' => $meanNumberOfDonations, 'meanNumberOfRounds' => $meanNumberOfRounds, 'meanNumberOfDonationsDonor' => $meanNumberOfDonationsDonor, 'meanDonationAmount' => $meanDonationAmount, 'expectedDonationAmount' => $expectedDonationAmount, 'actualTotalAmount' => $actualTotalAmount, 'estimatedAmounts' => $estimatedAmounts, 'actualAmounts' => $actualAmounts, 'mostRecentActivities' => $mostRecentActivities];
     }
 
     protected function greeting(): string
@@ -156,13 +141,12 @@ class GetDashboardDataAction
             ];
         }
 
-        usort($activities, function ($a, $b) {
+        usort($activities, function (array $a, array $b): int {
             return $a['created_at'] <=> $b['created_at'];
         });
 
         $activities = array_slice($activities, -10);
-        $activities = array_reverse($activities);
 
-        return $activities;
+        return array_reverse($activities);
     }
 }

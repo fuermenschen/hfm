@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Notifications\AthleteNewDonation;
 use App\Notifications\DonationRegistered;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +16,14 @@ use Illuminate\Support\Facades\Log;
  * @property Donor $donor
  * @property Athlete $athlete
  */
+#[Fillable([
+    'donor_id',
+    'athlete_id',
+    'amount_per_round',
+    'amount_max',
+    'amount_min',
+    'comment',
+])]
 class Donation extends Model
 {
     use HasFactory;
@@ -78,13 +89,4 @@ class Donation extends Model
     {
         return $this->belongsTo(Athlete::class);
     }
-
-    protected $fillable = [
-        'donor_id',
-        'athlete_id',
-        'amount_per_round',
-        'amount_max',
-        'amount_min',
-        'comment',
-    ];
 }

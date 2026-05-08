@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
@@ -46,9 +48,11 @@ class NewLoginLink extends Notification
             if ($this->athlete_login_token !== '') {
                 $message->action('Login', route('show-athlete', $this->athlete_login_token));
             }
+
             if ($this->donor_login_token !== '') {
                 $message->action('Login', route('show-donor', $this->donor_login_token));
             }
+
             if ($this->user_login_url !== '') {
                 $message->action('Login', $this->user_login_url);
             }
@@ -57,9 +61,11 @@ class NewLoginLink extends Notification
             if ($this->athlete_login_token !== '') {
                 $message->line('Anmelden als Sportler:in: '.route('show-athlete', $this->athlete_login_token));
             }
+
             if ($this->donor_login_token !== '') {
                 $message->line('Anmelden als Spender:in: '.route('show-donor', $this->donor_login_token));
             }
+
             if ($this->user_login_url !== '') {
                 $message->line('Anmelden als Benutzer:in: '.$this->user_login_url);
             }
@@ -91,9 +97,11 @@ class NewLoginLink extends Notification
         if ($this->athlete_login_token !== '') {
             $num_tokens++;
         }
+
         if ($this->donor_login_token !== '') {
             $num_tokens++;
         }
+
         if ($this->user_login_url !== '') {
             $num_tokens++;
         }

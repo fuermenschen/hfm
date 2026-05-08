@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\Actions\CollectDonorInvoiceDataAction;
@@ -37,17 +39,18 @@ class CreateDonorInvoiceLetter implements ShouldQueue
         }
 
         // Build due date (same logic as invoice job)
-        $dueDays = app(InvoiceSettings::class)->due_days;
+        $dueDays = resolve(InvoiceSettings::class)->due_days;
         $dueDate = $dueDays ? now()->addDays($dueDays) : now()->addDays(14);
 
         $text1 = 'Liebe:r '.($this->donor->first_name ?? '')."\n\nWir schätzen dein Engagement sehr und möchten dir herzlich danken.\nUntenstehend findest du eine Übersicht über deine Spenden.\n\n";
 
         // Compute the minimum amount (sum of all donation totals)
-        $invoiceLines = app(CollectDonorInvoiceDataAction::class)($this->donor);
+        $invoiceLines = resolve(CollectDonorInvoiceDataAction::class)($this->donor);
         $minTotal = 0.0;
         foreach ($invoiceLines as $l) {
             $minTotal += (float) ($l['total'] ?? 0.0);
         }
+
         $amountStr = 'Fr. '.number_format($minTotal, 2, '.', '');
         $dueStr = $dueDate->format('d.m.Y');
 
@@ -59,13 +62,13 @@ class CreateDonorInvoiceLetter implements ShouldQueue
             .'Wir werden dich informieren, wann wir welche Beträge überweisen durften.'
             ."\n\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
-        $currentEvent = app(CurrentDonationEventService::class)->current();
+        $currentEvent = resolve(CurrentDonationEventService::class)->current();
         $fallbackInvoiceInfo = 'Spendenrechnung Höhenmeter für Menschen';
         $invoiceAdditionalInformation = $currentEvent?->contentValue('invoice.additional_information', $fallbackInvoiceInfo)
             ?? $fallbackInvoiceInfo;
 
         try {
-            $letterResponse = app(LetterService::class)->createInvoiceLetter(
+            $letterResponse = resolve(LetterService::class)->createInvoiceLetter(
                 'Spendenrechnung Höhenmeter für Menschen',
                 function (LetterBuilder $b) use ($invoiceAdditionalInformation, $text1, $text2): void {
                     $b->body1($text1)
@@ -106,12 +109,12 @@ class CreateDonorInvoiceLetter implements ShouldQueue
                     'response_excerpt' => substr((string) $letterResponse->body(), 0, 500),
                 ]);
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('Failed to create Webling letter for debitor', [
                 'donor_id' => $this->donor->id,
-                'exception' => $e->getMessage(),
+                'exception' => $throwable->getMessage(),
             ]);
-            throw $e;
+            throw $throwable;
         }
     }
 }

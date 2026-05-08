@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Database\Factories\FaqFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,15 +16,14 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property int $group_sort_order
  * @property Pivot $pivot
  */
+#[Fillable([
+    'title',
+    'content_md',
+])]
 class Faq extends Model
 {
     /** @use HasFactory<FaqFactory> */
     use HasFactory;
-
-    protected $fillable = [
-        'title',
-        'content_md',
-    ];
 
     public function donationEvents(): BelongsToMany
     {

@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Database\Factories\SponsorFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,17 +16,16 @@ use Illuminate\Support\Facades\Storage;
  * @property string $size
  * @property Pivot $pivot
  */
+#[Fillable([
+    'name',
+    'description',
+    'logo_filename',
+    'url',
+])]
 class Sponsor extends Model
 {
     /** @use HasFactory<SponsorFactory> */
     use HasFactory;
-
-    protected $fillable = [
-        'name',
-        'description',
-        'logo_filename',
-        'url',
-    ];
 
     public function donationEvents(): BelongsToMany
     {

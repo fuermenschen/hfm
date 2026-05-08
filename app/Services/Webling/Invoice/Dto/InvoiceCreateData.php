@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Webling\Invoice\Dto;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Date;
 
 /**
  * Data Transfer Object for creating a Webling invoice (debitor).
@@ -33,10 +36,10 @@ class InvoiceCreateData
      */
     public static function fromArray(array $data): self
     {
-        $date = $data['date'] instanceof Carbon ? $data['date'] : Carbon::parse((string) ($data['date'] ?? now()->toDateString()));
+        $date = $data['date'] instanceof Carbon ? $data['date'] : Date::parse((string) ($data['date'] ?? now()->toDateString()));
         $due = (isset($data['duedate']) && $data['duedate'] instanceof Carbon)
             ? $data['duedate']
-            : Carbon::parse((string) ($data['duedate'] ?? $data['due_date'] ?? $date->copy()->addDays(30)->toDateString()));
+            : Date::parse((string) ($data['duedate'] ?? $data['due_date'] ?? $date->copy()->addDays(30)->toDateString()));
 
         // Default title if empty
         $title = trim((string) ($data['title'] ?? ''));
@@ -67,7 +70,7 @@ class InvoiceCreateData
         $dateStr = $this->date->toDateString();
         $dueStr = $this->dueDate->toDateString();
 
-        $address = implode("\n", array_filter($this->addressLines, fn ($l) => $l !== ''));
+        $address = implode("\n", array_filter($this->addressLines, fn (string $l): bool => $l !== ''));
 
         $revenue = [];
         foreach ($this->invoiceLines as $line) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Jobs\CreateDonorInvoice;
@@ -8,7 +10,7 @@ use App\Mail\GenericMailMessage;
 use App\Models\Donation;
 use App\Models\Donor;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -34,7 +36,7 @@ class DonorInvoiceService
             ];
         }
 
-        CreateDonorInvoice::dispatchSync($donor);
+        dispatch_sync(new CreateDonorInvoice($donor));
 
         return [
             'heading' => 'Rechnung erstellt',
@@ -64,7 +66,7 @@ class DonorInvoiceService
             ];
         }
 
-        DeleteDonorInvoiceDebitor::dispatchSync($donor);
+        dispatch_sync(new DeleteDonorInvoiceDebitor($donor));
 
         return [
             'heading' => 'Rechnung gelöscht',
@@ -253,7 +255,7 @@ class DonorInvoiceService
 
         $subject = 'Zahlungserinnerung – Höhenmeter für Menschen';
         $html = '<p>Liebe:r '.$donor->first_name.'</p>'
-            .'<p>Wir möchten dich freundlich an die offene Spendenrechnung erinnern. Im Anhang findest du die Rechnung nochmals. Der Versand der Rechnung erfolgte am '.Carbon::parse($donor->invoice_sent_at)->format('d.m.Y').'.</p>'
+            .'<p>Wir möchten dich freundlich an die offene Spendenrechnung erinnern. Im Anhang findest du die Rechnung nochmals. Der Versand der Rechnung erfolgte am '.Date::parse($donor->invoice_sent_at)->format('d.m.Y').'.</p>'
             .'<p>Sollte sich diese Erinnerung mit deiner Zahlung gekreuzt haben, kannst du diese Nachricht ignorieren.</p>'
             .'<p>Vielen Dank und herzliche Grüsse<br>Das Team von Höhenmeter für Menschen</p>';
 

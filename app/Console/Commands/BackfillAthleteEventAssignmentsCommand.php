@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use Database\Seeders\DonationEventSeeder;
@@ -515,7 +517,7 @@ class BackfillAthleteEventAssignmentsCommand extends Command
                 ->all();
 
         $timestamp = now()->format('Ymd_His');
-        $relativePath = "exports/unresolved-athlete-event-assignments_{$timestamp}.json";
+        $relativePath = sprintf('exports/unresolved-athlete-event-assignments_%s.json', $timestamp);
         $absolutePath = storage_path('app/'.$relativePath);
 
         if (! $dryRun) {

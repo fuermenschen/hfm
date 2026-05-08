@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Datatable\Actions;
 
 use App\Support\Datatable\Actions\Contracts\DatatableAction;

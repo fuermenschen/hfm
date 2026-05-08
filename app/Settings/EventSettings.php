@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Settings;
 
 use App\Models\DonationEvent;
@@ -56,7 +58,7 @@ class EventSettings extends Settings
         }
 
         $eventOptions = DonationEvent::query()
-            ->orderByDesc('starts_at')
+            ->latest('starts_at')
             ->get(['id', 'title', 'slug', 'is_published'])
             ->mapWithKeys(function (DonationEvent $event): array {
                 $suffix = $event->is_published ? '' : ' - NICHT VERÖFFENTLICHT';

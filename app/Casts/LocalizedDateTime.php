@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Casts;
 
 use Carbon\Carbon;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Date;
 
 class LocalizedDateTime implements CastsAttributes
 {
@@ -21,7 +24,7 @@ class LocalizedDateTime implements CastsAttributes
             ? $attributes['timezone']
             : 'UTC';
 
-        return Carbon::parse($value, 'UTC')->setTimezone($timezone);
+        return Date::parse($value, 'UTC')->setTimezone($timezone);
     }
 
     /**
@@ -39,7 +42,7 @@ class LocalizedDateTime implements CastsAttributes
             : 'UTC';
 
         if (! $value instanceof Carbon) {
-            $value = Carbon::parse($value, $timezone);
+            $value = Date::parse($value, $timezone);
         }
 
         return [$key => $value->clone()->setTimezone('UTC')->toDateTimeString()];

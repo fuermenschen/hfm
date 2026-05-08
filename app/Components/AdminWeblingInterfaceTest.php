@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Actions\InspectWeblingInvoicePdfAction;
@@ -7,9 +9,9 @@ use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\WeblingApiSettings;
-use Carbon\Carbon;
 use Exception;
 use Flux;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -114,7 +116,7 @@ class AdminWeblingInterfaceTest extends Component
         return [
             'name_correct' => 'Name im Zahlteil erkannt ('.$this->testData['first_name'].' '.$this->testData['last_name'].')',
             'address_correct' => 'Adresse im Zahlteil erkannt ('.$this->testData['address'].', '.$this->testData['zip'].' '.$this->testData['city'].')',
-            'amount_correct' => 'Betrag im PDF erkannt (Fr. '.number_format((float) $this->testData['amount'], 2, '.', '\'').')',
+            'amount_correct' => 'Betrag im PDF erkannt (Fr. '.number_format((float) $this->testData['amount'], 2, '.', "'").')',
             'qr_present' => 'QR-Rechnung gültig (keine Platzhalter / keine Warnung)',
             'date_correct' => 'Fälligkeitsdatum erkannt',
         ];
@@ -158,7 +160,7 @@ class AdminWeblingInterfaceTest extends Component
 
         // --- Step 1: Create debitor ---
         try {
-            $dueDate = Carbon::now()->addDays(14);
+            $dueDate = Date::now()->addDays(14);
 
             $addressLines = array_values(array_filter([
                 $this->testData['first_name'].' '.$this->testData['last_name'],
@@ -168,7 +170,7 @@ class AdminWeblingInterfaceTest extends Component
 
             $response = $invoiceService->createInvoiceFromParams(
                 title: 'TEST Spendenrechnung HfM – '.$this->testData['first_name'].' '.$this->testData['last_name'],
-                date: Carbon::now(),
+                date: Date::now(),
                 dueDate: $dueDate,
                 addressLines: $addressLines,
                 periodId: $settings->accounting_period_id,
@@ -196,14 +198,15 @@ class AdminWeblingInterfaceTest extends Component
             if (is_array($debitorId) && isset($debitorId['id'])) {
                 $debitorId = $debitorId['id'];
             }
+
             $this->debitorId = (int) $debitorId;
 
             $baseUrl = rtrim($settings->api_url, '/');
-            $periodId = (int) $settings->accounting_period_id;
+            $periodId = $settings->accounting_period_id;
             $this->debitorUrl = sprintf('%s/admin#/accounting/%d/debitor/:debitor/editor/%d', $baseUrl, $periodId, $this->debitorId);
 
-        } catch (Exception $e) {
-            $this->failWith('debitor_creation', 'Fehler beim Erstellen des Debitors: '.$e->getMessage());
+        } catch (Exception $exception) {
+            $this->failWith('debitor_creation', 'Fehler beim Erstellen des Debitors: '.$exception->getMessage());
 
             return;
         }
@@ -211,7 +214,7 @@ class AdminWeblingInterfaceTest extends Component
         // --- Step 2: Create letter / PDF ---
         try {
             $firstName = $this->testData['first_name'];
-            $amountStr = 'Fr. '.number_format((float) $this->testData['amount'], 2, '.', '\'');
+            $amountStr = 'Fr. '.number_format((float) $this->testData['amount'], 2, '.', "'");
             $dueStr = $dueDate->format('d.m.Y');
 
             $letterResponse = $letterService->createInvoiceLetter(
@@ -253,8 +256,8 @@ class AdminWeblingInterfaceTest extends Component
 
             $this->runAutomaticPdfValidation($pdfBinary, $dueDate->format('d.m.Y'));
 
-        } catch (Exception $e) {
-            $this->failWith('letter_creation', 'Fehler beim Erstellen des Briefes/PDFs: '.$e->getMessage());
+        } catch (Exception $exception) {
+            $this->failWith('letter_creation', 'Fehler beim Erstellen des Briefes/PDFs: '.$exception->getMessage());
 
             return;
         }
@@ -268,7 +271,7 @@ class AdminWeblingInterfaceTest extends Component
     public function confirmPdf(): void
     {
         if ($this->getChecklistHasFailuresProperty()) {
-            $failedLabels = array_keys(array_filter($this->checklist, static fn ($v) => $v === false));
+            $failedLabels = array_keys(array_filter($this->checklist, static fn (?bool $v): bool => $v === false));
             Log::warning('Webling interface test: automatic PDF checks failed', [
                 'failed_items' => $failedLabels,
                 'validation_issues' => $this->pdfValidationIssues,
@@ -317,7 +320,7 @@ class AdminWeblingInterfaceTest extends Component
         // A test is in progress — clean up silently
         if ($this->debitorId) {
             try {
-                $invoiceService = app(WeblingInvoiceService::class);
+                $invoiceService = resolve(WeblingInvoiceService::class);
                 $invoiceService->deleteInvoice($this->debitorId);
             } catch (Exception $e) {
                 Log::error('Webling interface test: silent cleanup failed after modal dismiss', [
@@ -334,7 +337,7 @@ class AdminWeblingInterfaceTest extends Component
     /** Delete the test debitor and temp PDF. */
     public function runCleanup(): void
     {
-        $invoiceService = app(WeblingInvoiceService::class);
+        $invoiceService = resolve(WeblingInvoiceService::class);
         $cleanupErrors = [];
 
         if ($this->debitorId) {
@@ -355,7 +358,7 @@ class AdminWeblingInterfaceTest extends Component
 
         $this->deleteLocalPdf();
 
-        if (! empty($cleanupErrors)) {
+        if ($cleanupErrors !== []) {
             $this->step = 'error';
             $this->errorStep = 'cleanup';
             $this->errorMessage = implode(' ', $cleanupErrors);
@@ -409,7 +412,7 @@ class AdminWeblingInterfaceTest extends Component
 
     protected function runAutomaticPdfValidation(string $pdfBinary, string $dueDate): void
     {
-        $result = app(InspectWeblingInvoicePdfAction::class)($pdfBinary, [
+        $result = resolve(InspectWeblingInvoicePdfAction::class)($pdfBinary, [
             'name' => $this->testData['first_name'].' '.$this->testData['last_name'],
             'address' => $this->testData['address'],
             'zip' => $this->testData['zip'],

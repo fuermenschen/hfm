@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Athlete;
@@ -10,6 +12,8 @@ use App\Rules\ValidZipCode;
 use App\Services\CurrentDonationEventService;
 use Exception;
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
@@ -127,7 +131,7 @@ class BecomeDonorForm extends Component
     public function updateNames(): void
     {
         // if the athlete_id is set, get the athlete and partner name
-        $athlete = Athlete::find($this->athlete_id);
+        $athlete = Athlete::query()->find($this->athlete_id);
         if ($athlete) {
             $this->currentAthlete = $athlete->privacy_name;
             $this->currentPartner = $athlete->partner->name ?? __('app.equal_split_full');
@@ -148,14 +152,15 @@ class BecomeDonorForm extends Component
                 'amount_max.gte' => 'Der Maximalbetrag muss grösser oder gleich dem Minimalbetrag sein.',
             ]);
         }
+
         // let validation exceptions bubble to Livewire's error bag
         $this->validate();
 
         // After successful validation, normalize the phone to E.164 once
         $phoneE164 = null;
-        if (! empty($this->phone_national)) {
+        if (! in_array($this->phone_national, [null, '', '0'], true)) {
             try {
-                $phoneE164 = (new PhoneNumber($this->phone_national, $this->phone_country))
+                $phoneE164 = new PhoneNumber($this->phone_national, $this->phone_country)
                     ->formatE164();
             } catch (\Throwable $e) {
                 throw ValidationException::withMessages([
@@ -165,7 +170,7 @@ class BecomeDonorForm extends Component
         }
 
         try {
-            $donor = Donor::where('email', $this->email)->first();
+            $donor = Donor::query()->where('email', $this->email)->first();
 
             if (! $donor) {
                 $donorData = [
@@ -178,7 +183,7 @@ class BecomeDonorForm extends Component
                     'phone_number' => $phoneE164,
                     'email' => $this->email,
                 ];
-                $donor = Donor::create($donorData);
+                $donor = Donor::query()->create($donorData);
 
                 // send notification to admin
                 if (config('app.send_notification_on_registration')) {
@@ -219,7 +224,7 @@ class BecomeDonorForm extends Component
 
             $this->redirectHelper('/');
 
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
         }
     }
@@ -229,7 +234,7 @@ class BecomeDonorForm extends Component
         $this->redirect($url, navigate: true);
     }
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('forms.become-donor-form');
     }
@@ -271,7 +276,7 @@ class BecomeDonorForm extends Component
             ->toArray();
 
         // fetch all partners
-        $currentDonationEvent = app(CurrentDonationEventService::class)->current();
+        $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
 
         $this->partners = Partner::query()
             ->when($currentDonationEvent !== null, function ($query) use ($currentDonationEvent): void {

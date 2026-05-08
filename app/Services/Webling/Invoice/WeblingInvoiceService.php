@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Webling\Invoice;
 
 use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
@@ -45,7 +47,7 @@ class WeblingInvoiceService
 
         $encoded = rawurlencode($filterString);
 
-        return $this->api->get("debitor?filter={$encoded}");
+        return $this->api->get('debitor?filter='.$encoded);
     }
 
     /**
@@ -110,9 +112,11 @@ class WeblingInvoiceService
             if (($dto->accountingPeriodId ?? 0) === 0) {
                 $dto->accountingPeriodId = $this->settings->accounting_period_id;
             }
+
             if (($dto->debitAccountId ?? 0) === 0) {
                 $dto->debitAccountId = $this->settings->debit_account_id;
             }
+
             if (($dto->creditAccountId ?? 0) === 0) {
                 $dto->creditAccountId = $this->settings->credit_account_id;
             }
@@ -126,7 +130,7 @@ class WeblingInvoiceService
      */
     public function getInvoice(int $id): Response
     {
-        return $this->api->get("debitor/{$id}");
+        return $this->api->get('debitor/'.$id);
     }
 
     /**
@@ -136,7 +140,7 @@ class WeblingInvoiceService
      */
     public function updateInvoice(int $id, array $data): Response
     {
-        return $this->api->put("debitor/{$id}", $data);
+        return $this->api->put('debitor/'.$id, $data);
     }
 
     /**
@@ -144,7 +148,7 @@ class WeblingInvoiceService
      */
     public function deleteInvoice(int $id): Response
     {
-        return $this->api->delete("debitor/{$id}");
+        return $this->api->delete('debitor/'.$id);
     }
 
     /**
@@ -176,6 +180,7 @@ class WeblingInvoiceService
                 if (! is_array($cond) || count($cond) !== 3) {
                     continue; // ignore invalid entries silently
                 }
+
                 [$field, $op, $value] = $cond;
                 $parts[] = $this->quoteName((string) $field).trim((string) $op).$this->formatValue($value);
             }

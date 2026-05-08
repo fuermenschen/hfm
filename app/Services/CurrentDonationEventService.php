@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\DonationEvent;
@@ -37,7 +39,7 @@ class CurrentDonationEventService
                     return ['event_id' => null, 'issue' => 'missing_events_table'];
                 }
 
-                $eventId = app(EventSettings::class)->current_event_id;
+                $eventId = resolve(EventSettings::class)->current_event_id;
 
                 if (! is_int($eventId) || $eventId < 1) {
                     return ['event_id' => null, 'issue' => 'missing_current_event'];

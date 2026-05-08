@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Athlete;
@@ -112,13 +114,13 @@ class BecomeAthleteForm extends Component
 
         try {
             $this->validate();
-        } catch (ValidationException $e) {
+        } catch (ValidationException $validationException) {
 
-            if ($e->validator->errors()->count() > 1) {
-                $title = 'Es sind '.$e->validator->errors()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->errors()->all());
+            if ($validationException->validator->errors()->count() > 1) {
+                $title = 'Es sind '.$validationException->validator->errors()->count().' Fehler aufgetreten.';
+                $description = implode('<br>', $validationException->validator->errors()->all());
             } else {
-                $title = $e->validator->errors()->first();
+                $title = $validationException->validator->errors()->first();
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
@@ -149,7 +151,7 @@ class BecomeAthleteForm extends Component
                 return;
             }
 
-            Athlete::create($this->all());
+            Athlete::query()->create($this->all());
 
             // send notification to admin
             if (config('app.send_notification_on_registration')) {
@@ -167,7 +169,7 @@ class BecomeAthleteForm extends Component
 
             $this->redirectHelper();
 
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
         }
     }
@@ -202,7 +204,7 @@ class BecomeAthleteForm extends Component
     {
         $this->extraFields = new HoneypotData;
 
-        $currentDonationEvent = app(CurrentDonationEventService::class)->current();
+        $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
         $this->allowEqualSplitOption = (bool) ($currentDonationEvent->has_equal_split_option ?? true);
 
         $this->sport_types = SportType::all();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Actions\GetCurrentEventPublicDataAction;
@@ -18,8 +20,8 @@ class HomeController extends Controller
 
     public function index(): View
     {
-        $athleteCount = Schema::hasTable('athletes') ? Athlete::count() : 0;
-        $donationCount = Schema::hasTable('donations') ? Donation::count() : 0;
+        $athleteCount = Schema::hasTable('athletes') ? Athlete::query()->count() : 0;
+        $donationCount = Schema::hasTable('donations') ? Donation::query()->count() : 0;
 
         $event = $this->eventService->current();
         $publicData = ($this->publicDataAction)($event);

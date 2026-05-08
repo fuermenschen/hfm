@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -17,7 +19,7 @@ class WeblingInterfaceTestPdfController extends Controller
 
         try {
             $path = decrypt($encryptedPath);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             abort(403);
         }
 

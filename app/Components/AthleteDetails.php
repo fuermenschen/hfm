@@ -1,16 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Athlete;
 use App\Models\Donation;
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AthleteDetails extends Component
 {
@@ -19,10 +24,10 @@ class AthleteDetails extends Component
 
     public Collection $donations;
 
-    public function mount($login_token)
+    public function mount($login_token): void
     {
         // try to find the corresponding athlete
-        $athlete = Athlete::where('login_token', $login_token)->firstOrFail();
+        $athlete = Athlete::query()->where('login_token', $login_token)->firstOrFail();
 
         // check if the athlete is not verified yet
         if (! $athlete->verified) {
@@ -43,8 +48,8 @@ class AthleteDetails extends Component
             'privacy_name' => $athlete->privacy_name,
             'public_id_string' => $athlete->public_id_string,
         ];
-        $donations = Donation::where('athlete_id', $athlete->id)->with('donor')->get();
-        $this->donations = $donations->map(function ($donation) {
+        $donations = Donation::query()->where('athlete_id', $athlete->id)->with('donor')->get();
+        $this->donations = $donations->map(function ($donation): array {
             return [
                 'donor' => $donation->donor->privacy_name,
                 'amount_per_round' => $donation->amount_per_round,
@@ -56,12 +61,12 @@ class AthleteDetails extends Component
         });
     }
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('components.athlete-details');
     }
 
-    public function downloadStorySingleDark()
+    public function downloadStorySingleDark(): BinaryFileResponse
     {
         $image = ImageManager::usingDriver(Driver::class)->decodePath('./../resources/image_templates/story_single_dark.jpg');
 
@@ -90,7 +95,7 @@ class AthleteDetails extends Component
 
     }
 
-    public function downloadStorySingleLight()
+    public function downloadStorySingleLight(): BinaryFileResponse
     {
         $image = ImageManager::usingDriver(Driver::class)->decodePath('./../resources/image_templates/story_single_light.jpg');
 
