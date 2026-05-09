@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\Notifications\NewsletterRegistrationStatusNotification;
@@ -23,11 +25,11 @@ class RegisterNewsletterSubscriber implements ShouldQueue
 
             Notification::route('mail', $this->email)
                 ->notify(new NewsletterRegistrationStatusNotification($this->firstName, $alreadyRegistered));
-        } catch (Throwable $exception) {
+        } catch (Throwable $throwable) {
             Log::error('Newsletter registration API call failed.', [
                 'email' => $this->email,
                 'first_name' => $this->firstName,
-                'error' => $exception->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
         }
     }

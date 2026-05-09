@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Athlete;
@@ -14,7 +16,7 @@ class AthleteDocumentService
     {
         $filename = $athlete->first_name.'_'.$athlete->last_name.'_Willkommensbrief.pdf';
         /** @var PDF $pdf */
-        $pdf = app('dompdf.wrapper')->loadView('printables.athlete_welcome_letter', compact('athlete'))
+        $pdf = resolve('dompdf.wrapper')->loadView('printables.athlete_welcome_letter', ['athlete' => $athlete])
             ->setPaper('a4', 'portrait');
 
         return [
@@ -30,7 +32,7 @@ class AthleteDocumentService
     {
         $filename = $athlete->first_name.'_'.$athlete->last_name.'_Flyer.pdf';
         /** @var PDF $pdf */
-        $pdf = app('dompdf.wrapper')->loadView('printables.athlete_personalized_flyer', compact('athlete'))
+        $pdf = resolve('dompdf.wrapper')->loadView('printables.athlete_personalized_flyer', ['athlete' => $athlete])
             ->setPaper('a5', 'portrait');
 
         return [

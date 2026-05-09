@@ -1,26 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
+#[Fillable(['name', 'email', 'uuid'])]
+#[Hidden(['remember_token'])]
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
-
-    // the attributes that are mass assignable.
-    protected $fillable = ['name', 'email', 'uuid'];
-
-    // The attributes that should be hidden for serialization.
-    protected $hidden = ['remember_token'];
-
-    // The attributes that should be cast to native types.
-    protected $casts = [
-        'uuid' => 'string',
-    ];
+    use HasFactory;
+    use Notifiable;
 
     // boot method
     protected static function boot()
@@ -30,5 +26,12 @@ class User extends Authenticatable
         static::creating(function ($user) {
             $user->uuid = (string) Str::uuid();
         });
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'uuid' => 'string',
+        ];
     }
 }

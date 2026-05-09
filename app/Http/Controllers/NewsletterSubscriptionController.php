@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Services\Infomaniak\InfomaniakNewsletterService;
@@ -29,10 +31,10 @@ class NewsletterSubscriptionController extends Controller
             return redirect()
                 ->to($request->fullUrl())
                 ->with('newsletter_unsubscribe_status', 'success');
-        } catch (\Throwable $exception) {
+        } catch (\Throwable $throwable) {
             Log::error('Newsletter unsubscribe API call failed.', [
                 'email' => $email,
-                'error' => $exception->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
             return redirect()

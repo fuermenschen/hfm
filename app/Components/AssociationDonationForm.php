@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Actions\CreateAssociationDonationInvoiceAction;
 use App\Notifications\AssociationDonationMessage;
 use Exception;
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
@@ -71,24 +75,24 @@ class AssociationDonationForm extends Component
     #[Validate('min:0', message: 'Der Betrag muss positiv sein.')]
     public ?float $amount = null;
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('forms.association-donation-form');
     }
 
-    public function submit(CreateAssociationDonationInvoiceAction $createAssociationDonationInvoiceAction)
+    public function submit(CreateAssociationDonationInvoiceAction $createAssociationDonationInvoiceAction): void
     {
         $this->protectAgainstSpam();
 
         try {
             $this->validate();
-        } catch (ValidationException $e) {
+        } catch (ValidationException $validationException) {
 
-            if ($e->validator->errors()->count() > 1) {
-                $title = 'Es sind '.$e->validator->errors()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->errors()->all());
+            if ($validationException->validator->errors()->count() > 1) {
+                $title = 'Es sind '.$validationException->validator->errors()->count().' Fehler aufgetreten.';
+                $description = implode('<br>', $validationException->validator->errors()->all());
             } else {
-                $title = $e->validator->errors()->first();
+                $title = $validationException->validator->errors()->first();
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
@@ -118,7 +122,7 @@ class AssociationDonationForm extends Component
 
             Notification::route('mail', $this->email)->notify($notification);
 
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
 
             Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
 

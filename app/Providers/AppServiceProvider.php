@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Actions\GetDashboardDataAction;
@@ -46,16 +48,16 @@ class AppServiceProvider extends ServiceProvider
             Model::preventLazyLoading();
         }
 
-        Gate::define('viewPulse', fn (User $user) => true);
-        Gate::define('viewLogViewer', fn (User $user) => true);
+        Gate::define('viewPulse', fn (User $user): true => true);
+        Gate::define('viewLogViewer', fn (User $user): true => true);
 
         // Inject computed dashboard data via a view composer
         View::composer('pages.admin.dashboard', function ($view): void {
-            $view->with(app(GetDashboardDataAction::class)());
+            $view->with(resolve(GetDashboardDataAction::class)());
         });
 
         View::composer('*', function ($view): void {
-            $eventService = app(CurrentDonationEventService::class);
+            $eventService = resolve(CurrentDonationEventService::class);
 
             $view->with('currentDonationEvent', $eventService->current());
             $view->with('currentDonationEventIssue', $eventService->issue());
@@ -97,7 +99,7 @@ class AppServiceProvider extends ServiceProvider
         // Mail events
         Event::listen(MessageSending::class, function (MessageSending $event): void {
             $to = collect($event->message->getTo())
-                ->map(fn (Address $addr) => $addr->getAddress())
+                ->map(fn (Address $addr): string => $addr->getAddress())
                 ->all();
             Log::info('Mail sending', [
                 'to' => $to,
@@ -107,7 +109,7 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(MessageSent::class, function (MessageSent $event): void {
             $to = collect($event->message->getTo())
-                ->map(fn (Address $addr) => $addr->getAddress())
+                ->map(fn (Address $addr): string => $addr->getAddress())
                 ->all();
             Log::info('Mail sent', [
                 'to' => $to,

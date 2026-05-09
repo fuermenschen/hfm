@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Models\Athlete;
@@ -156,13 +158,12 @@ class GetDashboardDataAction
             ];
         }
 
-        usort($activities, function ($a, $b) {
+        usort($activities, function (array $a, array $b): int {
             return $a['created_at'] <=> $b['created_at'];
         });
 
         $activities = array_slice($activities, -10);
-        $activities = array_reverse($activities);
 
-        return $activities;
+        return array_reverse($activities);
     }
 }

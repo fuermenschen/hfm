@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Athlete;
@@ -10,6 +12,7 @@ use Exception;
 use Flux;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Sleep;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -34,13 +37,13 @@ class LoginForm extends Component
 
         try {
             $this->validate();
-        } catch (ValidationException $e) {
+        } catch (ValidationException $validationException) {
 
-            if ($e->validator->errors()->count() > 1) {
-                $title = 'Es sind '.$e->validator->errors()->count().' Fehler aufgetreten.';
-                $description = implode('<br>', $e->validator->errors()->all());
+            if ($validationException->validator->errors()->count() > 1) {
+                $title = 'Es sind '.$validationException->validator->errors()->count().' Fehler aufgetreten.';
+                $description = implode('<br>', $validationException->validator->errors()->all());
             } else {
-                $title = $e->validator->errors()->all();
+                $title = $validationException->validator->errors()->all();
                 $description = 'Bitte überprüfe deine Angaben.';
             }
 
@@ -52,13 +55,13 @@ class LoginForm extends Component
         try {
 
             // get all login tokens
-            $athlete = Athlete::where('email', $this->email)->first();
+            $athlete = Athlete::query()->where('email', $this->email)->first();
             $athlete_login_token = $athlete ? $athlete->login_token : '';
 
-            $donor = Donor::where('email', $this->email)->first();
+            $donor = Donor::query()->where('email', $this->email)->first();
             $donorLoginToken = $donor ? $donor->login_token : '';
 
-            $user = User::where('email', $this->email)->first();
+            $user = User::query()->where('email', $this->email)->first();
             $user_url = '';
             if ($user) {
                 $user_uuid = $user->uuid;
@@ -80,7 +83,7 @@ class LoginForm extends Component
 
                 // add random delay to prevent timing attacks
                 $random_delay = random_int(0, 3);
-                sleep($random_delay);
+                Sleep::sleep($random_delay);
             } else {
                 // send login link
                 $notification = new NewLoginLink(
@@ -93,7 +96,7 @@ class LoginForm extends Component
                 Notification::route('mail', $this->email)->notify($notification);
             }
 
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
 
             Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
 

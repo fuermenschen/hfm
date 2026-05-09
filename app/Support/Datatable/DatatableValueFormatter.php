@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Datatable;
 
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 class DatatableValueFormatter
 {
@@ -60,7 +62,7 @@ class DatatableValueFormatter
         }
 
         try {
-            return Carbon::parse($value)->format($format);
+            return Date::parse($value)->format($format);
         } catch (\Throwable) {
             return $fallback;
         }

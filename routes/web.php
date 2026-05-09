@@ -5,6 +5,8 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
 use App\Models\User;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -46,7 +48,7 @@ Route::view('resultate', 'pages.results')->name('results');
 Route::get('login/{uuid}', function ($uuid) {
 
     // Get user by UUID
-    $user = User::where('uuid', $uuid)->firstOrFail();
+    $user = User::query()->where('uuid', $uuid)->firstOrFail();
 
     // Login user
     auth()->login($user, true);
@@ -55,25 +57,25 @@ Route::get('login/{uuid}', function ($uuid) {
     request()->session()->regenerate();
 
     // redirect to dashboard
-    return redirect()->route('admin.dashboard');
+    return to_route('admin.dashboard');
 
 })->name('login-uuid')->middleware('signed');
 
 // Athlete
-Route::get('sportlerinnen/{login_token}', function ($login_token) {
+Route::get('sportlerinnen/{login_token}', function ($login_token): Factory|View {
     return view('pages.show-athlete', [
         'login_token' => $login_token,
     ]);
 })->name('show-athlete');
 
 // Donor
-Route::get('spenderinnen/{login_token}', function ($login_token) {
+Route::get('spenderinnen/{login_token}', function ($login_token): Factory|View {
     return view('pages.show-donor', [
         'login_token' => $login_token,
     ]);
 })->name('show-donor');
 
-Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $donation_id) {
+Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $donation_id): Factory|View {
     return view('pages.show-donor', [
         'login_token' => $login_token,
         'donation_id' => $donation_id,
@@ -100,11 +102,11 @@ Route::middleware('auth')->group(function () {
         request()->session()->invalidate();
         request()->session()->regenerateToken();
 
-        return redirect()->route('home');
+        return to_route('home');
     })->name('logout');
 });
 
-Route::get('queue-worker', function () {
+Route::get('queue-worker', function (): string {
 
     Artisan::call('queue:work --stop-when-empty --tries=3 --max-time=20');
 

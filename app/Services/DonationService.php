@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Athlete;
@@ -118,7 +120,7 @@ class DonationService
 
         foreach ($donations as $donation) {
             /** @var Partner|null $partner */
-            $partner = optional($donation->athlete)->partner;
+            $partner = $donation->athlete?->partner;
             if (! $partner) {
                 // Skip if athlete has no partner assigned
                 continue;
@@ -147,7 +149,7 @@ class DonationService
 
         foreach ($donations as $donation) {
             /** @var Partner|null $partner */
-            $partner = optional($donation->athlete)->partner;
+            $partner = $donation->athlete?->partner;
             if (! $partner) {
                 // Skip if athlete has no partner assigned
                 continue;
@@ -175,7 +177,7 @@ class DonationService
         }
 
         if ($max !== null && $amount > $max) {
-            $amount = $max;
+            return $max;
         }
 
         return $amount;

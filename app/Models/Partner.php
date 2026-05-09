@@ -1,24 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
+#[Fillable([
+    'name',
+    'logo_light_filename',
+    'logo_dark_filename',
+    'beneficiary_blurb',
+    'url',
+])]
 class Partner extends Model
 {
     use HasFactory;
-
-    protected $fillable = [
-        'name',
-        'logo_light_filename',
-        'logo_dark_filename',
-        'beneficiary_blurb',
-        'url',
-    ];
 
     public function athletes(): HasMany
     {

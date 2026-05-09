@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Jobs\CheckDonorInvoicesStatus;
@@ -49,7 +51,7 @@ class AdminDonorTable extends AbstractDatatableComponent
     public function checkPaymentStatus(): void
     {
         try {
-            CheckDonorInvoicesStatus::dispatchSync();
+            dispatch_sync(new CheckDonorInvoicesStatus);
 
             $summary = $this->donorInvoiceService->invoiceStatusSummary();
 
@@ -61,12 +63,12 @@ class AdminDonorTable extends AbstractDatatableComponent
 
             $this->dispatch('showPaymentStatusSummary', $summary);
             $this->dispatch('$refresh');
-        } catch (\Throwable $exception) {
-            Log::error('Error checking payment status', ['error' => $exception->getMessage()]);
+        } catch (\Throwable $throwable) {
+            Log::error('Error checking payment status', ['error' => $throwable->getMessage()]);
 
             Flux::toast(
                 heading: 'Fehler beim Prüfen des Zahlungsstatus',
-                text: $exception->getMessage(),
+                text: $throwable->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -81,7 +83,7 @@ class AdminDonorTable extends AbstractDatatableComponent
         if ($this->requiresSecondClick(
             key: 'delete-invoice-'.$donorId,
             heading: 'Bitte bestätigen',
-            text: "Klicke erneut auf Löschen für {$name}, um die Rechnung inklusive Webling-Buchungen zu entfernen.",
+            text: sprintf('Klicke erneut auf Löschen für %s, um die Rechnung inklusive Webling-Buchungen zu entfernen.', $name),
         )) {
             return;
         }
@@ -114,12 +116,12 @@ class AdminDonorTable extends AbstractDatatableComponent
 
             Log::info('Deleting donor invoice debitor', ['donor_id' => $donorId]);
             $this->toastActionResult($this->donorInvoiceService->deleteInvoice($donor));
-        } catch (\Throwable $exception) {
-            Log::error('Error deleting donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+        } catch (\Throwable $throwable) {
+            Log::error('Error deleting donor invoice', ['error' => $throwable->getMessage(), 'donor_id' => $donorId]);
 
             Flux::toast(
                 heading: 'Fehler beim Löschen der Rechnung',
-                text: $exception->getMessage(),
+                text: $throwable->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -163,12 +165,12 @@ class AdminDonorTable extends AbstractDatatableComponent
             return response()->download($downloadData['absolute_path'], $downloadData['file_name'], [
                 'Content-Type' => 'application/pdf',
             ]);
-        } catch (\Throwable $exception) {
-            Log::error('Error downloading donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+        } catch (\Throwable $throwable) {
+            Log::error('Error downloading donor invoice', ['error' => $throwable->getMessage(), 'donor_id' => $donorId]);
 
             Flux::toast(
                 heading: 'Fehler beim Herunterladen',
-                text: $exception->getMessage(),
+                text: $throwable->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -181,7 +183,7 @@ class AdminDonorTable extends AbstractDatatableComponent
     {
         $donor = $this->findDonorOrToast($donorId);
 
-        if (! $donor) {
+        if (! $donor instanceof Donor) {
             return;
         }
 
@@ -191,7 +193,7 @@ class AdminDonorTable extends AbstractDatatableComponent
             if ($this->requiresSecondClick(
                 key: 'resend-invoice-'.$donorId,
                 heading: 'Rechnung erneut senden?',
-                text: "Die Rechnung für {$name} wurde bereits gesendet. Klicke erneut, um sie nochmals zu senden.",
+                text: sprintf('Die Rechnung für %s wurde bereits gesendet. Klicke erneut, um sie nochmals zu senden.', $name),
             )) {
                 return;
             }
@@ -226,12 +228,12 @@ class AdminDonorTable extends AbstractDatatableComponent
             $this->toastActionResult($result);
 
             return $result['variant'] === 'success';
-        } catch (\Throwable $exception) {
-            Log::error('Error sending donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+        } catch (\Throwable $throwable) {
+            Log::error('Error sending donor invoice', ['error' => $throwable->getMessage(), 'donor_id' => $donorId]);
 
             Flux::toast(
                 heading: 'Fehler beim Senden',
-                text: $exception->getMessage(),
+                text: $throwable->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -244,7 +246,7 @@ class AdminDonorTable extends AbstractDatatableComponent
     {
         $donor = $this->findDonorOrToast($donorId);
 
-        if (! $donor) {
+        if (! $donor instanceof Donor) {
             return;
         }
 
@@ -254,7 +256,7 @@ class AdminDonorTable extends AbstractDatatableComponent
             if ($this->requiresSecondClick(
                 key: 'resend-reminder-'.$donorId,
                 heading: 'Zahlungserinnerung erneut senden?',
-                text: "Für {$name} wurde bereits eine Erinnerung gesendet. Klicke erneut, um sie nochmals zu senden.",
+                text: sprintf('Für %s wurde bereits eine Erinnerung gesendet. Klicke erneut, um sie nochmals zu senden.', $name),
             )) {
                 return;
             }
@@ -271,12 +273,12 @@ class AdminDonorTable extends AbstractDatatableComponent
             $this->toastActionResult($result);
 
             return $result['variant'] === 'success';
-        } catch (\Throwable $exception) {
-            Log::error('Error sending donor invoice reminder', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+        } catch (\Throwable $throwable) {
+            Log::error('Error sending donor invoice reminder', ['error' => $throwable->getMessage(), 'donor_id' => $donorId]);
 
             Flux::toast(
                 heading: 'Fehler beim Senden der Erinnerung',
-                text: $exception->getMessage(),
+                text: $throwable->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );
@@ -337,12 +339,12 @@ class AdminDonorTable extends AbstractDatatableComponent
             $donor = Donor::query()->findOrFail($donorId);
 
             $this->toastActionResult($this->donorInvoiceService->createInvoice($donor));
-        } catch (\Throwable $exception) {
-            Log::error('Error creating donor invoice', ['error' => $exception->getMessage(), 'donor_id' => $donorId]);
+        } catch (\Throwable $throwable) {
+            Log::error('Error creating donor invoice', ['error' => $throwable->getMessage(), 'donor_id' => $donorId]);
 
             Flux::toast(
                 heading: 'Fehler beim Erstellen der Rechnung',
-                text: $exception->getMessage(),
+                text: $throwable->getMessage(),
                 variant: 'danger',
                 duration: 0,
             );

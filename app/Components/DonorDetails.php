@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Donation;
 use App\Models\Donor;
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -16,7 +20,7 @@ class DonorDetails extends Component
 
     public Collection $donations;
 
-    public function mount($login_token, $donation_id = null)
+    public function mount($login_token, $donation_id = null): void
     {
         $this->donor = Donor::query()->where('login_token', $login_token)->with('donations.athlete')->firstOrFail();
 
@@ -44,8 +48,8 @@ class DonorDetails extends Component
             }
         }
 
-        $donations = Donation::where('donor_id', $this->donor->id)->with('athlete')->get();
-        $this->donations = $donations->map(function ($donation) {
+        $donations = Donation::query()->where('donor_id', $this->donor->id)->with('athlete')->get();
+        $this->donations = $donations->map(function ($donation): array {
             return [
                 'athlete' => $donation->athlete->privacy_name,
                 'public_id' => $donation->athlete->public_id_string,
@@ -57,7 +61,7 @@ class DonorDetails extends Component
         });
     }
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('components.donor-details');
     }

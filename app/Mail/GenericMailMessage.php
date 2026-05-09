@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -12,7 +14,8 @@ use Illuminate\Queue\SerializesModels;
 
 class GenericMailMessage extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Create a new message instance.
@@ -70,7 +73,7 @@ class GenericMailMessage extends Mailable implements ShouldQueue
         // Optional:
         // - name: desired filename presented to the recipient
         // - mime: mime type
-        if (empty($this->storageAttachments)) {
+        if ($this->storageAttachments === []) {
             return [];
         }
 
@@ -87,6 +90,7 @@ class GenericMailMessage extends Mailable implements ShouldQueue
             if (! empty($att['name'])) {
                 $attachment = $attachment->as((string) $att['name']);
             }
+
             if (! empty($att['mime'])) {
                 $attachment = $attachment->withMime((string) $att['mime']);
             }

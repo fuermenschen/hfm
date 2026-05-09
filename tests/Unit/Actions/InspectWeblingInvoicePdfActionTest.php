@@ -3,13 +3,14 @@
 use App\Actions\InspectWeblingInvoicePdfAction;
 use Illuminate\Support\Facades\Log;
 use Smalot\PdfParser\Document;
+use Smalot\PdfParser\Page;
 use Smalot\PdfParser\Parser;
 
 it('flags placeholder qr slips as invalid', function (): void {
-    $pageOne = Mockery::mock();
+    $pageOne = Mockery::mock(Page::class);
     $pageOne->shouldReceive('getText')->andReturn('TEST Spendenrechnung HfM - Lukas Buehler Fällig bis: 14.04.2026 Total 250.00 CHF');
 
-    $pageTwo = Mockery::mock();
+    $pageTwo = Mockery::mock(Page::class);
     $pageTwo->shouldReceive('getText')->andReturn('Konto / Zahlbar an CH83 0070 0114 0000 4816 1 Platzhalter QR-Rechnung Bitte fuelle die QR-Rechnungsdaten ein NICHT ZUR ZAHLUNG VERWENDEN Zahlbar durch - - -');
 
     $document = Mockery::mock(Document::class);
@@ -36,10 +37,10 @@ it('flags placeholder qr slips as invalid', function (): void {
 });
 
 it('passes when qr slip contains expected payer data without placeholder markers', function (): void {
-    $pageOne = Mockery::mock();
+    $pageOne = Mockery::mock(Page::class);
     $pageOne->shouldReceive('getText')->andReturn('TEST Spendenrechnung HfM - Lukas Buehler Fällig bis: 14.04.2026 Fr. 250.00');
 
-    $pageTwo = Mockery::mock();
+    $pageTwo = Mockery::mock(Page::class);
     $pageTwo->shouldReceive('getText')->andReturn('Konto / Zahlbar an CH83 0070 0114 0000 4816 1 Hoehenmeter fuer Menschen Zahlbar durch Lukas Buehler Aarbergergasse 42 3011 Bern');
 
     $document = Mockery::mock(Document::class);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\Models\Donor;
@@ -32,6 +34,7 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
                     // Silently ignore storage errors during cleanup
                 }
             }
+
             unset($weblingData['letter_pdf']);
             $changed = true;
         }
@@ -50,15 +53,16 @@ class DeleteDonorInvoiceDebitor implements ShouldQueue
 
         // Call Webling API to delete debitor
         try {
-            $response = app(WeblingInvoiceService::class)->deleteInvoice($debitorId);
+            $response = resolve(WeblingInvoiceService::class)->deleteInvoice($debitorId);
             $responseStatus = $response->status();
-        } catch (\Throwable $e) {
-            if ($e->getCode() === 404) {
+        } catch (\Throwable $throwable) {
+            if ($throwable->getCode() === 404) {
                 $responseStatus = 404;
             } else {
-                throw $e;
+                throw $throwable;
             }
         }
+
         if (in_array($responseStatus, [204, 404], true)) {
             // Consider 204 No Content and 404 Not Found as successful deletions
             unset($weblingData['debitor_id']);

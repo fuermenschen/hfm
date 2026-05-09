@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Webling\Letter;
 
 use App\Services\Webling\Letter\Dto\LetterDraft;
@@ -60,7 +62,7 @@ class LetterBuilder
 
     public function options(?LetterOptions $options): self
     {
-        if ($options !== null) {
+        if ($options instanceof LetterOptions) {
             $this->options = $options;
         }
 

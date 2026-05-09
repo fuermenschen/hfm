@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Webling\Letter\Dto;
 
 use App\Settings\InvoiceSettings;
@@ -41,7 +43,7 @@ class QrInvoiceOptions
      */
     public function toArray(): array
     {
-        $settings = app(InvoiceSettings::class);
+        $settings = resolve(InvoiceSettings::class);
         $iban = $this->iban !== '' ? $this->iban : $settings->qr_iban;
         $withAmount = $this->withAmount || $settings->qr_show_amount;
         $creditorName = $this->creditorName !== '' ? $this->creditorName : $settings->creditor_name;

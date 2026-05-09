@@ -32,6 +32,7 @@ return new class extends Migration
                 $table->dropForeign(['sport_type_id']);
                 $table->dropColumn('sport_type_id');
             }
+
             if (Schema::hasColumn('athletes', 'partner_id')) {
                 $table->dropForeign(['partner_id']);
                 $table->dropColumn('partner_id');

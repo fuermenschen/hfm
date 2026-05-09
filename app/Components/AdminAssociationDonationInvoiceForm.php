@@ -1,10 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Actions\CreateAssociationDonationInvoiceAction;
 use Exception;
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -53,7 +57,7 @@ class AdminAssociationDonationInvoiceForm extends Component
     #[Validate('min:0.05', message: 'Der Betrag muss mindestens fünf Rappen betragen.')]
     public ?float $amount = null;
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('forms.admin.association-donation-invoice-form');
     }
@@ -65,7 +69,7 @@ class AdminAssociationDonationInvoiceForm extends Component
 
         try {
             $this->validate();
-        } catch (ValidationException $e) {
+        } catch (ValidationException $validationException) {
 
             Flux::toast(variant: 'danger', heading: 'Fehler', text: 'Bitte überprüfe deine Eingaben.');
 
@@ -92,7 +96,7 @@ class AdminAssociationDonationInvoiceForm extends Component
                 echo $pdf->stream();
             }, $filename);
 
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
 
             Flux::toast(variant: 'danger', heading: 'Fehler', text: 'Es gab einen Fehler beim Erstellen der Rechnung. Bitte versuche es später erneut.');
 

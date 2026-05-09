@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Athlete;
@@ -37,7 +39,7 @@ class AthleteFactory extends Factory
 
     public function verified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn (array $attributes): array => [
             'verified' => true,
         ]);
     }

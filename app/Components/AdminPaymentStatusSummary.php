@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use Flux;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -18,7 +22,7 @@ class AdminPaymentStatusSummary extends Component
 
     public int $notCreated = 0;
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('components.admin.payment-status-summary');
     }

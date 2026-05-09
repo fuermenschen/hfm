@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Models\DonationEvent;
@@ -44,7 +46,7 @@ class GetCurrentEventPublicDataAction
      */
     protected function hydratePartners(array $rows): Collection
     {
-        return Partner::hydrate($rows);
+        return Partner::query()->hydrate($rows);
     }
 
     /**
@@ -53,7 +55,7 @@ class GetCurrentEventPublicDataAction
      */
     protected function hydrateSponsors(array $rows): Collection
     {
-        $sponsors = Sponsor::hydrate($rows);
+        $sponsors = Sponsor::query()->hydrate($rows);
         $indexed = $sponsors->values();
 
         foreach (array_values($rows) as $i => $row) {
@@ -76,7 +78,7 @@ class GetCurrentEventPublicDataAction
      */
     protected function hydrateFaqs(array $rows): Collection
     {
-        $faqs = Faq::hydrate($rows);
+        $faqs = Faq::query()->hydrate($rows);
         $indexed = $faqs->values();
 
         foreach (array_values($rows) as $i => $row) {
@@ -102,7 +104,7 @@ class GetCurrentEventPublicDataAction
      */
     protected function partners(?DonationEvent $event): Collection
     {
-        if ($event === null) {
+        if (! $event instanceof DonationEvent) {
             return collect();
         }
 
@@ -118,7 +120,7 @@ class GetCurrentEventPublicDataAction
      */
     protected function sponsors(?DonationEvent $event): Collection
     {
-        if ($event === null) {
+        if (! $event instanceof DonationEvent) {
             return collect();
         }
 
@@ -140,7 +142,7 @@ class GetCurrentEventPublicDataAction
      */
     protected function faqs(?DonationEvent $event): Collection
     {
-        if ($event !== null) {
+        if ($event instanceof DonationEvent) {
             return $this->faqsForEvent($event);
         }
 

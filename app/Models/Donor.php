@@ -1,12 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Notifications\GenericMessage;
+use Illuminate\Database\Eloquent\Attributes\Appends;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -16,32 +23,28 @@ use Illuminate\Support\Facades\Notification;
  * @property string $privacy_name
  * @property string $full_name
  * @property string $public_id_string
+ * @property array|null $webling_data
+ * @property Carbon|null $invoice_sent_at
+ * @property Carbon|null $invoice_reminder_sent_at
  */
+#[Appends([
+    'privacy_name',
+])]
+#[Fillable([
+    'first_name',
+    'last_name',
+    'address',
+    'zip_code',
+    'city',
+    'country_of_residence',
+    'phone_number',
+    'email',
+])]
+#[Table(name: 'donors')]
 class Donor extends Model
 {
     use HasFactory;
     use Notifiable;
-
-    protected $table = 'donors';
-
-    protected $appends = [
-        'privacy_name',
-    ];
-
-    protected $casts = [
-        'webling_data' => 'array',
-    ];
-
-    protected $fillable = [
-        'first_name',
-        'last_name',
-        'address',
-        'zip_code',
-        'city',
-        'country_of_residence',
-        'phone_number',
-        'email',
-    ];
 
     protected static function boot(): void
     {
@@ -107,7 +110,11 @@ class Donor extends Model
 
     public function tokenExists(string $token): bool
     {
-        return self::where('login_token', $token)->exists() || Athlete::where('login_token', $token)->exists();
+        if (self::query()->where('login_token', $token)->exists()) {
+            return true;
+        }
+
+        return (bool) Athlete::query()->where('login_token', $token)->exists();
     }
 
     public function donations(): HasMany
@@ -115,8 +122,19 @@ class Donor extends Model
         return $this->hasMany(Donation::class, 'donor_id');
     }
 
-    public function getPrivacyNameAttribute(): string
+    protected function privacyName(): Attribute
     {
-        return "{$this->first_name} {$this->last_name[0]}.";
+        return Attribute::make(get: function (): string {
+            return sprintf('%s %s.', $this->first_name, $this->last_name[0]);
+        });
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'webling_data' => 'array',
+            'invoice_sent_at' => 'datetime',
+            'invoice_reminder_sent_at' => 'datetime',
+        ];
     }
 }

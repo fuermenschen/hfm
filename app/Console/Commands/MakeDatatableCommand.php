@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -157,9 +159,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
     {
         $normalized = Str::of($context)->trim()->lower()->slug('-')->value();
 
-        if ($normalized === '') {
-            throw new \InvalidArgumentException('Context cannot be empty.');
-        }
+        throw_if($normalized === '', \InvalidArgumentException::class, 'Context cannot be empty.');
 
         return $normalized;
     }
@@ -168,9 +168,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
     {
         $normalized = preg_replace('/[^A-Za-z0-9]/', '', Str::studly(trim($name))) ?? '';
 
-        if ($normalized === '' || ! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', $normalized)) {
-            throw new \InvalidArgumentException('Component class name must be alphanumeric and start with a letter.');
-        }
+        throw_if($normalized === '' || ! preg_match('/^[A-Za-z][A-Za-z0-9]*$/', $normalized), \InvalidArgumentException::class, 'Component class name must be alphanumeric and start with a letter.');
 
         if (! Str::endsWith($normalized, 'Table')) {
             $normalized .= 'Table';
@@ -201,12 +199,12 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
         $selected = suggest(
             label: 'Which model should back this datatable?',
             options: array_map('class_basename', $models),
-            default: $defaultShort,
             placeholder: 'E.g. Donor',
+            default: $defaultShort,
             required: true,
         );
 
-        $selected = trim((string) $selected);
+        $selected = trim($selected);
 
         return Str::startsWith($selected, 'App\\')
             ? $selected
@@ -279,7 +277,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
             return $default;
         }
 
-        return (string) suggest(
+        return suggest(
             label: 'Blade view slug?',
             options: [$default],
             default: $default,
@@ -339,17 +337,17 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
 
         if (! class_exists($modelClass)) {
             if ($this->isPromptingEnabled()) {
-                warning("Model class {$modelClass} does not exist yet. Falling back to minimal defaults.");
+                warning(sprintf('Model class %s does not exist yet. Falling back to minimal defaults.', $modelClass));
             }
 
             return $fallback;
         }
 
-        $model = app($modelClass);
+        $model = resolve($modelClass);
 
         if (! $model instanceof Model) {
             if ($this->isPromptingEnabled()) {
-                warning("{$modelClass} is not an Eloquent model. Falling back to minimal defaults.");
+                warning($modelClass.' is not an Eloquent model. Falling back to minimal defaults.');
             }
 
             return $fallback;
@@ -375,7 +373,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
                 'columns' => $columns,
                 'types' => $types,
             ];
-        } catch (\Throwable $exception) {
+        } catch (\Throwable $throwable) {
             if ($this->isPromptingEnabled()) {
                 warning('Could not inspect database schema. Falling back to minimal defaults.');
             }
@@ -440,7 +438,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
         $defaults = array_values(array_intersect($preferred, $schemaColumns));
 
         if ($defaults === []) {
-            $defaults = array_slice($schemaColumns, 0, min(count($schemaColumns), 8));
+            return array_slice($schemaColumns, 0, min(count($schemaColumns), 8));
         }
 
         return $defaults;
@@ -579,19 +577,19 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
 
             foreach ($definition as $key => $value) {
                 if (is_bool($value)) {
-                    $parts[] = "'{$key}' => ".($value ? 'true' : 'false');
+                    $parts[] = sprintf("'%s' => ", $key).($value ? 'true' : 'false');
 
                     continue;
                 }
 
                 if (is_int($value)) {
-                    $parts[] = "'{$key}' => {$value}";
+                    $parts[] = sprintf("'%s' => %d", $key, $value);
 
                     continue;
                 }
 
                 $escaped = str_replace("'", "\\'", (string) $value);
-                $parts[] = "'{$key}' => '{$escaped}'";
+                $parts[] = sprintf("'%s' => '%s'", $key, $escaped);
             }
 
             $lines[] = "'".$column."' => [".implode(', ', $parts).'],';
@@ -654,7 +652,15 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
 
     protected function isBooleanColumn(string $column, string $type): bool
     {
-        return $type === 'boolean' || Str::startsWith($column, 'is_') || Str::startsWith($column, 'has_');
+        if ($type === 'boolean') {
+            return true;
+        }
+
+        if (Str::startsWith($column, 'is_')) {
+            return true;
+        }
+
+        return Str::startsWith($column, 'has_');
     }
 
     protected function isDateTimeColumn(string $column, string $type): bool
@@ -696,13 +702,13 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
     protected function buildSortColumnsCode(array $sortableColumns, string $table): string
     {
         if ($sortableColumns === []) {
-            return "'id' => '{$table}.id',";
+            return sprintf("'id' => '%s.id',", $table);
         }
 
         $lines = [];
 
         foreach ($sortableColumns as $column) {
-            $lines[] = "'{$column}' => '{$table}.{$column}',";
+            $lines[] = sprintf("'%s' => '%s.%s',", $column, $table, $column);
         }
 
         return implode("\n            ", $lines);
@@ -733,7 +739,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
         }
 
         return implode("\n            ", array_map(
-            fn (string $column): string => "'{$column}',",
+            fn (string $column): string => sprintf("'%s',", $column),
             $columns,
         ));
     }
@@ -751,7 +757,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
         $labelMap = [];
 
         foreach ($columns as $column) {
-            $labelMap[] = "            '".$this->columnLabel($column)."' => data_get(\$row, '{$column}'),";
+            $labelMap[] = "            '".$this->columnLabel($column).sprintf("' => data_get(\$row, '%s'),", $column);
         }
 
         $labelMapCode = implode("\n", $labelMap);
@@ -842,7 +848,7 @@ PHP;
                 ],
                 default: 'admin',
             ),
-            'name' => fn (): string => (string) suggest(
+            'name' => fn (): string => suggest(
                 label: 'What is the component class name?',
                 options: [
                     'AdminUsersTable',

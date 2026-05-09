@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions;
 
 use App\Models\Donor;
@@ -22,7 +24,7 @@ class CollectDonorInvoiceDataAction
 
             $lines[] = [
                 'athlete' => $donation->athlete->privacy_name,
-                'partner' => optional($donation->athlete->partner)->name,
+                'partner' => $donation->athlete->partner?->name,
                 'rounds' => $rounds,
                 'amount_per_round' => round($perRound, 2),
                 'subtotal' => round($subtotal, 2),
@@ -42,7 +44,7 @@ class CollectDonorInvoiceDataAction
         }
 
         if ($max !== null && $amount > $max) {
-            $amount = $max;
+            return $max;
         }
 
         return $amount;

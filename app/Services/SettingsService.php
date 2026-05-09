@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use ReflectionClass;
@@ -9,8 +11,6 @@ use Throwable;
 
 class SettingsService
 {
-    public function __construct() {}
-
     /**
      * Return all settings grouped by class.
      *
@@ -34,14 +34,18 @@ class SettingsService
     {
         $classes = config('settings.settings');
 
-        if (! is_array($classes) || empty($classes)) {
+        if (! is_array($classes) || $classes === []) {
             return [];
         }
 
         $result = [];
 
         foreach ($classes as $class) {
-            if (! \is_string($class) || ! class_exists($class)) {
+            if (! \is_string($class)) {
+                continue;
+            }
+
+            if (! class_exists($class)) {
                 continue;
             }
 
@@ -49,7 +53,7 @@ class SettingsService
             $instance = null;
             $instanceData = null;
             try {
-                $instance = app($class);
+                $instance = resolve($class);
                 if ($instance !== null && \method_exists($instance, 'toArray')) {
                     /** @var array<string, mixed> $arr */
                     $arr = $instance->toArray();
@@ -142,6 +146,7 @@ class SettingsService
                     if ($prop->getDeclaringClass()->getName() !== $class) {
                         continue; // skip inherited public properties
                     }
+
                     $fields[] = $prop;
                 }
             } catch (Throwable $e) {
@@ -184,12 +189,14 @@ class SettingsService
                         foreach ($t->getTypes() as $sub) {
                             $typeNames[] = $sub instanceof ReflectionNamedType ? $sub->getName() : (string) $sub;
                         }
+
                         $type = implode('|', $typeNames);
                     } elseif ($t instanceof \ReflectionIntersectionType) {
                         $typeNames = [];
                         foreach ($t->getTypes() as $sub) {
                             $typeNames[] = $sub instanceof ReflectionNamedType ? $sub->getName() : (string) $sub;
                         }
+
                         $type = implode('&', $typeNames);
                     } else {
                         $type = null;
@@ -239,17 +246,21 @@ class SettingsService
      */
     public function save(array $payload): void
     {
-        if (empty($payload)) {
-            return;
-        }
-
         foreach ($payload as $class => $values) {
-            if (! \is_string($class) || ! class_exists($class) || ! \is_array($values)) {
+            if (! \is_string($class)) {
+                continue;
+            }
+
+            if (! class_exists($class)) {
+                continue;
+            }
+
+            if (! \is_array($values)) {
                 continue;
             }
 
             try {
-                $instance = app($class);
+                $instance = resolve($class);
             } catch (Throwable $e) {
                 $instance = null;
             }
@@ -266,6 +277,7 @@ class SettingsService
                     if ($prop->getDeclaringClass()->getName() !== $class) {
                         continue;
                     }
+
                     $t = $prop->getType();
                     $type = null;
                     if ($t instanceof ReflectionNamedType) {
@@ -274,6 +286,7 @@ class SettingsService
                             ? '?'.$nameType
                             : $nameType;
                     }
+
                     $typeMap[$prop->getName()] = $type;
                 }
             } catch (Throwable $e) {
@@ -284,6 +297,7 @@ class SettingsService
                 if (! \is_string($name)) {
                     continue;
                 }
+
                 $coerced = $this->coerceValue($typeMap[$name] ?? null, $value);
                 try {
                     $instance->{$name} = $coerced;
@@ -328,6 +342,7 @@ class SettingsService
                 if (\is_bool($value)) {
                     return $value;
                 }
+
                 $truthy = ['1', 'true', 'on', 'yes', 'y'];
 
                 return in_array(strtolower((string) $value), $truthy, true);

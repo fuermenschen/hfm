@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Components\Concerns\InteractsWithDatatable;
@@ -152,9 +154,7 @@ abstract class AbstractDatatableComponent extends Component
             $relation = (string) Str::beforeLast($column, '.');
             $relationColumn = (string) Str::afterLast($column, '.');
 
-            if ($relation === '' || $relationColumn === '') {
-                throw new \LogicException(static::class." has an invalid searchable relation column [{$column}].");
-            }
+            throw_if($relation === '' || $relationColumn === '', \LogicException::class, static::class.sprintf(' has an invalid searchable relation column [%s].', $column));
 
             $callback = function (Builder $relationQuery) use ($relationColumn, $search): void {
                 $this->applySearchColumnCondition(
@@ -176,9 +176,7 @@ abstract class AbstractDatatableComponent extends Component
             return;
         }
 
-        if (! preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $column)) {
-            throw new \LogicException(static::class." has an invalid searchable column [{$column}].");
-        }
+        throw_unless(preg_match('/^[A-Za-z_]\w*$/', $column), \LogicException::class, static::class.sprintf(' has an invalid searchable column [%s].', $column));
 
         $wrappedColumn = $builder->getQuery()->getGrammar()->wrap($column);
 
@@ -214,9 +212,7 @@ abstract class AbstractDatatableComponent extends Component
     {
         $defaultSortField = array_search($this->defaultSortColumn(), $this->sortColumns(), true);
 
-        if (! is_string($defaultSortField) || $defaultSortField === '') {
-            throw new \LogicException(static::class.' must map defaultSortColumn() in sortColumns().');
-        }
+        throw_if(! is_string($defaultSortField) || $defaultSortField === '', \LogicException::class, static::class.' must map defaultSortColumn() in sortColumns().');
 
         return $defaultSortField;
     }

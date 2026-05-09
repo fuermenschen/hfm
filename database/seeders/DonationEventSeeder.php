@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\DonationEvent;
@@ -87,14 +89,14 @@ class DonationEventSeeder extends Seeder
                 'about_body_md' => 'Der Spendenlauf ist ähnlich organisiert wie ein klassischer «Sponsorenlauf». Nur wird nicht für einen Verein gesammelt, sondern für Kinder psychisch kranker Eltern, für Menschen mit Beeinträchtigung und für Menschen in schwierigen Lebenssituationen.',
             ],
             'results' => [
-                'heading_md' => "Resultate {$year}",
+                'heading_md' => 'Resultate '.$year,
             ],
             'seo' => [
-                'meta_description_md' => "Höhenmeter für Menschen: Ein Spendenlauf in Winterthur im Jahr {$year}. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.",
-                'og_description_md' => "Ein Spendenlauf in Winterthur für Winterthur im Jahr {$year}.",
+                'meta_description_md' => sprintf('Höhenmeter für Menschen: Ein Spendenlauf in Winterthur im Jahr %d. Mit den Spenden werden Winterthurer Benefizpartner:innen unterstützt.', $year),
+                'og_description_md' => sprintf('Ein Spendenlauf in Winterthur für Winterthur im Jahr %d.', $year),
             ],
             'invoice' => [
-                'additional_information' => "Spendenrechnung Höhenmeter für Menschen Winterthur {$year}",
+                'additional_information' => 'Spendenrechnung Höhenmeter für Menschen Winterthur '.$year,
             ],
         ];
     }

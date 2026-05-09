@@ -1,9 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Notifications\AthleteRegistered;
 use App\Notifications\GenericMessage;
+use Illuminate\Database\Eloquent\Attributes\Appends;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,47 +27,37 @@ use Illuminate\Support\Facades\Notification;
  * @property string $full_name
  * @property string $public_id_string
  */
+#[Appends([
+    'full_name',
+    'privacy_name',
+    'public_id_string',
+])]
+#[Fillable([
+    'first_name',
+    'last_name',
+    'address',
+    'zip_code',
+    'city',
+    'phone_number',
+    'email',
+    'adult',
+    'sport_type_id',
+    'rounds_estimated',
+    'partner_id',
+    'donation_event_id',
+    'comment',
+])]
+#[Hidden([
+    'login_token',
+    'login_token_expires_at',
+    'email_verified_at',
+    'created_at',
+    'updated_at',
+])]
 class Athlete extends Model
 {
     use HasFactory;
     use Notifiable;
-
-    protected $fillable = [
-        'first_name',
-        'last_name',
-        'address',
-        'zip_code',
-        'city',
-        'phone_number',
-        'email',
-        'adult',
-        'sport_type_id',
-        'rounds_estimated',
-        'partner_id',
-        'donation_event_id',
-        'comment',
-    ];
-
-    protected $casts = [
-        'public_id' => 'integer',
-        'rounds_estimated' => 'integer',
-        'rounds_done' => 'integer',
-        'donation_event_id' => 'integer',
-    ];
-
-    protected $hidden = [
-        'login_token',
-        'login_token_expires_at',
-        'email_verified_at',
-        'created_at',
-        'updated_at',
-    ];
-
-    protected $appends = [
-        'full_name',
-        'privacy_name',
-        'public_id_string',
-    ];
 
     protected static function boot(): void
     {
@@ -86,11 +82,11 @@ class Athlete extends Model
                     $athlete->public_id_string,
                     $athlete->login_token
                 ));
-            } catch (\Throwable $e) {
+            } catch (\Throwable $throwable) {
                 Log::error('Failed to send AthleteRegistered notification', [
                     'athlete_id' => $athlete->id,
                     'email' => $athlete->email,
-                    'error' => $e->getMessage(),
+                    'error' => $throwable->getMessage(),
                 ]);
             }
 
@@ -149,7 +145,7 @@ class Athlete extends Model
 
     public function idExists(int $token): bool
     {
-        return Athlete::where('public_id', $token)->exists();
+        return Athlete::query()->where('public_id', $token)->exists();
     }
 
     public function generateLoginToken(bool $persist = true): void
@@ -176,7 +172,11 @@ class Athlete extends Model
 
     public function tokenExists(string $token): bool
     {
-        return Athlete::where('login_token', $token)->exists() || Donor::where('login_token', $token)->exists();
+        if (Athlete::query()->where('login_token', $token)->exists()) {
+            return true;
+        }
+
+        return (bool) Donor::query()->where('login_token', $token)->exists();
     }
 
     public function donations(): HasMany
@@ -184,25 +184,29 @@ class Athlete extends Model
         return $this->hasMany(Donation::class);
     }
 
-    public function getFullNameAttribute(): string
+    protected function fullName(): Attribute
     {
-        return "$this->first_name $this->last_name";
+        return Attribute::make(get: function (): string {
+            return sprintf('%s %s', $this->first_name, $this->last_name);
+        });
     }
 
-    // make a string in the format ###-###
-
-    public function getPrivacyNameAttribute(): string
+    protected function privacyName(): Attribute
     {
-        return "{$this->first_name} {$this->last_name[0]}.";
+        return Attribute::make(get: function (): string {
+            return sprintf('%s %s.', $this->first_name, $this->last_name[0]);
+        });
     }
 
-    public function getPublicIdStringAttribute(): string
+    protected function publicIdString(): Attribute
     {
-        // convert the public_id to a string with six digits
-        $publicId = str_pad((string) $this->public_id, 6, '0', STR_PAD_LEFT);
+        return Attribute::make(get: function (): string {
+            // convert the public_id to a string with six digits
+            $publicId = str_pad((string) $this->public_id, 6, '0', STR_PAD_LEFT);
 
-        // return the formatted string
-        return substr($publicId, 0, 3).'-'.substr($publicId, 3);
+            // return the formatted string
+            return substr($publicId, 0, 3).'-'.substr($publicId, 3);
+        });
     }
 
     public function sportType(): BelongsTo
@@ -218,5 +222,15 @@ class Athlete extends Model
     public function donationEvent(): BelongsTo
     {
         return $this->belongsTo(DonationEvent::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'public_id' => 'integer',
+            'rounds_estimated' => 'integer',
+            'rounds_done' => 'integer',
+            'donation_event_id' => 'integer',
+        ];
     }
 }

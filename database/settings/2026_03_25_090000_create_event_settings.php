@@ -6,7 +6,7 @@ return new class extends SettingsMigration
 {
     public function up(): void
     {
-        $this->migrator->add('eventSettings.current_event_id', null);
+        $this->migrator->add('eventSettings.current_event_id');
     }
 
     public function down(): void

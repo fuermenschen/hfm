@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\Models\Donor;
@@ -33,7 +35,7 @@ class CheckDonorInvoicesStatus implements ShouldQueue
             $overdueIds = $this->extractIds($overdueResponse->json());
 
             // Update donors with matching debitor_id to 'paid'
-            if (! empty($paidIds)) {
+            if ($paidIds !== []) {
                 Donor::query()
                     ->whereIn('webling_data->debitor_id', $paidIds)
                     ->chunkById(200, function ($donors): void {
@@ -48,7 +50,7 @@ class CheckDonorInvoicesStatus implements ShouldQueue
             }
 
             // Update donors with matching debitor_id to 'overdue' (but don't override 'paid')
-            if (! empty($overdueIds)) {
+            if ($overdueIds !== []) {
                 Donor::query()
                     ->whereIn('webling_data->debitor_id', $overdueIds)
                     ->chunkById(200, function ($donors): void {
@@ -59,17 +61,18 @@ class CheckDonorInvoicesStatus implements ShouldQueue
                             if (($data['payment_status'] ?? null) === 'paid') {
                                 continue;
                             }
+
                             $data['payment_status'] = 'overdue';
                             $donor->webling_data = $data;
                             $donor->save();
                         }
                     });
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('Failed to check donor invoice status', [
-                'message' => $e->getMessage(),
+                'message' => $throwable->getMessage(),
             ]);
-            throw $e;
+            throw $throwable;
         }
     }
 
@@ -90,19 +93,19 @@ class CheckDonorInvoicesStatus implements ShouldQueue
         // Most likely shapes
         $items = $payload['items'] ?? null;
         if (is_array($items)) {
-            return array_values(array_filter(array_map('intval', $items), fn ($v) => $v > 0));
+            return array_values(array_filter(array_map('intval', $items), fn (int $v): bool => $v > 0));
         }
 
         if (isset($payload['response']) && is_array($payload['response'])) {
             $resp = $payload['response'];
             if (isset($resp['items']) && is_array($resp['items'])) {
-                return array_values(array_filter(array_map('intval', $resp['items']), fn ($v) => $v > 0));
+                return array_values(array_filter(array_map('intval', $resp['items']), fn (int $v): bool => $v > 0));
             }
         }
 
         // If the payload itself is a list of numbers
         if (Arr::isList($payload)) {
-            return array_values(array_filter(array_map('intval', $payload), fn ($v) => $v > 0));
+            return array_values(array_filter(array_map('intval', $payload), fn (int $v): bool => $v > 0));
         }
 
         // Fallback: collect any integer-ish values across payload
@@ -114,6 +117,6 @@ class CheckDonorInvoicesStatus implements ShouldQueue
             }
         }
 
-        return array_values(array_unique(array_filter($collected, fn ($v) => $v > 0)));
+        return array_values(array_unique(array_filter($collected, fn (int $v): bool => $v > 0)));
     }
 }

@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Casts\LocalizedDateTime;
 use Database\Factories\DonationEventFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,40 +15,28 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
+#[Fillable([
+    'slug',
+    'title',
+    'timezone',
+    'starts_at',
+    'ends_at',
+    'registration_opens_at',
+    'athlete_registration_closes_at',
+    'donor_registration_closes_at',
+    'location_name',
+    'location_street',
+    'location_postal_code',
+    'location_city',
+    'location_url',
+    'is_published',
+    'has_equal_split_option',
+    'content',
+])]
 class DonationEvent extends Model
 {
     /** @use HasFactory<DonationEventFactory> */
     use HasFactory;
-
-    protected $fillable = [
-        'slug',
-        'title',
-        'timezone',
-        'starts_at',
-        'ends_at',
-        'registration_opens_at',
-        'athlete_registration_closes_at',
-        'donor_registration_closes_at',
-        'location_name',
-        'location_street',
-        'location_postal_code',
-        'location_city',
-        'location_url',
-        'is_published',
-        'has_equal_split_option',
-        'content',
-    ];
-
-    protected $casts = [
-        'starts_at' => LocalizedDateTime::class,
-        'ends_at' => LocalizedDateTime::class,
-        'registration_opens_at' => LocalizedDateTime::class,
-        'athlete_registration_closes_at' => LocalizedDateTime::class,
-        'donor_registration_closes_at' => LocalizedDateTime::class,
-        'is_published' => 'boolean',
-        'has_equal_split_option' => 'boolean',
-        'content' => 'array',
-    ];
 
     public function athletes(): HasMany
     {
@@ -110,5 +101,19 @@ class DonationEvent extends Model
     public function contentPlainText(string $path, ?string $default = null): string
     {
         return trim(strip_tags((string) $this->contentMarkdown($path, $default)));
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'starts_at' => LocalizedDateTime::class,
+            'ends_at' => LocalizedDateTime::class,
+            'registration_opens_at' => LocalizedDateTime::class,
+            'athlete_registration_closes_at' => LocalizedDateTime::class,
+            'donor_registration_closes_at' => LocalizedDateTime::class,
+            'is_published' => 'boolean',
+            'has_equal_split_option' => 'boolean',
+            'content' => 'array',
+        ];
     }
 }

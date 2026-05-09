@@ -16,9 +16,11 @@ return new class extends Migration
             if (Schema::hasColumn('donators', 'invoice_paid_at')) {
                 $table->dropColumn('invoice_paid_at');
             }
+
             if (Schema::hasColumn('donators', 'invoice_paid')) {
                 $table->dropColumn('invoice_paid');
             }
+
             if (Schema::hasColumn('donators', 'invoice_sent')) {
                 $table->dropColumn('invoice_sent');
             }
@@ -34,9 +36,11 @@ return new class extends Migration
             if (! Schema::hasColumn('donators', 'invoice_paid')) {
                 $table->boolean('invoice_paid')->default(false);
             }
+
             if (! Schema::hasColumn('donators', 'invoice_paid_at')) {
                 $table->timestamp('invoice_paid_at')->nullable();
             }
+
             if (! Schema::hasColumn('donators', 'invoice_sent')) {
                 $table->boolean('invoice_sent')->default(false);
             }

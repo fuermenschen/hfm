@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Jobs\RegisterNewsletterSubscriber;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
@@ -36,13 +40,13 @@ class NewsletterRegistrationForm extends Component
 
         $this->validate();
 
-        RegisterNewsletterSubscriber::dispatch((string) $this->first_name, strtolower((string) $this->email));
+        dispatch(new RegisterNewsletterSubscriber((string) $this->first_name, strtolower((string) $this->email)));
 
         $this->reset(['first_name', 'email', 'email_confirmation']);
         $this->registrationQueued = true;
     }
 
-    public function render()
+    public function render(): Factory|View
     {
         return view('forms.newsletter-registration-form');
     }

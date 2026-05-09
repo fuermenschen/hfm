@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\Athlete;
@@ -19,38 +21,38 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // create users
-        User::create([
+        User::query()->create([
             'name' => 'Simon',
             'email' => 'simon.moser@mailbox.org',
         ]);
-        User::create([
+        User::query()->create([
             'name' => 'Kai',
             'email' => 'kaifrehner@gmail.com',
         ]);
 
-        User::create([
+        User::query()->create([
             'name' => 'Felix',
             'email' => 'felix.moser@mailbox.org',
         ]);
 
         // create sport types
-        SportType::create([
+        SportType::query()->create([
             'name' => 'Rennen',
         ]);
 
-        SportType::create([
+        SportType::query()->create([
             'name' => 'Velofahren',
         ]);
 
-        SportType::create([
+        SportType::query()->create([
             'name' => 'Inlineskaten',
         ]);
 
-        SportType::create([
+        SportType::query()->create([
             'name' => 'Rollstuhl',
         ]);
 
-        SportType::create([
+        SportType::query()->create([
             'name' => 'Andere (bitte spezifizieren)',
         ]);
 

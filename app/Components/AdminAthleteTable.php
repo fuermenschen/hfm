@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Components;
 
 use App\Models\Athlete;
@@ -66,7 +68,7 @@ class AdminAthleteTable extends AbstractDatatableComponent
             $athlete->save();
 
             Flux::toast(text: 'Die Änderungen wurden gespeichert.', heading: 'Erfolgreich gespeichert', variant: 'success');
-        } catch (\Throwable $exception) {
+        } catch (\Throwable $throwable) {
             Flux::toast(text: 'Die Änderungen konnten nicht gespeichert werden.', heading: 'Fehler beim Speichern', variant: 'danger');
         }
     }
