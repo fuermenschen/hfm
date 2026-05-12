@@ -4,11 +4,6 @@ on:
   schedule:
     - cron: '0 3 * * 1'
   workflow_dispatch:
-    inputs:
-      days:
-        description: 'Remove pr-* directories where the PR was merged/closed more than this many days ago'
-        required: false
-        default: '14'
 
 permissions:
   contents: write
@@ -31,11 +26,11 @@ jobs:
       - name: Remove stale pr-* directories
         id: cleanup
         env:
-          DAYS: ${{ inputs.days || '14' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           REMOVED=0
+          DAYS=14
           cutoff_epoch=$(date -d "${DAYS} days ago" '+%s')
 
           for dir in pr-*/; do
@@ -50,13 +45,17 @@ jobs:
               continue
             fi
 
-            pr_data=$(gh pr view "$pr_number" --json mergedAt,closedAt,state --repo "${{ github.repository }}" 2>/dev/null || echo '{}')
-
-            if [ -z "$pr_data" ] || [ "$pr_data" = "{}" ]; then
-              echo "Removing $dir (PR #$pr_number not found)"
-              rm -rf "$dir"
-              REMOVED=$((REMOVED + 1))
-              continue
+            if ! pr_data=$(gh pr view "$pr_number" --json mergedAt,closedAt,state --repo "${{ github.repository }}" 2>/dev/null); then
+              gh_exit=$?
+              if [ "$gh_exit" -eq 1 ]; then
+                echo "Removing $dir (PR #$pr_number not found)"
+                rm -rf "$dir"
+                REMOVED=$((REMOVED + 1))
+                continue
+              else
+                echo "::error::gh pr view failed with exit code $gh_exit for PR #$pr_number"
+                exit 1
+              fi
             fi
 
             state=$(echo "$pr_data" | jq -r '.state //empty')
