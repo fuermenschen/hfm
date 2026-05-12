@@ -105,6 +105,9 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     needs: e2e
     runs-on: ubuntu-latest
+    concurrency:
+      group: gh-pages-write
+      cancel-in-progress: false
     permissions:
       contents: write # push to gh-pages
       pull-requests: write # create/update PR comment
