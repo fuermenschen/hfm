@@ -1,0 +1,108 @@
+name: cleanup-playwright-reports
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+
+      - name: Remove stale pr-* directories
+        id: cleanup
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          REMOVED=0
+          DAYS=14
+          cutoff_epoch=$(date -d "${DAYS} days ago" '+%s')
+
+          for dir in pr-*/; do
+            [ -d "$dir" ] || continue
+            dir="${dir%/}"
+            pr_number="${dir#pr-}"
+
+            if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
+              echo "Removing $dir (not a valid PR number)"
+              rm -rf "$dir"
+              REMOVED=$((REMOVED + 1))
+              continue
+            fi
+
+            pr_data=$(gh pr view "$pr_number" --json mergedAt,closedAt,state --repo "${{ github.repository }}" 2>/dev/null) && gh_exit=$? || gh_exit=$?
+            if [ "$gh_exit" -ne 0 ]; then
+              if [ "$gh_exit" -eq 1 ]; then
+                echo "Removing $dir (PR #$pr_number not found)"
+                rm -rf "$dir"
+                REMOVED=$((REMOVED + 1))
+                continue
+              else
+                echo "::error::gh pr view failed with exit code $gh_exit for PR #$pr_number"
+                exit 1
+              fi
+            fi
+
+            state=$(echo "$pr_data" | jq -r '.state //empty')
+
+            if [ "$state" = "OPEN" ]; then
+              echo "Keeping $dir (PR #$pr_number is still open)"
+              continue
+            fi
+
+            merged_at=$(echo "$pr_data" | jq -r '.mergedAt //empty')
+            closed_at=$(echo "$pr_data" | jq -r '.closedAt //empty')
+
+            if [ -n "$merged_at" ]; then
+              relevant_date="$merged_at"
+              date_label="merged"
+            elif [ -n "$closed_at" ]; then
+              relevant_date="$closed_at"
+              date_label="closed"
+            else
+              echo "Keeping $dir (PR #$pr_number has no date info)"
+              continue
+            fi
+
+            relevant_epoch=$(date -d "$relevant_date" '+%s')
+
+            if [ "$relevant_epoch" -lt "$cutoff_epoch" ]; then
+              echo "Removing $dir (PR #$pr_number $date_label on ${relevant_date%%T*}, older than $DAYS days)"
+              rm -rf "$dir"
+              REMOVED=$((REMOVED + 1))
+            else
+              echo "Keeping $dir (PR #$pr_number $date_label on ${relevant_date%%T*}, within $DAYS days)"
+            fi
+          done
+
+          echo "removed=$REMOVED" >> "$GITHUB_OUTPUT"
+
+      - name: Create orphan commit and force push
+        if: steps.cleanup.outputs.removed != '0'
+        run: |
+          set -euo pipefail
+          REMOVED=${{ steps.cleanup.outputs.removed }}
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+          git checkout --orphan cleanup
+          git add -A
+          git commit -m "Remove ${REMOVED} stale Playwright report(s) [skip ci]"
+
+          git push origin cleanup:gh-pages --force-with-lease
