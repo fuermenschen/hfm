@@ -45,8 +45,8 @@ jobs:
               continue
             fi
 
-            if ! pr_data=$(gh pr view "$pr_number" --json mergedAt,closedAt,state --repo "${{ github.repository }}" 2>/dev/null); then
-              gh_exit=$?
+            pr_data=$(gh pr view "$pr_number" --json mergedAt,closedAt,state --repo "${{ github.repository }}" 2>/dev/null) && gh_exit=$? || gh_exit=$?
+            if [ "$gh_exit" -ne 0 ]; then
               if [ "$gh_exit" -eq 1 ]; then
                 echo "Removing $dir (PR #$pr_number not found)"
                 rm -rf "$dir"
