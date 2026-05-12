@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   lockfile-consistency:
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
