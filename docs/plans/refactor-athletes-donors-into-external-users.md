@@ -21,8 +21,10 @@
 ### Auth infrastructure
 
 - [ ] Configure `auth:external` guard + `external_users` provider in `config/auth.php`
-- [ ] Add mandatory middleware/gates: `auth:external` guard cannot access admin routes; `auth:web` guard cannot access external write endpoints
-- [ ] Add signed-URL login route for external users (same pattern as admin `User`: `URL::temporarySignedRoute` → `auth()->guard('external')->login()` + session regeneration)
+- [ ] Split route files now: move admin routes to dedicated `routes/admin.php` (`auth:web`) and external portal routes to dedicated `routes/portal.php` (`auth:external`); keep public pages in `routes/web.php`
+- [ ] Enforce strict guard separation via middleware (not Gates): `auth:external` cannot access admin routes; `auth:web` cannot access external write endpoints
+- [ ] Add signed-URL login route for external users at `/portal/login/{uuid}` (controller action, no closure business logic), same pattern as admin `User`: `URL::temporarySignedRoute` → `auth()->guard('external')->login()` + session regeneration
+- [ ] External signed login link TTL is 15 minutes and reusable within TTL (single-use invalidation out of scope)
 - [ ] Update `LoginForm` to also check `external_users` table (dead path until backfill, but wired and ready). Legacy `Athlete`/`Donor` token lookups remain the active path
 
 ### Landing page
@@ -116,6 +118,8 @@
 - [ ] External login resolves one portal for dual-role user
 - [ ] External guard **cannot** access admin routes (enforced by middleware, tested per route)
 - [ ] Internal guard **cannot** access external write endpoints
+- [ ] Route split verified: admin routes are loaded from `routes/admin.php`, portal routes from `routes/portal.php`, and public routes from `routes/web.php`
+- [ ] External signed-login callback uses `/portal/login/{uuid}` controller action; signed URL expiry and invalid signature are tested
 
 ### PR2 — Backfill + switch reads
 
