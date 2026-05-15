@@ -14,9 +14,9 @@
 
 ### Schema + models
 
-- [ ] Create `external_users` migration + model (extends `Authenticatable` — no password column, passwordless login via signed URLs like admin `User`). Columns: `id`, `uuid` (unique, for signed URL routes), `first_name`, `last_name`, `address`, `zip_code`, `city`, `country_of_residence`, `phone_number`, `email` (unique), `remember_token`, timestamps, soft-deletes, `legacy_athlete_id` (nullable, migration trace), `legacy_donor_id` (nullable, migration trace)
-- [ ] Create `athlete_registrations` migration + model. Columns: `id`, `donation_event_id` FK, `external_user_id` FK, `sport_type_id`, `partner_id` (nullable), `rounds_estimated`, `rounds_done`, `comment`, `verified`, `public_id` (event-local, auto-generated), timestamps. Constraints: unique (`donation_event_id`, `external_user_id`)
-- [ ] Extend `donations` with nullable new columns: `donation_event_id`, `donor_external_user_id`, `athlete_registration_id`. No `group_id` yet — added when groups are implemented. Keep old columns (`donor_id`, `athlete_id`) for compatibility
+- [x] Create `external_users` migration + model (extends `Authenticatable` — no password column, passwordless login via signed URLs like admin `User`). Columns: `id`, `uuid` (unique, for signed URL routes), `first_name`, `last_name`, `address`, `zip_code`, `city`, `country_of_residence`, `phone_number`, `email` (unique), `public_id` (6-char uppercase alphanumeric, globally unique, always auto-generated, displayed as `XXX-XXX` to disambiguate athletes sharing the same privacy name), `remember_token`, timestamps, soft-deletes, `legacy_athlete_id` (nullable, migration trace), `legacy_donor_id` (nullable, migration trace)
+- [x] Create `athlete_registrations` migration + model. Columns: `id`, `donation_event_id` FK, `external_user_id` FK, `sport_type_id`, `partner_id` (nullable), `rounds_estimated`, `rounds_done`, `comment`, `verified`, timestamps. Constraints: unique (`donation_event_id`, `external_user_id`)
+- [x] Extend `donations` with nullable new columns: `donor_external_user_id`, `athlete_registration_id`. Event scope is derived through `athlete_registration.donation_event_id`; no redundant `donation_event_id` FK on donations. No `group_id` yet — added when groups are implemented. Keep old columns (`donor_id`, `athlete_id`) for compatibility
 
 ### Auth infrastructure
 
@@ -55,19 +55,18 @@
 ### Backfill participations
 
 - [x] `donation_event` for each legacy athlete: `athletes.donation_event_id` backfilled via `BackfillAthleteEventAssignmentsCommand`
-- [ ] For each legacy athlete: create one `athlete_registration` from resolved `donation_event_id` + copy event-scoped fields (`rounds_estimated`, `rounds_done`, `verified`, legacy `partner_id`, `public_id`)
+- [ ] For each legacy athlete: create one `athlete_registration` from resolved `donation_event_id` + copy event-scoped fields (`rounds_estimated`, `rounds_done`, `verified`, legacy `partner_id`)
 
 ### Backfill donations
 
 - [ ] For each legacy donation:
   - [ ] Map `donor_id` → `donor_external_user_id`
   - [ ] Map `athlete_id` → `athlete_registration_id`
-  - [ ] Set `donation_event_id` from registration's event
 
 ### Backfill command
 
 - [ ] Idempotent Artisan command `hfm:backfill:external-users` with `--dry-run` + report output (same pattern as `hfm:backfill:event-content`)
-- [ ] Validation checks after backfill: row count parity, amount parity per event/donor, every donation target belongs to same event, every legacy row mapped to exactly one external user
+- [ ] Validation checks after backfill: row count parity, amount parity per event/donor (event derived via athlete registration), every donation resolves to exactly one athlete registration, every legacy row mapped to exactly one external user
 
 ### Switch reads
 
@@ -86,11 +85,13 @@
 
 > Clean break. No legacy code, tables, or token routes remain.
 
-- [ ] Enforce NOT NULL on new FKs (`donations.donation_event_id`, `donations.donor_external_user_id`, `donations.athlete_registration_id`)
+- [ ] Enforce NOT NULL on new FKs (`donations.donor_external_user_id`, `donations.athlete_registration_id`)
+- [ ] Ensure `donations.athlete_registration_id` uses `RESTRICT` so athlete registrations with donations cannot be deleted
 - [ ] Remove old nullable columns from `donations`: `donor_id`, `athlete_id`
 - [ ] Drop legacy tables: `athletes`, `donors`
 - [ ] Remove legacy models: `Athlete`, `Donor`
 - [ ] Remove legacy token routes entirely (redirects from PR2 replaced with 404/removed)
+- [ ] Replace temporary transition guard in `Donation::boot()->created` with final new-schema flow (no legacy `donor` / `athlete` assumptions)
 - [ ] Remove `login_token` and `login_token_expiry_days` config
 - [ ] Remove `legacy_athlete_id`/`legacy_donor_id` trace columns from `external_users`
 - [ ] Remove legacy `LoginForm` fallback paths (only `external_users` lookup remains)
@@ -102,7 +103,7 @@
 ## Rollback + integrity
 
 - [ ] Rollback path: PR2 can revert to legacy reads; PR1 new schema is additive (no legacy disruption)
-- [ ] Integrity checks: row count parity, amount parity per event/donor, every donation target belongs to same event, every legacy row mapped to exactly one external user
+- [ ] Integrity checks: row count parity, amount parity per event/donor (event derived via athlete registration), every donation resolves to exactly one athlete registration, every legacy row mapped to exactly one external user
 
 ---
 
