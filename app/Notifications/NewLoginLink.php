@@ -18,7 +18,8 @@ class NewLoginLink extends Notification
     public function __construct(public readonly string $first_name,
         public readonly string $athlete_login_token = '',
         public readonly string $donor_login_token = '',
-        public readonly string $user_login_url = '', )
+        public readonly string $user_login_url = '',
+        public readonly string $external_user_login_url = '', )
     {
         //
     }
@@ -38,36 +39,20 @@ class NewLoginLink extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-
         $message = (new MailMessage)
             ->subject('Neuer Anmelde-Link')
             ->greeting('Hallo '.$this->first_name);
 
-        if (! $this->hasMultipleLoginTokens()) {
+        $loginLinks = $this->loginLinks();
+
+        if (count($loginLinks) === 1) {
             $message->line('Du hast deinen Anmelde-Link angefordert. Bitte klicke auf den unten stehenden Button, um dich anzumelden.');
-            if ($this->athlete_login_token !== '') {
-                $message->action('Login', route('show-athlete', $this->athlete_login_token));
-            }
-
-            if ($this->donor_login_token !== '') {
-                $message->action('Login', route('show-donor', $this->donor_login_token));
-            }
-
-            if ($this->user_login_url !== '') {
-                $message->action('Login', $this->user_login_url);
-            }
+            $message->action('Login', $loginLinks[0]['url']);
         } else {
             $message->line('Du hast mehrere Rollen. Bitte klicke unten auf den entsprechenden Link, um dich anzumelden.');
-            if ($this->athlete_login_token !== '') {
-                $message->line('Anmelden als Sportler:in: '.route('show-athlete', $this->athlete_login_token));
-            }
 
-            if ($this->donor_login_token !== '') {
-                $message->line('Anmelden als Spender:in: '.route('show-donor', $this->donor_login_token));
-            }
-
-            if ($this->user_login_url !== '') {
-                $message->line('Anmelden als Benutzer:in: '.$this->user_login_url);
+            foreach ($loginLinks as $loginLink) {
+                $message->line($loginLink['label'].': '.$loginLink['url']);
             }
         }
 
@@ -89,23 +74,40 @@ class NewLoginLink extends Notification
     }
 
     /**
-     * Check if multiple login tokens are set (more than one login link).
+     * @return array<int, array{label: string, url: string}>
      */
-    public function hasMultipleLoginTokens(): bool
+    protected function loginLinks(): array
     {
-        $num_tokens = 0;
+        $links = [];
+
         if ($this->athlete_login_token !== '') {
-            $num_tokens++;
+            $links[] = [
+                'label' => 'Anmelden als Sportler:in',
+                'url' => route('show-athlete', $this->athlete_login_token),
+            ];
         }
 
         if ($this->donor_login_token !== '') {
-            $num_tokens++;
+            $links[] = [
+                'label' => 'Anmelden als Spender:in',
+                'url' => route('show-donor', $this->donor_login_token),
+            ];
         }
 
         if ($this->user_login_url !== '') {
-            $num_tokens++;
+            $links[] = [
+                'label' => 'Anmelden als Benutzer:in',
+                'url' => $this->user_login_url,
+            ];
         }
 
-        return $num_tokens > 1;
+        if ($this->external_user_login_url !== '') {
+            $links[] = [
+                'label' => 'Anmelden im Portal',
+                'url' => $this->external_user_login_url,
+            ];
+        }
+
+        return $links;
     }
 }

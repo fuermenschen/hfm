@@ -1,10 +1,9 @@
 <?php
 
-use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
+use App\Http\Controllers\AdminSessionController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
-use App\Models\User;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Artisan;
@@ -45,21 +44,10 @@ Route::view('verein', 'pages.association')->name('association');
 Route::view('resultate', 'pages.results')->name('results');
 
 // User Login
-Route::get('login/{uuid}', function ($uuid) {
-
-    // Get user by UUID
-    $user = User::query()->where('uuid', $uuid)->firstOrFail();
-
-    // Login user
-    auth()->login($user, true);
-
-    // new session
-    request()->session()->regenerate();
-
-    // redirect to dashboard
-    return to_route('admin.dashboard');
-
-})->name('login-uuid')->middleware('signed');
+Route::get('login/{uuid}', [AdminSessionController::class, 'store'])
+    ->name('login-uuid')
+    ->middleware('signed')
+    ->whereUuid('uuid');
 
 // Athlete
 Route::get('sportlerinnen/{login_token}', function ($login_token): Factory|View {
@@ -81,30 +69,6 @@ Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $
         'donation_id' => $donation_id,
     ]);
 })->name('verify-donation');
-
-// Authenticated Routes
-Route::middleware('auth')->group(function () {
-    Route::view('admin', 'pages.admin.dashboard')->name('admin.dashboard');
-    Route::view('admin/anlaesse', 'pages.admin.donation-events')->name('admin.donation-events.index');
-    Route::view('admin/partner', 'pages.admin.partners')->name('admin.partners.index');
-    Route::view('admin/sponsoren', 'pages.admin.sponsors')->name('admin.sponsors.index');
-    Route::view('admin/faqs', 'pages.admin.faqs')->name('admin.faqs.index');
-    Route::view('admin/sportlerinnen', 'pages.admin.athletes')->name('admin.athletes.index');
-    Route::view('admin/spenderinnen', 'pages.admin.donors')->name('admin.donors.index');
-    Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
-    Route::view('admin/tools', 'pages.admin.tools')->name('admin.tools');
-    Route::get('admin/tools/webling-interface-test/pdf', WeblingInterfaceTestPdfController::class)
-        ->middleware('signed')
-        ->name('admin.tools.webling-interface-test.pdf');
-    Route::view('admin/einstellungen', 'pages.admin.settings')->name('admin.settings');
-    Route::post('logout', function () {
-        auth()->logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-
-        return to_route('home');
-    })->name('logout');
-});
 
 Route::get('queue-worker', function (): string {
 

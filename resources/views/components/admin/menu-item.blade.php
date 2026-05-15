@@ -7,7 +7,7 @@
 ])
 
 <li>
-    @if($route === 'logout')
+    @if($route === 'admin.logout')
         <form method="POST" action="{{ route($route) }}"
             @class([
               "group flex gap-x-3 rounded-md text-sm font-semibold leading-6",
@@ -15,7 +15,7 @@
               "bg-accent text-accent-foreground" => $current,
             ])>
             @csrf
-            <button type="submit" class="flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6">
+            <button type="submit" class="flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 cursor-pointer">
                 <span class="h6 w-6 shrink-0">
                     {!! html_entity_decode($svg) !!}
                 </span>

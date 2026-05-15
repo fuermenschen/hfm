@@ -1,14 +1,13 @@
 ---
 name: precommit-testing
-description: Run and interpret the AI-first precommit quality gate for this project, including when to run each sub-command and when to avoid rerunning the full suite.
+description: Run tests and linting before every commit.
 ---
 
 # Precommit Testing
 
 ## When to use this skill
 
-Use this skill when validating code quality before commit, especially when deciding between targeted checks and the full
-project gate.
+Use this skill always before committing changes.
 
 ## Goal
 

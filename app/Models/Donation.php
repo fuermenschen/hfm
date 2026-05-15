@@ -13,12 +13,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
 /**
- * @property Donor $donor
- * @property Athlete $athlete
+ * @property Donor|null $donor
+ * @property Athlete|null $athlete
+ * @property ExternalUser|null $donorExternalUser
+ * @property AthleteRegistration|null $athleteRegistration
  */
 #[Fillable([
     'donor_id',
+    'donor_external_user_id',
     'athlete_id',
+    'athlete_registration_id',
     'amount_per_round',
     'amount_max',
     'amount_min',
@@ -32,32 +36,43 @@ class Donation extends Model
     {
         parent::boot();
 
-        static::created(function ($donation) {
+        static::created(function (Donation $donation): void {
             // Skip notifications and logs during unit tests to speed up tests
             if (app()->runningUnitTests()) {
                 return;
             }
 
-            $donation->donor->generateLoginToken();
+            $donor = $donation->donor;
+            $athlete = $donation->athlete;
 
-            $donation->donor->notify(new DonationRegistered(
-                $donation->donor->first_name,
-                $donation->athlete->privacy_name,
+            if ($donor === null || $athlete === null) {
+                $donation->logSkippedLegacyNotification();
+
+                // TODO: implement external-user/athlete-registration notification flow before schema cutover writes (#126).
+
+                return;
+            }
+
+            $donor->generateLoginToken();
+
+            $donor->notify(new DonationRegistered(
+                $donor->first_name,
+                $athlete->privacy_name,
                 $donation->id,
-                $donation->donor->login_token
+                $donor->login_token
             ));
 
-            $donation->athlete->notify(new AthleteNewDonation(
-                $donation->athlete->first_name,
-                $donation->donor->privacy_name,
-                $donation->athlete->public_id_string,
-                $donation->athlete->login_token
+            $athlete->notify(new AthleteNewDonation(
+                $athlete->first_name,
+                $donor->privacy_name,
+                $athlete->public_id_string,
+                $athlete->login_token
             ));
 
             // add log entry
             Log::info('Donation registered', [
-                'donor' => $donation->donor->privacy_name,
-                'athlete' => $donation->athlete->privacy_name,
+                'donor' => $donor->privacy_name,
+                'athlete' => $athlete->privacy_name,
                 'amount_per_round' => $donation->amount_per_round,
                 'amount_max' => $donation->amount_max,
                 'amount_min' => $donation->amount_min,
@@ -65,12 +80,15 @@ class Donation extends Model
             ]);
         });
 
-        static::deleting(function ($donation) {
+        static::deleting(function (Donation $donation): void {
             if (! app()->runningUnitTests()) {
+                $donorPrivacyName = $donation->donor?->privacy_name;
+                $athletePrivacyName = $donation->athlete?->privacy_name;
+
                 // add log entry
                 Log::info('Donation deleted', [
-                    'donor' => $donation->donor->privacy_name,
-                    'athlete' => $donation->athlete->privacy_name,
+                    'donor' => $donorPrivacyName,
+                    'athlete' => $athletePrivacyName,
                     'amount_per_round' => $donation->amount_per_round,
                     'amount_max' => $donation->amount_max,
                     'amount_min' => $donation->amount_min,
@@ -88,5 +106,27 @@ class Donation extends Model
     public function athlete(): BelongsTo
     {
         return $this->belongsTo(Athlete::class);
+    }
+
+    public function donorExternalUser(): BelongsTo
+    {
+        return $this->belongsTo(ExternalUser::class, 'donor_external_user_id');
+    }
+
+    public function athleteRegistration(): BelongsTo
+    {
+        return $this->belongsTo(AthleteRegistration::class);
+    }
+
+    protected function logSkippedLegacyNotification(): void
+    {
+        Log::warning('Donation registered without legacy relations; skipping legacy notifications', [
+            'donation_id' => $this->id,
+            'donor_id' => $this->donor_id,
+            'athlete_id' => $this->athlete_id,
+            'donor_external_user_id' => $this->donor_external_user_id,
+            'athlete_registration_id' => $this->athlete_registration_id,
+            'athlete_registration_event_id' => $this->athleteRegistration?->donation_event_id,
+        ]);
     }
 }

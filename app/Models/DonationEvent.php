@@ -43,6 +43,11 @@ class DonationEvent extends Model
         return $this->hasMany(Athlete::class);
     }
 
+    public function athleteRegistrations(): HasMany
+    {
+        return $this->hasMany(AthleteRegistration::class);
+    }
+
     /** @return BelongsToMany<Partner, $this, Pivot, 'pivot'> */
     public function partners(): BelongsToMany
     {

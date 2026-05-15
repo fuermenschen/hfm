@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ExternalUser;
 use App\Models\User;
 
 return [
@@ -41,6 +42,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'external' => [
+            'driver' => 'session',
+            'provider' => 'external_users',
+        ],
     ],
 
     /*
@@ -64,6 +70,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'external_users' => [
+            'driver' => 'eloquent',
+            'model' => ExternalUser::class,
         ],
 
         // 'users' => [

@@ -2,6 +2,7 @@
 
 use App\Models\Athlete;
 use App\Models\Donor;
+use App\Models\ExternalUser;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -24,7 +25,7 @@ test('all public routes are accessible', function () {
         }
 
         // Skip authenticated routes (handled in a separate test)
-        if (in_array('auth', $route->middleware()) ||
+        if (collect($route->middleware())->contains(fn (string $middleware): bool => str_starts_with($middleware, 'auth')) ||
             in_array(Authorize::class, $route->middleware()) ||
             in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
@@ -74,8 +75,8 @@ test('all authenticated routes are accessible when logged in', function () {
             continue;
         }
 
-        // Only routes with auth middleware or Pulse Authorize middleware
-        if (! in_array('auth', $route->middleware()) &&
+        // Only routes with auth:web middleware or Pulse Authorize middleware
+        if (! in_array('auth:web', $route->middleware(), true) &&
             ! in_array(Authorize::class, $route->middleware()) &&
             ! in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
@@ -113,8 +114,8 @@ test('authenticated routes are protected', function () {
             continue;
         }
 
-        // Only test routes with auth, Pulse Authorize, or Log Viewer Authorize middleware
-        if (! in_array('auth', $route->middleware()) &&
+        // Only test routes with auth middleware, Pulse Authorize, or Log Viewer Authorize middleware
+        if (! collect($route->middleware())->contains(fn (string $middleware): bool => str_starts_with($middleware, 'auth')) &&
             ! in_array(Authorize::class, $route->middleware()) &&
             ! in_array(AuthorizeLogViewer::class, $route->middleware())) {
             continue;
@@ -142,6 +143,34 @@ test('authenticated routes are protected', function () {
         } else {
             $response->assertRedirect(route('login'));
         }
+    }
+});
+
+test('all external authenticated routes are accessible for external users', function () {
+    $routes = Route::getRoutes();
+
+    $externalUser = ExternalUser::factory()->create();
+    $this->actingAs($externalUser, 'external');
+
+    foreach ($routes as $route) {
+        if (! in_array('GET', $route->methods())) {
+            continue;
+        }
+
+        if (! in_array('auth:external', $route->middleware(), true)) {
+            continue;
+        }
+
+        if (str_contains($route->uri, '{')) {
+            continue;
+        }
+
+        if (in_array('signed', $route->middleware(), true)) {
+            continue;
+        }
+
+        $response = $this->get($route->uri);
+        $response->assertSuccessful();
     }
 });
 

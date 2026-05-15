@@ -68,11 +68,11 @@
                 </a>
             @endguest
             @auth
-                <form method="POST" action="{{ route('logout') }}">
+                <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button
                         type="submit"
-                        class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2"
+                        class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2 cursor-pointer"
                     >
                         Logout
                     </button>
@@ -171,12 +171,11 @@
                         </a>
                     @endguest
                     @auth
-                        <form method="POST" action="{{ route('logout') }}">
+                        <form method="POST" action="{{ route('admin.logout') }}">
                             @csrf
                             <button
                                 type="submit"
-                                class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark
-                                :text-hfm-white flex flex-row"
+                                class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex flex-row cursor-pointer"
                             >Logout
                             </button>
                         </form>
