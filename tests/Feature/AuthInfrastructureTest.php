@@ -96,7 +96,7 @@ it('prevents external users from accessing every admin web route', function () {
     }
 });
 
-it('prevents web users from accessing external write endpoints', function () {
+it('prevents admin users from accessing external write endpoints', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user, 'web')
@@ -104,9 +104,40 @@ it('prevents web users from accessing external write endpoints', function () {
         ->assertRedirect(route('login'));
 });
 
+it('prevents admin users from accessing external dashboard routes', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user, 'web')
+        ->get(route('portal.dashboard'))
+        ->assertRedirect(route('login'));
+});
+
 it('redirects guests from external write endpoints to login', function () {
     $this->post(route('portal.logout'))
         ->assertRedirect(route('login'));
+});
+
+it('redirects guests from external dashboard routes to login', function () {
+    $this->get(route('portal.dashboard'))
+        ->assertRedirect(route('login'));
+});
+
+it('logs external users out from portal logout endpoint', function () {
+    $externalUser = ExternalUser::factory()->create();
+
+    $this->actingAs($externalUser, 'external')
+        ->post(route('portal.logout'))
+        ->assertRedirect(route('home'));
+
+    $this->assertGuest('external');
+});
+
+it('returns not found for valid signed external login URL with unknown uuid', function () {
+    $unknownUuid = (string) str()->uuid();
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $unknownUuid]);
+
+    $this->get($url)->assertNotFound();
+    $this->assertGuest('external');
 });
 
 it('registers split route files with expected guard middleware', function () {

@@ -14,6 +14,7 @@ return new class extends Migration
 
             $table->index(['donor_external_user_id']);
             $table->index(['athlete_registration_id']);
+            $table->unique(['donor_external_user_id', 'athlete_registration_id']);
         });
     }
 
@@ -22,6 +23,7 @@ return new class extends Migration
         Schema::table('donations', function (Blueprint $table) {
             $table->dropForeign(['donor_external_user_id']);
             $table->dropForeign(['athlete_registration_id']);
+            $table->dropUnique(['donor_external_user_id', 'athlete_registration_id']);
             $table->dropColumn(['donor_external_user_id', 'athlete_registration_id']);
         });
     }

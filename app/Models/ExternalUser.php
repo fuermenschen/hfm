@@ -7,10 +7,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -19,8 +22,8 @@ use Illuminate\Support\Str;
  * @property string $full_name
  * @property string $privacy_name
  * @property string $public_id_string
- * @property AthleteRegistration[] $athleteRegistrations
- * @property Donation[] $donationsAsDonor
+ * @property Collection<int, AthleteRegistration> $athleteRegistrations
+ * @property Collection<int, Donation> $donationsAsDonor
  */
 #[Appends([
     'full_name',
@@ -56,17 +59,26 @@ class ExternalUser extends Authenticatable
             }
 
             if (empty($externalUser->public_id)) {
-                $charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-                do {
-                    $id = '';
-                    for ($i = 0; $i < 6; $i++) {
-                        $id .= $charset[random_int(0, strlen($charset) - 1)];
-                    }
-                } while (self::query()->where('public_id', $id)->exists());
-
-                $externalUser->public_id = $id;
+                $externalUser->public_id = self::generatePublicId();
             }
         });
+    }
+
+    protected function performInsert(Builder $query): bool
+    {
+        $attempts = 0;
+
+        while (true) {
+            try {
+                return parent::performInsert($query);
+            } catch (UniqueConstraintViolationException $exception) {
+                $attempts++;
+
+                throw_if($attempts >= 3 || ! self::query()->where('public_id', $this->public_id)->exists(), $exception);
+
+                $this->public_id = self::generatePublicId();
+            }
+        }
     }
 
     public function athleteRegistrations(): HasMany
@@ -101,5 +113,20 @@ class ExternalUser extends Authenticatable
             'legacy_athlete_id' => 'integer',
             'legacy_donor_id' => 'integer',
         ];
+    }
+
+    protected static function generatePublicId(): string
+    {
+        $charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+        do {
+            $id = '';
+
+            for ($i = 0; $i < 6; $i++) {
+                $id .= $charset[random_int(0, strlen($charset) - 1)];
+            }
+        } while (self::query()->where('public_id', $id)->exists());
+
+        return $id;
     }
 }

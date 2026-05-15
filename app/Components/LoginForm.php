@@ -57,23 +57,23 @@ class LoginForm extends Component
 
             // get all login tokens
             $athlete = Athlete::query()->where('email', $this->email)->first();
-            $athlete_login_token = $athlete ? $athlete->login_token : '';
+            $athleteLoginToken = $athlete ? $athlete->login_token : '';
 
             $donor = Donor::query()->where('email', $this->email)->first();
             $donorLoginToken = $donor ? $donor->login_token : '';
 
             $user = User::query()->where('email', $this->email)->first();
-            $user_url = '';
+            $userLoginUrl = '';
             if ($user) {
-                $user_uuid = $user->uuid;
-                $user_url = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $user_uuid]);
+                $userUuid = $user->uuid;
+                $userLoginUrl = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $userUuid]);
             }
 
             $externalUser = ExternalUser::query()->where('email', $this->email)->first();
-            $external_user_url = '';
+            $externalUserLoginUrl = '';
             if ($externalUser) {
-                $external_user_uuid = $externalUser->uuid;
-                $external_user_url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $external_user_uuid]);
+                $externalUserUuid = $externalUser->uuid;
+                $externalUserLoginUrl = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUserUuid]);
             }
 
             // get the first name
@@ -98,10 +98,10 @@ class LoginForm extends Component
                 // send login link
                 $notification = new NewLoginLink(
                     first_name: $first_name,
-                    athlete_login_token: $athlete_login_token,
+                    athlete_login_token: $athleteLoginToken,
                     donor_login_token: $donorLoginToken,
-                    user_login_url: $user_url,
-                    external_user_login_url: $external_user_url,
+                    user_login_url: $userLoginUrl,
+                    external_user_login_url: $externalUserLoginUrl,
                 );
 
                 Notification::route('mail', $this->email)->notify($notification);
