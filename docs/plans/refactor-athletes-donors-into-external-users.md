@@ -1,6 +1,8 @@
 # Refactor Athletes/Donors into External Users
 
 > **Constraint: no registrations are currently happening.** Zero concurrent-write risk during migration. No time pressure — refactor incrementally at whatever pace ensures correctness.
+>
+> **Extended guarantee for this migration window:** No new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` will be created between now and PR3 merge.
 
 **Goal:** Replace the split `athletes` + `donors` identity + token-auth system with a unified `external_users` model, event-scoped `athlete_registrations`, and proper passwordless auth via signed URLs. After completion, the app behaves identically from a user perspective but is structurally prepared for multi-event features, groups, and future registration flows.
 
@@ -20,23 +22,23 @@
 
 ### Auth infrastructure
 
-- [ ] Configure `auth:external` guard + `external_users` provider in `config/auth.php`
-- [ ] Split route files now: move admin routes to dedicated `routes/admin.php` (`auth:web`) and external portal routes to dedicated `routes/portal.php` (`auth:external`); keep public pages in `routes/web.php`
-- [ ] Enforce strict guard separation via middleware (not Gates): `auth:external` cannot access admin routes; `auth:web` cannot access external write endpoints
-- [ ] Add signed-URL login route for external users at `/portal/login/{uuid}` (controller action, no closure business logic), same pattern as admin `User`: `URL::temporarySignedRoute` → `auth()->guard('external')->login()` + session regeneration
-- [ ] External signed login link TTL is 15 minutes and reusable within TTL (single-use invalidation out of scope)
-- [ ] Update `LoginForm` to also check `external_users` table (dead path until backfill, but wired and ready). Legacy `Athlete`/`Donor` token lookups remain the active path
+- [x] Configure `auth:external` guard + `external_users` provider in `config/auth.php`
+- [x] Split route files now: move admin routes to dedicated `routes/admin.php` (`auth:web`) and external portal routes to dedicated `routes/portal.php` (`auth:external`); keep public pages in `routes/web.php`
+- [x] Enforce strict guard separation via middleware (not Gates): `auth:external` cannot access admin routes; `auth:web` cannot access external write endpoints
+- [x] Add signed-URL login route for external users at `/portal/login/{uuid}` (controller action, no closure business logic), same pattern as admin `User`: `URL::temporarySignedRoute` → `auth()->guard('external')->login()` + session regeneration
+- [x] External signed login link TTL is 15 minutes and reusable within TTL (single-use invalidation out of scope)
+- [x] Update `LoginForm` to also check `external_users` table (dead path until backfill, but wired and ready). Legacy `Athlete`/`Donor` token lookups remain the active path
 
 ### Landing page
 
-- [ ] Build simple external-user landing page (combination of current athlete + donor detail views: greeting, list of donations-as-donor, list of donations-as-athlete, verified status). Accessible only via `auth:external` guard. Served at a neutral path (e.g. `/portal`)
-- [ ] Dual-role users see both athlete and donor sections in one page
+- [x] PR1 scope: keep `/portal` as placeholder-only page behind `auth:external` guard (no legacy-data merge, no verified status rendering yet)
 
 ### Coexistence
 
-- [ ] Legacy `/sportlerinnen/{token}` + `/spenderinnen/{token}` routes remain fully functional
-- [ ] New `auth:external` routes exist in parallel — no disruption to existing users
-- [ ] No new registrations during this phase (see constraint above)
+- [x] Legacy `/sportlerinnen/{token}` + `/spenderinnen/{token}` routes remain fully functional
+- [x] New `auth:external` routes exist in parallel — no disruption to existing users
+- [x] No legacy token-route redirects in PR1; redirects start only in PR2
+- [x] No new user-facing writes during this phase (no new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, `donations`)
 
 ---
 
@@ -75,6 +77,8 @@
 - [ ] After backfill + validation: switch app reads to new models (`ExternalUser`, `AthleteRegistration`, donation queries via `donor_external_user_id`/`athlete_registration_id`)
 - [ ] `LoginForm` resolves `external_users` first; falls back to legacy `Athlete`/`Donor` token lookups
 - [ ] External-user landing page now shows real backfilled data
+- [ ] Build simple external-user landing page (combination of current athlete + donor detail views: greeting, list of donations-as-donor, list of donations-as-athlete, verified status)
+- [ ] Dual-role users see both athlete and donor sections in one page
 - [ ] Legacy token routes (`/sportlerinnen/{token}`, `/spenderinnen/{token}`) redirect to `/portal` — the same content is available there via `auth:external`
 - [ ] Welcome/registration notifications updated: send signed-URL login link (same pattern as admin) instead of legacy `/sportlerinnen/{token}` and `/spenderinnen/{token}` links (code-only change — no registrations happening currently)
 - [ ] QR codes in welcome letters encode the login page URL (no tokens in QR codes)
@@ -113,13 +117,14 @@
 
 ### PR1 — Schema + auth
 
-- [ ] `external_users` uniqueness/dedup behavior
-- [ ] `athlete_registrations` unique per (`event`, `external_user`)
-- [ ] External login resolves one portal for dual-role user
-- [ ] External guard **cannot** access admin routes (enforced by middleware, tested per route)
-- [ ] Internal guard **cannot** access external write endpoints
-- [ ] Route split verified: admin routes are loaded from `routes/admin.php`, portal routes from `routes/portal.php`, and public routes from `routes/web.php`
-- [ ] External signed-login callback uses `/portal/login/{uuid}` controller action; signed URL expiry and invalid signature are tested
+- [x] `external_users` uniqueness/dedup behavior
+- [x] `athlete_registrations` unique per (`event`, `external_user`)
+- [x] External login resolves one portal for dual-role user
+- [x] External guard **cannot** access admin routes (enforced by middleware, tested per route)
+- [x] Internal guard **cannot** access external write endpoints
+- [x] Route split verified: admin routes are loaded from `routes/admin.php`, portal routes from `routes/portal.php`, and public routes from `routes/web.php`
+- [x] External signed-login callback uses `/portal/login/{uuid}` controller action; signed URL expiry and invalid signature are tested
+- [x] Placeholder `/portal` page renders for authenticated external users without legacy athlete/donor dependency
 
 ### PR2 — Backfill + switch reads
 
@@ -130,6 +135,7 @@
 - [ ] Per-event financial totals match baseline
 - [ ] Donor can sponsor same athlete in different events
 - [ ] Event-scoped results/dashboard totals are isolated
+- [ ] Portal page switches from placeholder to real merged donor/athlete data after backfill
 
 ### PR3 — Legacy removal
 

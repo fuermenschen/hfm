@@ -127,10 +127,13 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
 
 ### Phase 3 — Refactor athletes/donors into external users
 
-> Replace the split `athletes` + `donors` identity + token-auth system with unified `external_users`, event-scoped `athlete_registrations`, and passwordless auth via signed URLs. No registrations are currently happening, so zero concurrent-write risk during migration. Execute incrementally: add new schema/auth, backfill and switch reads, then remove legacy tables and token routes after validation.
+> Replace the split `athletes` + `donors` identity + token-auth system with unified `external_users`, event-scoped `athlete_registrations`, and passwordless auth via signed URLs. No registrations are currently happening, so zero concurrent-write risk during migration. Migration window guarantee: no new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` until PR3 merge. Execute incrementally: add new schema/auth, backfill and switch reads, then remove legacy tables and token routes after validation.
 
 - [x] Create `external_users`, `athlete_registrations`, and new donation FKs without disrupting legacy reads
-- [ ] Add external passwordless auth + unified portal landing page
+- [x] Add external passwordless auth + split route files (`web`/`admin`/`portal`) with strict guard separation
+- [x] Add external signed login route `/portal/login/{uuid}` (15-minute temporary signed URL)
+- [x] Wire login form to include `external_users` signed-link path (legacy paths still active)
+- [ ] Keep `/portal` as placeholder page in PR1; switch to unified data view in PR2
 - [ ] Backfill identities, athlete registrations, and donation links; switch app reads to new models
 - [ ] Remove legacy `athletes`/`donors` tables, token routes, and fallback code after validation
 
@@ -156,7 +159,7 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
 - Same login page for both internal admins and external participants — submit email → receive temporarily signed URL (passwordless, same pattern as current admin `User` login). Auth routes are **not** event-scoped; one login gives access to all events the user participates in. Dual-role users (athlete + donor) get one account, one signed URL — no more separate tokens per role
 - Internal admins: `users` table, `auth:web` / `auth:admin` guard
 - External participants: `external_users` table, `auth:external` guard — standard `Authenticatable` with passwordless signed-URL login, no password column, no custom token columns. `remember_token` included (same "always remember" behavior as admin users)
-- Mandatory guard separation: external users **cannot** access admin routes; internal users **cannot** access external write endpoints — enforced via middleware + gates, not convention
+- Mandatory guard separation: external users **cannot** access admin routes; internal users **cannot** access external write endpoints — enforced via middleware, not convention
 
 ### Identity modeling decision
 
