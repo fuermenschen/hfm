@@ -18,7 +18,8 @@ class NewLoginLink extends Notification
     public function __construct(public readonly string $first_name,
         public readonly string $athlete_login_token = '',
         public readonly string $donor_login_token = '',
-        public readonly string $user_login_url = '', )
+        public readonly string $user_login_url = '',
+        public readonly string $external_user_login_url = '', )
     {
         //
     }
@@ -56,6 +57,10 @@ class NewLoginLink extends Notification
             if ($this->user_login_url !== '') {
                 $message->action('Login', $this->user_login_url);
             }
+
+            if ($this->external_user_login_url !== '') {
+                $message->action('Login', $this->external_user_login_url);
+            }
         } else {
             $message->line('Du hast mehrere Rollen. Bitte klicke unten auf den entsprechenden Link, um dich anzumelden.');
             if ($this->athlete_login_token !== '') {
@@ -68,6 +73,10 @@ class NewLoginLink extends Notification
 
             if ($this->user_login_url !== '') {
                 $message->line('Anmelden als Benutzer:in: '.$this->user_login_url);
+            }
+
+            if ($this->external_user_login_url !== '') {
+                $message->line('Anmelden im Portal: '.$this->external_user_login_url);
             }
         }
 
@@ -103,6 +112,10 @@ class NewLoginLink extends Notification
         }
 
         if ($this->user_login_url !== '') {
+            $num_tokens++;
+        }
+
+        if ($this->external_user_login_url !== '') {
             $num_tokens++;
         }
 

@@ -6,6 +6,7 @@ namespace App\Components;
 
 use App\Models\Athlete;
 use App\Models\Donor;
+use App\Models\ExternalUser;
 use App\Models\User;
 use App\Notifications\NewLoginLink;
 use Exception;
@@ -68,6 +69,13 @@ class LoginForm extends Component
                 $user_url = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $user_uuid]);
             }
 
+            $externalUser = ExternalUser::query()->where('email', $this->email)->first();
+            $external_user_url = '';
+            if ($externalUser) {
+                $external_user_uuid = $externalUser->uuid;
+                $external_user_url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $external_user_uuid]);
+            }
+
             // get the first name
             if ($athlete) {
                 $first_name = $athlete->first_name;
@@ -75,11 +83,13 @@ class LoginForm extends Component
                 $first_name = $donor->first_name;
             } elseif ($user) {
                 $first_name = $user->name;
+            } elseif ($externalUser) {
+                $first_name = $externalUser->first_name;
             } else {
                 $first_name = '';
             }
 
-            if (! $athlete && ! $donor && ! $user) {
+            if (! $athlete && ! $donor && ! $user && ! $externalUser) {
 
                 // add random delay to prevent timing attacks
                 $random_delay = random_int(0, 3);
@@ -91,6 +101,7 @@ class LoginForm extends Component
                     athlete_login_token: $athlete_login_token,
                     donor_login_token: $donorLoginToken,
                     user_login_url: $user_url,
+                    external_user_login_url: $external_user_url,
                 );
 
                 Notification::route('mail', $this->email)->notify($notification);
