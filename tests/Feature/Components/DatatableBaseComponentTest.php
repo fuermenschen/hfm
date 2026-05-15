@@ -112,26 +112,51 @@ it('filters donor rows when search input changes', function (): void {
         ->assertSee('Anna');
 });
 
-it('sanitizes search input and escapes SQL wildcard characters', function (): void {
+it('sanitizes donor search input before applying filters', function (): void {
     Donor::factory()->create(['first_name' => 'Anna']);
     Donor::factory()->create(['first_name' => 'Ann%a']);
     Donor::factory()->create(['first_name' => 'Ann_a']);
     Donor::factory()->create(['first_name' => 'AnnXa']);
 
-    Livewire::test(AdminDonorTable::class)
+    $names = Livewire::test(AdminDonorTable::class)
         ->set('search', "  Anna\n")
-        ->assertSee('Anna')
-        ->assertDontSee('Ann%a');
+        ->viewData('donors')
+        ->getCollection()
+        ->pluck('first_name')
+        ->all();
 
-    Livewire::test(AdminDonorTable::class)
+    expect($names)->toContain('Anna');
+    expect($names)->not->toContain('Ann%a');
+});
+
+it('treats percent sign as literal in donor search', function (): void {
+    Donor::factory()->create(['first_name' => 'Anna']);
+    Donor::factory()->create(['first_name' => 'Ann%a']);
+
+    $names = Livewire::test(AdminDonorTable::class)
         ->set('search', '%')
-        ->assertSee('Ann%a')
-        ->assertDontSee('Anna');
+        ->viewData('donors')
+        ->getCollection()
+        ->pluck('first_name')
+        ->all();
 
-    Livewire::test(AdminDonorTable::class)
+    expect($names)->toContain('Ann%a');
+    expect($names)->not->toContain('Anna');
+});
+
+it('treats underscore as literal in donor search', function (): void {
+    Donor::factory()->create(['first_name' => 'Ann_a']);
+    Donor::factory()->create(['first_name' => 'AnnXa']);
+
+    $names = Livewire::test(AdminDonorTable::class)
         ->set('search', '_')
-        ->assertSee('Ann_a')
-        ->assertDontSee('AnnXa');
+        ->viewData('donors')
+        ->getCollection()
+        ->pluck('first_name')
+        ->all();
+
+    expect($names)->toContain('Ann_a');
+    expect($names)->not->toContain('AnnXa');
 });
 
 it('hydrates donor table search and sorting state from query parameters', function (): void {
