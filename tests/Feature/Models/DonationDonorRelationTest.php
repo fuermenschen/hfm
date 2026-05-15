@@ -1,7 +1,13 @@
 <?php
 
+use App\Models\Athlete;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\Donor;
+use App\Models\ExternalUser;
+use App\Models\Partner;
+use App\Models\SportType;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -27,4 +33,96 @@ it('uses donor relation with donor_id foreign key', function () {
         ->toBeInstanceOf(BelongsTo::class)
         ->and($donorRelation->getRelated())->toBeInstanceOf(Donor::class)
         ->and($donorRelation->getForeignKeyName())->toBe('donor_id');
+});
+
+it('resolves new donation relationships', function () {
+    $donationEvent = DonationEvent::factory()->create();
+    $partner = Partner::query()->create(['name' => 'Test Partner']);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+    $donor = Donor::factory()->create();
+    $athlete = Athlete::factory()->create([
+        'partner_id' => $partner->id,
+        'sport_type_id' => $sportType->id,
+    ]);
+    $externalUser = ExternalUser::factory()->create();
+    $athleteRegistration = AthleteRegistration::factory()->create([
+        'donation_event_id' => $donationEvent->id,
+        'sport_type_id' => $sportType->id,
+    ]);
+
+    $donation = Donation::query()->create([
+        'donor_id' => $donor->id,
+        'donor_external_user_id' => $externalUser->id,
+        'athlete_id' => $athlete->id,
+        'athlete_registration_id' => $athleteRegistration->id,
+        'amount_per_round' => 10,
+        'amount_max' => 100,
+        'amount_min' => 10,
+        'comment' => 'Test donation',
+    ]);
+    $donation->refresh();
+
+    expect($donation->donorExternalUser)
+        ->toBeInstanceOf(ExternalUser::class)
+        ->and($donation->donorExternalUser->is($externalUser))->toBeTrue()
+        ->and($donation->athleteRegistration)->toBeInstanceOf(AthleteRegistration::class)
+        ->and($donation->athleteRegistration->is($athleteRegistration))->toBeTrue();
+});
+
+it('derives donation event from athlete registration', function () {
+    $donationEvent = DonationEvent::factory()->create();
+    $partner = Partner::query()->create(['name' => 'Test Partner']);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+    $donor = Donor::factory()->create();
+    $athlete = Athlete::factory()->create([
+        'partner_id' => $partner->id,
+        'sport_type_id' => $sportType->id,
+    ]);
+    $externalUser = ExternalUser::factory()->create();
+    $athleteRegistration = AthleteRegistration::factory()->create([
+        'donation_event_id' => $donationEvent->id,
+        'sport_type_id' => $sportType->id,
+    ]);
+
+    $donation = Donation::query()->create([
+        'donor_id' => $donor->id,
+        'donor_external_user_id' => $externalUser->id,
+        'athlete_id' => $athlete->id,
+        'athlete_registration_id' => $athleteRegistration->id,
+        'amount_per_round' => 10,
+        'amount_max' => 100,
+        'amount_min' => 10,
+        'comment' => 'Test donation',
+    ]);
+
+    expect($donation->athleteRegistration->donationEvent->is($donationEvent))->toBeTrue();
+});
+
+it('resolves donation event athlete registrations relation', function () {
+    $donationEvent = DonationEvent::factory()->create();
+    $sportType = SportType::query()->create(['name' => 'Run']);
+    $registration = AthleteRegistration::factory()->create([
+        'donation_event_id' => $donationEvent->id,
+        'sport_type_id' => $sportType->id,
+    ]);
+
+    expect($donationEvent->athleteRegistrations)
+        ->toHaveCount(1)
+        ->and($donationEvent->athleteRegistrations->first()?->is($registration))->toBeTrue();
+});
+
+it('generates a unique public id on external user create', function () {
+    $user = ExternalUser::factory()->create();
+
+    expect($user->public_id)
+        ->toBeString()
+        ->toHaveLength(6)
+        ->toMatch('/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/');
+});
+
+it('formats public id string as xxx-xxx', function () {
+    $user = ExternalUser::factory()->create();
+
+    expect($user->public_id_string)
+        ->toMatch('/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{3}-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{3}$/');
 });
