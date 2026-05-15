@@ -18,5 +18,5 @@ Route::middleware('auth:web')->group(function (): void {
         ->middleware('signed')
         ->name('admin.tools.webling-interface-test.pdf');
     Route::view('admin/einstellungen', 'pages.admin.settings')->name('admin.settings');
-    Route::post('logout', [AdminSessionController::class, 'destroy'])->name('logout');
+    Route::post('admin/logout', [AdminSessionController::class, 'destroy'])->name('admin.logout');
 });

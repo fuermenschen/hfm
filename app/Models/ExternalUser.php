@@ -7,13 +7,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -64,23 +62,6 @@ class ExternalUser extends Authenticatable
         });
     }
 
-    protected function performInsert(Builder $query): bool
-    {
-        $attempts = 0;
-
-        while (true) {
-            try {
-                return parent::performInsert($query);
-            } catch (UniqueConstraintViolationException $exception) {
-                $attempts++;
-
-                throw_if($attempts >= 3 || ! self::query()->where('public_id', $this->public_id)->exists(), $exception);
-
-                $this->public_id = self::generatePublicId();
-            }
-        }
-    }
-
     public function athleteRegistrations(): HasMany
     {
         return $this->hasMany(AthleteRegistration::class);
@@ -118,6 +99,7 @@ class ExternalUser extends Authenticatable
     protected static function generatePublicId(): string
     {
         $charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        // Intentional: keep this simple. Extremely unlikely collisions are enforced by DB unique constraint.
 
         do {
             $id = '';
