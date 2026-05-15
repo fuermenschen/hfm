@@ -21,4 +21,14 @@ class ExternalUserSessionController extends Controller
 
         return to_route('portal.dashboard');
     }
+
+    public function destroy(Request $request): RedirectResponse
+    {
+        auth()->guard('external')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return to_route('home');
+    }
 }

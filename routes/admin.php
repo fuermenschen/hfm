@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AdminSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:web')->group(function (): void {
@@ -18,11 +18,5 @@ Route::middleware('auth:web')->group(function (): void {
         ->middleware('signed')
         ->name('admin.tools.webling-interface-test.pdf');
     Route::view('admin/einstellungen', 'pages.admin.settings')->name('admin.settings');
-    Route::post('logout', function () {
-        Auth::guard('web')->logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-
-        return to_route('home');
-    })->name('logout');
+    Route::post('logout', [AdminSessionController::class, 'destroy'])->name('logout');
 });

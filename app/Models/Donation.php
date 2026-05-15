@@ -48,6 +48,8 @@ class Donation extends Model
             if ($donor === null || $athlete === null) {
                 $donation->logSkippedLegacyNotification();
 
+                // TODO: implement external-user/athlete-registration notification flow before schema cutover writes (#126).
+
                 return;
             }
 

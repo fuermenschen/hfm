@@ -104,6 +104,11 @@ it('prevents web users from accessing external write endpoints', function () {
         ->assertRedirect(route('login'));
 });
 
+it('redirects guests from external write endpoints to login', function () {
+    $this->post(route('portal.logout'))
+        ->assertRedirect(route('login'));
+});
+
 it('registers split route files with expected guard middleware', function () {
     $adminRoute = Route::getRoutes()->getByName('admin.dashboard');
     $portalRoute = Route::getRoutes()->getByName('portal.dashboard');

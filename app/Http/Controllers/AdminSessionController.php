@@ -21,4 +21,14 @@ class AdminSessionController extends Controller
 
         return to_route('admin.dashboard');
     }
+
+    public function destroy(Request $request): RedirectResponse
+    {
+        auth()->guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return to_route('home');
+    }
 }
