@@ -1,146 +1,151 @@
 # Refactor Athletes/Donors into External Users
 
-> **Constraint: no registrations are currently happening.** Zero concurrent-write risk during migration. No time pressure — refactor incrementally at whatever pace ensures correctness.
->
-> **Extended guarantee for this migration window:** No new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` will be created between now and PR3 merge.
+## Context and rollout assumptions
 
-**Goal:** Replace the split `athletes` + `donors` identity + token-auth system with a unified `external_users` model, event-scoped `athlete_registrations`, and proper passwordless auth via signed URLs. After completion, the app behaves identically from a user perspective but is structurally prepared for multi-event features, groups, and future registration flows.
+- No concurrent writes during full migration window.
+- No new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` until PR3 merged.
+- No athlete or donor login activity until after PR3 merged.
+- Each PR merge auto-deploys.
+- PR2 operational step is mandatory: run `php artisan hfm:backfill:external-users` immediately after deployment.
+- Because assumptions above hold, transition can be strict and fail-fast.
 
-**Parent plan:** `docs/plans/multi-event-restructure-plan.md` — Section B defines the target data model; this document handles execution.
+## Goal
 
----
+Replace split `athletes` + `donors` identity and static token login with unified `external_users`, event-scoped `athlete_registrations`, and passwordless signed-URL auth. End-user behavior should stay effectively same, while model becomes ready for multi-event growth.
 
-## PR1 — New identity schema + auth + landing page
+Parent plan: `docs/plans/multi-event-restructure-plan.md` (Section B).
 
-> The new models and auth infrastructure exist and work, but the table is empty. Legacy paths remain fully operational. This PR makes the new world *possible* without disrupting the old.
-
-### Schema + models
-
-- [x] Create `external_users` migration + model (extends `Authenticatable` — no password column, passwordless login via signed URLs like admin `User`). Columns: `id`, `uuid` (unique, for signed URL routes), `first_name`, `last_name`, `address`, `zip_code`, `city`, `country_of_residence`, `phone_number`, `email` (unique), `public_id` (6-char uppercase alphanumeric, globally unique, always auto-generated, displayed as `XXX-XXX` to disambiguate athletes sharing the same privacy name), `remember_token`, timestamps, soft-deletes, `legacy_athlete_id` (nullable, migration trace), `legacy_donor_id` (nullable, migration trace)
-- [x] Create `athlete_registrations` migration + model. Columns: `id`, `donation_event_id` FK, `external_user_id` FK, `sport_type_id`, `partner_id` (nullable), `rounds_estimated`, `rounds_done`, `comment`, `verified`, timestamps. Constraints: unique (`donation_event_id`, `external_user_id`)
-- [x] Extend `donations` with nullable new columns: `donor_external_user_id`, `athlete_registration_id`. Event scope is derived through `athlete_registration.donation_event_id`; no redundant `donation_event_id` FK on donations. No `group_id` yet — added when groups are implemented. Keep old columns (`donor_id`, `athlete_id`) for compatibility
-
-### Auth infrastructure
-
-- [x] Configure `auth:external` guard + `external_users` provider in `config/auth.php`
-- [x] Split route files now: move admin routes to dedicated `routes/admin.php` (`auth:web`) and external portal routes to dedicated `routes/portal.php` (`auth:external`); keep public pages in `routes/web.php`
-- [x] Enforce strict guard separation via middleware (not Gates): `auth:external` cannot access admin routes; `auth:web` cannot access external write endpoints
-- [x] Add signed-URL login route for external users at `/portal/login/{uuid}` (controller action, no closure business logic), same pattern as admin `User`: `URL::temporarySignedRoute` → `auth()->guard('external')->login()` + session regeneration
-- [x] External signed login link TTL is 15 minutes and reusable within TTL (single-use invalidation out of scope)
-- [x] Update `LoginForm` to also check `external_users` table (dead path until backfill, but wired and ready). Legacy `Athlete`/`Donor` token lookups remain the active path
-
-### Landing page
-
-- [x] PR1 scope: keep `/portal` as placeholder-only page behind `auth:external` guard (no legacy-data merge, no verified status rendering yet)
-
-### Coexistence
-
-- [x] Legacy `/sportlerinnen/{token}` + `/spenderinnen/{token}` routes remain fully functional
-- [x] New `auth:external` routes exist in parallel — no disruption to existing users
-- [x] No legacy token-route redirects in PR1; redirects start only in PR2
-- [x] No new user-facing writes during this phase (no new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, `donations`)
+Production rehearsal artifact: `storage/upgrade-lab/dumps/2026-05-17_16-44-51.sql`.
 
 ---
 
-## PR2 — Backfill + switch reads to new models
+## Current state
 
-> All legacy data lives in the new schema. The app reads from new models. Legacy tables become read-only fallback.
+- Identity split across `athletes` and `donors`.
+- External login relies on legacy static token routes.
+- `donations` references legacy foreign keys (`donor_id`, `athlete_id`).
+- Portal behavior depends on legacy models.
+- Admin pages read legacy tables.
 
-### Identity map (`athletes` + `donors` → `external_users`)
+## Target state (after PR3)
 
-- [ ] Build index of normalized emails across `athletes` + `donors` (`donors.email` may duplicate)
-- [ ] Unique emails across both tables → create one `external_users` row + attach all matching
-- [ ] Multiple `donors` with same email:
-  - [ ] Name + address identical → auto-merge, record all `legacy_donor_id`s
-  - [ ] Name or address differ → "donor-email-conflicts" manual-review CSV; resolve before hard cutover
-- [ ] Unmatched rows → create `external_users` keyed by name, address, phone
-- [ ] Persist mapping via `legacy_athlete_id`/`legacy_donor_id` trace columns on `external_users`
-
-### Backfill participations
-
-- [x] `donation_event` for each legacy athlete: `athletes.donation_event_id` backfilled via `BackfillAthleteEventAssignmentsCommand`
-- [ ] For each legacy athlete: create one `athlete_registration` from resolved `donation_event_id` + copy event-scoped fields (`rounds_estimated`, `rounds_done`, `verified`, legacy `partner_id`)
-
-### Backfill donations
-
-- [ ] For each legacy donation:
-  - [ ] Map `donor_id` → `donor_external_user_id`
-  - [ ] Map `athlete_id` → `athlete_registration_id`
-
-### Backfill command
-
-- [ ] Idempotent Artisan command `hfm:backfill:external-users` with `--dry-run` + report output (same pattern as `hfm:backfill:event-content`)
-- [ ] Validation checks after backfill: row count parity, amount parity per event/donor (event derived via athlete registration), every donation resolves to exactly one athlete registration, every legacy row mapped to exactly one external user
-
-### Switch reads
-
-- [ ] After backfill + validation: switch app reads to new models (`ExternalUser`, `AthleteRegistration`, donation queries via `donor_external_user_id`/`athlete_registration_id`)
-- [ ] `LoginForm` resolves `external_users` first; falls back to legacy `Athlete`/`Donor` token lookups
-- [ ] External-user landing page now shows real backfilled data
-- [ ] Build simple external-user landing page (combination of current athlete + donor detail views: greeting, list of donations-as-donor, list of donations-as-athlete, verified status)
-- [ ] Dual-role users see both athlete and donor sections in one page
-- [ ] Legacy token routes (`/sportlerinnen/{token}`, `/spenderinnen/{token}`) redirect to `/portal` — the same content is available there via `auth:external`
-- [ ] Welcome/registration notifications updated: send signed-URL login link (same pattern as admin) instead of legacy `/sportlerinnen/{token}` and `/spenderinnen/{token}` links (code-only change — no registrations happening currently)
-- [ ] QR codes in welcome letters encode the login page URL (no tokens in QR codes)
-- [ ] Legacy tables/columns become read-only fallback
-- [ ] Admin views (`admin/sportlerinnen`, `admin/spenderinnen`, `admin/spenden`) continue reading legacy tables during PR2 — admin rework happens in PR3 when legacy tables are dropped
+- Identity unified in `external_users` (passwordless signed login, `auth:external`).
+- Participation modeled as `athlete_registrations` scoped by `donation_event_id`.
+- `donations` linked via `donor_external_user_id` and `athlete_registration_id`.
+- Portal and admin read from new model graph.
+- Legacy token routes, models, and tables removed.
 
 ---
 
-## PR3 — Remove legacy
+## PR1 - Introduce new models and auth foundation
 
-> Clean break. No legacy code, tables, or token routes remain.
+### Steps
 
-- [ ] Enforce NOT NULL on new FKs (`donations.donor_external_user_id`, `donations.athlete_registration_id`)
-- [ ] Ensure `donations.athlete_registration_id` uses `RESTRICT` so athlete registrations with donations cannot be deleted
-- [ ] Remove old nullable columns from `donations`: `donor_id`, `athlete_id`
-- [ ] Drop legacy tables: `athletes`, `donors`
-- [ ] Remove legacy models: `Athlete`, `Donor`
-- [ ] Remove legacy token routes entirely (redirects from PR2 replaced with 404/removed)
-- [ ] Replace temporary transition guard in `Donation::boot()->created` with final new-schema flow (no legacy `donor` / `athlete` assumptions)
-- [ ] Remove `login_token` and `login_token_expiry_days` config
-- [ ] Remove `legacy_athlete_id`/`legacy_donor_id` trace columns from `external_users`
-- [ ] Remove legacy `LoginForm` fallback paths (only `external_users` lookup remains)
-- [ ] Switch admin views to new models (`admin/sportlerinnen` → athlete_registrations scoped by event, `admin/spenderinnen` → external_users with donor role, `admin/spenden` → donations via new FKs)
-- [ ] Login auditability: covered by `spatie/laravel-activitylog` (GH #111)
+- [x] Create `external_users` model + migration (`Authenticatable`, signed-URL login identity, trace columns `legacy_athlete_id`/`legacy_donor_id`).
+- [x] Create `athlete_registrations` model + migration with unique (`donation_event_id`, `external_user_id`).
+- [x] Extend `donations` with nullable `donor_external_user_id` and `athlete_registration_id` while keeping legacy columns.
+- [x] Configure `auth:external` guard + provider.
+- [x] Split routes into `routes/admin.php`, `routes/portal.php`, `routes/web.php` with strict guard separation.
+- [x] Add external signed login callback at `/portal/login/{uuid}` (controller action).
+- [x] Keep `/portal` as placeholder behind `auth:external`.
+- [x] Keep legacy token routes fully operational in parallel.
 
----
+### Exit criteria
 
-## Rollback + integrity
-
-- [ ] Rollback path: PR2 can revert to legacy reads; PR1 new schema is additive (no legacy disruption)
-- [ ] Integrity checks: row count parity, amount parity per event/donor (event derived via athlete registration), every donation resolves to exactly one athlete registration, every legacy row mapped to exactly one external user
+- [x] New schema exists and is additive only.
+- [x] Guard separation enforced by middleware.
+- [x] Signed external login flow works (valid + expired/invalid signature behavior covered).
+- [x] Placeholder portal renders without legacy data dependency.
 
 ---
 
-## Verification
+## PR2 - Backfill and switch portal reads
 
-### PR1 — Schema + auth
+PR2 introduces one guarded migration command for this exact production data shape, then flips portal reads.
 
-- [x] `external_users` uniqueness/dedup behavior
-- [x] `athlete_registrations` unique per (`event`, `external_user`)
-- [x] External login resolves one portal for dual-role user
-- [x] External guard **cannot** access admin routes (enforced by middleware, tested per route)
-- [x] Internal guard **cannot** access external write endpoints
-- [x] Route split verified: admin routes are loaded from `routes/admin.php`, portal routes from `routes/portal.php`, and public routes from `routes/web.php`
-- [x] External signed-login callback uses `/portal/login/{uuid}` controller action; signed URL expiry and invalid signature are tested
-- [x] Placeholder `/portal` page renders for authenticated external users without legacy athlete/donor dependency
+### Command contract
 
-### PR2 — Backfill + switch reads
+- [ ] Implement `php artisan hfm:backfill:external-users` with `--dry-run`.
+- [ ] Treat command as one-time guarded migration for this rollout, not generic dedupe engine.
+- [ ] Execute preflight before any write (including dry-run).
+- [ ] Write mode runs in one transaction and exits non-zero on violation.
+- [ ] No report file export; console output only.
+- [ ] Dry-run repeatable; write-mode rerun intentionally unsupported.
 
-- [ ] Backfill parity checks for counts and sums
-- [ ] Conflict fixture test (same email, differing names) requires manual resolution path
-- [ ] Dry-run migration reports identity merge decisions
-- [ ] 100% legacy athlete/donor rows mapped to exactly one external user
-- [ ] Per-event financial totals match baseline
-- [ ] Donor can sponsor same athlete in different events
-- [ ] Event-scoped results/dashboard totals are isolated
-- [ ] Portal page switches from placeholder to real merged donor/athlete data after backfill
+### Preflight assumptions (fail-fast)
 
-### PR3 — Legacy removal
+- [ ] Duplicate normalized donor emails count is `0`.
+- [ ] Duplicate normalized athlete emails count is `0`.
+- [ ] Duplicate donation pair count for (`donor_id`, `athlete_id`) is `0`.
+- [ ] Every athlete has exactly one `donation_event_id`.
+- [ ] Every donation references existing donor and athlete.
+- [ ] `external_users`, `athlete_registrations`, and new donation FK columns are empty before write mode.
 
-- [ ] Old token routes (`/sportlerinnen/{token}`, `/spenderinnen/{token}`) return 404
-- [ ] Admin views work with new models (athlete_registrations, external_users, donations via new FKs)
-- [ ] Admin pages remain internal-only; event switching yields consistent counts
-- [ ] Invoice generation works with event filter
-- [ ] External auth uses same passwordless login page as admin users (email → signed URL) with `auth:external` guard; mandatory guard separation enforced
+If any check fails: print blocking counts, exit non-zero, write nothing.
+
+### Backfill mapping rules
+
+- [ ] Normalize email with `trim(mb_strtolower($email))`.
+- [ ] Build `external_users` by normalized email only (no name/address/phone matching).
+- [ ] Same athlete+donor email becomes one dual-role `external_user`.
+- [ ] Dual-role merge policy: athlete fields win when both non-empty; fill athlete gaps from donor; keep donor-only `country_of_residence`.
+- [ ] Preserve migration trace via `legacy_athlete_id` / `legacy_donor_id`.
+- [ ] Create one `athlete_registration` per legacy athlete with copied event-scoped fields.
+- [ ] Map each donation to `donor_external_user_id` and `athlete_registration_id`.
+- [ ] Preserve donation row cardinality (1 legacy row -> 1 new-mapped row).
+
+### Read switch scope
+
+- [ ] After successful backfill + validation, portal reads from `ExternalUser`, `AthleteRegistration`, and new donation FKs.
+- [ ] `LoginForm` normalizes input email and resolves `external_users` first.
+- [ ] Legacy token routes stop token auth and redirect to `/portal` with no side effects.
+- [ ] Remove admin token-login shortcuts that point to legacy token routes.
+- [ ] Keep admin list pages on legacy reads for PR2 (`admin/sportlerinnen`, `admin/spenderinnen`, `admin/spenden`).
+
+### Exit criteria
+
+- [ ] Rehearsal completed in upgrade lab using `storage/upgrade-lab/dumps/2026-05-17_16-44-51.sql` in dry-run and write mode.
+- [ ] Row parity checks pass.
+- [ ] Amount parity per event/donor passes (event derived via `athlete_registration`).
+- [ ] Every legacy athlete and donor maps to exactly one `external_user`.
+- [ ] Every donation resolves to exactly one `athlete_registration`.
+- [ ] Portal shows merged dual-role data grouped by donation event.
+- [ ] Legacy token redirects do not authenticate and do not mutate verification state.
+
+---
+
+## PR3 - Remove legacy and complete switch
+
+### Steps
+
+- [ ] Enforce NOT NULL on `donations.donor_external_user_id` and `donations.athlete_registration_id`.
+- [ ] Ensure delete rule for `donations.athlete_registration_id` is `RESTRICT`.
+- [ ] Remove legacy donation columns `donor_id`, `athlete_id`.
+- [ ] Drop legacy tables `athletes`, `donors`.
+- [ ] Remove legacy models `Athlete`, `Donor`.
+- [ ] Remove legacy token routes entirely (no transition redirects).
+- [ ] Remove legacy login-token config keys.
+- [ ] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
+- [ ] Remove legacy `LoginForm` fallback paths.
+- [ ] Switch admin pages to new models and FKs.
+
+### Exit criteria
+
+- [ ] Legacy token route paths return 404.
+- [ ] Admin pages work on new model graph with consistent event-scoped counts.
+- [ ] External passwordless login remains functional through shared login entry.
+- [ ] No remaining runtime dependency on `athletes` or `donors`.
+
+---
+
+## Rollback and risk posture
+
+- [ ] PR1 is additive and low risk.
+- [ ] PR2 rollback path is read-switch revert to legacy reads if needed.
+- [ ] PR3 is clean break and should ship only after PR2 validations pass.
+
+## Out of scope for this refactor
+
+- [ ] Generic cross-environment dedupe engine.
+- [ ] New registration flows.
+- [ ] Group model and group-level sponsorship behavior.
