@@ -65,34 +65,34 @@ PR2 introduces one guarded migration command for this exact production data shap
 
 ### Command contract
 
-- [ ] Implement `php artisan hfm:backfill:external-users` with `--dry-run`.
-- [ ] Treat command as one-time guarded migration for this rollout, not generic dedupe engine.
-- [ ] Execute preflight before any write (including dry-run).
-- [ ] Write mode runs in one transaction and exits non-zero on violation.
-- [ ] No report file export; console output only.
-- [ ] Dry-run repeatable; write-mode rerun intentionally unsupported.
+- [x] Implement `php artisan hfm:backfill:external-users` with `--dry-run`.
+- [x] Treat command as one-time guarded migration for this rollout, not generic dedupe engine.
+- [x] Execute preflight before any write (including dry-run).
+- [x] Write mode runs in one transaction and exits non-zero on violation.
+- [x] No report file export; console output only.
+- [x] Dry-run repeatable; write-mode rerun intentionally unsupported.
 
 ### Preflight assumptions (fail-fast)
 
-- [ ] Duplicate normalized donor emails count is `0`.
-- [ ] Duplicate normalized athlete emails count is `0`.
-- [ ] Duplicate donation pair count for (`donor_id`, `athlete_id`) is `0`.
-- [ ] Every athlete has exactly one `donation_event_id`.
-- [ ] Every donation references existing donor and athlete.
-- [ ] `external_users`, `athlete_registrations`, and new donation FK columns are empty before write mode.
+- [x] Duplicate normalized donor emails count is `0`.
+- [x] Duplicate normalized athlete emails count is `0`.
+- [x] Duplicate donation pair count for (`donor_id`, `athlete_id`) is `0`.
+- [x] Every athlete has exactly one `donation_event_id`.
+- [x] Every donation references existing donor and athlete.
+- [x] `external_users`, `athlete_registrations`, and new donation FK columns are empty before write mode.
 
 If any check fails: print blocking counts, exit non-zero, write nothing.
 
 ### Backfill mapping rules
 
-- [ ] Normalize email with `trim(mb_strtolower($email))`.
-- [ ] Build `external_users` by normalized email only (no name/address/phone matching).
-- [ ] Same athlete+donor email becomes one dual-role `external_user`.
-- [ ] Dual-role merge policy: athlete fields win when both non-empty; fill athlete gaps from donor; keep donor-only `country_of_residence`.
-- [ ] Preserve migration trace via `legacy_athlete_id` / `legacy_donor_id`.
-- [ ] Create one `athlete_registration` per legacy athlete with copied event-scoped fields.
-- [ ] Map each donation to `donor_external_user_id` and `athlete_registration_id`.
-- [ ] Preserve donation row cardinality (1 legacy row -> 1 new-mapped row).
+- [x] Normalize email with `trim(mb_strtolower($email))`.
+- [x] Build `external_users` by normalized email only (no name/address/phone matching).
+- [x] Same athlete+donor email becomes one dual-role `external_user`.
+- [x] Dual-role merge policy: athlete fields win when both non-empty; fill athlete gaps from donor; keep donor-only `country_of_residence`.
+- [x] Preserve migration trace via `legacy_athlete_id` / `legacy_donor_id`.
+- [x] Create one `athlete_registration` per legacy athlete with copied event-scoped fields.
+- [x] Map each donation to `donor_external_user_id` and `athlete_registration_id`.
+- [x] Preserve donation row cardinality (1 legacy row -> 1 new-mapped row).
 
 ### Read switch scope
 
@@ -105,10 +105,10 @@ If any check fails: print blocking counts, exit non-zero, write nothing.
 ### Exit criteria
 
 - [ ] Rehearsal completed in upgrade lab using `storage/upgrade-lab/dumps/2026-05-17_16-44-51.sql` in dry-run and write mode.
-- [ ] Row parity checks pass.
-- [ ] Amount parity per event/donor passes (event derived via `athlete_registration`).
-- [ ] Every legacy athlete and donor maps to exactly one `external_user`.
-- [ ] Every donation resolves to exactly one `athlete_registration`.
+- [x] Row parity checks pass.
+- [x] Amount parity per event/donor passes (event derived via `athlete_registration`).
+- [x] Every legacy athlete and donor maps to exactly one `external_user`.
+- [x] Every donation resolves to exactly one `athlete_registration`.
 - [ ] Portal shows merged dual-role data grouped by donation event.
 - [ ] Legacy token redirects do not authenticate and do not mutate verification state.
 
