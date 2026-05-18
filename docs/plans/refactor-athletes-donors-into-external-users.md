@@ -100,11 +100,11 @@ If any check fails: print blocking counts, exit non-zero, write nothing.
 - [x] `LoginForm` normalizes input email and resolves `external_users` first.
 - [x] Legacy token routes stop token auth and redirect to `/portal` with no side effects.
 - [x] Remove admin token-login shortcuts that point to legacy token routes.
-- [ ] Keep admin list pages on legacy reads for PR2 (`admin/sportlerinnen`, `admin/spenderinnen`, `admin/spenden`).
+- [x] Keep admin list pages on legacy reads for PR2 (`admin/sportlerinnen`, `admin/spenderinnen`, `admin/spenden`).
 
 ### Exit criteria
 
-- [ ] Rehearsal completed in upgrade lab using `storage/upgrade-lab/dumps/2026-05-17_16-44-51.sql` in dry-run and write mode.
+- [x] Rehearsal completed in upgrade lab using `storage/upgrade-lab/dumps/2026-05-17_16-44-51.sql` in dry-run and write mode.
 - [x] Row parity checks pass.
 - [x] Amount parity per event/donor passes (event derived via `athlete_registration`).
 - [x] Every legacy athlete and donor maps to exactly one `external_user`.
