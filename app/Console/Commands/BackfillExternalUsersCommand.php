@@ -247,12 +247,7 @@ class BackfillExternalUsersCommand extends Command
     }
 
     /**
-     * @param  array{
-     *     external_user_rows: Collection<int, array<string, mixed>>,
-     *     athlete_registration_rows: Collection<int, array<string, mixed>>,
-     *     donation_updates: Collection<int, array{donation_id: int, donor_id: int, athlete_id: int}>,
-     *     merge_preview: Collection<int, string>
-     * }  $plan
+     * @param  array<string, Collection<int, mixed>>  $plan
      */
     protected function executeWritePlan(array $plan): void
     {
@@ -290,12 +285,7 @@ class BackfillExternalUsersCommand extends Command
     }
 
     /**
-     * @return array{
-     *     external_user_rows: Collection<int, array<string, mixed>>,
-     *     athlete_registration_rows: Collection<int, array<string, mixed>>,
-     *     donation_updates: Collection<int, array{donation_id: int, donor_id: int, athlete_id: int}>,
-     *     merge_preview: Collection<int, string>
-     * }
+     * @return array<string, Collection<int, mixed>>
      */
     protected function buildPlan(): array
     {
@@ -323,7 +313,9 @@ class BackfillExternalUsersCommand extends Command
             $identityMap->put($normalizedEmail, $existing);
         }
 
+        /** @var Collection<int, array<string, mixed>> $externalUserRows */
         $externalUserRows = collect();
+        /** @var Collection<int, string> $mergePreview */
         $mergePreview = collect();
 
         foreach ($identityMap as $email => $identity) {

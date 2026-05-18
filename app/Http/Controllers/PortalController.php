@@ -7,7 +7,6 @@ namespace App\Http\Controllers;
 use App\Models\ExternalUser;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 
 class PortalController extends Controller
 {
@@ -43,11 +42,11 @@ class PortalController extends Controller
     }
 
     /**
-     * @param  Collection<int, Collection<int, mixed>>  $athleteRegistrationsByEvent
-     * @param  Collection<int, Collection<int, mixed>>  $donationsAsDonorByEvent
+     * @param  iterable<int|string, mixed>  $athleteRegistrationsByEvent
+     * @param  iterable<int|string, mixed>  $donationsAsDonorByEvent
      * @return array<int, string>
      */
-    private function eventTitleMap(Collection $athleteRegistrationsByEvent, Collection $donationsAsDonorByEvent): array
+    protected function eventTitleMap(iterable $athleteRegistrationsByEvent, iterable $donationsAsDonorByEvent): array
     {
         $titles = [];
 

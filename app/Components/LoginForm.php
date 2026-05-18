@@ -56,7 +56,7 @@ class LoginForm extends Component
         }
 
         try {
-            $normalizedEmail = (string) $this->email;
+            $normalizedEmail = $this->email;
 
             $externalUser = ExternalUser::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
 
