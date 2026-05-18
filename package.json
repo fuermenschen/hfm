@@ -12,7 +12,7 @@
         "e2e:ai": "npx playwright test --reporter=junit"
     },
     "devDependencies": {
-        "@playwright/test": "^1.59.0",
+        "@playwright/test": "^1.60.0",
         "@prettier/plugin-php": "^0.25.0",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/typography": "^0.5.19",
@@ -25,7 +25,7 @@
         "sharp": "^0.34.5",
         "svgo": "^4.0.1",
         "tailwindcss": "^4.2.1",
-        "vite": "^8.0.12",
+        "vite": "^8.0.13",
         "vite-plugin-image-optimizer": "^2.0.3"
     }
 }
