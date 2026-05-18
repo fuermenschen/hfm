@@ -42,7 +42,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - `dependency-upgrade` — Upgrade dependencies with a risk-based workflow. batch minor updates and handle major updates with migration guides, incremental checks, and fast failure detection.
 - `pr-description` — Use this skill when creating or editing pull request descriptions. Activate when the user asks to create a PR, write a PR description, or open a pull request. Covers: analyzing branch diffs, writing concise summaries, detecting multi-purpose PRs, linking issues, and structuring descriptions for reviewers. Do not use for commit messages, changelogs, or release notes.
-- `precommit-testing` — Run and interpret the AI-first precommit quality gate for this project, including when to run each sub-command and when to avoid rerunning the full suite.
+- `precommit-testing` — Run tests and linting before every commit.
 
 ## Conventions
 
@@ -126,6 +126,13 @@ This project has domain-specific skills available. You MUST activate the relevan
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
+
+=== herd rules ===
+
+# Laravel Herd
+
+- The application is served by Laravel Herd at `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs. Never run commands to serve the site. It is always available.
+- Use the `herd` CLI to manage services, PHP versions, and sites (e.g. `herd sites`, `herd services:start <service>`, `herd php:list`). Run `herd list` to discover all available commands.
 
 === tests rules ===
 

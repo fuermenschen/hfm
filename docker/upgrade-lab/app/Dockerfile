@@ -24,6 +24,7 @@ RUN apt-get update \
         opcache \
         pcntl \
         pdo_mysql \
+        sockets \
         zip \
     && a2enmod headers rewrite \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
