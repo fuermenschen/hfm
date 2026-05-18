@@ -96,10 +96,10 @@ If any check fails: print blocking counts, exit non-zero, write nothing.
 
 ### Read switch scope
 
-- [ ] After successful backfill + validation, portal reads from `ExternalUser`, `AthleteRegistration`, and new donation FKs.
-- [ ] `LoginForm` normalizes input email and resolves `external_users` first.
-- [ ] Legacy token routes stop token auth and redirect to `/portal` with no side effects.
-- [ ] Remove admin token-login shortcuts that point to legacy token routes.
+- [x] After successful backfill + validation, portal reads from `ExternalUser`, `AthleteRegistration`, and new donation FKs.
+- [x] `LoginForm` normalizes input email and resolves `external_users` first.
+- [x] Legacy token routes stop token auth and redirect to `/portal` with no side effects.
+- [x] Remove admin token-login shortcuts that point to legacy token routes.
 - [ ] Keep admin list pages on legacy reads for PR2 (`admin/sportlerinnen`, `admin/spenderinnen`, `admin/spenden`).
 
 ### Exit criteria
@@ -109,8 +109,8 @@ If any check fails: print blocking counts, exit non-zero, write nothing.
 - [x] Amount parity per event/donor passes (event derived via `athlete_registration`).
 - [x] Every legacy athlete and donor maps to exactly one `external_user`.
 - [x] Every donation resolves to exactly one `athlete_registration`.
-- [ ] Portal shows merged dual-role data grouped by donation event.
-- [ ] Legacy token redirects do not authenticate and do not mutate verification state.
+- [x] Portal shows merged dual-role data grouped by donation event.
+- [x] Legacy token redirects do not authenticate and do not mutate verification state.
 
 ---
 

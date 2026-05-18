@@ -33,17 +33,6 @@ class DonorRowActionFactory
 
         $actions = [
             new DatatableActionDefinition(
-                key: 'donor-login',
-                group: 'Spender:in',
-                label: 'Als Spender einloggen',
-                execute: static fn (array $payload): array => [
-                    'type' => 'href',
-                    'href' => route('show-donor', ['login_token' => $payload['donor']->login_token]),
-                    'target' => '_blank',
-                ],
-                icon: 'user',
-            ),
-            new DatatableActionDefinition(
                 key: 'invoice-create',
                 group: 'Rechnung',
                 label: 'Rechnung erstellen',

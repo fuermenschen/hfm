@@ -36,6 +36,8 @@ class LoginForm extends Component
     {
         $this->protectAgainstSpam();
 
+        $this->email = trim(mb_strtolower((string) $this->email));
+
         try {
             $this->validate();
         } catch (ValidationException $validationException) {
@@ -54,22 +56,24 @@ class LoginForm extends Component
         }
 
         try {
+            $normalizedEmail = (string) $this->email;
+
+            $externalUser = ExternalUser::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
 
             // get all login tokens
-            $athlete = Athlete::query()->where('email', $this->email)->first();
+            $athlete = Athlete::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
             $athleteLoginToken = $athlete ? $athlete->login_token : '';
 
-            $donor = Donor::query()->where('email', $this->email)->first();
+            $donor = Donor::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
             $donorLoginToken = $donor ? $donor->login_token : '';
 
-            $user = User::query()->where('email', $this->email)->first();
+            $user = User::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
             $userLoginUrl = '';
             if ($user) {
                 $userUuid = $user->uuid;
                 $userLoginUrl = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $userUuid]);
             }
 
-            $externalUser = ExternalUser::query()->where('email', $this->email)->first();
             $externalUserLoginUrl = '';
             if ($externalUser) {
                 $externalUserUuid = $externalUser->uuid;
@@ -77,14 +81,14 @@ class LoginForm extends Component
             }
 
             // get the first name
-            if ($athlete) {
+            if ($externalUser) {
+                $first_name = $externalUser->first_name;
+            } elseif ($athlete) {
                 $first_name = $athlete->first_name;
             } elseif ($donor) {
                 $first_name = $donor->first_name;
             } elseif ($user) {
                 $first_name = $user->name;
-            } elseif ($externalUser) {
-                $first_name = $externalUser->first_name;
             } else {
                 $first_name = '';
             }
@@ -104,7 +108,7 @@ class LoginForm extends Component
                     external_user_login_url: $externalUserLoginUrl,
                 );
 
-                Notification::route('mail', $this->email)->notify($notification);
+                Notification::route('mail', $normalizedEmail)->notify($notification);
             }
 
         } catch (Exception $exception) {

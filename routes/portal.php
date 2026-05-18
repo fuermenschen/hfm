@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ExternalUserSessionController;
+use App\Http\Controllers\PortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('portal/login/{uuid}', [ExternalUserSessionController::class, 'store'])
@@ -9,7 +10,7 @@ Route::get('portal/login/{uuid}', [ExternalUserSessionController::class, 'store'
     ->whereUuid('uuid');
 
 Route::middleware('auth:external')->group(function (): void {
-    Route::view('portal', 'pages.portal')->name('portal.dashboard');
+    Route::get('portal', PortalController::class)->name('portal.dashboard');
 
     Route::post('portal/logout', [ExternalUserSessionController::class, 'destroy'])->name('portal.logout');
 });

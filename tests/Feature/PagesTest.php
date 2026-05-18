@@ -181,12 +181,12 @@ test('parameterized routes can be accessed with valid parameters', function () {
         'verified' => true,
     ]);
     $response = $this->get(route('show-athlete', ['login_token' => $athlete->login_token]));
-    $response->assertSuccessful();
+    $response->assertRedirect(route('portal.dashboard'));
 
     // Test donor route
     $donor = Donor::factory()->create();
     $response = $this->get(route('show-donor', ['login_token' => $donor->login_token]));
-    $response->assertSuccessful();
+    $response->assertRedirect(route('portal.dashboard'));
 
 });
 

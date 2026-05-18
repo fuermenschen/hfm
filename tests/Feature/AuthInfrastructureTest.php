@@ -155,7 +155,7 @@ it('registers split route files with expected guard middleware', function () {
     expect($homeRoute->middleware())->not->toContain('auth:external');
 });
 
-it('renders placeholder portal page for authenticated external users without legacy records', function () {
+it('renders portal page for authenticated external users without registrations or donations', function () {
     $externalUser = ExternalUser::factory()->create([
         'first_name' => 'Alex',
     ]);
@@ -164,6 +164,8 @@ it('renders placeholder portal page for authenticated external users without leg
         ->get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText('Hallo Alex')
-        ->assertSeeText('Willkommen im neuen Portal.')
-        ->assertSeeText('Diese Seite ist aktuell in Aufbau.');
+        ->assertSeeText('Ich bin Sportler:in')
+        ->assertSeeText('Ich spende')
+        ->assertSeeText('Du hast aktuell keine Sportler:innen-Anmeldungen im Portal.')
+        ->assertSeeText('Du hast aktuell keine Spenden im Portal.');
 });
