@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Write and improve project plans for coding agents. Use for roadmap, migration, refactor, or execution plans. Plans capture decided direction: why, what, order, progress, and constraints.
+description: "Write and improve project plans for coding agents. Use for roadmap, migration, refactor, or execution plans. Plans capture decided direction: why, what, order, progress, and constraints."
 ---
 
 # Writing Plans
