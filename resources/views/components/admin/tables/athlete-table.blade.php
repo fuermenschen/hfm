@@ -159,7 +159,6 @@
                                 <flux:menu>
                                     <flux:menu.item wire:click="downloadWelcomeLetter({{ $athlete->id }})">Brief</flux:menu.item>
                                     <flux:menu.item wire:click="downloadPersonalizedFlyerTemplate({{ $athlete->id }})">Flyer</flux:menu.item>
-                                    <flux:menu.item :href="route('show-athlete', ['login_token' => $athlete->login_token])" target="_blank">Login</flux:menu.item>
                                 </flux:menu>
                             </flux:dropdown>
                         </x-admin.tables.partials.actions-column>

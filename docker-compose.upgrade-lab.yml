@@ -26,8 +26,6 @@ services:
       MAIL_FROM_NAME: "HFM Upgrade Lab"
     volumes:
       - "${UPGRADE_LAB_APP_SOURCE:-.}:/var/www/html"
-      - /var/www/html/vendor
-      - /var/www/html/node_modules
     depends_on:
       db:
         condition: service_healthy

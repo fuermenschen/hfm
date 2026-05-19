@@ -4,8 +4,7 @@ use App\Http\Controllers\AdminSessionController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -50,24 +49,17 @@ Route::get('login/{uuid}', [AdminSessionController::class, 'store'])
     ->whereUuid('uuid');
 
 // Athlete
-Route::get('sportlerinnen/{login_token}', function ($login_token): Factory|View {
-    return view('pages.show-athlete', [
-        'login_token' => $login_token,
-    ]);
+Route::get('sportlerinnen/{login_token}', function (): RedirectResponse {
+    return to_route('portal.dashboard');
 })->name('show-athlete');
 
 // Donor
-Route::get('spenderinnen/{login_token}', function ($login_token): Factory|View {
-    return view('pages.show-donor', [
-        'login_token' => $login_token,
-    ]);
+Route::get('spenderinnen/{login_token}', function (): RedirectResponse {
+    return to_route('portal.dashboard');
 })->name('show-donor');
 
-Route::get('spenderinnen/{login_token}/{donation_id}', function ($login_token, $donation_id): Factory|View {
-    return view('pages.show-donor', [
-        'login_token' => $login_token,
-        'donation_id' => $donation_id,
-    ]);
+Route::get('spenderinnen/{login_token}/{donation_id}', function (): RedirectResponse {
+    return to_route('portal.dashboard');
 })->name('verify-donation');
 
 Route::get('queue-worker', function (): string {

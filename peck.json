@@ -64,7 +64,8 @@
             "iban",
             "twint",
             "fn",
-            "hardcoded"
+            "hardcoded",
+            "preflight"
         ],
         "paths": []
     }

@@ -127,15 +127,13 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
 
 ### Phase 3 — Refactor athletes/donors into external users
 
-> Replace the split `athletes` + `donors` identity + token-auth system with unified `external_users`, event-scoped `athlete_registrations`, and passwordless auth via signed URLs. No registrations are currently happening, so zero concurrent-write risk during migration. Migration window guarantee: no new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` until PR3 merge. Execute incrementally: add new schema/auth, backfill and switch reads, then remove legacy tables and token routes after validation.
+> Replace the split `athletes` + `donors` identity + token-auth system with unified `external_users`, event-scoped `athlete_registrations`, and passwordless auth via signed URLs. No registrations are currently happening, so zero concurrent-write risk during migration. Migration window guarantee: no new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` until the third pull request merge. Execute incrementally: add new schema/auth, backfill and switch reads, then remove legacy tables and token routes after validation.
 
-- [x] Create `external_users`, `athlete_registrations`, and new donation FKs without disrupting legacy reads
-- [x] Add external passwordless auth + split route files (`web`/`admin`/`portal`) with strict guard separation
-- [x] Add external signed login route `/portal/login/{uuid}` (15-minute temporary signed URL)
-- [x] Wire login form to include `external_users` signed-link path (legacy paths still active)
-- [ ] Keep `/portal` as placeholder page in PR1; switch to unified data view in PR2
-- [ ] Backfill identities, athlete registrations, and donation links; switch app reads to new models
-- [ ] Remove legacy `athletes`/`donors` tables, token routes, and fallback code after validation
+> Roll out this refactor in three deployable slices because each merged pull request auto-deploys. The sequence is additive foundation, validated data cutover, then legacy removal.
+
+- [x] Add the new external identity schema and passwordless auth foundation without disrupting legacy reads
+- [ ] Backfill legacy identities, participations, and donation links; then switch participant-facing reads to the new model
+- [ ] Remove legacy identity tables, token routes, and fallback code after validation
 
 ### Phase 4 — Groups, portal UI, event-scoped routes
 

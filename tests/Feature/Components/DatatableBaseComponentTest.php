@@ -8,7 +8,10 @@ use App\Models\Donation;
 use App\Models\Donor;
 use App\Models\Partner;
 use App\Models\SportType;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+
+uses(RefreshDatabase::class);
 
 it('normalizes invalid donor sorting input using shared allowlist validation', function (): void {
     $later = Donor::factory()->create(['first_name' => 'Zoe']);
@@ -266,7 +269,7 @@ it('builds donor row action groups and keeps overdue reminder visibility', funct
 
     $invoiceKeys = collect($groups['Rechnung'] ?? [])->pluck('key')->all();
 
-    expect($groups)->toHaveKeys(['Spender:in', 'Rechnung']);
+    expect(array_keys($groups))->toBe(['Rechnung']);
     expect($invoiceKeys)->toContain('invoice-download');
     expect($invoiceKeys)->toContain('invoice-send');
     expect($invoiceKeys)->toContain('invoice-send-reminder');

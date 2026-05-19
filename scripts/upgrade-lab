@@ -41,20 +41,13 @@ Notes:
   - Release-specific commands (backfills, data migrations) are run manually
     on the container during the post-deploy pause.
   - Mail is routed to Mailpit in the lab stack for login-link checks.
-  - Uses Sail on Linux/macOS when available, otherwise falls back to docker compose.
+  - Uses docker compose directly.
 EOF
 }
 
 fail() {
     printf 'ERROR: %s\n' "$1" >&2
     exit 1
-}
-
-is_sail_supported() {
-    case "$(uname -s)" in
-        Linux*|Darwin*) return 0 ;;
-        *) return 1 ;;
-    esac
 }
 
 is_absolute_path() {
@@ -145,17 +138,7 @@ export COMPOSE_PROJECT_NAME="$UPGRADE_LAB_PROJECT_NAME"
 
 MAILPIT_UI_URL="http://localhost:$UPGRADE_LAB_MAILPIT_UI_PORT"
 
-USE_SAIL=0
-if [[ -x "$ROOT_DIR/vendor/bin/sail" ]] && is_sail_supported; then
-    USE_SAIL=1
-fi
-
 compose_cmd() {
-    if [[ "$USE_SAIL" -eq 1 ]]; then
-        "$ROOT_DIR/vendor/bin/sail" -f "$COMPOSE_FILE" "$@"
-        return
-    fi
-
     docker compose --project-name "$UPGRADE_LAB_PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 
@@ -201,7 +184,6 @@ wait_for_app() {
 }
 
 prepare_worktree_runtime_artifacts() {
-    compose_cmd exec -T app sh -c 'find vendor -mindepth 1 -delete 2>/dev/null; find node_modules -mindepth 1 -delete 2>/dev/null; true'
     compose_cmd exec -T app composer install --no-interaction --prefer-dist --optimize-autoloader
 
     if compose_cmd exec -T app test -f package-lock.json; then
