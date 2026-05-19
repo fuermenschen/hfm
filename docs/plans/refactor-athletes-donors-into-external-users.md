@@ -130,10 +130,10 @@ PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime 
 - [ ] Drop legacy tables `athletes`, `donors`.
 - [ ] Remove legacy models `Athlete`, `Donor`.
 - [x] Remove legacy token routes entirely (no transition redirects).
-- [ ] Remove legacy login-token config keys.
+- [x] Remove legacy login-token config keys.
 - [ ] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
 - [x] Remove legacy `LoginForm` fallback paths.
-- [ ] Remove `hfm:backfill:external-users` command and its tests.
+- [x] Remove `hfm:backfill:external-users` command and its tests
 - [x] Replace admin athlete/donor pages with one simple `external_users` admin datatable generated from `make:datatable`.
 - [x] Remove legacy admin athlete/donor routes, navigation entries, pages, and Livewire table components.
 - [ ] Replace legacy donation, athlete-registration, and external-user factories with new-graph defaults.
