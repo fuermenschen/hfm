@@ -135,14 +135,14 @@ PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime 
 - [x] Remove legacy `LoginForm` fallback paths.
 - [ ] Remove `hfm:backfill:external-users` command and its tests.
 - [x] Replace admin athlete/donor pages with one simple `external_users` admin datatable generated from `make:datatable`.
-- [ ] Remove legacy admin athlete/donor routes, navigation entries, pages, and Livewire table components.
+- [x] Remove legacy admin athlete/donor routes, navigation entries, pages, and Livewire table components.
 - [ ] Replace legacy donation, athlete-registration, and external-user factories with new-graph defaults.
 - [ ] Rewrite default local seeding with two events: one past event and one near-future active event, with external users, athlete registrations, and donations across both.
 - [ ] Seed or configure the near-future event as the active/current event for local development.
 - [x] Keep public registration pages disabled; remove remaining legacy Livewire form dependencies only where needed for boot/static-search cleanliness.
 - [x] Disable printable athlete documents that still require legacy athlete token routes.
 - [x] Keep admin replacement simple: external-users list first; event-scoped admin metrics/calculations can wait unless needed for boot.
-- [ ] Remove invoice UI entrypoints only; keep reusable invoice/Webling services/jobs/actions parked for issue #134 where they can still autoload cleanly.
+- [x] Remove invoice UI entrypoints only; keep reusable invoice/Webling services/jobs/actions parked for issue #134 where they can still autoload cleanly.
 
 ### Exit criteria
 

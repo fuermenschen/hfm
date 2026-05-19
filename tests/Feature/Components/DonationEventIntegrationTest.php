@@ -1,11 +1,7 @@
 <?php
 
-use App\Components\AdminAthleteTable;
 use App\Components\AdminDonationEventTable;
-use App\Models\Athlete;
 use App\Models\DonationEvent;
-use App\Models\Partner;
-use App\Models\SportType;
 use Database\Seeders\DonationEventSeeder;
 use Database\Seeders\EventContentBackfillSeeder;
 use Illuminate\Support\Facades\DB;
@@ -64,22 +60,4 @@ it('renders donation events in the admin donation event datatable', function ():
     Livewire::test(AdminDonationEventTable::class)
         ->assertSee('2028')
         ->assertSee('Höhenmeter für Menschen');
-});
-
-it('shows athlete event in the admin athlete datatable', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
-
-    $sportType = SportType::query()->create(['name' => 'Laufen']);
-    $partner = Partner::query()->create(['name' => 'Partner']);
-    $donationEvent = DonationEvent::query()->where('slug', '2026')->firstOrFail();
-
-    Athlete::factory()->create([
-        'sport_type_id' => $sportType->id,
-        'partner_id' => $partner->id,
-        'donation_event_id' => $donationEvent->id,
-    ]);
-
-    Livewire::test(AdminAthleteTable::class)
-        ->assertSee('2026');
 });

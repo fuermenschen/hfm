@@ -1,11 +1,11 @@
 <?php
 
-use App\Components\AdminAthleteTable;
 use App\Components\AdminDonationTable;
-use App\Components\AdminDonorTable;
+use App\Components\AdminExternalUserTable;
 use App\Models\Athlete;
 use App\Models\Donation;
 use App\Models\Donor;
+use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,11 +13,11 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('exports selected donors as csv', function (): void {
-    $donor = Donor::factory()->create();
+it('exports selected external users as csv', function (): void {
+    $externalUser = ExternalUser::factory()->create();
 
-    Livewire::test(AdminDonorTable::class)
-        ->set('checkboxValues', [$donor->id])
+    Livewire::test(AdminExternalUserTable::class)
+        ->set('checkboxValues', [$externalUser->id])
         ->call('exportSelected', 'csv')
         ->assertFileDownloaded();
 });
@@ -28,23 +28,16 @@ it('returns null for selected donation export without selection', function (): v
         ->assertReturned(null);
 });
 
-it('exports all athletes as xlsx even when search is active', function (): void {
-    $sportType = SportType::query()->create(['name' => 'Laufen']);
-    $partner = Partner::query()->create(['name' => 'Partner']);
-
-    Athlete::factory()->create([
+it('exports all external users as xlsx even when search is active', function (): void {
+    ExternalUser::factory()->create([
         'first_name' => 'Anna',
-        'sport_type_id' => $sportType->id,
-        'partner_id' => $partner->id,
     ]);
 
-    Athlete::factory()->create([
+    ExternalUser::factory()->create([
         'first_name' => 'Bea',
-        'sport_type_id' => $sportType->id,
-        'partner_id' => $partner->id,
     ]);
 
-    Livewire::test(AdminAthleteTable::class)
+    Livewire::test(AdminExternalUserTable::class)
         ->set('search', 'Anna')
         ->call('exportAll', 'xlsx')
         ->assertFileDownloaded();
