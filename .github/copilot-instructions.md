@@ -41,8 +41,9 @@ This project has domain-specific skills available. You MUST activate the relevan
 - `debug-using-debugbar` — Use this skill to optimize requests or debug Laravel application issues — slow pages, N+1 queries, exceptions, failed requests, or unexpected behavior — by inspecting data captured by Laravel Debugbar via Artisan CLI commands. Use when the user asks to investigate a bug, diagnose a slow request, find duplicate queries, check what happened on a previous request, or optimize database performance, even if they don't explicitly mention "debugbar" or "profiling."
 
 - `dependency-upgrade` — Upgrade dependencies with a risk-based workflow. batch minor updates and handle major updates with migration guides, incremental checks, and fast failure detection.
-- `pr-description` — Use this skill when creating or editing pull request descriptions. Activate when the user asks to create a PR, write a PR description, or open a pull request. Covers: analyzing branch diffs, writing concise summaries, detecting multi-purpose PRs, linking issues, and structuring descriptions for reviewers. Do not use for commit messages, changelogs, or release notes.
+- `pr-description` — Use this skill when making or editing pull request descriptions. Use for: branch diff review, clear PR summary, multi-purpose PR warning, reviewer setup commands, and PR creation. Not for commit messages, changelogs, or release notes.
 - `precommit-testing` — Run tests and linting before every commit.
+- `writing-plans` — Write and improve project plans for coding agents. Use for roadmap, migration, refactor, or execution plans. Plans capture decided direction: why, what, order, progress, and constraints.
 
 ## Conventions
 
@@ -126,13 +127,6 @@ This project has domain-specific skills available. You MUST activate the relevan
 # Deployment
 
 - Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-
-=== herd rules ===
-
-# Laravel Herd
-
-- The application is served by Laravel Herd at `https?://[kebab-case-project-dir].test`. Use the `get-absolute-url` tool to generate valid URLs. Never run commands to serve the site. It is always available.
-- Use the `herd` CLI to manage services, PHP versions, and sites (e.g. `herd sites`, `herd services:start <service>`, `herd php:list`). Run `herd list` to discover all available commands.
 
 === tests rules ===
 

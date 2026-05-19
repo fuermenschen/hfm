@@ -64,7 +64,7 @@
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --ansi",
+            "@php artisan boost:update --discover --ansi",
             "@php -r \"if (file_exists('AGENTS.md')) { is_dir('.github') || mkdir('.github', 0777, true); copy('AGENTS.md', '.github/copilot-instructions.md'); }\""
         ],
         "post-root-package-install": [
