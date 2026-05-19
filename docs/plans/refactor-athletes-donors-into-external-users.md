@@ -129,27 +129,27 @@ PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime 
 - [ ] Remove legacy donation columns `donor_id`, `athlete_id`.
 - [ ] Drop legacy tables `athletes`, `donors`.
 - [ ] Remove legacy models `Athlete`, `Donor`.
-- [ ] Remove legacy token routes entirely (no transition redirects).
+- [x] Remove legacy token routes entirely (no transition redirects).
 - [ ] Remove legacy login-token config keys.
 - [ ] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
-- [ ] Remove legacy `LoginForm` fallback paths.
+- [x] Remove legacy `LoginForm` fallback paths.
 - [ ] Remove `hfm:backfill:external-users` command and its tests.
 - [ ] Replace admin athlete/donor pages with one simple `external_users` admin datatable generated from `make:datatable`.
 - [ ] Remove legacy admin athlete/donor routes, navigation entries, pages, and Livewire table components.
 - [ ] Replace legacy donation, athlete-registration, and external-user factories with new-graph defaults.
 - [ ] Rewrite default local seeding with two events: one past event and one near-future active event, with external users, athlete registrations, and donations across both.
 - [ ] Seed or configure the near-future event as the active/current event for local development.
-- [ ] Keep public registration pages disabled; remove remaining legacy Livewire form dependencies only where needed for boot/static-search cleanliness.
-- [ ] Disable printable athlete documents that still require legacy athlete token routes.
+- [x] Keep public registration pages disabled; remove remaining legacy Livewire form dependencies only where needed for boot/static-search cleanliness.
+- [x] Disable printable athlete documents that still require legacy athlete token routes.
 - [ ] Keep admin replacement simple: external-users list first; event-scoped admin metrics/calculations can wait unless needed for boot.
 - [ ] Remove invoice UI entrypoints only; keep reusable invoice/Webling services/jobs/actions parked for issue #134 where they can still autoload cleanly.
 
 ### Exit criteria
 
-- [ ] Legacy token route paths return 404.
+- [x] Legacy token route paths return 404.
 - [ ] Application boots without runtime dependency on `athletes`, `donors`, `donor_id`, or `athlete_id` outside old migrations.
 - [ ] Admin navigation does not expose broken legacy-dependent actions.
-- [ ] External passwordless login remains functional through shared login entry.
+- [x] External passwordless login remains functional through shared login entry.
 - [ ] Static search finds legacy table/column references only in old migrations, historical plan text, or explicitly disabled code.
 - [ ] Local development seeding produces external users, athlete registrations, and donations for the current event.
 

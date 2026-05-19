@@ -79,8 +79,7 @@ class Athlete extends Model
             try {
                 $athlete->notify(new AthleteRegistered(
                     $athlete->first_name,
-                    $athlete->public_id_string,
-                    $athlete->login_token
+                    $athlete->public_id_string
                 ));
             } catch (\Throwable $throwable) {
                 Log::error('Failed to send AthleteRegistered notification', [

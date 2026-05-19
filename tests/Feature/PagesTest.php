@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Athlete;
-use App\Models\Donor;
 use App\Models\ExternalUser;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Laravel\Pulse\Http\Middleware\Authorize;
 use Opcodes\LogViewer\Http\Middleware\AuthorizeLogViewer;
 
@@ -174,20 +173,15 @@ test('all external authenticated routes are accessible for external users', func
     }
 });
 
-test('parameterized routes can be accessed with valid parameters', function () {
-    // Test athlete route
+test('parameterized signed login routes can be accessed with valid parameters', function () {
     Artisan::call('db:seed');
-    $athlete = Athlete::factory()->create([
-        'verified' => true,
-    ]);
-    $response = $this->get(route('show-athlete', ['login_token' => $athlete->login_token]));
-    $response->assertRedirect(route('portal.dashboard'));
 
-    // Test donor route
-    $donor = Donor::factory()->create();
-    $response = $this->get(route('show-donor', ['login_token' => $donor->login_token]));
-    $response->assertRedirect(route('portal.dashboard'));
+    $externalUser = ExternalUser::factory()->create();
+    $response = $this->get(
+        URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid])
+    );
 
+    $response->assertRedirect(route('portal.dashboard'));
 });
 
 test('api-key middleware works', function () {

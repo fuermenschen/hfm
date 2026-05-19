@@ -57,16 +57,13 @@ class Donation extends Model
 
             $donor->notify(new DonationRegistered(
                 $donor->first_name,
-                $athlete->privacy_name,
-                $donation->id,
-                $donor->login_token
+                $athlete->privacy_name
             ));
 
             $athlete->notify(new AthleteNewDonation(
                 $athlete->first_name,
                 $donor->privacy_name,
-                $athlete->public_id_string,
-                $athlete->login_token
+                $athlete->public_id_string
             ));
 
             // add log entry

@@ -4,7 +4,6 @@ use App\Http\Controllers\AdminSessionController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -47,20 +46,6 @@ Route::get('login/{uuid}', [AdminSessionController::class, 'store'])
     ->name('login-uuid')
     ->middleware('signed')
     ->whereUuid('uuid');
-
-// Athlete
-Route::get('sportlerinnen/{login_token}', function (): RedirectResponse {
-    return to_route('portal.dashboard');
-})->name('show-athlete');
-
-// Donor
-Route::get('spenderinnen/{login_token}', function (): RedirectResponse {
-    return to_route('portal.dashboard');
-})->name('show-donor');
-
-Route::get('spenderinnen/{login_token}/{donation_id}', function (): RedirectResponse {
-    return to_route('portal.dashboard');
-})->name('verify-donation');
 
 Route::get('queue-worker', function (): string {
 
