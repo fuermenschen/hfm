@@ -4,7 +4,7 @@
 
 Single-event system. `athletes` and `donors` are flat identity+participation rows with no event scope. Participation fields (`rounds_estimated`, `rounds_done`, `verified`) on person row, not per-event. Donations link `donor_id` + `athlete_id` globally. Partners selected per-athlete globally (`partner_id`), not per-event. Auth uses vulnerable plain-text token routes: `/sportlerinnen/{token}` + `/spenderinnen/{token}` — same human with both roles gets two tokens, no proper login page. Reporting aggregates across all events. Event details hardcoded in views/jobs.
 
-Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner selection conflicts with per-event requirement. Duplicate-donation prevention is global (`donor_id + athlete_id`). Invoice totals derive from global athlete fields — cross-year leakage risk. Vulnerable plain-text token auth (`/sportlerinnen/{token}` + `/spenderinnen/{token}`) creates UX/security issues for dual-role humans and exposes tokens in URLs/notifications.
+Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner selection conflicts with per-event requirement. Duplicate-donation prevention is global (`donor_id + athlete_id`). Invoice totals derive from global athlete fields — cross-year leakage risk; event-scoped invoice reintroduction is tracked separately in GitHub issue #134. Vulnerable plain-text token auth (`/sportlerinnen/{token}` + `/spenderinnen/{token}`) creates UX/security issues for dual-role humans and exposes tokens in URLs/notifications.
 
 > Transitional state (`donation_events` + pivots already shipped): `athletes.donation_event_id` FK added; `donation_events.content` JSON drives hero/SEO/invoice metadata; `CurrentDonationEventService` resolves active event; `BecomeAthleteForm` uses event-scoped partner list + equal-split flag; `Results` groups by event for equal-split. Remaining gaps: `athlete_welcome_letter.blade.php` still has hardcoded 2025 date; admin tables show event column but no filter; services still aggregate globally.
 
@@ -93,9 +93,17 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
     - Constraints: unique (`group_id`, `athlete_registration_id`)
     - On delete: `RESTRICT` — consistent with financial tables; group deletion blocked if memberships exist
 
+14. **`donor_event_invoices`** (future, tracked in GitHub issue #134):
+    - `id`, `external_user_id` FK, `donation_event_id` FK
+    - Webling state: `webling_debitor_id`, `webling_debitor_url`, `payment_status`
+    - PDF state: `pdf_disk`, `pdf_path`, `pdf_size`
+    - Send state: `invoice_sent_at`, `invoice_reminder_sent_at`, timestamps
+    - Constraints: unique (`external_user_id`, `donation_event_id`); index `webling_debitor_id`; index (`donation_event_id`, `payment_status`)
+    - On delete: `RESTRICT` — invoices remain tied to financial history
+
 ### On-delete strategy summary
 
-- **Financial/operational tables** (`donations`, `athlete_registrations`, `groups`, `group_memberships`): all `RESTRICT` — prevent accidental data loss
+- **Financial/operational tables** (`donations`, `athlete_registrations`, `groups`, `group_memberships`, `donor_event_invoices`): all `RESTRICT` — prevent accidental data loss
 - **Event pivots** (`donation_event_partner`, `_sponsor`, `_faq`, `_sport_type`): `CASCADE` on event delete — event-scoped config rows cleared automatically
 - **External users**: prefer soft-deletes; FKs from financial tables use `RESTRICT` so historical records prevent hard deletion
 
@@ -132,7 +140,7 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
 > Roll out this refactor in three deployable slices because each merged pull request auto-deploys. The sequence is additive foundation, validated data cutover, then legacy removal.
 
 - [x] Add the new external identity schema and passwordless auth foundation without disrupting legacy reads
-- [ ] Backfill legacy identities, participations, and donation links; then switch participant-facing reads to the new model
+- [x] Backfill legacy identities, participations, and donation links; then switch participant-facing reads to the new model
 - [ ] Remove legacy identity tables, token routes, and fallback code after validation
 
 ### Phase 4 — Groups, portal UI, event-scoped routes
@@ -143,8 +151,17 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
 - [ ] Verify `donations` target XOR constraint (athlete_registration_id XOR group_id)
 - [ ] Replace split athlete/donor navigation with unified external portal; add event switcher/selector
 - [ ] Introduce canonical event routes: `/events/{event:slug}/...`
-- [ ] Apply event scope to all dashboard/results/admin/export/invoice queries; invoice/export jobs filter by selected event
-- [ ] Rename/deprecate legacy `donors` table name in dedicated follow-up
+- [ ] Rebuild public registration flows and printable athlete documents on the new event/group model
+- [ ] Apply event scope to dashboard/results/admin/export queries
+
+### Phase 5 — Event-scoped invoices
+
+> Reintroduce invoice workflows after registrations reopen work is unblocked. Existing Webling integration, invoice services, jobs, and admin patterns should be reused where practical. Detailed tracking lives in GitHub issue #134.
+
+- [ ] Create `donor_event_invoices` with one row per external user per donation event
+- [ ] Move Webling debitor state, PDF storage metadata, payment status, sent timestamp, and reminder timestamp onto the event invoice row
+- [ ] Refactor invoice creation, letters, download, sending, reminders, payment-status sync, and admin bulk actions to operate per event invoice
+- [ ] Filter invoice line collection by donation event
 
 ---
 
