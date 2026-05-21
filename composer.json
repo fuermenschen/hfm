@@ -80,7 +80,7 @@
             "vendor/bin/pint --dirty",
             "vendor/bin/peck",
             "npm run build",
-            "vendor/bin/phpstan",
+            "vendor/bin/phpstan clear-result-cache && vendor/bin/phpstan analyze",
             "php artisan test --parallel",
             "npm run e2e"
         ],
@@ -90,7 +90,7 @@
             "vendor/bin/peck -q"
         ],
         "test:sca:ai": [
-            "vendor/bin/phpstan --error-format=json"
+            "vendor/bin/phpstan clear-result-cache && vendor/bin/phpstan --error-format=json"
         ],
         "test:pest:ai": [
             "php artisan test --parallel --compact --colors=never"
@@ -128,5 +128,5 @@
             "type": "composer",
             "url": "https://composer.fluxui.dev"
         }
-        ]
+    ]
 }
