@@ -8,10 +8,13 @@ use Database\Seeders\EventContentBackfillSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
+use function Pest\Laravel\artisan;
+use function Pest\Laravel\seed;
+
 it('recommends content-assets in non-interactive mode when asset files are missing in storage', function (): void {
     resetEventContentAssetTargets();
 
-    $this->artisan('hfm:backfill:event-content', [
+    artisan('hfm:backfill:event-content', [
         '--no-prompt' => true,
         '--dry-run' => true,
     ])
@@ -22,8 +25,8 @@ it('recommends content-assets in non-interactive mode when asset files are missi
 it('does not recommend content-assets when targets are already present', function (): void {
     resetEventContentAssetTargets();
 
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $sportType = SportType::query()->create(['name' => 'Laufen']);
     $eventId = (int) DonationEvent::query()->where('slug', '2025')->value('id');
@@ -47,7 +50,7 @@ it('does not recommend content-assets when targets are already present', functio
         File::copy($sourceAbsolutePath, $targetAbsolutePath);
     }
 
-    $this->artisan('hfm:backfill:event-content', [
+    artisan('hfm:backfill:event-content', [
         '--no-prompt' => true,
         '--dry-run' => true,
     ])
@@ -65,7 +68,7 @@ it('reports missing source files during content-assets backfill without failing'
         'logo_dark_filename' => 'bruehlgut_dark.svg',
     ]);
 
-    $this->artisan('hfm:backfill:event-content', [
+    artisan('hfm:backfill:event-content', [
         '--part' => ['content-assets'],
         '--no-prompt' => true,
     ])

@@ -59,13 +59,13 @@ class DonationFactory extends Factory
     public function legacyLinked(): static
     {
         return $this->afterCreating(function (Donation $donation): void {
-            if ($donation->donor_id !== null && $donation->athlete_id !== null) {
+            if ($donation->donor()->exists() && $donation->athlete()->exists()) {
                 return;
             }
 
             $externalDonor = $donation->donorExternalUser ?? ExternalUser::query()->find($donation->donor_external_user_id);
-            $externalAthlete = $donation->athleteRegistration?->externalUser
-                ?? ExternalUser::query()->find($donation->athleteRegistration?->external_user_id);
+            $externalAthlete = $donation->athleteRegistration->externalUser
+                ?? ExternalUser::query()->find($donation->athleteRegistration->external_user_id);
 
             $donor = Donor::factory()->create([
                 'first_name' => $externalDonor?->first_name,

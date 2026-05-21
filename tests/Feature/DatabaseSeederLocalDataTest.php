@@ -11,10 +11,12 @@ use App\Services\CurrentDonationEventService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Cache;
 
+use function Pest\Laravel\seed;
+
 it('seeds local development graph with external users and two events', function (): void {
     config()->set('app.env', 'local');
 
-    $this->seed(DatabaseSeeder::class);
+    seed(DatabaseSeeder::class);
 
     expect(DonationEvent::query()->whereIn('slug', ['2025', '2026'])->count())->toBe(2)
         ->and(Partner::query()->count())->toBe(6)

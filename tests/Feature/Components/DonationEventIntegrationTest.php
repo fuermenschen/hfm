@@ -7,19 +7,21 @@ use Database\Seeders\EventContentBackfillSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
-it('seeds canonical donation events idempotently', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+use function Pest\Laravel\seed;
 
-    expect(DonationEvent::query()->count())->toBe(2);
-    expect(DonationEvent::query()->orderBy('slug')->pluck('slug')->all())->toBe(['2025', '2026']);
-    expect(DonationEvent::query()->where('slug', '2026')->value('location_url'))->toBe('https://s.geo.admin.ch/yat5fpx761jk');
-    expect((bool) DonationEvent::query()->where('slug', '2026')->value('is_published'))->toBeTrue();
-    expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'hero.copy_md'))->not->toBeNull();
-    expect(data_get(DonationEvent::query()->where('slug', '2025')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull();
-    expect(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull();
+it('seeds canonical donation events idempotently', function (): void {
+    seed(DonationEventSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
+    seed(EventContentBackfillSeeder::class);
+
+    expect(DonationEvent::query()->count())->toBe(2)
+        ->and(DonationEvent::query()->orderBy('slug')->pluck('slug')->all())->toBe(['2025', '2026'])
+        ->and(DonationEvent::query()->where('slug', '2026')->value('location_url'))->toBe('https://s.geo.admin.ch/yat5fpx761jk')
+        ->and((bool)DonationEvent::query()->where('slug', '2026')->value('is_published'))->toBeTrue()
+        ->and(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'hero.copy_md'))->not->toBeNull()
+        ->and(data_get(DonationEvent::query()->where('slug', '2025')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull()
+        ->and(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull();
 
     $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
     $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
@@ -36,8 +38,8 @@ it('seeds canonical donation events idempotently', function (): void {
         ->where('faqs.title', 'Wann und wo findet der Anlass statt?')
         ->value('faqs.content_md');
 
-    expect($faq2025)->toContain('13 Uhr bis 18 Uhr');
-    expect($faq2026)->toContain('13 Uhr bis 16 Uhr');
+    expect($faq2025)->toContain('13 Uhr bis 18 Uhr')
+        ->and($faq2026)->toContain('13 Uhr bis 16 Uhr');
 });
 
 it('renders donation events in the admin donation event datatable', function (): void {

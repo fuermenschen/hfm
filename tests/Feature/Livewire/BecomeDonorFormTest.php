@@ -129,10 +129,7 @@ it('persists selected country', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    $this->assertDatabaseHas('donors', [
-        'email' => 'erika@example.de',
-        'country_of_residence' => 'DE',
-    ]);
+    expect(Donor::query()->where('email', 'erika@example.de')->where('country_of_residence', 'DE')->exists())->toBeTrue();
 })->skip('Registrierung aktuell geschlossen.');
 
 it('shows ZIP validation message in the UI when invalid', function () {
@@ -205,27 +202,27 @@ it('validates phone per country', function (
 
     if ($valid) {
         $test->assertHasNoErrors(['phone_national']);
-        $this->assertDatabaseHas('donors', ['email' => $email]);
+        expect(Donor::query()->where('email', $email)->exists())->toBeTrue();
 
         // verify the phone number is formatted correctly
         $donor = Donor::query()->where('email', $email)->first();
 
         switch ($country) {
             case 'DE':
-                $this->assertMatchesRegularExpression('/^\+49/', $donor->phone_number);
+                expect((bool) preg_match('/^\+49/', (string) $donor?->phone_number))->toBeTrue();
                 break;
             case 'AT':
-                $this->assertMatchesRegularExpression('/^\+43/', $donor->phone_number);
+                expect((bool) preg_match('/^\+43/', (string) $donor?->phone_number))->toBeTrue();
                 break;
             case 'CH':
             default:
-                $this->assertMatchesRegularExpression('/^\+41/', $donor->phone_number);
+                expect((bool) preg_match('/^\+41/', (string) $donor?->phone_number))->toBeTrue();
                 break;
         }
 
     } else {
         $test->assertHasErrors(['phone_national']);
-        $this->assertDatabaseMissing('donors', ['email' => $email]);
+        expect(Donor::query()->where('email', $email)->exists())->toBeFalse();
     }
 })->with('phone_validation_cases')->skip('Registrierung aktuell geschlossen.');
 
@@ -256,7 +253,7 @@ it('rejects email confirmation mismatch and does not persist', function () {
         ->call('save')
         ->assertHasErrors(['email_confirmation' => 'same']);
 
-    $this->assertDatabaseMissing('donors', ['email' => 'alex@example.com']);
+    expect(Donor::query()->where('email', 'alex@example.com')->exists())->toBeFalse();
 })->skip('Registrierung aktuell geschlossen.');
 
 it('requires privacy acceptance', function () {
@@ -285,7 +282,7 @@ it('requires privacy acceptance', function () {
         ->call('save')
         ->assertHasErrors(['privacy' => 'accepted']);
 
-    $this->assertDatabaseMissing('donors', ['email' => 'maya@example.com']);
+    expect(Donor::query()->where('email', 'maya@example.com')->exists())->toBeFalse();
 })->skip('Registrierung aktuell geschlossen.');
 
 it('validates amount rules and boundaries', function () {
@@ -335,12 +332,13 @@ it('validates amount rules and boundaries', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    $this->assertDatabaseHas('donations', [
-        'amount_per_round' => 0.05,
-        'amount_min' => 10.0,
-        'amount_max' => 50.0,
-        'athlete_id' => $athlete->id,
-    ]);
+    expect(
+        $athlete->donations()
+            ->where('amount_per_round', 0.05)
+            ->where('amount_min', 10.0)
+            ->where('amount_max', 50.0)
+            ->exists()
+    )->toBeTrue();
 
     // amount_min must be >= per-round
     Livewire::test(BecomeDonorForm::class)

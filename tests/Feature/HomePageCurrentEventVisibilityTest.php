@@ -5,12 +5,15 @@ use App\Settings\EventSettings;
 use Database\Seeders\DonationEventSeeder;
 use Database\Seeders\EventContentBackfillSeeder;
 
+use function Pest\Laravel\get;
+use function Pest\Laravel\seed;
+
 it('shows fallback hero message and hides content sections when no active event is configured', function (): void {
     $settings = app(EventSettings::class);
     $settings->current_event_id = null;
     $settings->save();
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertSuccessful();
     $response->assertSee('Aktuell ist kein Anlass als aktiv konfiguriert.');
@@ -28,7 +31,7 @@ it('shows full home content when current event is published', function (): void 
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertSuccessful();
     $response->assertSee('Werde Sportler:in');
@@ -36,8 +39,8 @@ it('shows full home content when current event is published', function (): void 
 });
 
 it('shows only 2026 partner set and no sponsors on home', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event = DonationEvent::query()->where('slug', '2026')->firstOrFail();
 
@@ -45,7 +48,7 @@ it('shows only 2026 partner set and no sponsors on home', function (): void {
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertSuccessful();
     $response->assertSee('Logo Brühlgut Stiftung');
@@ -57,8 +60,8 @@ it('shows only 2026 partner set and no sponsors on home', function (): void {
 });
 
 it('shows 2025 partners and sponsors on home', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event = DonationEvent::query()->where('slug', '2025')->firstOrFail();
 
@@ -66,7 +69,7 @@ it('shows 2025 partners and sponsors on home', function (): void {
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertSuccessful();
     $response->assertSee('Logo Brühlgut Stiftung');

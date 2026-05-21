@@ -1,14 +1,40 @@
 includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/nesbot/carbon/extension.neon
+    - vendor/phpstan/phpstan-mockery/extension.neon
 
 parameters:
 
     paths:
         - app/
+        - config/
+        - routes/
+        - public/
+        - bootstrap/
+        - database/
+        - lang/
+        - resources/
+        - scripts/
+        - tests/
 
     # Level 10 is the highest level
     level: 5
+
+
+# TODO: Re-enable resources/views/ after Bladestan supports Laravel 13.
+    excludePaths:
+        - .ai/
+        - .github/
+        - bootstrap/cache/
+        - docker/
+        - docs/
+        - e2e/
+        - public/build/
+        - resources/views/
+        - storage/
+        - stubs/
+        - tests/Feature/ArchitectureTest.php
+        - vendor/
 
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'

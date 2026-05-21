@@ -20,20 +20,20 @@ test('new registrations include a valid 24h signed unsubscribe link', function (
         $unsubscribeUrl = $mailMessage->actionUrl;
         $actionText = $mailMessage->actionText;
 
-        expect(is_string($unsubscribeUrl))->toBeTrue();
-        expect($actionText)->toBe('Newsletter-Abmeldung');
+        expect($unsubscribeUrl)->toBeString()
+            ->and($actionText)->toBe('Newsletter-Abmeldung');
 
         $unsubscribePath = (string) parse_url((string) $unsubscribeUrl, PHP_URL_PATH);
-        expect(Str::contains($unsubscribePath, '/newsletter/abmelden/'))->toBeTrue();
-        expect(urldecode((string) basename($unsubscribePath)))->toBe('anna@example.com');
+        expect(Str::contains($unsubscribePath, '/newsletter/abmelden/'))->toBeTrue()
+            ->and(urldecode((string) basename($unsubscribePath)))->toBe('anna@example.com');
 
         $request = Request::create((string) $unsubscribeUrl);
         expect(URL::hasValidSignature($request))->toBeTrue();
 
         parse_str((string) parse_url((string) $unsubscribeUrl, PHP_URL_QUERY), $query);
 
-        expect($query)->toHaveKey('expires');
-        expect((int) $query['expires'])->toBe($frozenNow->copy()->addDay()->timestamp);
+        expect($query)->toHaveKey('expires')
+            ->and((int) $query['expires'])->toBe($frozenNow->copy()->addDay()->timestamp);
     } finally {
         Carbon::setTestNow();
     }
@@ -44,6 +44,6 @@ test('already-registered addresses do not receive unsubscribe link', function ()
 
     $notification = new NewsletterRegistrationStatusNotification('Anna', true);
     $mailMessage = $notification->toMail($notifiable);
-    expect($mailMessage->actionUrl)->toBeNull();
-    expect($mailMessage->actionText)->toBeNull();
+    expect($mailMessage->actionUrl)->toBeNull()
+        ->and($mailMessage->actionText)->toBeNull();
 });

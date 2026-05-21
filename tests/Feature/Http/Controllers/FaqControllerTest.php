@@ -4,6 +4,8 @@ use App\Models\DonationEvent;
 use App\Models\Faq;
 use App\Settings\EventSettings;
 
+use function Pest\Laravel\get;
+
 it('renders questions and answers page with event faqs', function (): void {
     $event = DonationEvent::factory()->create(['is_published' => true]);
     $settings = app(EventSettings::class);
@@ -17,7 +19,7 @@ it('renders questions and answers page with event faqs', function (): void {
         'is_published' => true,
     ]);
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertOk();
     $response->assertSee('Event Specific FAQ');
@@ -30,7 +32,7 @@ it('renders questions and answers page with global faqs when no event', function
 
     $faq = Faq::factory()->create(['title' => 'Global FAQ']);
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertOk();
     $response->assertSee('Global FAQ');
@@ -49,7 +51,7 @@ it('does not show unpublished faqs on questions and answers', function (): void 
         'is_published' => false,
     ]);
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertOk();
     $response->assertDontSee('Hidden FAQ');

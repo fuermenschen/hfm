@@ -2,6 +2,8 @@
 
 use Illuminate\Filesystem\Filesystem;
 
+use function Pest\Laravel\artisan;
+
 it('generates datatable class, view, and test files', function (): void {
     $files = app(Filesystem::class);
 
@@ -15,7 +17,7 @@ it('generates datatable class, view, and test files', function (): void {
         }
     }
 
-    $this->artisan('make:datatable', [
+    artisan('make:datatable', [
         'context' => 'shared',
         'name' => 'PartnersTable',
         '--model' => 'Partner',
@@ -56,7 +58,7 @@ it('fails when target files exist without force', function (): void {
     $files->put($componentPath, '<?php');
     $files->put($viewPath, '<div></div>');
 
-    $this->artisan('make:datatable', [
+    artisan('make:datatable', [
         'context' => 'shared',
         'name' => 'ExistingDemoTable',
     ])->assertExitCode(1);
@@ -78,7 +80,7 @@ it('can generate without exports and tests', function (): void {
         }
     }
 
-    $this->artisan('make:datatable', [
+    artisan('make:datatable', [
         'context' => 'shared',
         'name' => 'SlimTable',
         '--model' => 'Partner',

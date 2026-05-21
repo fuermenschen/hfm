@@ -42,7 +42,14 @@ it('sends info-only notification when address already exists', function (): void
 
 it('logs an error and skips notifications when api call fails', function (): void {
     Notification::fake();
-    Log::spy();
+    Log::shouldReceive('error')
+        ->once()
+        ->withArgs(function (string $message, array $context) {
+            return $message === 'Newsletter registration API call failed.'
+                && $context['email'] === 'anna@example.com'
+                && $context['first_name'] === 'Anna'
+                && $context['error'] === 'API not reachable';
+        });
 
     $service = Mockery::mock(InfomaniakNewsletterService::class);
     $service->shouldReceive('registerSubscriber')
@@ -52,13 +59,4 @@ it('logs an error and skips notifications when api call fails', function (): voi
     (new RegisterNewsletterSubscriber('Anna', 'anna@example.com'))->handle($service);
 
     Notification::assertNothingSent();
-
-    Log::shouldHaveReceived('error')
-        ->once()
-        ->withArgs(function (string $message, array $context) {
-            return $message === 'Newsletter registration API call failed.'
-                && $context['email'] === 'anna@example.com'
-                && $context['first_name'] === 'Anna'
-                && $context['error'] === 'API not reachable';
-        });
 });

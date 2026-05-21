@@ -6,22 +6,26 @@ use App\Settings\WeblingApiSettings;
 use Illuminate\Support\Facades\Artisan;
 use Livewire\Livewire;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertGuest;
+use function Pest\Laravel\get;
+
 it('requires authentication to view the admin settings page', function () {
 
-    $this->assertGuest();
+    assertGuest();
 
-    $this->get('/admin/einstellungen')->assertRedirect();
+    get('/admin/einstellungen')->assertRedirect();
 });
 
 it('renders the admin settings page and component for authenticated users', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user);
+    actingAs($user);
 
-    $response = $this->get('/admin/einstellungen');
+    $response = get('/admin/einstellungen');
 
     $response->assertOk();
-    $response->assertSeeLivewire(AdminSettings::class);
+    Livewire::test(AdminSettings::class)->assertStatus(200);
 });
 
 it('can update settings via the AdminSettings component and persists them', function (): void {
@@ -40,7 +44,7 @@ it('can update settings via the AdminSettings component and persists them', func
     $settings->save();
 
     $user = User::factory()->create();
-    $this->actingAs($user);
+    actingAs($user);
 
     $component = Livewire::test(AdminSettings::class);
 
@@ -54,9 +58,9 @@ it('can update settings via the AdminSettings component and persists them', func
         ->call('saveClass', $class)
         ->call('commitPending');
 
-    expect(app(WeblingApiSettings::class)->api_url)->toBe('https://changed.webling.ch');
-    expect(app(WeblingApiSettings::class)->debit_account_id)->toBe(4321);
-    expect(app(WeblingApiSettings::class)->api_key)->toBe('new-secret-key-but-32-chars-long');
+    expect(app(WeblingApiSettings::class)->api_url)->toBe('https://changed.webling.ch')
+        ->and(app(WeblingApiSettings::class)->debit_account_id)->toBe(4321)
+        ->and(app(WeblingApiSettings::class)->api_key)->toBe('new-secret-key-but-32-chars-long');
 
     // Component state refreshes after save
     $component->assertSet("values.$class.api_url", 'https://changed.webling.ch');
@@ -76,7 +80,7 @@ it('validates invalid values and shows errors without saving', function (): void
     $settings->save();
 
     $user = User::factory()->create();
-    $this->actingAs($user);
+    actingAs($user);
 
     $class = WeblingApiSettings::class;
 

@@ -1,5 +1,5 @@
 <?php
 
 it('become member form was removed', function () {
-    $this->markTestSkipped('Association member functionality has been removed from this app.');
-});
+    expect(true)->toBeTrue();
+})->skip('Association member functionality has been removed from this app.');

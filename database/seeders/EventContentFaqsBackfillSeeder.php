@@ -67,10 +67,14 @@ class EventContentFaqsBackfillSeeder extends Seeder
             }
         }
 
-        $events = DonationEvent::query()->get(['id', 'content']);
+        $events = DB::table('donation_events')->get(['id', 'content']);
 
         foreach ($events as $event) {
-            $content = is_array($event->content) ? $event->content : [];
+            $content = json_decode((string) ($event->content ?? ''), true);
+
+            if (! is_array($content)) {
+                $content = [];
+            }
 
             if (! array_key_exists('faq', $content)) {
                 continue;

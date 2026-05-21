@@ -6,6 +6,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertAuthenticatedAs;
+use function Pest\Laravel\assertGuest;
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
+
 uses(RefreshDatabase::class);
 
 it('logs external users in via signed portal link', function () {
@@ -13,10 +19,10 @@ it('logs external users in via signed portal link', function () {
 
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid]);
 
-    $this->get($url)
+    get($url)
         ->assertRedirect(route('portal.dashboard'));
 
-    $this->assertAuthenticatedAs($externalUser, 'external');
+    assertAuthenticatedAs($externalUser, 'external');
 });
 
 it('allows reusing valid external signed login link within ttl', function () {
@@ -24,13 +30,13 @@ it('allows reusing valid external signed login link within ttl', function () {
 
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid]);
 
-    $this->get($url)->assertRedirect(route('portal.dashboard'));
-    $this->assertAuthenticatedAs($externalUser, 'external');
+    get($url)->assertRedirect(route('portal.dashboard'));
+    assertAuthenticatedAs($externalUser, 'external');
 
     auth()->guard('external')->logout();
 
-    $this->get($url)->assertRedirect(route('portal.dashboard'));
-    $this->assertAuthenticatedAs($externalUser, 'external');
+    get($url)->assertRedirect(route('portal.dashboard'));
+    assertAuthenticatedAs($externalUser, 'external');
 });
 
 it('rejects expired external signed login links', function () {
@@ -38,8 +44,8 @@ it('rejects expired external signed login links', function () {
 
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->subMinute(), ['uuid' => $externalUser->uuid]);
 
-    $this->get($url)->assertForbidden();
-    $this->assertGuest('external');
+    get($url)->assertForbidden();
+    assertGuest('external');
 });
 
 it('rejects external login links with invalid signature', function () {
@@ -48,24 +54,25 @@ it('rejects external login links with invalid signature', function () {
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid]);
     $invalidUrl = str_replace($externalUser->uuid, (string) str()->uuid(), $url);
 
-    $this->get($invalidUrl)->assertForbidden();
-    $this->assertGuest('external');
+    get($invalidUrl)->assertForbidden();
+    assertGuest('external');
 });
 
 it('prevents external users from accessing admin routes', function () {
     $externalUser = ExternalUser::factory()->create();
 
-    $this->actingAs($externalUser, 'external')
-        ->get(route('admin.dashboard'))
+    actingAs($externalUser, 'external');
+
+    get(route('admin.dashboard'))
         ->assertRedirect(route('login'));
 });
 
 it('prevents external users from accessing every admin web route', function () {
     $externalUser = ExternalUser::factory()->create();
 
-    $this->actingAs($externalUser, 'external');
+    actingAs($externalUser, 'external');
 
-    foreach (Route::getRoutes() as $route) {
+    foreach (Route::getRoutes()->getRoutes() as $route) {
         if (! in_array('GET', $route->methods(), true)) {
             continue;
         }
@@ -86,7 +93,7 @@ it('prevents external users from accessing every admin web route', function () {
             continue;
         }
 
-        $response = $this->get('/'.$route->uri());
+        $response = get('/'.$route->uri());
 
         if ($response->status() === 403) {
             $response->assertForbidden();
@@ -99,45 +106,48 @@ it('prevents external users from accessing every admin web route', function () {
 it('prevents admin users from accessing external write endpoints', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user, 'web')
-        ->post(route('portal.logout'))
+    actingAs($user, 'web');
+
+    post(route('portal.logout'))
         ->assertRedirect(route('login'));
 });
 
 it('prevents admin users from accessing external dashboard routes', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user, 'web')
-        ->get(route('portal.dashboard'))
+    actingAs($user, 'web');
+
+    get(route('portal.dashboard'))
         ->assertRedirect(route('login'));
 });
 
 it('redirects guests from external write endpoints to login', function () {
-    $this->post(route('portal.logout'))
+    post(route('portal.logout'))
         ->assertRedirect(route('login'));
 });
 
 it('redirects guests from external dashboard routes to login', function () {
-    $this->get(route('portal.dashboard'))
+    get(route('portal.dashboard'))
         ->assertRedirect(route('login'));
 });
 
 it('logs external users out from portal logout endpoint', function () {
     $externalUser = ExternalUser::factory()->create();
 
-    $this->actingAs($externalUser, 'external')
-        ->post(route('portal.logout'))
+    actingAs($externalUser, 'external');
+
+    post(route('portal.logout'))
         ->assertRedirect(route('home'));
 
-    $this->assertGuest('external');
+    assertGuest('external');
 });
 
 it('returns not found for valid signed external login URL with unknown uuid', function () {
     $unknownUuid = (string) str()->uuid();
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $unknownUuid]);
 
-    $this->get($url)->assertNotFound();
-    $this->assertGuest('external');
+    get($url)->assertNotFound();
+    assertGuest('external');
 });
 
 it('registers split route files with expected guard middleware', function () {
@@ -145,14 +155,14 @@ it('registers split route files with expected guard middleware', function () {
     $portalRoute = Route::getRoutes()->getByName('portal.dashboard');
     $homeRoute = Route::getRoutes()->getByName('home');
 
-    expect($adminRoute)->not->toBeNull();
-    expect($portalRoute)->not->toBeNull();
-    expect($homeRoute)->not->toBeNull();
+    expect($adminRoute)->not->toBeNull()
+        ->and($portalRoute)->not->toBeNull()
+        ->and($homeRoute)->not->toBeNull()
+        ->and($adminRoute->middleware())->toContain('auth:web')
+        ->and($portalRoute->middleware())->toContain('auth:external')
+        ->and($homeRoute->middleware())->not->toContain('auth:web')
+        ->and($homeRoute->middleware())->not->toContain('auth:external');
 
-    expect($adminRoute->middleware())->toContain('auth:web');
-    expect($portalRoute->middleware())->toContain('auth:external');
-    expect($homeRoute->middleware())->not->toContain('auth:web');
-    expect($homeRoute->middleware())->not->toContain('auth:external');
 });
 
 it('renders portal page for authenticated external users without registrations or donations', function () {
@@ -160,8 +170,9 @@ it('renders portal page for authenticated external users without registrations o
         'first_name' => 'Alex',
     ]);
 
-    $this->actingAs($externalUser, 'external')
-        ->get(route('portal.dashboard'))
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText('Hallo Alex')
         ->assertSeeText('Ich bin Sportler:in')

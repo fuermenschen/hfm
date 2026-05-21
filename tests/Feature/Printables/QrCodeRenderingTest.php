@@ -55,9 +55,9 @@ it('renders association donation invoice with embedded png qr bill image', funct
     preg_match_all('/data:image\/png;base64,[A-Za-z0-9+\/=]+/', $html, $matches);
 
     expect($html)
-        ->toContain('id="qr-bill-swiss-qr-image"');
-
-    expect($matches[0] ?? [])
+        ->toContain('id="qr-bill-swiss-qr-image"')
+        ->and($matches[0])
         ->not->toBeEmpty()
         ->and(strlen($matches[0][0]))->toBeGreaterThan(strlen('data:image/png;base64,'));
+
 });

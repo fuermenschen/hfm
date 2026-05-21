@@ -10,6 +10,9 @@ use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
+
 uses(RefreshDatabase::class);
 
 it('renders merged external user portal data grouped by donation event', function (): void {
@@ -90,8 +93,9 @@ it('renders merged external user portal data grouped by donation event', functio
         'verified' => false,
     ]);
 
-    $this->actingAs($externalUser, 'external')
-        ->get(route('portal.dashboard'))
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText('Hallo Alex')
         ->assertSeeText('Event Alpha')

@@ -69,7 +69,7 @@ it('builds dashboard data with expected aggregates', function (): void {
             'actualAmounts',
             'mostRecentActivities',
         ])
-        ->and($data['greeting'])->toBeString()->not->toBe('')
+        ->and($data['greeting'])->toBeString()
         ->and($data['athleteCount'])->toBe(2)
         ->and($data['donorCount'])->toBe(2)
         ->and($data['donationCount'])->toBe(2)
@@ -83,5 +83,7 @@ it('builds dashboard data with expected aggregates', function (): void {
         ->and($data['actualTotalAmount'])->toBe(34.0)
         ->and($data['estimatedAmounts'])->toBe([$partner->id => 30.0])
         ->and($data['actualAmounts'])->toBe([$partner->id => 34.0])
-        ->and($data['mostRecentActivities'])->toBeArray();
+        ->and($data['mostRecentActivities'])->toBeArray()
+        ->and($data['greeting'] !== '')->toBeTrue();
+
 });

@@ -7,6 +7,8 @@ use App\Models\SportType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
+use function Pest\Laravel\artisan;
+
 it('backfills athlete donation events via command and exports unresolved records without deleting by default', function (): void {
     $sportType = SportType::query()->create(['name' => 'Laufen']);
     $partner = Partner::query()->create(['name' => 'Test Partner']);
@@ -104,7 +106,7 @@ it('backfills athlete donation events via command and exports unresolved records
 
     $filesBefore = Storage::disk('local')->files('exports');
 
-    $this->artisan('hfm:backfill:event-content', [
+    artisan('hfm:backfill:event-content', [
         '--part' => ['athlete-assignments'],
         '--no-prompt' => true,
     ])->assertSuccessful();
