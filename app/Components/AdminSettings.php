@@ -34,16 +34,9 @@ class AdminSettings extends Component
      */
     public array $pendingValues = [];
 
-    private mixed $settingsService;
-
-    public function __construct()
+    public function mount(SettingsService $settingsService): void
     {
-        $this->settingsService = resolve(SettingsService::class);
-    }
-
-    public function mount(): void
-    {
-        $this->classes = $this->settingsService->getAllSettings();
+        $this->classes = $settingsService->getAllSettings();
 
         // Initialize bindable values from current settings
         foreach ($this->classes as $class => $meta) {
@@ -112,7 +105,7 @@ class AdminSettings extends Component
         Flux::modal('admin-setting-confirm')->show();
     }
 
-    public function commitPending(): void
+    public function commitPending(SettingsService $settingsService): void
     {
         if ($this->pendingClass === null || $this->pendingValues === []) {
             return;
@@ -121,7 +114,7 @@ class AdminSettings extends Component
         $class = $this->pendingClass;
 
         try {
-            $this->settingsService->save([
+            $settingsService->save([
                 $class => $this->pendingValues,
             ]);
         } catch (\Throwable $throwable) {
