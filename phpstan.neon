@@ -2,8 +2,16 @@ includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/nesbot/carbon/extension.neon
     - vendor/phpstan/phpstan-mockery/extension.neon
+    - vendor/shipmonk/dead-code-detector/rules.neon
 
 parameters:
+
+    shipmonkDeadCode:
+        usageExcluders:
+            tests:
+                enabled: true
+            usageOverMixed:
+                enabled: true
 
     paths:
         - app/
@@ -20,8 +28,7 @@ parameters:
     # Level 10 is the highest level
     level: 5
 
-
-# TODO: Re-enable resources/views/ after Bladestan supports Laravel 13.
+    # TODO: Re-enable resources/views/ after Bladestan supports Laravel 13.
     excludePaths:
         - .ai/
         - .github/
@@ -35,6 +42,36 @@ parameters:
         - stubs/
         - tests/Feature/ArchitectureTest.php
         - vendor/
+
+services:
+    -
+        class: App\Support\DeadCode\ContainerResolveUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
+    -
+        class: App\Support\DeadCode\LivewireComponentUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
+    -
+        class: App\Support\DeadCode\SpatieSettingsUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
+    -
+        class: App\Support\DeadCode\BladeComponentUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
+    -
+        class: App\Support\DeadCode\DatatableActionUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
+    -
+        class: App\Support\DeadCode\DonationEventContentUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
+    -
+        class: App\Support\DeadCode\ServiceConstructorInjectionUsageProvider
+        tags:
+            - shipmonk.deadCode.memberUsageProvider
 
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'
