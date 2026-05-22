@@ -17,9 +17,13 @@ use Illuminate\Support\Facades\Storage;
 
 class DonorInvoiceService
 {
+    // Invoice service currently not wired to active production flows.
+    // TODO(dead-code): Remove temporary ignores when invoice feature is reintroduced.
+
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function createInvoice(Donor $donor): array
     {
         $weblingData = $donor->webling_data ?? [];
@@ -50,6 +54,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function deleteInvoice(Donor $donor): array
     {
         $weblingData = $donor->webling_data ?? [];
@@ -80,6 +85,7 @@ class DonorInvoiceService
     /**
      * @return array{absolute_path:string,file_name:string}|null
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function getDownloadData(Donor $donor): ?array
     {
         $letterPdf = $this->letterPdfData($donor);
@@ -123,6 +129,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function sendInvoice(Donor $donor): array
     {
         if (empty($donor->email)) {
@@ -194,6 +201,7 @@ class DonorInvoiceService
     /**
      * @return array{heading:string,text:string,variant:string,duration:int|null,refresh:bool}
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function sendReminder(Donor $donor): array
     {
         if (empty($donor->invoice_sent_at)) {
@@ -284,6 +292,7 @@ class DonorInvoiceService
         ];
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function formatInvoiceStatus(Donor $donor): string
     {
         $weblingData = $donor->webling_data ?? [];
@@ -308,16 +317,19 @@ class DonorInvoiceService
         return '-';
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function canCreateInvoiceInBulk(Donor $donor): bool
     {
         return $donor->donations()->exists();
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function canSendInvoiceInBulk(Donor $donor): bool
     {
         return empty($donor->invoice_sent_at);
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function canSendReminderInBulk(Donor $donor): bool
     {
         $paymentStatus = data_get($donor->webling_data, 'payment_status');
@@ -327,12 +339,14 @@ class DonorInvoiceService
             && $paymentStatus === 'overdue';
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function invoiceTotalSubquery(): Builder
     {
         return $this->invoiceTotalQuery()
             ->whereColumn('donations.donor_id', 'donors.id');
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function invoiceTotalForDonor(Donor $donor): float
     {
         $precomputedInvoiceTotal = $donor->getAttribute('invoice_total');
@@ -348,6 +362,7 @@ class DonorInvoiceService
         return round((float) $invoiceTotal, 2);
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function invoiceStatusCaseSql(): string
     {
         $driver = DB::connection()->getDriverName();
@@ -390,6 +405,7 @@ class DonorInvoiceService
     /**
      * @return array{paid:int,overdue:int,sent:int,created:int,not_created:int}
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function invoiceStatusSummary(): array
     {
         $paid = Donor::query()

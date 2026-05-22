@@ -292,6 +292,9 @@ class BecomeDonorForm extends Component
             ->toArray();
     }
 
+    // Form currently not mounted in become-donor page (component call commented out).
+    // TODO(dead-code): Remove this ignore after donor form refactor/relaunch and wire validation flow again.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     protected function rules(): array
     {
         return [
@@ -306,6 +309,9 @@ class BecomeDonorForm extends Component
         ];
     }
 
+    // Form currently not mounted in become-donor page (component call commented out).
+    // TODO(dead-code): Remove this ignore after donor form refactor/relaunch and wire validation flow again.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     protected function messages(): array
     {
         return [

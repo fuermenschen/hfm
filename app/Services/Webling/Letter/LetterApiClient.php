@@ -9,6 +9,9 @@ use Illuminate\Http\Client\Response;
 
 class LetterApiClient
 {
+    // Webling letter pipeline currently not active in production flows.
+    // TODO(dead-code): Remove temporary ignores when Webling letter generation is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(public WeblingApiService $api) {}
 
     /**

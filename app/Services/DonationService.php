@@ -42,46 +42,6 @@ class DonationService
     }
 
     /**
-     * Calculate the estimated total amount across all donations for a given athlete.
-     */
-    public function calculateEstimatedTotalForAthlete(Athlete $athlete): float
-    {
-        if (! $athlete->relationLoaded('donations')) {
-            $athlete->load('donations');
-        }
-
-        $total = 0.0;
-
-        foreach ($athlete->donations as $donation) {
-            // Ensure the donation references this athlete to avoid extra queries
-            $donation->setRelation('athlete', $athlete);
-            $total += $this->calculateEstimatedAmount($donation);
-        }
-
-        return round($total, 2);
-    }
-
-    /**
-     * Calculate the actual total amount across all donations for a given athlete.
-     */
-    public function calculateActualTotalForAthlete(Athlete $athlete): float
-    {
-        if (! $athlete->relationLoaded('donations')) {
-            $athlete->load('donations');
-        }
-
-        $total = 0.0;
-
-        foreach ($athlete->donations as $donation) {
-            // Ensure the donation references this athlete to avoid extra queries
-            $donation->setRelation('athlete', $athlete);
-            $total += $this->calculateActualAmount($donation);
-        }
-
-        return round($total, 2);
-    }
-
-    /**
      * Calculate the estimated total amount across all donations in the system.
      */
     public function calculateEstimatedTotal(iterable $donations): float

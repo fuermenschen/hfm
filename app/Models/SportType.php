@@ -10,10 +10,4 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([
     'name',
 ])]
-class SportType extends Model
-{
-    public function athletes()
-    {
-        return $this->hasMany(Athlete::class);
-    }
-}
+class SportType extends Model {}

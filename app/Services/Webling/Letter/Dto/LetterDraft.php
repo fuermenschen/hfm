@@ -15,6 +15,9 @@ class LetterDraft
         public string $headerText = '',
         public string $bodyIntro = '',
         public string $bodyOutro = '',
+        // Temporarily unused in active Webling invoice flow.
+        // TODO(dead-code): Remove ignore when due date is wired into rendered letter payload again.
+        // @phpstan-ignore-next-line shipmonk.deadProperty.neverRead
         public ?CarbonInterface $dueDate = null,
         public ?QrInvoiceOptions $qr = null,
         public ?LetterOptions $options = null,

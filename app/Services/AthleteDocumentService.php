@@ -12,6 +12,9 @@ class AthleteDocumentService
     /**
      * @return array{pdf:PDF,filename:string}
      */
+    // Service currently has no production call site; kept for planned relaunch of athlete documents.
+    // TODO(dead-code): Remove ignore when welcome letter flow is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function buildWelcomeLetter(Athlete $athlete): array
     {
         $filename = $athlete->first_name.'_'.$athlete->last_name.'_Willkommensbrief.pdf';
@@ -28,6 +31,9 @@ class AthleteDocumentService
     /**
      * @return array{pdf:PDF,filename:string}
      */
+    // Service currently has no production call site; kept for planned relaunch of athlete documents.
+    // TODO(dead-code): Remove ignore when personalized flyer flow is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function buildPersonalizedFlyer(Athlete $athlete): array
     {
         $filename = $athlete->first_name.'_'.$athlete->last_name.'_Flyer.pdf';

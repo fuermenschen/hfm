@@ -19,6 +19,9 @@ class WeblingApiService
 {
     protected PendingRequest $client;
 
+    // Webling pipeline currently not active in production flows.
+    // TODO(dead-code): Remove temporary ignores when Webling integration is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(public WeblingApiSettings $settings, public ConfigRepository $config)
     {
         $baseUrl = $this->settings->api_url;
@@ -44,6 +47,7 @@ class WeblingApiService
     /**
      * Get the underlying HTTP PendingRequest instance.
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function client(): PendingRequest
     {
         return $this->client;

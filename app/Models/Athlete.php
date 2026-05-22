@@ -131,6 +131,9 @@ class Athlete extends Model
         });
     }
 
+    // Athlete model scheduled for removal; suppress dead-code noise until cleanup.
+    // TODO(dead-code): Remove ignores when Athlete domain removal lands.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function generatePublicId(): int
     {
         $token = random_int(100000, 999999);
@@ -147,6 +150,9 @@ class Athlete extends Model
         return Athlete::query()->where('public_id', $token)->exists();
     }
 
+    // Athlete model scheduled for removal; suppress dead-code noise until cleanup.
+    // TODO(dead-code): Remove ignores when Athlete domain removal lands.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function generateLoginToken(bool $persist = true): void
     {
         // return if token is non empty

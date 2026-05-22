@@ -72,62 +72,6 @@ describe('calculateActualAmount', function () {
     })->with('amount_cases');
 });
 
-// Group: calculateEstimatedTotalForAthlete
-
-describe('calculateEstimatedTotalForAthlete', function () {
-    it('sums estimated amounts across preloaded donations without hitting DB', function (): void {
-        $service = app(DonationService::class);
-        $athlete = new Athlete([
-            'rounds_estimated' => 10,
-        ]);
-
-        $donation1 = new Donation([
-            'amount_per_round' => 2.0, // 10 * 2 = 20
-            'amount_min' => null,
-            'amount_max' => null,
-        ]);
-        $donation2 = new Donation([
-            'amount_per_round' => 5.0, // 10 * 5 = 50 (within 30..70)
-            'amount_min' => 30.0,
-            'amount_max' => 70.0,
-        ]);
-
-        // Preload relation to avoid DB inside the service
-        $athlete->setRelation('donations', collect([$donation1, $donation2]));
-
-        $total = $service->calculateEstimatedTotalForAthlete($athlete);
-
-        expect($total)->toBe(70.00);
-    });
-});
-
-// Group: calculateActualTotalForAthlete
-
-describe('calculateActualTotalForAthlete', function () {
-    it('sums actual amounts across preloaded donations without hitting DB', function (): void {
-        $service = app(DonationService::class);
-        $athlete = new Athlete;
-        $athlete->rounds_done = 12;
-
-        $donation1 = new Donation([
-            'amount_per_round' => 2.0, // 12 * 2 = 24
-            'amount_min' => null,
-            'amount_max' => 30.0, // cap not hit
-        ]);
-        $donation2 = new Donation([
-            'amount_per_round' => 1.0, // 12 * 1 = 12 -> min 30 applies
-            'amount_min' => 30.0,
-            'amount_max' => null,
-        ]);
-
-        $athlete->setRelation('donations', collect([$donation1, $donation2]));
-
-        $total = $service->calculateActualTotalForAthlete($athlete);
-
-        expect($total)->toBe(54.00);
-    });
-});
-
 // DB-backed aggregate methods
 
 describe('calculateEstimatedTotal', function () {

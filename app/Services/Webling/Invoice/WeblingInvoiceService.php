@@ -128,6 +128,9 @@ class WeblingInvoiceService
     /**
      * Retrieve an invoice by ID.
      */
+    // Temporarily unused in active flows; kept for upcoming Webling sync operations.
+    // TODO(dead-code): Remove ignore when get-by-id flow is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function getInvoice(int $id): Response
     {
         return $this->api->get('debitor/'.$id);
@@ -138,6 +141,9 @@ class WeblingInvoiceService
      *
      * @param  array<string,mixed>  $data  Invoice payload updates
      */
+    // Temporarily unused in active flows; kept for upcoming Webling sync operations.
+    // TODO(dead-code): Remove ignore when invoice update flow is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function updateInvoice(int $id, array $data): Response
     {
         return $this->api->put('debitor/'.$id, $data);
