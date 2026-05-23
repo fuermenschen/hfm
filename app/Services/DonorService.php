@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Models\DonationEvent;
+use App\Models\ExternalUser;
+use Illuminate\Database\Eloquent\Builder;
+
+class DonorService
+{
+    public function all(): Builder
+    {
+        return $this->baseQuery();
+    }
+
+    // TODO(refactor-external-user): Wire forEvent into production consumers after donor model migration lands.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function forEvent(DonationEvent|int $event): Builder
+    {
+        $eventId = $event instanceof DonationEvent ? $event->id : $event;
+
+        return $this->forEvents([$eventId]);
+    }
+
+    public function forEvents(iterable $events): Builder
+    {
+        $eventIds = $this->normalizeEventIds($events);
+
+        if ($eventIds === []) {
+            return $this->baseQuery()->whereRaw('1 = 0');
+        }
+
+        return $this->baseQuery()->whereHas('donationsAsDonor', function (Builder $donations) use ($eventIds): void {
+            $donations->whereHas('athleteRegistration', function (Builder $registration) use ($eventIds): void {
+                $registration->whereIn('donation_event_id', $eventIds);
+            });
+        });
+    }
+
+    // TODO(refactor-external-user): Replace legacy donor counts with DonorService::count in dashboard/reporting.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function count(): int
+    {
+        return (int) $this->all()->count();
+    }
+
+    protected function baseQuery(): Builder
+    {
+        return ExternalUser::query()
+            ->select('external_users.*')
+            ->whereHas('donationsAsDonor')
+            ->distinct();
+    }
+
+    /**
+     * @param  iterable<mixed>  $events
+     * @return array<int, int>
+     */
+    protected function normalizeEventIds(iterable $events): array
+    {
+        $eventIds = [];
+
+        foreach ($events as $event) {
+            if ($event instanceof DonationEvent) {
+                $eventIds[] = (int) $event->id;
+
+                continue;
+            }
+
+            if (is_int($event)) {
+                $eventIds[] = $event;
+
+                continue;
+            }
+
+            if (is_string($event) && is_numeric($event)) {
+                $eventIds[] = (int) $event;
+            }
+        }
+
+        return array_values(array_unique(array_filter($eventIds, fn (int $eventId): bool => $eventId > 0)));
+    }
+}

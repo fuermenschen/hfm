@@ -51,7 +51,7 @@ class AthleteDetails extends Component
         $donations = Donation::query()->where('athlete_id', $athlete->id)->with('donor')->get();
         $this->donations = $donations->map(function ($donation): array {
             return [
-                'donor' => $donation->donor->privacy_name,
+                'donor' => $donation->donor->privacy_name ?? 'Legacy Spender:in',
                 'amount_per_round' => $donation->amount_per_round,
                 'amount_min' => $donation->amount_min,
                 'amount_max' => $donation->amount_max,

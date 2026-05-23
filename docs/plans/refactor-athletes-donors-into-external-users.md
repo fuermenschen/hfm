@@ -126,6 +126,7 @@ PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime 
 - [ ] Enforce NOT NULL on `donations.donor_external_user_id` and `donations.athlete_registration_id`.
 - [ ] Ensure delete rule for `donations.donor_external_user_id` is `RESTRICT`.
 - [ ] Ensure delete rule for `donations.athlete_registration_id` is `RESTRICT`.
+- [x] Remove NOT NULL constraint on legacy donation columns `donor_id`, `athlete_id`.
 - [ ] Remove legacy donation columns `donor_id`, `athlete_id`.
 - [ ] Drop legacy tables `athletes`, `donors`.
 - [ ] Remove legacy models `Athlete`, `Donor`.

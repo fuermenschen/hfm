@@ -23,8 +23,8 @@ class CollectDonorInvoiceDataAction
             $lineTotal = $this->applyMinMax($subtotal, $donation->amount_min, $donation->amount_max);
 
             $lines[] = [
-                'athlete' => $donation->athlete->privacy_name,
-                'partner' => $donation->athlete->partner?->name,
+                'athlete' => $donation->athlete->privacy_name ?? 'Legacy Sportler:in',
+                'partner' => $donation->athlete?->partner?->name,
                 'rounds' => $rounds,
                 'amount_per_round' => round($perRound, 2),
                 'subtotal' => round($subtotal, 2),

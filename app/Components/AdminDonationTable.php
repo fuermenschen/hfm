@@ -157,8 +157,8 @@ class AdminDonationTable extends AbstractDatatableComponent
     protected function exportRow(Donation $donation): array
     {
         return [
-            'Spender:in' => $donation->donor->privacy_name,
-            'Sportler:in' => $donation->athlete->privacy_name,
+            'Spender:in' => $donation->donor->privacy_name ?? 'Legacy Spender:in',
+            'Sportler:in' => $donation->athlete->privacy_name ?? 'Legacy Sportler:in',
             'Bestätigt' => $donation->verified ? 'Ja' : 'Nein',
             'Betrag pro Runde' => $donation->amount_per_round,
             'Geschätzter Betrag' => $this->estimatedAmount($donation),

@@ -33,6 +33,7 @@ parameters:
         - .ai/
         - .github/
         - bootstrap/cache/
+        - database/factories/
         - docker/
         - docs/
         - e2e/
@@ -72,7 +73,6 @@ services:
         class: App\Support\DeadCode\ServiceConstructorInjectionUsageProvider
         tags:
             - shipmonk.deadCode.memberUsageProvider
-
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'
 #

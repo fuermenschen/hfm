@@ -99,7 +99,6 @@ class DatabaseSeeder extends Seeder
             Donation::factory()
                 ->forDonorExternalUser($donorId)
                 ->forAthleteRegistration($registrationId)
-                ->legacyLinked()
                 ->create();
         }
     }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\AthleteRegistration;
+use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -43,5 +46,46 @@ class ExternalUserFactory extends Factory
             'phone_number' => $phoneNumber,
             'email' => fake()->unique()->safeEmail(),
         ];
+    }
+
+    /**
+     * Model this external user as a donor: creates one donation linked via donor_external_user_id.
+     *
+     * @param  array<string, mixed>  $donationAttributes  Extra attributes merged onto the donation.
+     */
+    public function asDonor(DonationEvent|int|null $event = null, array $donationAttributes = []): static
+    {
+        return $this->afterCreating(function (ExternalUser $externalUser) use ($event, $donationAttributes): void {
+            $registrationAttributes = ['external_user_id' => ExternalUser::factory()->create()->id];
+
+            if ($event !== null) {
+                $registrationAttributes['donation_event_id'] = $event instanceof DonationEvent ? $event->id : $event;
+            }
+
+            $registration = AthleteRegistration::factory()->create($registrationAttributes);
+
+            Donation::factory()
+                ->forDonorExternalUser($externalUser)
+                ->forAthleteRegistration($registration)
+                ->create($donationAttributes);
+        });
+    }
+
+    /**
+     * Model this external user as an athlete: creates one athlete registration linked via external_user_id.
+     *
+     * @param  array<string, mixed>  $registrationAttributes  Extra attributes merged onto the registration.
+     */
+    public function asAthlete(DonationEvent|int|null $event = null, array $registrationAttributes = []): static
+    {
+        return $this->afterCreating(function (ExternalUser $externalUser) use ($event, $registrationAttributes): void {
+            $base = ['external_user_id' => $externalUser->id];
+
+            if ($event !== null) {
+                $base['donation_event_id'] = $event instanceof DonationEvent ? $event->id : $event;
+            }
+
+            AthleteRegistration::factory()->create(array_merge($base, $registrationAttributes));
+        });
     }
 }

@@ -152,8 +152,8 @@ class GetDashboardDataAction
         foreach ($recentDonations as $donation) {
             $activities[] = [
                 'type' => 'donation',
-                'name' => $donation->donor->privacy_name,
-                'name2' => $donation->athlete->privacy_name,
+                'name' => $donation->donor->privacy_name ?? 'Legacy Spender:in',
+                'name2' => $donation->athlete->privacy_name ?? 'Legacy Sportler:in',
                 'created_at' => $donation->created_at,
             ];
         }

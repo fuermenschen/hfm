@@ -42,7 +42,7 @@ class DonorDetails extends Component
                 // show a success message
                 Flux::toast(
                     heading: 'Spende bestätigt!',
-                    text: 'Deine Spende für '.$donation->athlete->privacy_name.' wurde bestätigt. Vielen Dank!',
+                    text: 'Deine Spende für '.($donation->athlete->privacy_name ?? 'Legacy Sportler:in').' wurde bestätigt. Vielen Dank!',
                     variant: 'success',
                 );
             }
@@ -51,12 +51,12 @@ class DonorDetails extends Component
         $donations = Donation::query()->where('donor_id', $this->donor->id)->with('athlete')->get();
         $this->donations = $donations->map(function ($donation): array {
             return [
-                'athlete' => $donation->athlete->privacy_name,
-                'public_id' => $donation->athlete->public_id_string,
+                'athlete' => $donation->athlete->privacy_name ?? 'Legacy Sportler:in',
+                'public_id' => $donation->athlete?->public_id_string,
                 'amount_per_round' => $donation->amount_per_round,
                 'amount_min' => $donation->amount_min,
                 'amount_max' => $donation->amount_max,
-                'rounds_estimated' => $donation->athlete->rounds_estimated,
+                'rounds_estimated' => $donation->athlete?->rounds_estimated,
             ];
         });
     }
