@@ -40,7 +40,6 @@ class DonorService
     }
 
     // TODO(refactor-external-user): Replace legacy donor counts with DonorService::count in dashboard/reporting.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function count(): int
     {
         return (int) $this->all()->count();

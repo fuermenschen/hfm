@@ -3,7 +3,7 @@
 use App\Components\Results;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donor;
+use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use Livewire\Livewire;
@@ -45,13 +45,13 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'partner_id' => $c->id,
     ]);
 
-    // Create donors and donations
-    $donor1 = Donor::factory()->create();
-    $donor2 = Donor::factory()->create();
-    $donor3 = Donor::factory()->create();
+    // Create donor identities and donations
+    $donor1 = ExternalUser::factory()->create();
+    $donor2 = ExternalUser::factory()->create();
+    $donor3 = ExternalUser::factory()->create();
 
     Donation::create([
-        'donor_id' => $donor1->id,
+        'donor_external_user_id' => $donor1->id,
         'athlete_id' => $athleteEqual->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
@@ -59,7 +59,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'comment' => null,
     ]);
     Donation::create([
-        'donor_id' => $donor2->id,
+        'donor_external_user_id' => $donor2->id,
         'athlete_id' => $athleteB->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
@@ -67,7 +67,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
         'comment' => null,
     ]);
     Donation::create([
-        'donor_id' => $donor3->id,
+        'donor_external_user_id' => $donor3->id,
         'athlete_id' => $athleteC->id,
         'amount_per_round' => 5.0,
         'amount_max' => null,
@@ -109,4 +109,45 @@ it('does not expose single athlete results anymore', function () {
         ->assertDontSee('Einzelresultate')
         ->assertDontSee($three->privacy_name)
         ->assertDontSee($zero->privacy_name);
+});
+
+it('counts unique donors via external user identities', function () {
+    $partner = Partner::create(['name' => 'Partner X']);
+    $sportType = SportType::create(['name' => 'Run']);
+
+    $athleteOne = Athlete::factory()->create([
+        'rounds_done' => 3,
+        'sport_type_id' => $sportType->id,
+        'partner_id' => $partner->id,
+    ]);
+    $athleteTwo = Athlete::factory()->create([
+        'rounds_done' => 2,
+        'sport_type_id' => $sportType->id,
+        'partner_id' => $partner->id,
+    ]);
+
+    $donor = ExternalUser::factory()->create();
+
+    Donation::create([
+        'donor_external_user_id' => $donor->id,
+        'athlete_id' => $athleteOne->id,
+        'amount_per_round' => 5.0,
+        'amount_max' => null,
+        'amount_min' => null,
+        'comment' => null,
+    ]);
+
+    Donation::create([
+        'donor_external_user_id' => $donor->id,
+        'athlete_id' => $athleteTwo->id,
+        'amount_per_round' => 10.0,
+        'amount_max' => null,
+        'amount_min' => null,
+        'comment' => null,
+    ]);
+
+    Livewire::test(Results::class)
+        ->assertStatus(200)
+        ->assertSee('Spender:innen')
+        ->assertSee('1');
 });

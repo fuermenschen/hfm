@@ -3,7 +3,7 @@
 use App\Actions\GetDashboardDataAction;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donor;
+use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 
@@ -27,11 +27,11 @@ it('builds dashboard data with expected aggregates', function (): void {
         'verified' => false,
     ]);
 
-    $donorOne = Donor::factory()->create();
-    $donorTwo = Donor::factory()->create();
+    $donorOne = ExternalUser::factory()->create();
+    $donorTwo = ExternalUser::factory()->create();
 
     $firstDonation = Donation::query()->create([
-        'donor_id' => $donorOne->id,
+        'donor_external_user_id' => $donorOne->id,
         'athlete_id' => $athleteOne->id,
         'amount_per_round' => 2.0,
         'amount_min' => null,
@@ -40,7 +40,7 @@ it('builds dashboard data with expected aggregates', function (): void {
     $firstDonation->forceFill(['verified' => true])->save();
 
     $secondDonation = Donation::query()->create([
-        'donor_id' => $donorTwo->id,
+        'donor_external_user_id' => $donorTwo->id,
         'athlete_id' => $athleteTwo->id,
         'amount_per_round' => 1.0,
         'amount_min' => 10.0,

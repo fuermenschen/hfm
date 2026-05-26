@@ -6,14 +6,18 @@ namespace App\Actions;
 
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donor;
+use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Services\DonationService;
+use App\Services\DonorService;
 use Illuminate\Support\Collection;
 
 class GetDashboardDataAction
 {
-    public function __construct(public DonationService $donationService) {}
+    public function __construct(
+        public DonationService $donationService,
+        public DonorService $donorService,
+    ) {}
 
     /**
      * @return array{
@@ -45,7 +49,7 @@ class GetDashboardDataAction
             ->get();
 
         $athleteCount = (int) Athlete::query()->count();
-        $donorCount = (int) Donor::query()->count();
+        $donorCount = $this->donorService->count();
         $donationCount = (int) Donation::query()->count();
 
         $verifiedAthleteCount = (int) Athlete::query()->where('verified', true)->count();
@@ -115,7 +119,7 @@ class GetDashboardDataAction
             ->limit(30)
             ->get(['id', 'first_name', 'last_name', 'created_at']);
 
-        $recentDonors = Donor::query()
+        $recentDonors = $this->donorService->all()
             ->where('created_at', '>=', $sevenDaysAgo)
             ->latest()
             ->limit(30)
@@ -124,12 +128,12 @@ class GetDashboardDataAction
         $recentDonations = Donation::query()
             ->where('created_at', '>=', $sevenDaysAgo)
             ->with([
-                'donor:id,first_name,last_name',
+                'donorExternalUser:id,first_name,last_name',
                 'athlete:id,first_name,last_name',
             ])
             ->latest()
             ->limit(30)
-            ->get(['id', 'donor_id', 'athlete_id', 'created_at']);
+            ->get(['id', 'donor_external_user_id', 'athlete_id', 'created_at']);
 
         $activities = [];
 
@@ -142,6 +146,7 @@ class GetDashboardDataAction
         }
 
         foreach ($recentDonors as $donor) {
+            /** @var ExternalUser $donor */
             $activities[] = [
                 'type' => 'donor',
                 'name' => $donor->privacy_name,
@@ -152,12 +157,13 @@ class GetDashboardDataAction
         foreach ($recentDonations as $donation) {
             $activities[] = [
                 'type' => 'donation',
-                'name' => $donation->donor->privacy_name ?? 'Legacy Spender:in',
+                'name' => $donation->donorPrivacyName(),
                 'name2' => $donation->athlete->privacy_name ?? 'Legacy Sportler:in',
                 'created_at' => $donation->created_at,
             ];
         }
 
+        /** @var array<int, array{type: string, name: string, created_at: mixed, name2?: string}> $activities */
         usort($activities, function (array $a, array $b): int {
             return $a['created_at'] <=> $b['created_at'];
         });

@@ -4,7 +4,6 @@ use App\Components\AdminDonationTable;
 use App\Components\AdminExternalUserTable;
 use App\Models\Athlete;
 use App\Models\Donation;
-use App\Models\Donor;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
@@ -52,10 +51,10 @@ it('exports selected donations as csv', function (): void {
         'partner_id' => $partner->id,
     ]);
 
-    $donor = Donor::factory()->create();
+    $donor = ExternalUser::factory()->create();
 
     $donation = Donation::query()->create([
-        'donor_id' => $donor->id,
+        'donor_external_user_id' => $donor->id,
         'athlete_id' => $athlete->id,
         'amount_per_round' => 10,
         'amount_max' => 100,

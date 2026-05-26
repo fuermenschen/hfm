@@ -63,7 +63,7 @@
                             <flux:table.cell class="{{ $cellClass }}">
                                 @switch($columnKey)
                                     @case('donor')
-                                        {{ $donation->donor?->privacy_name ?? 'Legacy Spender:in' }}
+                                        {{ $donation->donorPrivacyName() }}
                                         @break
 
                                     @case('athlete')

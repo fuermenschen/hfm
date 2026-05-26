@@ -65,9 +65,6 @@ class Athlete extends Model
 
         static::creating(function ($athlete) {
             $athlete->public_id = $athlete->generatePublicId();
-
-            // Generate login token before first save to avoid an extra update query
-            $athlete->generateLoginToken(false);
         });
 
         static::created(function ($athlete) {
@@ -148,40 +145,6 @@ class Athlete extends Model
     public function idExists(int $token): bool
     {
         return Athlete::query()->where('public_id', $token)->exists();
-    }
-
-    // Athlete model scheduled for removal; suppress dead-code noise until cleanup.
-    // TODO(dead-code): Remove ignores when Athlete domain removal lands.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
-    public function generateLoginToken(bool $persist = true): void
-    {
-        // return if token is non empty
-        if (! empty($this->login_token)) {
-            return;
-        }
-
-        $token = bin2hex(random_bytes(32));
-
-        if ($this->tokenExists($token)) {
-            $this->generateLoginToken($persist);
-
-            return;
-        }
-
-        $this->login_token = $token;
-
-        if ($persist && $this->exists) {
-            $this->save();
-        }
-    }
-
-    public function tokenExists(string $token): bool
-    {
-        if (Athlete::query()->where('login_token', $token)->exists()) {
-            return true;
-        }
-
-        return (bool) Donor::query()->where('login_token', $token)->exists();
     }
 
     public function donations(): HasMany

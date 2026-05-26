@@ -35,6 +35,8 @@ class WeblingInvoiceService
      *
      * @param  null|string|array<int,array{0:string,1:string,2:mixed}>|array<string,mixed>  $filter
      */
+    // TODO(dead-code): Remove ignore when donor_event_invoices status sync is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function index(null|string|array $filter = null): Response
     {
         if ($filter === null) {

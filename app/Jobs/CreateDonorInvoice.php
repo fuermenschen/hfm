@@ -4,23 +4,29 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Models\Donor;
+use App\Models\ExternalUser;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Bus;
 
 class CreateDonorInvoice implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public Donor $donor) {}
+    // @phpstan-ignore-next-line shipmonk.deadProperty.neverRead
+    public function __construct(public ExternalUser $externalUser) {}
 
-    public function handle(): void
-    {
-        // Orchestrate sequentially via the bus: first create debitor, then generate the letter PDF
-        Bus::chain([
-            new CreateDonorInvoiceDebitor($this->donor),
-            new CreateDonorInvoiceLetter($this->donor),
-        ])->onConnection('sync')->dispatch();
-    }
+    /**
+     * TODO(refactor-external-user):
+     * Replace donor-bound orchestration with donor_event_invoices workflow (GH-134).
+     *
+     * Keep orchestration pattern from legacy flow:
+     * `Bus::chain([new CreateDonorInvoiceDebitor(...), new CreateDonorInvoiceLetter(...)])->onConnection('sync')->dispatch();`
+     *
+     * Pseudo code:
+     * - Resolve event-scoped invoice aggregate.
+     * - Keep sequential chain order: debitor creation before letter generation.
+     * - Keep explicit sync connection for deterministic inline behavior where needed.
+     * - Dispatch chain through Bus facade.
+     */
+    public function handle(): void {}
 }

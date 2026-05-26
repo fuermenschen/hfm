@@ -12,9 +12,12 @@ class DonationRegistered extends Notification
 {
     use Queueable;
 
+    // TODO(refactor-external-user): Rewire notification dispatch from donation-created event on external-user flow.
+
     /**
      * Create a new notification instance.
      */
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(
         public readonly string $first_name,
         public readonly string $athlete_name,

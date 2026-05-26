@@ -24,7 +24,6 @@ class DonationFactory extends Factory
     public function definition(): array
     {
         return [
-            'donor_id' => null,
             'athlete_id' => null,
             'donor_external_user_id' => ExternalUser::factory(),
             'athlete_registration_id' => AthleteRegistration::factory(),

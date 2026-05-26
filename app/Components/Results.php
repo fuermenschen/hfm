@@ -62,7 +62,7 @@ class Results extends Component
         // Totals (prefer in-memory where possible)
         $athletesCount = $allAthletes->count();
         $donorsCount = $allAthletes->flatMap->donations
-            ->pluck('donor_id')->filter()->unique()->count();
+            ->pluck('donor_external_user_id')->filter()->unique()->count();
         $roundsTotal = (int) ($allAthletes->sum('rounds_done') ?? 0);
         $elevationTotal = $roundsTotal * 50; // meters
 

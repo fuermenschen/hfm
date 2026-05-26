@@ -4,12 +4,10 @@ use App\Models\Athlete;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
-use App\Models\Donor;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
@@ -48,7 +46,6 @@ it('renders merged external user portal data grouped by donation event', functio
     ]);
 
     Donation::query()->create([
-        'donor_id' => Donor::factory()->create()->id,
         'athlete_id' => Athlete::factory()->create([
             'donation_event_id' => $eventA->id,
             'partner_id' => $partner->id,
@@ -77,7 +74,6 @@ it('renders merged external user portal data grouped by donation event', functio
     ]);
 
     Donation::query()->create([
-        'donor_id' => Donor::factory()->create()->id,
         'athlete_id' => Athlete::factory()->create([
             'donation_event_id' => $eventB->id,
             'partner_id' => $partner->id,
