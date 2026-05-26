@@ -9,7 +9,7 @@ use App\Models\ExternalUser;
 use App\Support\DonationEventIdParser;
 use Illuminate\Database\Eloquent\Builder;
 
-class DonorService
+class AthleteService
 {
     // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(private DonationEventIdParser $donationEventIdParser) {}
@@ -19,7 +19,6 @@ class DonorService
         return $this->baseQuery();
     }
 
-    // TODO(refactor-external-user): Wire forEvent into production consumers after donor model migration lands.
     // @phpstan-ignore-next-line shipmonk.deadMethod
     public function forEvent(DonationEvent|int $event): Builder
     {
@@ -36,24 +35,32 @@ class DonorService
             return $this->baseQuery()->whereRaw('1 = 0');
         }
 
-        return $this->baseQuery()->whereHas('donationsAsDonor', function (Builder $donations) use ($eventIds): void {
-            $donations->whereHas('athleteRegistration', function (Builder $registration) use ($eventIds): void {
-                $registration->whereIn('donation_event_id', $eventIds);
-            });
+        return $this->baseQuery()->whereHas('athleteRegistrations', function (Builder $registrations) use ($eventIds): void {
+            $registrations->whereIn('donation_event_id', $eventIds);
         });
     }
 
-    // TODO(refactor-external-user): Replace legacy donor counts with DonorService::count in dashboard/reporting.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function count(): int
     {
-        return (int) $this->all()->count();
+        return $this->all()->count();
+    }
+
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function verifiedCount(): int
+    {
+        return $this->baseQuery()
+            ->whereHas('athleteRegistrations', function (Builder $registrations): void {
+                $registrations->where('verified', true);
+            })
+            ->count();
     }
 
     protected function baseQuery(): Builder
     {
         return ExternalUser::query()
             ->select('external_users.*')
-            ->whereHas('donationsAsDonor')
+            ->whereHas('athleteRegistrations')
             ->distinct();
     }
 }
