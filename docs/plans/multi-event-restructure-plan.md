@@ -141,7 +141,7 @@ Highest-risk coupling: `rounds_done` on athlete breaks per-year results. Partner
 
 - [x] Add the new external identity schema and passwordless auth foundation without disrupting legacy reads
 - [x] Backfill legacy identities, participations, and donation links; then switch participant-facing reads to the new model
-- [ ] Remove legacy identity tables, token routes, and fallback code after validation
+- [x] Remove legacy identity tables, token routes, and fallback code after validation
 
 ### Phase 4 — Groups, portal UI, event-scoped routes
 
