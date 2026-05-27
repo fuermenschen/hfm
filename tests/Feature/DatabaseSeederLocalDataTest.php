@@ -10,6 +10,7 @@ use App\Models\Partner;
 use App\Services\CurrentDonationEventService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Cache;
+
 use function Pest\Laravel\seed;
 
 it('seeds local development graph with external users and two events', function (): void {

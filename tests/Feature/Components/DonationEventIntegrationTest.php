@@ -18,7 +18,7 @@ it('seeds canonical donation events idempotently', function (): void {
     expect(DonationEvent::query()->count())->toBe(2)
         ->and(DonationEvent::query()->orderBy('slug')->pluck('slug')->all())->toBe(['2025', '2026'])
         ->and(DonationEvent::query()->where('slug', '2026')->value('location_url'))->toBe('https://s.geo.admin.ch/yat5fpx761jk')
-        ->and((bool)DonationEvent::query()->where('slug', '2026')->value('is_published'))->toBeTrue()
+        ->and((bool) DonationEvent::query()->where('slug', '2026')->value('is_published'))->toBeTrue()
         ->and(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'hero.copy_md'))->not->toBeNull()
         ->and(data_get(DonationEvent::query()->where('slug', '2025')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull()
         ->and(data_get(DonationEvent::query()->where('slug', '2026')->firstOrFail()->content, 'faq.general_event_md'))->toBeNull();
