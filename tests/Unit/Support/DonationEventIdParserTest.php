@@ -22,10 +22,15 @@ it('normalizes event ids from mixed supported inputs', function (): void {
 });
 
 it('drops invalid, non-numeric, and non-positive values', function (): void {
+    $unsavedEvent = DonationEvent::factory()->make();
+
     $normalized = app(DonationEventIdParser::class)([
+        $unsavedEvent,
         null,
         '',
         'abc',
+        '1e3',
+        '12.5',
         0,
         -1,
         '0',

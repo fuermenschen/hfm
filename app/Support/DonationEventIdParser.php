@@ -18,7 +18,11 @@ class DonationEventIdParser
 
         foreach ($events as $event) {
             if ($event instanceof DonationEvent) {
-                $eventIds[] = $event->id;
+                $eventId = $event->getKey();
+
+                if (is_int($eventId)) {
+                    $eventIds[] = $eventId;
+                }
 
                 continue;
             }
@@ -29,7 +33,7 @@ class DonationEventIdParser
                 continue;
             }
 
-            if (is_string($event) && is_numeric($event)) {
+            if (is_string($event) && ctype_digit($event)) {
                 $eventIds[] = (int) $event;
             }
         }

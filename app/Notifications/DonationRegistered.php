@@ -42,7 +42,7 @@ class DonationRegistered extends Notification
             ->subject('Anmeldung als Spender:in für '.$this->athlete_name)
             ->greeting('Hallo '.$this->first_name)
             ->line(sprintf('Du hast dich als Spender:in für %s angemeldet.', $this->athlete_name))
-            ->line('Du kannst deinen Zugang jederzeit uber den Login-Bereich anfordern:')
+            ->line('Du kannst deinen Zugang jederzeit über den Login-Bereich anfordern:')
             ->action('Zum Login', route('login'))
             ->line('Vielen Dank für deine Unterstützung!');
     }

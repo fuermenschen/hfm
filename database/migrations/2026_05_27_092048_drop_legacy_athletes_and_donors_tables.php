@@ -41,9 +41,9 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('address');
-            $table->text('zip_code')->nullable();
+            $table->string('zip_code', 16);
             $table->string('city');
-            $table->string('country_of_residence', 2)->default('CH');
+            $table->string('country_of_residence', 2)->default('CH')->comment('ISO 3166-1 alpha-2 country code');
             $table->string('phone_number');
             $table->string('email');
             $table->string('login_token')->unique()->nullable();
