@@ -100,8 +100,6 @@ class ExternalUser extends Authenticatable
     {
         return [
             'uuid' => 'string',
-            'legacy_athlete_id' => 'integer',
-            'legacy_donor_id' => 'integer',
         ];
     }
 

@@ -123,24 +123,24 @@ PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime 
 
 ### Steps
 
-- [ ] Enforce NOT NULL on `donations.donor_external_user_id` and `donations.athlete_registration_id`.
-- [ ] Ensure delete rule for `donations.donor_external_user_id` is `RESTRICT`.
-- [ ] Ensure delete rule for `donations.athlete_registration_id` is `RESTRICT`.
+- [x] Enforce NOT NULL on `donations.donor_external_user_id` and `donations.athlete_registration_id`.
+- [x] Ensure delete rule for `donations.donor_external_user_id` is `RESTRICT`.
+- [x] Ensure delete rule for `donations.athlete_registration_id` is `RESTRICT`.
 - [x] Remove NOT NULL constraint on legacy donation columns `donor_id`, `athlete_id`.
-- [ ] Remove legacy donation columns `donor_id`, `athlete_id`.
-- [ ] Drop legacy tables `athletes`, `donors`.
+- [x] Remove legacy donation columns `donor_id`, `athlete_id`.
+- [x] Drop legacy tables `athletes`, `donors`.
 - [x] Remove legacy model `Athlete`.
 - [x] Remove legacy model `Donor`.
 - [x] Remove legacy token routes entirely (no transition redirects).
 - [x] Remove legacy login-token config keys.
-- [ ] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
+- [x] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
 - [x] Remove legacy `LoginForm` fallback paths.
 - [x] Remove `hfm:backfill:external-users` command and its tests
 - [x] Replace admin athlete/donor pages with one simple `external_users` admin datatable generated from `make:datatable`.
 - [x] Remove legacy admin athlete/donor routes, navigation entries, pages, and Livewire table components.
 - [x] Replace legacy donation, athlete-registration, and external-user factories with new-graph defaults.
-- [ ] Rewrite default local seeding with two events: one past event and one near-future active event, with external users, athlete registrations, and donations across both.
-- [ ] Seed or configure the near-future event as the active/current event for local development.
+- [x] Rewrite default local seeding with two events: one past event and one near-future active event, with external users, athlete registrations, and donations across both.
+- [x] Seed or configure the near-future event as the active/current event for local development.
 - [x] Keep public registration pages disabled; remove remaining legacy Livewire form dependencies only where needed for boot/static-search cleanliness.
 - [x] Disable printable athlete documents that still require legacy athlete token routes.
 - [x] Keep `AthleteRegistered` notification class as parked/reusable artifact for future external-user athlete relaunch.
@@ -152,23 +152,8 @@ PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime 
 ### Exit criteria
 
 - [x] Legacy token route paths return 404.
-- [ ] Application boots without runtime dependency on `athletes`, `donors`, `donor_id`, or `athlete_id` outside old migrations.
+- [x] Application boots without runtime dependency on `athletes`, `donors`, `donor_id`, or `athlete_id` outside old migrations.
 - [x] Admin navigation does not expose broken legacy-dependent actions.
 - [x] External passwordless login remains functional through shared login entry.
-- [ ] Static search finds legacy table/column references only in old migrations, historical plan text, or explicitly disabled code.
-- [ ] Local development seeding produces external users, athlete registrations, and donations for the current event.
-
----
-
-## Rollback and risk posture
-
-- [ ] PR1 is additive and low risk.
-- [ ] PR2 rollback path is read-switch revert to legacy reads if needed.
-- [ ] PR3 is clean break and should ship only after PR2 validations pass.
-
-## Out of scope for this refactor
-
-- [ ] Generic cross-environment dedupe engine.
-- [ ] New registration flows.
-- [ ] Group model and group-level sponsorship behavior.
-- [ ] Event-scoped donor invoices (`donor_event_invoices`) and active invoice workflows; tracked in GitHub issue #134.
+- [x] Static search finds legacy table/column references only in old migrations, historical plan text, or explicitly disabled code.
+- [x] Local development seeding produces external users, athlete registrations, and donations for the current event.
