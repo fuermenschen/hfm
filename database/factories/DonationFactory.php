@@ -51,4 +51,11 @@ class DonationFactory extends Factory
             'donor_external_user_id' => $externalUserId,
         ]);
     }
+
+    public function forPair(ExternalUser|int $donor, AthleteRegistration|int $registration): static
+    {
+        return $this
+            ->forDonorExternalUser($donor)
+            ->forAthleteRegistration($registration);
+    }
 }

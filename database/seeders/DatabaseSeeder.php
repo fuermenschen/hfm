@@ -38,9 +38,10 @@ class DatabaseSeeder extends Seeder
 
     protected function seedAdminUsers(): void
     {
-        User::query()->firstOrCreate(['email' => 'simon.moser@mailbox.org'], ['name' => 'Simon']);
-        User::query()->firstOrCreate(['email' => 'kaifrehner@gmail.com'], ['name' => 'Kai']);
-        User::query()->firstOrCreate(['email' => 'felix.moser@mailbox.org'], ['name' => 'Felix']);
+        User::query()->firstOrCreate(
+            ['email' => 'admin@hfm.test'],
+            User::factory()->localAdmin()->make()->toArray(),
+        );
     }
 
     protected function seedSportTypes(): void
@@ -59,19 +60,8 @@ class DatabaseSeeder extends Seeder
         $athletes2025 = $athleteOnlyUsers->random(7)->merge($dualRoleUsers->random(3));
         $athletes2026 = $athleteOnlyUsers->diff($athletes2025)->values()->merge($dualRoleUsers);
 
-        $registrations2025 = $athletes2025->map(fn (ExternalUser $externalUser): AthleteRegistration => AthleteRegistration::factory()
-            ->forExternalUser($externalUser)
-            ->forEvent($pastEvent)
-            ->withPartner()
-            ->verified()
-            ->create());
-
-        $registrations2026 = $athletes2026->map(fn (ExternalUser $externalUser): AthleteRegistration => AthleteRegistration::factory()
-            ->forExternalUser($externalUser)
-            ->forEvent($futureEvent)
-            ->withPartner()
-            ->verified()
-            ->create());
+        $registrations2025 = $this->createEventRegistrations($athletes2025, $pastEvent);
+        $registrations2026 = $this->createEventRegistrations($athletes2026, $futureEvent);
 
         $donorPool = $donorOnlyUsers->merge($dualRoleUsers)->values();
 
@@ -79,27 +69,39 @@ class DatabaseSeeder extends Seeder
         $this->createDonationsForEvent($registrations2026, $donorPool, 150);
     }
 
+    protected function createEventRegistrations(Collection $externalUsers, DonationEvent $event): Collection
+    {
+        return $externalUsers->map(fn (ExternalUser $externalUser): AthleteRegistration => AthleteRegistration::factory()
+            ->forVerifiedEventUser($event, $externalUser)
+            ->create());
+    }
+
+    /**
+     * @param  Collection<int, AthleteRegistration>  $registrations
+     * @param  Collection<int, ExternalUser>  $donorPool
+     */
     protected function createDonationsForEvent(Collection $registrations, Collection $donorPool, int $count): void
     {
-        $registrationIds = $registrations->pluck('id')->values();
-        $donorIds = $donorPool->pluck('id')->values();
-        $usedPairs = [];
+        $pairPool = $this->buildPairPool($registrations, $donorPool)->shuffle()->take($count);
 
-        while (count($usedPairs) < $count) {
-            $registrationId = (int) $registrationIds->random();
-            $donorId = (int) $donorIds->random();
-            $pairKey = $donorId.'-'.$registrationId;
+        $pairPool->each(function (array $pair): void {
+            Donation::factory()->forPair($pair['donor'], $pair['registration'])->create();
+        });
+    }
 
-            if (isset($usedPairs[$pairKey])) {
-                continue;
-            }
-
-            $usedPairs[$pairKey] = true;
-
-            Donation::factory()
-                ->forDonorExternalUser($donorId)
-                ->forAthleteRegistration($registrationId)
-                ->create();
-        }
+    /**
+     * @param  Collection<int, AthleteRegistration>  $registrations
+     * @param  Collection<int, ExternalUser>  $donorPool
+     * @return Collection<int, array{donor: ExternalUser, registration: AthleteRegistration}>
+     */
+    protected function buildPairPool(Collection $registrations, Collection $donorPool): Collection
+    {
+        return $donorPool
+            ->flatMap(fn (ExternalUser $donor): Collection => $registrations
+                ->map(fn (AthleteRegistration $registration): array => [
+                    'donor' => $donor,
+                    'registration' => $registration,
+                ]))
+            ->values();
     }
 }

@@ -70,4 +70,13 @@ class AthleteRegistrationFactory extends Factory
             'partner_id' => $partnerId,
         ]);
     }
+
+    public function forVerifiedEventUser(DonationEvent|int $event, ExternalUser|int $externalUser): static
+    {
+        return $this
+            ->forEvent($event)
+            ->forExternalUser($externalUser)
+            ->withPartner()
+            ->verified();
+    }
 }
