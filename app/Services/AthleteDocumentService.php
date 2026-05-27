@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Athlete;
+use App\Models\ExternalUser;
 use Barryvdh\DomPDF\PDF;
 
 class AthleteDocumentService
@@ -15,7 +15,7 @@ class AthleteDocumentService
     // Service currently has no production call site; kept for planned relaunch of athlete documents.
     // TODO(dead-code): Remove ignore when welcome letter flow is reintroduced.
     // @phpstan-ignore-next-line shipmonk.deadMethod
-    public function buildWelcomeLetter(Athlete $athlete): array
+    public function buildWelcomeLetter(ExternalUser $athlete): array
     {
         $filename = $athlete->first_name.'_'.$athlete->last_name.'_Willkommensbrief.pdf';
         /** @var PDF $pdf */
@@ -34,7 +34,7 @@ class AthleteDocumentService
     // Service currently has no production call site; kept for planned relaunch of athlete documents.
     // TODO(dead-code): Remove ignore when personalized flyer flow is reintroduced.
     // @phpstan-ignore-next-line shipmonk.deadMethod
-    public function buildPersonalizedFlyer(Athlete $athlete): array
+    public function buildPersonalizedFlyer(ExternalUser $athlete): array
     {
         $filename = $athlete->first_name.'_'.$athlete->last_name.'_Flyer.pdf';
         /** @var PDF $pdf */

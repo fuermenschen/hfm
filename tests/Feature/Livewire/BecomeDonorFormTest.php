@@ -1,9 +1,7 @@
 <?php
 
 use App\Components\BecomeDonorForm;
-use App\Models\Athlete;
-use App\Models\Partner;
-use App\Models\SportType;
+use App\Models\AthleteRegistration;
 use App\Notifications\AdminSomeoneRegistered;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;
@@ -71,13 +69,7 @@ it('validates ZIP per country', function (
     string $city,
     bool $valid
 ) {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     $test = Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', $country)
@@ -90,7 +82,7 @@ it('validates ZIP per country', function (
         ->set('phone_national', '0791234567')
         ->set('email', 'test-mail@fake.com')
         ->set('email_confirmation', 'test-mail@fake.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save');
@@ -103,13 +95,7 @@ it('validates ZIP per country', function (
 })->with('zip_validation_cases')->skip('Registrierung aktuell geschlossen.');
 
 it('persists selected country', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'DE')
@@ -122,7 +108,7 @@ it('persists selected country', function () {
         ->set('phone_national', '151 23456789')
         ->set('email', 'erika@example.de')
         ->set('email_confirmation', 'erika@example.de')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 10.0)
         ->set('privacy', true)
         ->call('save')
@@ -132,13 +118,7 @@ it('persists selected country', function () {
 })->skip('Registrierung aktuell geschlossen.');
 
 it('shows ZIP validation message in the UI when invalid', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
@@ -151,7 +131,7 @@ it('shows ZIP validation message in the UI when invalid', function () {
         ->set('phone_national', '079 123 45 67')
         ->set('email', 'jane.ui@example.com')
         ->set('email_confirmation', 'jane.ui@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save')
@@ -166,13 +146,7 @@ it('validates phone per country', function (
     string $city,
     bool $valid
 ) {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     $zip = match ($country) {
         'CH' => '8001',
@@ -194,7 +168,7 @@ it('validates phone per country', function (
         ->set('phone_national', $phone)
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save');
@@ -214,13 +188,7 @@ it('validates phone per country', function (
 
 // --- Added pragmatic, high-impact tests ---
 it('rejects email confirmation mismatch and does not persist', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
@@ -233,7 +201,7 @@ it('rejects email confirmation mismatch and does not persist', function () {
         ->set('phone_national', '0791234567')
         ->set('email', 'alex@example.com')
         ->set('email_confirmation', 'other@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save')
@@ -243,13 +211,7 @@ it('rejects email confirmation mismatch and does not persist', function () {
 })->skip('Registrierung aktuell geschlossen.');
 
 it('requires privacy acceptance', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     Livewire::test(BecomeDonorForm::class)
         ->set('country_of_residence', 'CH')
@@ -262,7 +224,7 @@ it('requires privacy acceptance', function () {
         ->set('phone_national', '0791234567')
         ->set('email', 'maya@example.com')
         ->set('email_confirmation', 'maya@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', false)
         ->call('save')
@@ -272,13 +234,7 @@ it('requires privacy acceptance', function () {
 })->skip('Registrierung aktuell geschlossen.');
 
 it('validates amount rules and boundaries', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     // below min boundary fails
     Livewire::test(BecomeDonorForm::class)
@@ -292,7 +248,7 @@ it('validates amount rules and boundaries', function () {
         ->set('phone_national', '0791234567')
         ->set('email', 'ben@example.com')
         ->set('email_confirmation', 'ben@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 0.04)
         ->set('privacy', true)
         ->call('save')
@@ -310,7 +266,7 @@ it('validates amount rules and boundaries', function () {
         ->set('phone_national', '0791234567')
         ->set('email', 'cara@example.com')
         ->set('email_confirmation', 'cara@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 0.05)
         ->set('amount_min', 10.0)
         ->set('amount_max', 50.0)
@@ -319,7 +275,7 @@ it('validates amount rules and boundaries', function () {
         ->assertHasNoErrors();
 
     expect(
-        $athlete->donations()
+        $athleteRegistration->donations()
             ->where('amount_per_round', 0.05)
             ->where('amount_min', 10.0)
             ->where('amount_max', 50.0)
@@ -338,7 +294,7 @@ it('validates amount rules and boundaries', function () {
         ->set('phone_national', '0791234567')
         ->set('email', 'dina@example.com')
         ->set('email_confirmation', 'dina@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('amount_min', 3.0)
         ->set('privacy', true)
@@ -357,7 +313,7 @@ it('validates amount rules and boundaries', function () {
         ->set('phone_national', '0791234567')
         ->set('email', 'evan@example.com')
         ->set('email_confirmation', 'evan@example.com')
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('amount_min', 10.0)
         ->set('amount_max', 5.0)
@@ -367,13 +323,7 @@ it('validates amount rules and boundaries', function () {
 })->skip('Registrierung aktuell geschlossen.');
 
 it('prevents duplicate donation for the same athlete', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     $email = 'dup@example.com';
 
@@ -389,7 +339,7 @@ it('prevents duplicate donation for the same athlete', function () {
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save')
@@ -409,7 +359,7 @@ it('prevents duplicate donation for the same athlete', function () {
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 7.0)
         ->set('privacy', true)
         ->call('save');
@@ -418,19 +368,8 @@ it('prevents duplicate donation for the same athlete', function () {
 })->skip('Registrierung aktuell geschlossen.');
 
 it('reuses donor across different athletes', function () {
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-
-    $athlete1 = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
-    $athlete2 = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistrationOne = AthleteRegistration::factory()->create();
+    $athleteRegistrationTwo = AthleteRegistration::factory()->create();
 
     $email = 'reuse@example.com';
 
@@ -446,7 +385,7 @@ it('reuses donor across different athletes', function () {
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete1->id)
+        ->set('athlete_registration_id', $athleteRegistrationOne->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save')
@@ -464,7 +403,7 @@ it('reuses donor across different athletes', function () {
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete2->id)
+        ->set('athlete_registration_id', $athleteRegistrationTwo->id)
         ->set('amount_per_round', 7.0)
         ->set('privacy', true)
         ->call('save')
@@ -476,13 +415,7 @@ it('reuses donor across different athletes', function () {
 it('sends admin notification only for first-time donors when enabled', function () {
     config(['app.send_notification_on_registration' => true]);
 
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     $email = 'notify@example.com';
 
@@ -497,7 +430,7 @@ it('sends admin notification only for first-time donors when enabled', function 
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save');
@@ -519,7 +452,7 @@ it('sends admin notification only for first-time donors when enabled', function 
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 6.0)
         ->set('privacy', true)
         ->call('save');
@@ -528,13 +461,7 @@ it('sends admin notification only for first-time donors when enabled', function 
 it('does not send admin notification when disabled', function () {
     config(['app.send_notification_on_registration' => false]);
 
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
-    $sport = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sport->id,
-        'verified' => true,
-    ]);
+    $athleteRegistration = AthleteRegistration::factory()->create();
 
     $email = 'no-notify@example.com';
 
@@ -549,7 +476,7 @@ it('does not send admin notification when disabled', function () {
         ->set('phone_national', '0791234567')
         ->set('email', $email)
         ->set('email_confirmation', $email)
-        ->set('athlete_id', $athlete->id)
+        ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.0)
         ->set('privacy', true)
         ->call('save')

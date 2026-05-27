@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\Athlete;
+use App\Models\ExternalUser;
 use App\Services\AthleteDocumentService;
 use Barryvdh\DomPDF\PDF;
 
 it('builds welcome letter payload with expected filename and paper format', function (): void {
-    $athlete = new Athlete([
+    $athlete = new ExternalUser([
         'first_name' => 'Anna',
         'last_name' => 'Muster',
     ]);
@@ -31,7 +31,7 @@ it('builds welcome letter payload with expected filename and paper format', func
 });
 
 it('builds personalized flyer payload with expected filename and paper format', function (): void {
-    $athlete = new Athlete([
+    $athlete = new ExternalUser([
         'first_name' => 'Anna',
         'last_name' => 'Muster',
     ]);

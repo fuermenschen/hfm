@@ -73,31 +73,17 @@
     />
 
     <span>
-    <flux:select wire:model.live="athlete_id" label="Meine Unterstützung geht an" autocomplete="off" @change="$wire.updateNames()" >
-        <option disabled value="0">Bitte wählen</option>
-        @if (!$athletes || sizeof($athletes) === 0)
-            <option disabled value="0">Keine Sportler:innen verfügbar</option>
-        @else
-            @foreach ($athletes as $athlete)
-                <option value="{{ $athlete['id'] }}">{{ $athlete['privacy_name'] }} ({{ $athlete['public_id_string'] }})
-                </option>
-            @endforeach
-        @endif
+    <flux:select wire:model.live="athlete_registration_id" label="Meine Unterstützung geht an" autocomplete="off" disabled>
+        <option selected value="0">Temporär deaktiviert</option>
     </flux:select>
-    @if ($athlete_id)
-        <span class="text-xs">Mit deiner Unterstützung für <strong>{{ $currentAthlete }}</strong> hilfst du, Spenden für
-            <strong>{{ $currentPartner }}</strong> zu sammeln. Danke!</span>
-    @endif
+    <span class="text-xs">Auswahl Sportler:in temporär deaktiviert, bis Donor-Form Refactor fertig ist.</span>
         </span>
 
     <span>
     <flux:input label="Dein Beitrag pro Runde" placeholder="7.25" wire:model.number.blur="amount_per_round" prefix="Fr."
                  type="number" step="0.01" autocomplete="off" required
     />
-    @if ($athlete_id)
-        <span class="text-xs"><strong>{{ $currentAthlete }}</strong> hat angegeben, ungefähr <strong>{{ $currentRounds }}</strong> Runden zu absolvieren.
-                </span>
-    @endif
+    <span class="text-xs">Runden-Hinweis folgt nach Refactor auf AthleteRegistration.</span>
         </span>
 
     <span>

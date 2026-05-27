@@ -40,13 +40,11 @@ class AthleteService
         });
     }
 
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function count(): int
     {
         return $this->all()->count();
     }
 
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function verifiedCount(): int
     {
         return $this->baseQuery()

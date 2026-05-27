@@ -1,13 +1,13 @@
 <?php
 
-use App\Models\Athlete;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Services\DonationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 
@@ -26,30 +26,30 @@ dataset('amount_cases', [
 describe('calculateEstimatedAmount', function () {
     it('computes estimated amount with min/max caps applied', function (int $rounds, float $perRound, ?float $min, ?float $max, float $expected): void {
         $service = app(DonationService::class);
-        $athlete = new Athlete(['rounds_estimated' => $rounds]);
+        $athleteRegistration = new AthleteRegistration(['rounds_estimated' => $rounds]);
         $donation = new Donation([
             'amount_per_round' => $perRound,
             'amount_min' => $min,
             'amount_max' => $max,
         ]);
-        $donation->setRelation('athlete', $athlete);
+        $donation->setRelation('athleteRegistration', $athleteRegistration);
 
         expect($service->calculateEstimatedAmount($donation))->toBe(round($expected, 2));
     })->with('amount_cases');
 
     it('respects both min and max changing with athlete rounds', function (): void {
         $service = app(DonationService::class);
-        $athlete = new Athlete(['rounds_estimated' => 5]);
+        $athleteRegistration = new AthleteRegistration(['rounds_estimated' => 5]);
         $donation = new Donation([
             'amount_per_round' => 10.0, // subtotal = 50
             'amount_min' => 60.0,
             'amount_max' => 80.0,
         ]);
-        $donation->setRelation('athlete', $athlete);
+        $donation->setRelation('athleteRegistration', $athleteRegistration);
 
         expect($service->calculateEstimatedAmount($donation))->toBe(60.00);
 
-        $athlete->rounds_estimated = 20; // subtotal = 200 -> capped at max
+        $athleteRegistration->rounds_estimated = 20; // subtotal = 200 -> capped at max
         expect($service->calculateEstimatedAmount($donation))->toBe(80.00);
     });
 });
@@ -59,14 +59,13 @@ describe('calculateEstimatedAmount', function () {
 describe('calculateActualAmount', function () {
     it('computes actual amount with min/max caps applied', function (int $rounds, float $perRound, ?float $min, ?float $max, float $expected): void {
         $service = app(DonationService::class);
-        $athlete = new Athlete;
-        $athlete->rounds_done = $rounds;
+        $athleteRegistration = new AthleteRegistration(['rounds_done' => $rounds]);
         $donation = new Donation([
             'amount_per_round' => $perRound,
             'amount_min' => $min,
             'amount_max' => $max,
         ]);
-        $donation->setRelation('athlete', $athlete);
+        $donation->setRelation('athleteRegistration', $athleteRegistration);
 
         expect($service->calculateActualAmount($donation))->toBe(round($expected, 2));
     })->with('amount_cases');
@@ -77,36 +76,45 @@ describe('calculateActualAmount', function () {
 describe('calculateEstimatedTotal', function () {
     it('sums estimated amounts across all donations in the DB', function (): void {
         $service = app(DonationService::class);
-        Notification::fake();
+        $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
         $partner = Partner::create(['name' => 'P1']);
         $donor1 = ExternalUser::factory()->create(['email' => 'd1@example.com']);
         $donor2 = ExternalUser::factory()->create(['email' => 'd2@example.com']);
         $donor3 = ExternalUser::factory()->create(['email' => 'd3@example.com']);
 
-        // Athletes
-        $a1 = Athlete::create([
-            'first_name' => 'A', 'last_name' => 'One', 'address' => 'X', 'zip_code' => 1000,
-            'city' => 'City', 'phone_number' => '0', 'email' => 'a1@example.com', 'adult' => 1,
-            'sport_type_id' => $sport->id, 'partner_id' => $partner->id, 'rounds_estimated' => 10,
+        $a1 = ExternalUser::factory()->create(['email' => 'a1@example.com']);
+        $a2 = ExternalUser::factory()->create(['email' => 'a2@example.com']);
+        $a3 = ExternalUser::factory()->create(['email' => 'a3@example.com']);
+
+        $r1 = AthleteRegistration::factory()->create([
+            'external_user_id' => $a1->id,
+            'donation_event_id' => $event->id,
+            'sport_type_id' => $sport->id,
+            'partner_id' => $partner->id,
+            'rounds_estimated' => 10,
         ]);
-        $a2 = Athlete::create([
-            'first_name' => 'B', 'last_name' => 'Two', 'address' => 'X', 'zip_code' => 1000,
-            'city' => 'City', 'phone_number' => '0', 'email' => 'a2@example.com', 'adult' => 1,
-            'sport_type_id' => $sport->id, 'partner_id' => $partner->id, 'rounds_estimated' => 5,
+        $r2 = AthleteRegistration::factory()->create([
+            'external_user_id' => $a2->id,
+            'donation_event_id' => $event->id,
+            'sport_type_id' => $sport->id,
+            'partner_id' => $partner->id,
+            'rounds_estimated' => 5,
         ]);
-        $a3 = Athlete::create([
-            'first_name' => 'C', 'last_name' => 'Three', 'address' => 'X', 'zip_code' => 1000,
-            'city' => 'City', 'phone_number' => '0', 'email' => 'a3@example.com', 'adult' => 1,
-            'sport_type_id' => $sport->id, 'partner_id' => $partner->id, 'rounds_estimated' => 50,
+        $r3 = AthleteRegistration::factory()->create([
+            'external_user_id' => $a3->id,
+            'donation_event_id' => $event->id,
+            'sport_type_id' => $sport->id,
+            'partner_id' => $partner->id,
+            'rounds_estimated' => 50,
         ]);
 
         // Donations with caps to exercise min/max
-        Donation::create(['donor_external_user_id' => $donor1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 10*2=20
-        Donation::create(['donor_external_user_id' => $donor2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 3.0, 'amount_min' => 20.0, 'amount_max' => null, 'comment' => null]); // 5*3=15 -> 20 (min)
-        Donation::create(['donor_external_user_id' => $donor3->id, 'athlete_id' => $a3->id, 'amount_per_round' => 1.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 50*1=50 -> 30 (max)
+        Donation::create(['donor_external_user_id' => $donor1->id, 'athlete_registration_id' => $r1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 10*2=20
+        Donation::create(['donor_external_user_id' => $donor2->id, 'athlete_registration_id' => $r2->id, 'amount_per_round' => 3.0, 'amount_min' => 20.0, 'amount_max' => null, 'comment' => null]); // 5*3=15 -> 20 (min)
+        Donation::create(['donor_external_user_id' => $donor3->id, 'athlete_registration_id' => $r3->id, 'amount_per_round' => 1.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 50*1=50 -> 30 (max)
 
-        $donations = Donation::query()->with('athlete')->get();
+        $donations = Donation::query()->with('athleteRegistration')->get();
         $total = $service->calculateEstimatedTotal($donations);
 
         expect($total)->toBe(70.00);
@@ -116,32 +124,34 @@ describe('calculateEstimatedTotal', function () {
 describe('calculateActualTotal', function () {
     it('sums actual amounts across all donations in the DB', function (): void {
         $service = app(DonationService::class);
-        Notification::fake();
+        $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
         $partner = Partner::create(['name' => 'P1']);
         $d1 = ExternalUser::factory()->create(['email' => 'da1@example.com']);
         $d2 = ExternalUser::factory()->create(['email' => 'da2@example.com']);
 
-        $a1 = Athlete::create([
-            'first_name' => 'AA', 'last_name' => 'One', 'address' => 'X', 'zip_code' => 1000,
-            'city' => 'City', 'phone_number' => '0', 'email' => 'aa1@example.com', 'adult' => 1,
-            'sport_type_id' => $sport->id, 'partner_id' => $partner->id, 'rounds_estimated' => 0,
+        $a1 = ExternalUser::factory()->create(['email' => 'aa1@example.com']);
+        $a2 = ExternalUser::factory()->create(['email' => 'aa2@example.com']);
+
+        $r1 = AthleteRegistration::factory()->create([
+            'external_user_id' => $a1->id,
+            'donation_event_id' => $event->id,
+            'sport_type_id' => $sport->id,
+            'partner_id' => $partner->id,
+            'rounds_done' => 12,
         ]);
-        $a1->rounds_done = 12; // persisted below
-        $a1->save();
-
-        $a2 = Athlete::create([
-            'first_name' => 'BB', 'last_name' => 'Two', 'address' => 'X', 'zip_code' => 1000,
-            'city' => 'City', 'phone_number' => '0', 'email' => 'aa2@example.com', 'adult' => 1,
-            'sport_type_id' => $sport->id, 'partner_id' => $partner->id, 'rounds_estimated' => 0,
+        $r2 = AthleteRegistration::factory()->create([
+            'external_user_id' => $a2->id,
+            'donation_event_id' => $event->id,
+            'sport_type_id' => $sport->id,
+            'partner_id' => $partner->id,
+            'rounds_done' => 1,
         ]);
-        $a2->rounds_done = 1;
-        $a2->save();
 
-        Donation::create(['donor_external_user_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
-        Donation::create(['donor_external_user_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10 (min)
+        Donation::create(['donor_external_user_id' => $d1->id, 'athlete_registration_id' => $r1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
+        Donation::create(['donor_external_user_id' => $d2->id, 'athlete_registration_id' => $r2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10 (min)
 
-        $donations = Donation::query()->with('athlete')->get();
+        $donations = Donation::query()->with('athleteRegistration')->get();
         $total = $service->calculateActualTotal($donations);
 
         expect($total)->toBe(34.00);
@@ -151,7 +161,7 @@ describe('calculateActualTotal', function () {
 describe('calculateEstimatedTotalPerPartner', function () {
     it('groups estimated totals by partner id', function (): void {
         $service = app(DonationService::class);
-        Notification::fake();
+        $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
         $p1 = Partner::create(['name' => 'Partner 1']);
         $p2 = Partner::create(['name' => 'Partner 2']);
@@ -159,15 +169,19 @@ describe('calculateEstimatedTotalPerPartner', function () {
         $d2 = ExternalUser::factory()->create(['email' => 'p1d2@example.com']);
         $d3 = ExternalUser::factory()->create(['email' => 'p2d1@example.com']);
 
-        $a1 = Athlete::create(['first_name' => 'A', 'last_name' => '1', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'pa1@example.com', 'adult' => 1, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_estimated' => 10]);
-        $a2 = Athlete::create(['first_name' => 'A', 'last_name' => '2', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'pa2@example.com', 'adult' => 1, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_estimated' => 5]);
-        $b1 = Athlete::create(['first_name' => 'B', 'last_name' => '1', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'pb1@example.com', 'adult' => 1, 'sport_type_id' => $sport->id, 'partner_id' => $p2->id, 'rounds_estimated' => 3]);
+        $a1 = ExternalUser::factory()->create(['email' => 'pa1@example.com']);
+        $a2 = ExternalUser::factory()->create(['email' => 'pa2@example.com']);
+        $b1 = ExternalUser::factory()->create(['email' => 'pb1@example.com']);
 
-        Donation::create(['donor_external_user_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 20
-        Donation::create(['donor_external_user_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 10.0, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 5*10=50 -> 40
-        Donation::create(['donor_external_user_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 10.0, 'amount_min' => 40.0, 'amount_max' => null, 'comment' => null]); // 3*10=30 -> 40
+        $r1 = AthleteRegistration::factory()->create(['external_user_id' => $a1->id, 'donation_event_id' => $event->id, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_estimated' => 10]);
+        $r2 = AthleteRegistration::factory()->create(['external_user_id' => $a2->id, 'donation_event_id' => $event->id, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_estimated' => 5]);
+        $r3 = AthleteRegistration::factory()->create(['external_user_id' => $b1->id, 'donation_event_id' => $event->id, 'sport_type_id' => $sport->id, 'partner_id' => $p2->id, 'rounds_estimated' => 3]);
 
-        $donations = Donation::query()->with('athlete.partner')->get();
+        Donation::create(['donor_external_user_id' => $d1->id, 'athlete_registration_id' => $r1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => null, 'comment' => null]); // 20
+        Donation::create(['donor_external_user_id' => $d2->id, 'athlete_registration_id' => $r2->id, 'amount_per_round' => 10.0, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 5*10=50 -> 40
+        Donation::create(['donor_external_user_id' => $d3->id, 'athlete_registration_id' => $r3->id, 'amount_per_round' => 10.0, 'amount_min' => 40.0, 'amount_max' => null, 'comment' => null]); // 3*10=30 -> 40
+
+        $donations = Donation::query()->with('athleteRegistration.partner')->get();
         $totals = $service->calculateEstimatedTotalPerPartner($donations);
 
         expect($totals)->toBe([
@@ -180,7 +194,7 @@ describe('calculateEstimatedTotalPerPartner', function () {
 describe('calculateActualTotalPerPartner', function () {
     it('groups actual totals by partner id', function (): void {
         $service = app(DonationService::class);
-        Notification::fake();
+        $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
         $p1 = Partner::create(['name' => 'Partner 1']);
         $p2 = Partner::create(['name' => 'Partner 2']);
@@ -188,21 +202,19 @@ describe('calculateActualTotalPerPartner', function () {
         $d2 = ExternalUser::factory()->create(['email' => 'ap1d2@example.com']);
         $d3 = ExternalUser::factory()->create(['email' => 'ap2d1@example.com']);
 
-        $a1 = Athlete::create(['first_name' => 'A', 'last_name' => '1', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'aaap1@example.com', 'adult' => 1, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_estimated' => 0]);
-        $a1->rounds_done = 12;
-        $a1->save();
-        $a2 = Athlete::create(['first_name' => 'A', 'last_name' => '2', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'aaap2@example.com', 'adult' => 1, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_estimated' => 0]);
-        $a2->rounds_done = 1;
-        $a2->save();
-        $b1 = Athlete::create(['first_name' => 'B', 'last_name' => '1', 'address' => 'A', 'zip_code' => 1, 'city' => 'C', 'phone_number' => '0', 'email' => 'aaapb1@example.com', 'adult' => 1, 'sport_type_id' => $sport->id, 'partner_id' => $p2->id, 'rounds_estimated' => 0]);
-        $b1->rounds_done = 100;
-        $b1->save();
+        $a1 = ExternalUser::factory()->create(['email' => 'aaap1@example.com']);
+        $a2 = ExternalUser::factory()->create(['email' => 'aaap2@example.com']);
+        $b1 = ExternalUser::factory()->create(['email' => 'aaapb1@example.com']);
 
-        Donation::create(['donor_external_user_id' => $d1->id, 'athlete_id' => $a1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
-        Donation::create(['donor_external_user_id' => $d2->id, 'athlete_id' => $a2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10
-        Donation::create(['donor_external_user_id' => $d3->id, 'athlete_id' => $b1->id, 'amount_per_round' => 0.5, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 100*0.5=50 -> 40
+        $r1 = AthleteRegistration::factory()->create(['external_user_id' => $a1->id, 'donation_event_id' => $event->id, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_done' => 12]);
+        $r2 = AthleteRegistration::factory()->create(['external_user_id' => $a2->id, 'donation_event_id' => $event->id, 'sport_type_id' => $sport->id, 'partner_id' => $p1->id, 'rounds_done' => 1]);
+        $r3 = AthleteRegistration::factory()->create(['external_user_id' => $b1->id, 'donation_event_id' => $event->id, 'sport_type_id' => $sport->id, 'partner_id' => $p2->id, 'rounds_done' => 100]);
 
-        $donations = Donation::query()->with('athlete.partner')->get();
+        Donation::create(['donor_external_user_id' => $d1->id, 'athlete_registration_id' => $r1->id, 'amount_per_round' => 2.0, 'amount_min' => null, 'amount_max' => 30.0, 'comment' => null]); // 12*2=24
+        Donation::create(['donor_external_user_id' => $d2->id, 'athlete_registration_id' => $r2->id, 'amount_per_round' => 1.0, 'amount_min' => 10.0, 'amount_max' => null, 'comment' => null]); // 1*1=1 -> 10
+        Donation::create(['donor_external_user_id' => $d3->id, 'athlete_registration_id' => $r3->id, 'amount_per_round' => 0.5, 'amount_min' => null, 'amount_max' => 40.0, 'comment' => null]); // 100*0.5=50 -> 40
+
+        $donations = Donation::query()->with('athleteRegistration.partner')->get();
         $totals = $service->calculateActualTotalPerPartner($donations);
 
         expect($totals)->toBe([

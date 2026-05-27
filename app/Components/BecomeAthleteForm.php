@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Components;
 
-use App\Models\Athlete;
 use App\Models\Partner;
 use App\Models\SportType;
-use App\Notifications\AdminSomeoneRegistered;
 use App\Services\CurrentDonationEventService;
 use Exception;
 use Flux;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -59,7 +56,8 @@ class BecomeAthleteForm extends Component
     // E-Mail
     #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
     #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
-    #[Validate('unique:athletes,email', message: 'Die E-Mail-Adresse ist bereits registriert.')]
+    // TODO(refactor-athlete-form): Re-enable persistence-specific uniqueness rule after external-user registration flow relaunch.
+    // #[Validate('unique:external_users,email', message: 'Die E-Mail-Adresse ist bereits registriert.')]
     public ?string $email = null;
 
     // E-Mail bestätigen
@@ -151,20 +149,10 @@ class BecomeAthleteForm extends Component
                 return;
             }
 
-            Athlete::query()->create($this->all());
-
-            // send notification to admin
-            if (config('app.send_notification_on_registration')) {
-                $notification = new AdminSomeoneRegistered;
-                Notification::route('mail', 'info@fuer-menschen.ch')->notify($notification);
-            }
-
-            $this->reset();
-
             Flux::toast(
-                heading: 'Prüfe deine E-Mails!',
-                text: 'Vielen Dank für deine Anmeldung. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.',
-                variant: 'success',
+                heading: 'Anmeldung geschlossen',
+                text: 'Die Anmeldung als Sportler:in ist aktuell noch nicht offen. Melde dich für den Newsletter an.',
+                variant: 'warning',
             );
 
             $this->redirectHelper();
@@ -239,6 +227,6 @@ class BecomeAthleteForm extends Component
 
     public function redirectHelper(): void
     {
-        $this->redirect(route('home'), navigate: true);
+        $this->redirect(route('become-athlete'), navigate: true);
     }
 }

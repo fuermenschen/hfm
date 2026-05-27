@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Components;
 
-use App\Models\Athlete;
 use App\Models\Partner;
 use App\Rules\ValidZipCode;
 use App\Services\CurrentDonationEventService;
@@ -76,17 +75,15 @@ class BecomeDonorForm extends Component
     #[Validate('same:email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
     public ?string $email_confirmation = null;
 
-    // Athlet
-    public ?array $athletes = null;
-
     public string $currentAthlete = 'der:die Sportler:in';
 
     public ?int $currentRounds = null;
 
     #[Validate('required', message: 'Bitte wähle jemanden aus.')]
     #[Validate('min:0', message: 'Sportler:in existiert nicht.')]
-    #[Validate('exists:athletes,id', message: 'Sportler:in existiert nicht.')]
-    public ?int $athlete_id = 0;
+    // TODO(refactor-donor-form): Re-enable strict registration selection validation after full donor form rebuild.
+    // #[Validate('exists:athlete_registrations,id', message: 'Sportler:in existiert nicht.')]
+    public ?int $athlete_registration_id = 0;
 
     // Partners
     public ?array $partners = null;
@@ -124,13 +121,10 @@ class BecomeDonorForm extends Component
 
     public function updateNames(): void
     {
-        // if the athlete_id is set, get the athlete and partner name
-        $athlete = Athlete::query()->find($this->athlete_id);
-        if ($athlete) {
-            $this->currentAthlete = $athlete->privacy_name;
-            $this->currentPartner = $athlete->partner->name ?? __('app.equal_split_full');
-            $this->currentRounds = $athlete->rounds_estimated;
-        }
+        // Donor form parked. Athlete lookup intentionally disabled until full refactor to registrations.
+        $this->currentAthlete = 'der:die Sportler:in';
+        $this->currentPartner = 'den:die Benefizpartner:in';
+        $this->currentRounds = null;
     }
 
     public function save(): void
@@ -206,13 +200,7 @@ class BecomeDonorForm extends Component
     {
         $this->extraFields = new HoneypotData;
 
-        // fetch all athletes
-        $this->athletes = Athlete::query()
-            ->where('verified', true)
-            ->orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name', 'partner_id', 'public_id']) // fetch real columns only
-            ->each->append(['privacy_name', 'public_id_string'])  // append computed attributes
-            ->toArray();
+        // Donor form parked. Athlete list intentionally disabled until full refactor to registrations.
 
         // fetch all partners
         $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();

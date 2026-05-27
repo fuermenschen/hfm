@@ -63,11 +63,11 @@
                             <flux:table.cell class="{{ $cellClass }}">
                                 @switch($columnKey)
                                     @case('donor')
-                                        {{ $donation->donorPrivacyName() }}
+                                        {{ $this->donationService->donorPrivacyName($donation) }}
                                         @break
 
                                     @case('athlete')
-                                        {{ $donation->athlete?->privacy_name ?? 'Legacy Sportler:in' }}
+                                        {{ $this->donationService->athletePrivacyName($donation) }}
                                         @break
 
                                     @case('verified')

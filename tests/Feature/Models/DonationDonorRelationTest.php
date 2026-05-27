@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Athlete;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
@@ -12,19 +11,17 @@ it('resolves new donation relationships', function () {
     $donationEvent = DonationEvent::factory()->create();
     $partner = Partner::query()->create(['name' => 'Test Partner']);
     $sportType = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sportType->id,
-    ]);
+    $athleteIdentity = ExternalUser::factory()->create();
     $externalUser = ExternalUser::factory()->create();
     $athleteRegistration = AthleteRegistration::factory()->create([
         'donation_event_id' => $donationEvent->id,
+        'external_user_id' => $athleteIdentity->id,
         'sport_type_id' => $sportType->id,
+        'partner_id' => $partner->id,
     ]);
 
     $donation = Donation::query()->create([
         'donor_external_user_id' => $externalUser->id,
-        'athlete_id' => $athlete->id,
         'athlete_registration_id' => $athleteRegistration->id,
         'amount_per_round' => 10,
         'amount_max' => 100,
@@ -37,26 +34,25 @@ it('resolves new donation relationships', function () {
         ->toBeInstanceOf(ExternalUser::class)
         ->and($donation->donorExternalUser->is($externalUser))->toBeTrue()
         ->and($donation->athleteRegistration)->toBeInstanceOf(AthleteRegistration::class)
-        ->and($donation->athleteRegistration->is($athleteRegistration))->toBeTrue();
+        ->and($donation->athleteRegistration->is($athleteRegistration))->toBeTrue()
+        ->and($donation->athleteRegistration->externalUser->is($athleteIdentity))->toBeTrue();
 });
 
 it('derives donation event from athlete registration', function () {
     $donationEvent = DonationEvent::factory()->create();
     $partner = Partner::query()->create(['name' => 'Test Partner']);
     $sportType = SportType::query()->create(['name' => 'Run']);
-    $athlete = Athlete::factory()->create([
-        'partner_id' => $partner->id,
-        'sport_type_id' => $sportType->id,
-    ]);
+    $athleteIdentity = ExternalUser::factory()->create();
     $externalUser = ExternalUser::factory()->create();
     $athleteRegistration = AthleteRegistration::factory()->create([
         'donation_event_id' => $donationEvent->id,
+        'external_user_id' => $athleteIdentity->id,
         'sport_type_id' => $sportType->id,
+        'partner_id' => $partner->id,
     ]);
 
     $donation = Donation::query()->create([
         'donor_external_user_id' => $externalUser->id,
-        'athlete_id' => $athlete->id,
         'athlete_registration_id' => $athleteRegistration->id,
         'amount_per_round' => 10,
         'amount_max' => 100,

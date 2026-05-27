@@ -38,11 +38,6 @@ class DonationEvent extends Model
     /** @use HasFactory<DonationEventFactory> */
     use HasFactory;
 
-    public function athletes(): HasMany
-    {
-        return $this->hasMany(Athlete::class);
-    }
-
     public function athleteRegistrations(): HasMany
     {
         return $this->hasMany(AthleteRegistration::class);

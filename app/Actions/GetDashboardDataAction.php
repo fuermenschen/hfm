@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Models\Athlete;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\ExternalUser;
 use App\Models\Partner;
+use App\Services\AthleteService;
 use App\Services\DonationService;
 use App\Services\DonorService;
 use Illuminate\Support\Collection;
@@ -15,6 +16,7 @@ use Illuminate\Support\Collection;
 class GetDashboardDataAction
 {
     public function __construct(
+        public AthleteService $athleteService,
         public DonationService $donationService,
         public DonorService $donorService,
     ) {}
@@ -48,19 +50,19 @@ class GetDashboardDataAction
             ->orderBy('name')
             ->get();
 
-        $athleteCount = (int) Athlete::query()->count();
+        $athleteCount = $this->athleteService->count();
         $donorCount = $this->donorService->count();
         $donationCount = (int) Donation::query()->count();
 
-        $verifiedAthleteCount = (int) Athlete::query()->where('verified', true)->count();
+        $verifiedAthleteCount = $this->athleteService->verifiedCount();
         $verifiedDonationCount = (int) Donation::query()->where('verified', true)->count();
 
         $meanNumberOfDonations = $athleteCount > 0 ? (float) ($donationCount / $athleteCount) : 0.0;
-        $meanNumberOfRounds = Athlete::query()->avg('rounds_estimated');
+        $meanNumberOfRounds = $this->meanNumberOfRounds();
         $meanNumberOfDonationsDonor = $donorCount > 0 ? (float) ($donationCount / $donorCount) : 0.0;
         $meanDonationAmount = (float) (Donation::query()->avg('amount_per_round') ?? 0.0);
 
-        $donations = Donation::query()->with('athlete.partner')->get();
+        $donations = Donation::query()->with(['athleteRegistration.partner', 'athleteRegistration.externalUser'])->get();
 
         $expectedDonationAmount = $this->donationService->calculateEstimatedTotal($donations);
         $actualTotalAmount = $this->donationService->calculateActualTotal($donations);
@@ -113,7 +115,7 @@ class GetDashboardDataAction
     {
         $sevenDaysAgo = now()->subDays(7);
 
-        $recentAthletes = Athlete::query()
+        $recentAthletes = $this->athleteService->all()
             ->where('created_at', '>=', $sevenDaysAgo)
             ->latest()
             ->limit(30)
@@ -129,18 +131,22 @@ class GetDashboardDataAction
             ->where('created_at', '>=', $sevenDaysAgo)
             ->with([
                 'donorExternalUser:id,first_name,last_name',
-                'athlete:id,first_name,last_name',
+                'athleteRegistration.externalUser:id,first_name,last_name',
             ])
             ->latest()
             ->limit(30)
-            ->get(['id', 'donor_external_user_id', 'athlete_id', 'created_at']);
+            ->get(['id', 'donor_external_user_id', 'athlete_registration_id', 'created_at']);
 
         $activities = [];
 
         foreach ($recentAthletes as $athlete) {
+            if (! $athlete instanceof ExternalUser) {
+                continue;
+            }
+
             $activities[] = [
                 'type' => 'athlete',
-                'name' => $athlete->privacy_name,
+                'name' => $athlete->privacyName(),
                 'created_at' => $athlete->created_at,
             ];
         }
@@ -149,7 +155,7 @@ class GetDashboardDataAction
             /** @var ExternalUser $donor */
             $activities[] = [
                 'type' => 'donor',
-                'name' => $donor->privacy_name,
+                'name' => $donor->privacyName(),
                 'created_at' => $donor->created_at,
             ];
         }
@@ -157,8 +163,8 @@ class GetDashboardDataAction
         foreach ($recentDonations as $donation) {
             $activities[] = [
                 'type' => 'donation',
-                'name' => $donation->donorPrivacyName(),
-                'name2' => $donation->athlete->privacy_name ?? 'Legacy Sportler:in',
+                'name' => $this->donationService->donorPrivacyName($donation),
+                'name2' => $this->donationService->athletePrivacyName($donation),
                 'created_at' => $donation->created_at,
             ];
         }
@@ -171,5 +177,12 @@ class GetDashboardDataAction
         $activities = array_slice($activities, -10);
 
         return array_reverse($activities);
+    }
+
+    protected function meanNumberOfRounds(): float
+    {
+        $mean = AthleteRegistration::query()->avg('rounds_estimated');
+
+        return (float) ($mean ?? 0.0);
     }
 }

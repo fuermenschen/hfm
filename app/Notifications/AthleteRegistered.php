@@ -12,17 +12,12 @@ class AthleteRegistered extends Notification
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct(
-        public readonly string $first_name,
-        public readonly string $public_id_string,
-    ) {}
+    // TODO(refactor-athlete-relaunch): Wire this notification back into the external-user athlete registration flow.
+    public string $first_name = '';
+
+    public string $public_id_string = '';
 
     /**
-     * Get the notification's delivery channels.
-     *
      * @return array<int, string>
      */
     public function via(object $notifiable): array
@@ -30,9 +25,6 @@ class AthleteRegistered extends Notification
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
@@ -46,14 +38,10 @@ class AthleteRegistered extends Notification
     }
 
     /**
-     * Get the array representation of the notification.
-     *
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 }

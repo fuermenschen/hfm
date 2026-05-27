@@ -1,8 +1,9 @@
 <?php
 
 use App\Components\Results;
-use App\Models\Athlete;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
@@ -20,26 +21,39 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
     $equal = Partner::create(['name' => 'alle zu gleichen Teilen']);
     $b = Partner::create(['name' => 'B Partner']);
     $c = Partner::create(['name' => 'C Partner']);
+    $donationEvent = DonationEvent::factory()->create(['has_equal_split_option' => true]);
 
     // Create athletes assigned to partners with completed rounds
     $sportType = SportType::create(['name' => 'Run']);
-    $athleteEqual = Athlete::factory()->create([
+    $athleteEqual = ExternalUser::factory()->create([
         'first_name' => 'Alice',
         'last_name' => 'Equal',
+    ]);
+    $registrationEqual = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteEqual->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 10, // 10 * 10 = 100
         'sport_type_id' => $sportType->id,
-        'partner_id' => $equal->id,
+        'partner_id' => null,
     ]);
-    $athleteB = Athlete::factory()->create([
+    $athleteB = ExternalUser::factory()->create([
         'first_name' => 'Bob',
         'last_name' => 'Bee',
+    ]);
+    $registrationB = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteB->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 5, // 5 * 10 = 50
         'sport_type_id' => $sportType->id,
         'partner_id' => $b->id,
     ]);
-    $athleteC = Athlete::factory()->create([
+    $athleteC = ExternalUser::factory()->create([
         'first_name' => 'Cathy',
         'last_name' => 'See',
+    ]);
+    $registrationC = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteC->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 6, // 6 * 5 = 30
         'sport_type_id' => $sportType->id,
         'partner_id' => $c->id,
@@ -52,7 +66,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
 
     Donation::create([
         'donor_external_user_id' => $donor1->id,
-        'athlete_id' => $athleteEqual->id,
+        'athlete_registration_id' => $registrationEqual->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
         'amount_min' => null,
@@ -60,7 +74,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
     ]);
     Donation::create([
         'donor_external_user_id' => $donor2->id,
-        'athlete_id' => $athleteB->id,
+        'athlete_registration_id' => $registrationB->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
         'amount_min' => null,
@@ -68,7 +82,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
     ]);
     Donation::create([
         'donor_external_user_id' => $donor3->id,
-        'athlete_id' => $athleteC->id,
+        'athlete_registration_id' => $registrationC->id,
         'amount_per_round' => 5.0,
         'amount_max' => null,
         'amount_min' => null,
@@ -87,18 +101,27 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
 it('does not expose single athlete results anymore', function () {
     $sportType = SportType::create(['name' => 'Run']);
     $partner = Partner::create(['name' => 'Partner X']);
+    $donationEvent = DonationEvent::factory()->create();
 
-    $zero = Athlete::factory()->create([
+    $zero = ExternalUser::factory()->create([
         'first_name' => 'Zero',
         'last_name' => 'Rounds',
+    ]);
+    AthleteRegistration::factory()->create([
+        'external_user_id' => $zero->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 0,
         'sport_type_id' => $sportType->id,
         'partner_id' => $partner->id,
     ]);
 
-    $three = Athlete::factory()->create([
+    $three = ExternalUser::factory()->create([
         'first_name' => 'Three',
         'last_name' => 'Rounds',
+    ]);
+    AthleteRegistration::factory()->create([
+        'external_user_id' => $three->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 3,
         'sport_type_id' => $sportType->id,
         'partner_id' => $partner->id,
@@ -107,20 +130,27 @@ it('does not expose single athlete results anymore', function () {
     Livewire::test(Results::class)
         ->assertStatus(200)
         ->assertDontSee('Einzelresultate')
-        ->assertDontSee($three->privacy_name)
-        ->assertDontSee($zero->privacy_name);
+        ->assertDontSee($three->privacyName())
+        ->assertDontSee($zero->privacyName());
 });
 
 it('counts unique donors via external user identities', function () {
     $partner = Partner::create(['name' => 'Partner X']);
     $sportType = SportType::create(['name' => 'Run']);
+    $donationEvent = DonationEvent::factory()->create();
 
-    $athleteOne = Athlete::factory()->create([
+    $athleteOne = ExternalUser::factory()->create();
+    $registrationOne = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteOne->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 3,
         'sport_type_id' => $sportType->id,
         'partner_id' => $partner->id,
     ]);
-    $athleteTwo = Athlete::factory()->create([
+    $athleteTwo = ExternalUser::factory()->create();
+    $registrationTwo = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteTwo->id,
+        'donation_event_id' => $donationEvent->id,
         'rounds_done' => 2,
         'sport_type_id' => $sportType->id,
         'partner_id' => $partner->id,
@@ -130,7 +160,7 @@ it('counts unique donors via external user identities', function () {
 
     Donation::create([
         'donor_external_user_id' => $donor->id,
-        'athlete_id' => $athleteOne->id,
+        'athlete_registration_id' => $registrationOne->id,
         'amount_per_round' => 5.0,
         'amount_max' => null,
         'amount_min' => null,
@@ -139,7 +169,7 @@ it('counts unique donors via external user identities', function () {
 
     Donation::create([
         'donor_external_user_id' => $donor->id,
-        'athlete_id' => $athleteTwo->id,
+        'athlete_registration_id' => $registrationTwo->id,
         'amount_per_round' => 10.0,
         'amount_max' => null,
         'amount_min' => null,
