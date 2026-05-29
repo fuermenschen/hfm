@@ -1,23 +1,21 @@
 <?php
 
-use App\Components\AdminAthleteTable;
 use App\Components\AdminDonationTable;
-use App\Components\AdminDonorTable;
-use App\Models\Athlete;
+use App\Components\AdminExternalUserTable;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
-use App\Models\Donor;
-use App\Models\Partner;
-use App\Models\SportType;
+use App\Models\DonationEvent;
+use App\Models\ExternalUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('exports selected donors as csv', function (): void {
-    $donor = Donor::factory()->create();
+it('exports selected external users as csv', function (): void {
+    $externalUser = ExternalUser::factory()->create();
 
-    Livewire::test(AdminDonorTable::class)
-        ->set('checkboxValues', [$donor->id])
+    Livewire::test(AdminExternalUserTable::class)
+        ->set('checkboxValues', [$externalUser->id])
         ->call('exportSelected', 'csv')
         ->assertFileDownloaded();
 });
@@ -28,42 +26,36 @@ it('returns null for selected donation export without selection', function (): v
         ->assertReturned(null);
 });
 
-it('exports all athletes as xlsx even when search is active', function (): void {
-    $sportType = SportType::query()->create(['name' => 'Laufen']);
-    $partner = Partner::query()->create(['name' => 'Partner']);
-
-    Athlete::factory()->create([
+it('exports all external users as xlsx even when search is active', function (): void {
+    ExternalUser::factory()->create([
         'first_name' => 'Anna',
-        'sport_type_id' => $sportType->id,
-        'partner_id' => $partner->id,
     ]);
 
-    Athlete::factory()->create([
+    ExternalUser::factory()->create([
         'first_name' => 'Bea',
-        'sport_type_id' => $sportType->id,
-        'partner_id' => $partner->id,
     ]);
 
-    Livewire::test(AdminAthleteTable::class)
+    Livewire::test(AdminExternalUserTable::class)
         ->set('search', 'Anna')
         ->call('exportAll', 'xlsx')
         ->assertFileDownloaded();
 });
 
 it('exports selected donations as csv', function (): void {
-    $sportType = SportType::query()->create(['name' => 'Laufen']);
-    $partner = Partner::query()->create(['name' => 'Partner']);
-
-    $athlete = Athlete::factory()->create([
-        'sport_type_id' => $sportType->id,
-        'partner_id' => $partner->id,
+    $donationEvent = DonationEvent::factory()->create();
+    $athleteIdentity = ExternalUser::factory()->create([
+        'first_name' => 'Nea',
+        'last_name' => 'Athlete',
     ]);
-
-    $donor = Donor::factory()->create();
+    $athleteRegistration = AthleteRegistration::factory()
+        ->forEvent($donationEvent)
+        ->forExternalUser($athleteIdentity)
+        ->create();
+    $donor = ExternalUser::factory()->create();
 
     $donation = Donation::query()->create([
-        'donor_id' => $donor->id,
-        'athlete_id' => $athlete->id,
+        'donor_external_user_id' => $donor->id,
+        'athlete_registration_id' => $athleteRegistration->id,
         'amount_per_round' => 10,
         'amount_max' => 100,
         'amount_min' => 0,
@@ -74,4 +66,41 @@ it('exports selected donations as csv', function (): void {
         ->set('checkboxValues', [$donation->id])
         ->call('exportSelected', 'csv')
         ->assertFileDownloaded();
+});
+
+it('searches donation table by athlete registration external user name', function (): void {
+    $donationEvent = DonationEvent::factory()->create();
+    $matchingAthleteIdentity = ExternalUser::factory()->create([
+        'first_name' => 'Alice',
+        'last_name' => 'Runner',
+    ]);
+    $nonMatchingAthleteIdentity = ExternalUser::factory()->create([
+        'first_name' => 'Bob',
+        'last_name' => 'Walker',
+    ]);
+
+    $matchingRegistration = AthleteRegistration::factory()
+        ->forEvent($donationEvent)
+        ->forExternalUser($matchingAthleteIdentity)
+        ->create();
+    $nonMatchingRegistration = AthleteRegistration::factory()
+        ->forEvent($donationEvent)
+        ->forExternalUser($nonMatchingAthleteIdentity)
+        ->create();
+
+    $donor = ExternalUser::factory()->create();
+
+    Donation::factory()
+        ->forDonorExternalUser($donor)
+        ->forAthleteRegistration($matchingRegistration)
+        ->create();
+    Donation::factory()
+        ->forDonorExternalUser($donor)
+        ->forAthleteRegistration($nonMatchingRegistration)
+        ->create();
+
+    Livewire::test(AdminDonationTable::class)
+        ->set('search', 'Alice')
+        ->assertSee('Alice R.')
+        ->assertDontSee('Bob W.');
 });

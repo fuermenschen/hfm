@@ -43,4 +43,36 @@ class DonationEventFactory extends Factory
             ],
         ];
     }
+
+    public function defaults(): static
+    {
+        return $this->state(fn (): array => [
+            'title' => 'Hoehenmeter fuer Menschen',
+            'timezone' => 'Europe/Zurich',
+            'location_name' => 'Bruehlgut Stiftung',
+            'location_street' => 'Bruehlbergstrasse 6',
+            'location_postal_code' => '8400',
+            'location_city' => 'Winterthur',
+            'location_url' => 'https://s.geo.admin.ch/yat5fpx761jk',
+            'is_published' => true,
+            'has_equal_split_option' => true,
+        ]);
+    }
+
+    public function year(int $year): static
+    {
+        return $this->state(fn (): array => [
+            'slug' => (string) $year,
+            'starts_at' => sprintf('%d-09-12 11:00:00', $year),
+            'ends_at' => sprintf('%d-09-12 16:00:00', $year),
+            'registration_opens_at' => sprintf('%d-02-01 00:00:00', $year),
+            'athlete_registration_closes_at' => sprintf('%d-09-12 10:59:59', $year),
+            'donor_registration_closes_at' => sprintf('%d-09-20 23:59:59', $year),
+            'content' => [
+                'hero' => [
+                    'copy_md' => sprintf('Ein Spendenlauf fuer Winterthur im Jahr %d.', $year),
+                ],
+            ],
+        ]);
+    }
 }

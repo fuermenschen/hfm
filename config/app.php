@@ -11,7 +11,6 @@ return [
     | file to customize your application.
     |
     */
-    'login_token_expiry_days' => 5,
     'send_notification_on_registration' => true,
     'api_key' => env('APP_API_KEY'),
 

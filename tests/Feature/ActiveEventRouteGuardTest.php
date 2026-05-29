@@ -7,12 +7,15 @@ use Database\Seeders\DonationEventSeeder;
 use Database\Seeders\EventContentBackfillSeeder;
 use Illuminate\Support\Facades\DB;
 
+use function Pest\Laravel\get;
+use function Pest\Laravel\seed;
+
 it('redirects athlete registration to home when no active event exists', function (): void {
     $settings = app(EventSettings::class);
     $settings->current_event_id = null;
     $settings->save();
 
-    $response = $this->get(route('become-athlete'));
+    $response = get(route('become-athlete'));
 
     $response->assertRedirect(route('home'));
     $response->assertSessionHas('no_active_event_redirected', true);
@@ -23,7 +26,7 @@ it('redirects donor registration to home when no active event exists', function 
     $settings->current_event_id = null;
     $settings->save();
 
-    $response = $this->get(route('become-donor'));
+    $response = get(route('become-donor'));
 
     $response->assertRedirect(route('home'));
     $response->assertSessionHas('no_active_event_redirected', true);
@@ -34,7 +37,7 @@ it('keeps registration menu items hidden on home when no active event exists', f
     $settings->current_event_id = null;
     $settings->save();
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertSuccessful();
     $response->assertDontSee('Sportler:in werden');
@@ -51,8 +54,8 @@ it('allows registration pages when current event is published', function (): voi
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $this->get(route('become-athlete'))->assertSuccessful();
-    $this->get(route('become-donor'))->assertSuccessful();
+    get(route('become-athlete'))->assertSuccessful();
+    get(route('become-donor'))->assertSuccessful();
 });
 
 it('shows faq warning when no active event exists', function (): void {
@@ -60,30 +63,30 @@ it('shows faq warning when no active event exists', function (): void {
     $settings->current_event_id = null;
     $settings->save();
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertSuccessful();
     $response->assertSee('anlassbezogene Angaben können jedoch fehlen oder nicht aktuell sein');
 });
 
 it('renders event timing faq content from faq model', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event = DonationEvent::query()->where('slug', '2026')->firstOrFail();
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertSuccessful();
     $response->assertSee('13 Uhr bis 16 Uhr');
 });
 
 it('does not leak event-specific faqs from other events', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
     $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
@@ -107,15 +110,15 @@ it('does not leak event-specific faqs from other events', function (): void {
     $settings->current_event_id = $event2026->id;
     $settings->save();
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertSuccessful();
     $response->assertDontSee('Nur 2025 FAQ');
 });
 
 it('shows globally unassigned faqs as fallback', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
 
@@ -128,7 +131,7 @@ it('shows globally unassigned faqs as fallback', function (): void {
     $settings->current_event_id = $event2026->id;
     $settings->save();
 
-    $response = $this->get(route('questions-and-answers'));
+    $response = get(route('questions-and-answers'));
 
     $response->assertSuccessful();
     $response->assertSee('Globale FAQ ohne Event');

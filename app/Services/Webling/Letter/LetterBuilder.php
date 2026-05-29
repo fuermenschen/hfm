@@ -11,6 +11,9 @@ use Closure;
 
 class LetterBuilder
 {
+    // Webling letter pipeline currently not active in production flows.
+    // TODO(dead-code): Remove temporary ignores when Webling letter generation is reintroduced.
+
     protected string $headerText = '';
 
     protected string $body1 = '';
@@ -27,6 +30,7 @@ class LetterBuilder
         $this->options = new LetterOptions;
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function header(string $text): self
     {
         $this->headerText = $text;
@@ -60,6 +64,7 @@ class LetterBuilder
         return $this;
     }
 
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function options(?LetterOptions $options): self
     {
         if ($options instanceof LetterOptions) {

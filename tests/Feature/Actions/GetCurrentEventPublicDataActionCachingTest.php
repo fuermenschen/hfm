@@ -6,6 +6,9 @@ use App\Models\Partner;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+use function Pest\Laravel\freezeTime;
+use function Pest\Laravel\travel;
+
 it('populates cache on first call and serves subsequent calls from cache', function (): void {
     $event = DonationEvent::factory()->create();
     $partner = Partner::factory()->create();
@@ -13,7 +16,7 @@ it('populates cache on first call and serves subsequent calls from cache', funct
 
     $cacheKey = 'event_public_data_'.$event->id;
 
-    $this->freezeTime();
+    freezeTime();
 
     expect(Cache::missing($cacheKey))->toBeTrue();
 
@@ -47,11 +50,11 @@ it('populates cache on first call and serves subsequent calls from cache', funct
 it('serves from cache within the one-minute TTL', function (): void {
     $event = DonationEvent::factory()->create();
 
-    $this->freezeTime();
+    freezeTime();
 
     (new GetCurrentEventPublicDataAction)($event);
 
-    $this->travel(30)->seconds();
+    travel(30)->seconds();
 
     DB::enableQueryLog();
 
@@ -65,11 +68,11 @@ it('serves from cache within the one-minute TTL', function (): void {
 it('re-queries the database after the one-minute TTL expires', function (): void {
     $event = DonationEvent::factory()->create();
 
-    $this->freezeTime();
+    freezeTime();
 
     (new GetCurrentEventPublicDataAction)($event);
 
-    $this->travel(61)->seconds();
+    travel(61)->seconds();
 
     DB::enableQueryLog();
 
@@ -83,7 +86,7 @@ it('re-queries the database after the one-minute TTL expires', function (): void
 it('uses a separate cache key when no event is given', function (): void {
     $cacheKey = 'event_public_data_none';
 
-    $this->freezeTime();
+    freezeTime();
 
     expect(Cache::missing($cacheKey))->toBeTrue();
 

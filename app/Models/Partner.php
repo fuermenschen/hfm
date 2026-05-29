@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
@@ -21,11 +20,6 @@ use Illuminate\Support\Facades\Storage;
 class Partner extends Model
 {
     use HasFactory;
-
-    public function athletes(): HasMany
-    {
-        return $this->hasMany(Athlete::class);
-    }
 
     public function donationEvents(): BelongsToMany
     {

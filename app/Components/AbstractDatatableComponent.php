@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,24 +18,16 @@ abstract class AbstractDatatableComponent extends Component
     use InteractsWithDatatable;
     use WithPagination;
 
+    #[Url]
     public string $sortField = '';
 
     public function mount(): void
     {
-        $this->initializeVisibleColumns();
-    }
+        if ($this->sortField === '') {
+            $this->sortField = $this->defaultSortField();
+        }
 
-    /**
-     * @return array<string, array<string, int|string>>
-     */
-    protected function queryString(): array
-    {
-        return [
-            'search' => ['except' => ''],
-            'sortField' => ['except' => $this->defaultSortField()],
-            'sortDirection' => ['except' => 'asc'],
-            'perPage' => ['except' => 10],
-        ];
+        $this->initializeVisibleColumns();
     }
 
     public function render(): View

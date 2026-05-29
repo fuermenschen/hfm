@@ -8,15 +8,19 @@ use App\Support\Datatable\DatatableValueFormatter;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Url;
 use Spatie\SimpleExcel\SimpleExcelWriter;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 trait InteractsWithDatatable
 {
+    #[Url(except: '')]
     public string $search = '';
 
+    #[Url(except: 10)]
     public int $perPage = 10;
 
+    #[Url(except: 'asc')]
     public string $sortDirection = 'asc';
 
     /**

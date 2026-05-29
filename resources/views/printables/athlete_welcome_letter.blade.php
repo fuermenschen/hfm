@@ -10,7 +10,7 @@
     use Illuminate\Support\Facades\Vite;
 
     $qrCode = new QrCode(
-        data: route('show-athlete', $athlete->login_token),
+        data: route('login'),
         errorCorrectionLevel: ErrorCorrectionLevel::Low,
         size: 100,
         margin: 0,

@@ -24,7 +24,6 @@ beforeEach(function (): void {
 
 it('renders successfully in intro step', function (): void {
     Livewire::test(AdminWeblingInterfaceTest::class)
-        ->assertStatus(200)
         ->assertSet('step', 'intro')
         ->assertSet('debitorId', null)
         ->assertSet('debitorUrl', null)
@@ -471,27 +470,27 @@ it('returns progress value 0 for intro step', function (): void {
     $component = Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'intro');
 
-    expect($component->instance()->getProgressProperty())->toBe(0);
+    expect($component->get('progress'))->toBe(0);
 });
 
 it('returns progress value 50 for inspect_pdf step', function (): void {
     $component = Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'inspect_pdf');
 
-    expect($component->instance()->getProgressProperty())->toBe(50);
+    expect($component->get('progress'))->toBe(50);
 });
 
 it('returns progress value 100 for done step', function (): void {
     $component = Livewire::test(AdminWeblingInterfaceTest::class)
         ->set('step', 'done');
 
-    expect($component->instance()->getProgressProperty())->toBe(100);
+    expect($component->get('progress'))->toBe(100);
 });
 
 it('checklist is not decided until all items are set to true or false', function (): void {
     $component = Livewire::test(AdminWeblingInterfaceTest::class);
 
-    expect($component->instance()->getChecklistDecidedProperty())->toBeFalse();
+    expect($component->get('checklistDecided'))->toBeFalse();
 
     $component->set('checklist', [
         'name_correct' => true,
@@ -501,7 +500,7 @@ it('checklist is not decided until all items are set to true or false', function
         'date_correct' => false,
     ]);
 
-    expect($component->instance()->getChecklistDecidedProperty())->toBeTrue();
+    expect($component->get('checklistDecided'))->toBeTrue();
 });
 
 it('checklist has failures when any item is false', function (): void {
@@ -514,7 +513,7 @@ it('checklist has failures when any item is false', function (): void {
             'date_correct' => true,
         ]);
 
-    expect($component->instance()->getChecklistHasFailuresProperty())->toBeTrue();
+    expect($component->get('checklistHasFailures'))->toBeTrue();
 });
 
 it('checklist has no failures when all items are true', function (): void {
@@ -527,5 +526,5 @@ it('checklist has no failures when all items are true', function (): void {
             'date_correct' => true,
         ]);
 
-    expect($component->instance()->getChecklistHasFailuresProperty())->toBeFalse();
+    expect($component->get('checklistHasFailures'))->toBeFalse();
 });

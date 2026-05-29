@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Athlete;
-use App\Models\Donor;
+use App\Models\AthleteRegistration;
+use App\Models\Donation;
+use App\Models\ExternalUser;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\=Donation>
+ * @extends Factory<Donation>
  */
 class DonationFactory extends Factory
 {
+    protected $model = Donation::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,17 +23,39 @@ class DonationFactory extends Factory
      */
     public function definition(): array
     {
-        $verified_athletes = Athlete::query()->where('verified', 1)->get();
-        $donors = Donor::all();
-
         return [
-            'donor_id' => $donors->random()->id,
-            'athlete_id' => $verified_athletes->random()->id,
+            'donor_external_user_id' => ExternalUser::factory(),
+            'athlete_registration_id' => AthleteRegistration::factory(),
             'amount_per_round' => fake()->randomFloat(2, 0, 100),
             'amount_max' => fake()->randomFloat(2, 0, 100),
             'amount_min' => fake()->randomFloat(2, 0, 100),
             'comment' => fake()->text(100),
             'verified' => fake()->boolean(),
         ];
+    }
+
+    public function forAthleteRegistration(AthleteRegistration|int $registration): static
+    {
+        $registrationId = $registration instanceof AthleteRegistration ? $registration->id : $registration;
+
+        return $this->state(fn (): array => [
+            'athlete_registration_id' => $registrationId,
+        ]);
+    }
+
+    public function forDonorExternalUser(ExternalUser|int $externalUser): static
+    {
+        $externalUserId = $externalUser instanceof ExternalUser ? $externalUser->id : $externalUser;
+
+        return $this->state(fn (): array => [
+            'donor_external_user_id' => $externalUserId,
+        ]);
+    }
+
+    public function forPair(ExternalUser|int $donor, AthleteRegistration|int $registration): static
+    {
+        return $this
+            ->forDonorExternalUser($donor)
+            ->forAthleteRegistration($registration);
     }
 }

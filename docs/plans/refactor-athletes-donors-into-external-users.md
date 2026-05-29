@@ -5,6 +5,7 @@
 - No concurrent writes during full migration window.
 - No new `users`, `external_users`, `athletes`, `donors`, `athlete_registrations`, or `donations` until PR3 merged.
 - No athlete or donor login activity until after PR3 merged.
+- Public registration, donation creation, donor login, invoice handling, and printable athlete documents are not productive during PR3.
 - Each PR merge auto-deploys.
 - PR2 operational step is mandatory: run `php artisan hfm:backfill:external-users` immediately after deployment.
 - Because assumptions above hold, transition can be strict and fail-fast.
@@ -34,6 +35,8 @@ Production rehearsal artifact: `storage/upgrade-lab/dumps/2026-05-17_16-44-51.sq
 - `donations` linked via `donor_external_user_id` and `athlete_registration_id`.
 - Portal and admin read from new model graph.
 - Legacy token routes, models, and tables removed.
+- Public registration and printable document flows are disabled until rebuilt on top of the new event/group model.
+- Donor invoices are not part of this refactor. Future event-scoped invoice work is tracked in GitHub issue #134.
 
 ---
 
@@ -116,36 +119,41 @@ If any check fails: print blocking counts, exit non-zero, write nothing.
 
 ## PR3 - Remove legacy and complete switch
 
+PR3 is a destructive cleanup. It may remove or disable legacy-dependent runtime behavior instead of preserving every old screen, because the application is intentionally non-productive during this deployment window. Existing invoice state on `donors` may be lost; reusable Webling/invoice integration code should remain where practical for the future `donor_event_invoices` rebuild tracked in GitHub issue #134.
+
 ### Steps
 
-- [ ] Enforce NOT NULL on `donations.donor_external_user_id` and `donations.athlete_registration_id`.
-- [ ] Ensure delete rule for `donations.athlete_registration_id` is `RESTRICT`.
-- [ ] Remove legacy donation columns `donor_id`, `athlete_id`.
-- [ ] Drop legacy tables `athletes`, `donors`.
-- [ ] Remove legacy models `Athlete`, `Donor`.
-- [ ] Remove legacy token routes entirely (no transition redirects).
-- [ ] Remove legacy login-token config keys.
-- [ ] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
-- [ ] Remove legacy `LoginForm` fallback paths.
-- [ ] Switch admin pages to new models and FKs.
+- [x] Enforce NOT NULL on `donations.donor_external_user_id` and `donations.athlete_registration_id`.
+- [x] Ensure delete rule for `donations.donor_external_user_id` is `RESTRICT`.
+- [x] Ensure delete rule for `donations.athlete_registration_id` is `RESTRICT`.
+- [x] Remove NOT NULL constraint on legacy donation columns `donor_id`, `athlete_id`.
+- [x] Remove legacy donation columns `donor_id`, `athlete_id`.
+- [x] Drop legacy tables `athletes`, `donors`.
+- [x] Remove legacy model `Athlete`.
+- [x] Remove legacy model `Donor`.
+- [x] Remove legacy token routes entirely (no transition redirects).
+- [x] Remove legacy login-token config keys.
+- [x] Remove `legacy_athlete_id` / `legacy_donor_id` trace columns.
+- [x] Remove legacy `LoginForm` fallback paths.
+- [x] Remove `hfm:backfill:external-users` command and its tests
+- [x] Replace admin athlete/donor pages with one simple `external_users` admin datatable generated from `make:datatable`.
+- [x] Remove legacy admin athlete/donor routes, navigation entries, pages, and Livewire table components.
+- [x] Replace legacy donation, athlete-registration, and external-user factories with new-graph defaults.
+- [x] Rewrite default local seeding with two events: one past event and one near-future active event, with external users, athlete registrations, and donations across both.
+- [x] Seed or configure the near-future event as the active/current event for local development.
+- [x] Keep public registration pages disabled; remove remaining legacy Livewire form dependencies only where needed for boot/static-search cleanliness.
+- [x] Disable printable athlete documents that still require legacy athlete token routes.
+- [x] Keep `AthleteRegistered` notification class as parked/reusable artifact for future external-user athlete relaunch.
+- [x] Keep admin replacement simple: external-users list first; event-scoped admin metrics/calculations can wait unless needed for boot.
+- [x] Remove invoice UI entrypoints only; keep reusable invoice/Webling services/jobs/actions parked for issue #134 where they can still autoload cleanly.
+- [x] Remove runtime `athlete_id`/`athlete()`/`athletes()` coupling from active app models; keep historical migration references only.
+- [x] Make historical migrations model-independent (use explicit table names for FKs instead of `foreignIdFor(Model::class)`).
 
 ### Exit criteria
 
-- [ ] Legacy token route paths return 404.
-- [ ] Admin pages work on new model graph with consistent event-scoped counts.
-- [ ] External passwordless login remains functional through shared login entry.
-- [ ] No remaining runtime dependency on `athletes` or `donors`.
-
----
-
-## Rollback and risk posture
-
-- [ ] PR1 is additive and low risk.
-- [ ] PR2 rollback path is read-switch revert to legacy reads if needed.
-- [ ] PR3 is clean break and should ship only after PR2 validations pass.
-
-## Out of scope for this refactor
-
-- [ ] Generic cross-environment dedupe engine.
-- [ ] New registration flows.
-- [ ] Group model and group-level sponsorship behavior.
+- [x] Legacy token route paths return 404.
+- [x] Application boots without runtime dependency on `athletes`, `donors`, `donor_id`, or `athlete_id` outside old migrations.
+- [x] Admin navigation does not expose broken legacy-dependent actions.
+- [x] External passwordless login remains functional through shared login entry.
+- [x] Static search finds legacy table/column references only in old migrations, historical plan text, or explicitly disabled code.
+- [x] Local development seeding produces external users, athlete registrations, and donations for the current event.

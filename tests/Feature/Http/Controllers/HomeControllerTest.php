@@ -5,8 +5,10 @@ use App\Models\Partner;
 use App\Models\Sponsor;
 use App\Settings\EventSettings;
 
+use function Pest\Laravel\get;
+
 it('renders home page with athlete and donation counts', function (): void {
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertOk();
 });
@@ -27,7 +29,7 @@ it('renders home page with partners and sponsors for active event', function ():
         'is_published' => true,
     ]);
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertOk();
     $response->assertSee('Test Partner');
@@ -50,7 +52,7 @@ it('does not show unpublished partners or sponsors on home', function (): void {
         'is_published' => false,
     ]);
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertOk();
     $response->assertDontSee('Hidden Partner');

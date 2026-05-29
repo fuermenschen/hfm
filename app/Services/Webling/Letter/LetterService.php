@@ -9,6 +9,8 @@ use Illuminate\Http\Client\Response;
 
 class LetterService
 {
+    // TODO(dead-code): Remove ignore when donor_event_invoices letter flow is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(
         public LetterRenderer $renderer,
         public LetterSchemaValidator $validator,

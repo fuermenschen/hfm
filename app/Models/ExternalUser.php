@@ -72,27 +72,34 @@ class ExternalUser extends Authenticatable
         return $this->hasMany(Donation::class, 'donor_external_user_id');
     }
 
-    protected function fullName(): Attribute
+    public function privacyName(): string
     {
-        return Attribute::make(get: fn (): string => sprintf('%s %s', $this->first_name, $this->last_name));
+        return $this->privacy_name;
     }
 
-    protected function privacyName(): Attribute
+    protected function fullName(): Attribute
     {
-        return Attribute::make(get: fn (): string => sprintf('%s %s.', $this->first_name, Str::substr($this->last_name, 0, 1)));
+        return Attribute::make(get: function (): string {
+            return sprintf('%s %s', $this->first_name, $this->last_name);
+        });
+    }
+
+    protected function getPrivacyNameAttribute(): string
+    {
+        return sprintf('%s %s.', $this->first_name, Str::substr($this->last_name, 0, 1));
     }
 
     protected function publicIdString(): Attribute
     {
-        return Attribute::make(get: fn (): string => substr($this->public_id, 0, 3).'-'.substr($this->public_id, 3));
+        return Attribute::make(get: function (): string {
+            return substr($this->public_id, 0, 3).'-'.substr($this->public_id, 3);
+        });
     }
 
     protected function casts(): array
     {
         return [
             'uuid' => 'string',
-            'legacy_athlete_id' => 'integer',
-            'legacy_donor_id' => 'integer',
         ];
     }
 

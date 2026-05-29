@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Components;
 
-use App\Models\Athlete;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\Partner;
 use App\Services\DonationService;
@@ -27,7 +27,7 @@ class Results extends Component
         // Compute a version string based on the latest updated_at timestamps
         $row = DB::selectOne('
             select
-              (select max(updated_at) from athletes)  as a,
+              (select max(updated_at) from athlete_registrations)  as a,
               (select max(updated_at) from donations) as d
         ');
         $version = hash('sha256', ($row->a ?? '0').($row->d ?? '0'));
@@ -48,29 +48,29 @@ class Results extends Component
 
     /**
      * Collect and prepare all data for the component.
-     * Ensures a single initial athletes query including relations (donations, partner, sportType).
+     * Ensures a single initial athlete-registrations query including relations.
      *
      * @return array{totals: array<string, mixed>}
      */
     protected function collectData(DonationService $donationService): array
     {
-        // One initial query for ALL athletes with needed relations
-        $allAthletes = Athlete::query()
-            ->with(['sportType:id,name', 'partner:id,name', 'donationEvent:id,has_equal_split_option', 'donations'])
+        // One initial query for ALL athlete registrations with needed relations
+        $allAthletes = AthleteRegistration::query()
+            ->with(['partner:id,name', 'donationEvent:id,has_equal_split_option', 'donations'])
             ->get();
 
         // Totals (prefer in-memory where possible)
         $athletesCount = $allAthletes->count();
         $donorsCount = $allAthletes->flatMap->donations
-            ->pluck('donor_id')->filter()->unique()->count();
+            ->pluck('donor_external_user_id')->filter()->unique()->count();
         $roundsTotal = (int) ($allAthletes->sum('rounds_done') ?? 0);
         $elevationTotal = $roundsTotal * 50; // meters
 
         // Build donations list from already loaded athletes to avoid extra queries
-        $donations = $allAthletes->flatMap(function (Athlete $athlete) {
-            return collect($athlete->donations)->map(function (Donation $donation) use ($athlete): Donation {
-                // Ensure the donation has the athlete relation (with partner) set to avoid N+1 later
-                $donation->setRelation('athlete', $athlete);
+        $donations = $allAthletes->flatMap(function (AthleteRegistration $athleteRegistration) {
+            return collect($athleteRegistration->donations)->map(function (Donation $donation) use ($athleteRegistration): Donation {
+                // Ensure donation has athlete-registration relation set to avoid extra reads later
+                $donation->setRelation('athleteRegistration', $athleteRegistration);
 
                 return $donation;
             });
@@ -139,7 +139,7 @@ class Results extends Component
                 }
 
                 $eventEqualAmount = $donations
-                    ->filter(fn (Donation $d): bool => isset($equalSplitAthleteIds[(int) $d->athlete_id]))
+                    ->filter(fn (Donation $d): bool => isset($equalSplitAthleteIds[(int) $d->athlete_registration_id]))
                     ->sum(fn (Donation $d): float => $donationService->calculateActualAmount($d));
 
                 if ($eventEqualAmount <= 0.0) {

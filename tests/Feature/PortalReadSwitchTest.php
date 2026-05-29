@@ -1,14 +1,14 @@
 <?php
 
-use App\Models\Athlete;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
-use App\Models\Donor;
 use App\Models\ExternalUser;
-use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
@@ -29,8 +29,6 @@ it('renders merged external user portal data grouped by donation event', functio
         'last_name' => 'Muster',
     ]);
 
-    $partner = Partner::factory()->create();
-
     $supporter = ExternalUser::factory()->create([
         'first_name' => 'Pat',
         'last_name' => 'Support',
@@ -45,13 +43,6 @@ it('renders merged external user portal data grouped by donation event', functio
     ]);
 
     Donation::query()->create([
-        'donor_id' => Donor::factory()->create()->id,
-        'athlete_id' => Athlete::factory()->create([
-            'donation_event_id' => $eventA->id,
-            'partner_id' => $partner->id,
-            'sport_type_id' => $sportType->id,
-            'verified' => true,
-        ])->id,
         'donor_external_user_id' => $supporter->id,
         'athlete_registration_id' => $athleteRegistration->id,
         'amount_per_round' => 11,
@@ -74,13 +65,6 @@ it('renders merged external user portal data grouped by donation event', functio
     ]);
 
     Donation::query()->create([
-        'donor_id' => Donor::factory()->create()->id,
-        'athlete_id' => Athlete::factory()->create([
-            'donation_event_id' => $eventB->id,
-            'partner_id' => $partner->id,
-            'sport_type_id' => $sportType->id,
-            'verified' => true,
-        ])->id,
         'donor_external_user_id' => $externalUser->id,
         'athlete_registration_id' => $otherRegistration->id,
         'amount_per_round' => 7,
@@ -90,8 +74,9 @@ it('renders merged external user portal data grouped by donation event', functio
         'verified' => false,
     ]);
 
-    $this->actingAs($externalUser, 'external')
-        ->get(route('portal.dashboard'))
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText('Hallo Alex')
         ->assertSeeText('Event Alpha')

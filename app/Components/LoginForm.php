@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Components;
 
-use App\Models\Athlete;
-use App\Models\Donor;
 use App\Models\ExternalUser;
 use App\Models\User;
 use App\Notifications\NewLoginLink;
@@ -60,13 +58,6 @@ class LoginForm extends Component
 
             $externalUser = ExternalUser::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
 
-            // get all login tokens
-            $athlete = Athlete::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
-            $athleteLoginToken = $athlete ? $athlete->login_token : '';
-
-            $donor = Donor::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
-            $donorLoginToken = $donor ? $donor->login_token : '';
-
             $user = User::query()->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])->first();
             $userLoginUrl = '';
             if ($user) {
@@ -83,17 +74,13 @@ class LoginForm extends Component
             // get the first name
             if ($externalUser) {
                 $first_name = $externalUser->first_name;
-            } elseif ($athlete) {
-                $first_name = $athlete->first_name;
-            } elseif ($donor) {
-                $first_name = $donor->first_name;
             } elseif ($user) {
                 $first_name = $user->name;
             } else {
                 $first_name = '';
             }
 
-            if (! $athlete && ! $donor && ! $user && ! $externalUser) {
+            if (! $user && ! $externalUser) {
 
                 // add random delay to prevent timing attacks
                 $random_delay = random_int(0, 3);
@@ -102,8 +89,6 @@ class LoginForm extends Component
                 // send login link
                 $notification = new NewLoginLink(
                     first_name: $first_name,
-                    athlete_login_token: $athleteLoginToken,
-                    donor_login_token: $donorLoginToken,
                     user_login_url: $userLoginUrl,
                     external_user_login_url: $externalUserLoginUrl,
                 );

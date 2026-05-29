@@ -21,8 +21,6 @@ it('throws RequestException on 4xx/5xx responses', function (): void {
 
     $service = app(WeblingApiService::class);
 
-    // Expect a RequestException when a 404 is encountered
-    $this->expectException(RequestException::class);
-
-    $service->get('member/1');
+    expect(fn (): mixed => $service->get('member/1'))
+        ->toThrow(RequestException::class);
 });

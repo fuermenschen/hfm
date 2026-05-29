@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\Partner;
 use App\Models\SportType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -37,5 +38,45 @@ class AthleteRegistrationFactory extends Factory
         return $this->state(fn (array $attributes): array => [
             'verified' => true,
         ]);
+    }
+
+    public function forEvent(DonationEvent|int $event): static
+    {
+        $eventId = $event instanceof DonationEvent ? $event->id : $event;
+
+        return $this->state(fn (): array => [
+            'donation_event_id' => $eventId,
+        ]);
+    }
+
+    public function forExternalUser(ExternalUser|int $externalUser): static
+    {
+        $externalUserId = $externalUser instanceof ExternalUser ? $externalUser->id : $externalUser;
+
+        return $this->state(fn (): array => [
+            'external_user_id' => $externalUserId,
+        ]);
+    }
+
+    public function withPartner(Partner|int|null $partner = null): static
+    {
+        $partnerId = match (true) {
+            $partner instanceof Partner => $partner->id,
+            is_int($partner) => $partner,
+            default => Partner::query()->inRandomOrder()->value('id'),
+        };
+
+        return $this->state(fn (): array => [
+            'partner_id' => $partnerId,
+        ]);
+    }
+
+    public function forVerifiedEventUser(DonationEvent|int $event, ExternalUser|int $externalUser): static
+    {
+        return $this
+            ->forEvent($event)
+            ->forExternalUser($externalUser)
+            ->withPartner()
+            ->verified();
     }
 }

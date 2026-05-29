@@ -1,5 +1,7 @@
 <?php
 
+use function Pest\Laravel\get;
+
 it('admin association members page is removed', function () {
-    $this->get('/admin/mitglieder')->assertNotFound();
+    get('/admin/mitglieder')->assertNotFound();
 });

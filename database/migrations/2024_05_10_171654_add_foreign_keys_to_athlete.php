@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Partner;
-use App\Models\SportType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,8 +13,8 @@ return new class extends Migration
     {
         // Athletes
         Schema::table('athletes', function (Blueprint $table) {
-            $table->foreignIdFor(SportType::class)->constrained();
-            $table->foreignIdFor(Partner::class)->constrained();
+            $table->foreignId('sport_type_id')->constrained('sport_types');
+            $table->foreignId('partner_id')->constrained('partners');
         });
     }
 

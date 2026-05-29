@@ -1,0 +1,81 @@
+<div>
+    <x-datatable>
+        <x-slot:toolbar>
+            <x-datatable.partials.toolbar-grid>
+                <x-slot:topLeft>
+                    <flux:input wire:model.live.debounce.300ms="search" placeholder="Eintrag suchen..." icon="magnifying-glass" />
+                </x-slot:topLeft>
+
+                <x-slot:topRight>
+                    <x-datatable.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                </x-slot:topRight>
+
+                <x-slot:bottomLeft>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-datatable.partials.export-dropdown />
+                        <x-datatable.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
+                    </div>
+                </x-slot:bottomLeft>
+            </x-datatable.partials.toolbar-grid>
+        </x-slot:toolbar>
+
+        <flux:checkbox.group wire:model.live="checkboxValues">
+            @php($visibleColumns = $this->visibleColumnDefinitions())
+            <flux:table class="min-w-max">
+                <flux:table.columns>
+                    <flux:table.column>
+                        <flux:field variant="inline">
+                            <flux:checkbox.all />
+                        </flux:field>
+                    </flux:table.column>
+                    @foreach ($visibleColumns as $columnKey => $columnDefinition)
+                        @php($headerAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
+                        @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
+                        <flux:table.column class="{{ $headerClass }}">
+                            @if ($columnDefinition['sortable'])
+                                @include('components.datatable.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                            @else
+                                <span>{{ $columnDefinition['label'] }}</span>
+                            @endif
+                        </flux:table.column>
+                    @endforeach
+                </flux:table.columns>
+
+                <flux:table.rows>
+                    @forelse ($external_users as $row)
+                        @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
+                        <flux:table.row wire:key="row-{{ $row->id }}" class="{{ $rowClass }}">
+                            <flux:table.cell>
+                                <flux:field variant="inline">
+                                    <flux:checkbox value="{{ $row->id }}" />
+                                </flux:field>
+                            </flux:table.cell>
+                            @foreach ($visibleColumns as $columnKey => $columnDefinition)
+                                @php($cellAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
+                                @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
+                                <flux:table.cell class="{{ $cellClass }}">
+                                    {{ $this->displayValue($row, $columnKey) }}
+                                </flux:table.cell>
+                            @endforeach
+                        </flux:table.row>
+                    @empty
+                        <flux:table.row>
+                            <flux:table.cell colspan="99" class="text-center text-zinc-500">
+                                <div class="mx-auto flex max-w-lg flex-col items-center gap-2 py-6">
+                                    <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
+                                    <flux:text>Keine Einträge vorhanden.</flux:text>
+                                </div>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endforelse
+                </flux:table.rows>
+            </flux:table>
+        </flux:checkbox.group>
+
+        <x-slot:footer>
+            <x-datatable.partials.per-page-select />
+
+            <flux:pagination :paginator="$external_users" />
+        </x-slot:footer>
+    </x-datatable>
+</div>

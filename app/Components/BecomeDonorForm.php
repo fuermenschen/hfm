@@ -4,21 +4,14 @@ declare(strict_types=1);
 
 namespace App\Components;
 
-use App\Models\Athlete;
-use App\Models\Donor;
 use App\Models\Partner;
-use App\Notifications\AdminSomeoneRegistered;
 use App\Rules\ValidZipCode;
 use App\Services\CurrentDonationEventService;
-use Exception;
 use Flux;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Propaganistas\LaravelPhone\PhoneNumber;
 use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
 use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
 
@@ -82,17 +75,15 @@ class BecomeDonorForm extends Component
     #[Validate('same:email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
     public ?string $email_confirmation = null;
 
-    // Athlet
-    public ?array $athletes = null;
-
     public string $currentAthlete = 'der:die Sportler:in';
 
     public ?int $currentRounds = null;
 
     #[Validate('required', message: 'Bitte wähle jemanden aus.')]
     #[Validate('min:0', message: 'Sportler:in existiert nicht.')]
-    #[Validate('exists:athletes,id', message: 'Sportler:in existiert nicht.')]
-    public ?int $athlete_id = 0;
+    // TODO(refactor-donor-form): Re-enable strict registration selection validation after full donor form rebuild.
+    // #[Validate('exists:athlete_registrations,id', message: 'Sportler:in existiert nicht.')]
+    public ?int $athlete_registration_id = 0;
 
     // Partners
     public ?array $partners = null;
@@ -130,13 +121,10 @@ class BecomeDonorForm extends Component
 
     public function updateNames(): void
     {
-        // if the athlete_id is set, get the athlete and partner name
-        $athlete = Athlete::query()->find($this->athlete_id);
-        if ($athlete) {
-            $this->currentAthlete = $athlete->privacy_name;
-            $this->currentPartner = $athlete->partner->name ?? __('app.equal_split_full');
-            $this->currentRounds = $athlete->rounds_estimated;
-        }
+        // Donor form parked. Athlete lookup intentionally disabled until full refactor to registrations.
+        $this->currentAthlete = 'der:die Sportler:in';
+        $this->currentPartner = 'den:die Benefizpartner:in';
+        $this->currentRounds = null;
     }
 
     public function save(): void
@@ -156,77 +144,22 @@ class BecomeDonorForm extends Component
         // let validation exceptions bubble to Livewire's error bag
         $this->validate();
 
-        // After successful validation, normalize the phone to E.164 once
-        $phoneE164 = null;
-        if (! in_array($this->phone_national, [null, '', '0'], true)) {
-            try {
-                $phoneE164 = new PhoneNumber($this->phone_national, $this->phone_country)
-                    ->formatE164();
-            } catch (\Throwable $e) {
-                throw ValidationException::withMessages([
-                    'phone_national' => ['Die Telefonnummer ist ungültig.'],
-                ]);
-            }
-        }
+        // TODO(refactor-external-user): Re-enable donor signup by creating/updating ExternalUser
+        // and Donation via donor_external_user_id. Legacy Donor writes intentionally parked.
+        //
+        // Legacy flow (kept for future migration reference):
+        // - find/create Donor by email
+        // - send AdminSomeoneRegistered on first registration
+        // - prevent duplicate athlete pledge on donor->donations()
+        // - create Donation via donor_external_user_id relation
 
-        try {
-            $donor = Donor::query()->where('email', $this->email)->first();
+        Flux::toast(
+            heading: 'Anmeldung geschlossen',
+            text: 'Die Anmeldung als Spender:in ist aktuell noch nicht offen. Melde dich für den Newsletter an.',
+            variant: 'warning',
+        );
 
-            if (! $donor) {
-                $donorData = [
-                    'first_name' => $this->first_name,
-                    'last_name' => $this->last_name,
-                    'address' => $this->address,
-                    'zip_code' => $this->zip_code,
-                    'city' => $this->city,
-                    'country_of_residence' => $this->country_of_residence,
-                    'phone_number' => $phoneE164,
-                    'email' => $this->email,
-                ];
-                $donor = Donor::query()->create($donorData);
-
-                // send notification to admin
-                if (config('app.send_notification_on_registration')) {
-                    $notification = new AdminSomeoneRegistered;
-                    Notification::route('mail', 'info@fuer-menschen.ch')->notify($notification);
-                }
-            }
-
-            if ($donor->donations()->where('athlete_id', $this->athlete_id)->exists()) {
-                Flux::toast(
-                    heading: 'Bereits angemeldet',
-                    text: 'Du hast dich bereits als Spender:in für diese:n Sportler:in angemeldet. Falls du den gewählten Betrag anpassen möchtest, kontaktiere uns bitte.',
-                    variant: 'warning',
-                );
-
-                $this->redirectHelper('/kontakt');
-
-                return;
-            }
-
-            // create a new donation
-            $donationData = [
-                'athlete_id' => $this->athlete_id,
-                'amount_per_round' => $this->amount_per_round,
-                'amount_max' => $this->amount_max,
-                'amount_min' => $this->amount_min,
-                'comment' => $this->comment,
-            ];
-            $donor->donations()->create($donationData);
-
-            $this->reset();
-
-            Flux::toast(
-                heading: 'Prüfe deine E-Mails',
-                text: 'Vielen Dank für deine Anmeldung zur Spende. Wir haben dir eine E-Mail mit weiteren Informationen gesendet. Deine Anmeldung ist erst nach Bestätigung der E-Mail gültig.',
-                variant: 'success',
-            );
-
-            $this->redirectHelper('/');
-
-        } catch (Exception $exception) {
-            Flux::toast(heading: 'Fehler', text: 'Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.', variant: 'danger');
-        }
+        $this->redirectHelper('/spenderin-werden');
     }
 
     public function redirectHelper(string $url): void
@@ -267,13 +200,7 @@ class BecomeDonorForm extends Component
     {
         $this->extraFields = new HoneypotData;
 
-        // fetch all athletes
-        $this->athletes = Athlete::query()
-            ->where('verified', true)
-            ->orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name', 'partner_id', 'public_id']) // fetch real columns only
-            ->each->append(['privacy_name', 'public_id_string'])  // append computed attributes
-            ->toArray();
+        // Donor form parked. Athlete list intentionally disabled until full refactor to registrations.
 
         // fetch all partners
         $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
@@ -292,6 +219,9 @@ class BecomeDonorForm extends Component
             ->toArray();
     }
 
+    // Form currently not mounted in become-donor page (component call commented out).
+    // TODO(dead-code): Remove this ignore after donor form refactor/relaunch and wire validation flow again.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     protected function rules(): array
     {
         return [
@@ -306,6 +236,9 @@ class BecomeDonorForm extends Component
         ];
     }
 
+    // Form currently not mounted in become-donor page (component call commented out).
+    // TODO(dead-code): Remove this ignore after donor form refactor/relaunch and wire validation flow again.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     protected function messages(): array
     {
         return [

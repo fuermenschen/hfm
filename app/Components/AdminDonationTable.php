@@ -85,16 +85,16 @@ class AdminDonationTable extends AbstractDatatableComponent
     {
         return [
             'comment',
-            'athlete.first_name',
-            'athlete.last_name',
-            'donor.first_name',
-            'donor.last_name',
+            'athleteRegistration.externalUser.first_name',
+            'athleteRegistration.externalUser.last_name',
+            'donorExternalUser.first_name',
+            'donorExternalUser.last_name',
         ];
     }
 
     protected function baseQuery(): Builder
     {
-        return Donation::query()->with(['athlete', 'donor']);
+        return Donation::query()->with(['athleteRegistration.externalUser', 'donorExternalUser']);
     }
 
     protected function defaultSortColumn(): string
@@ -157,8 +157,8 @@ class AdminDonationTable extends AbstractDatatableComponent
     protected function exportRow(Donation $donation): array
     {
         return [
-            'Spender:in' => $donation->donor->privacy_name,
-            'Sportler:in' => $donation->athlete->privacy_name,
+            'Spender:in' => $this->donationService->donorPrivacyName($donation),
+            'Sportler:in' => $this->donationService->athletePrivacyName($donation),
             'Bestätigt' => $donation->verified ? 'Ja' : 'Nein',
             'Betrag pro Runde' => $donation->amount_per_round,
             'Geschätzter Betrag' => $this->estimatedAmount($donation),

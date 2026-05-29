@@ -42,7 +42,11 @@
         "peckphp/peck": "^0.3.0",
         "pestphp/pest": "^4.4",
         "pestphp/pest-plugin-browser": "^4.3",
+        "pestphp/pest-plugin-laravel": "^4.1",
+        "pestphp/pest-plugin-livewire": "^4.1",
+        "phpstan/phpstan-mockery": "^2.0",
         "rector/rector": "^2.4",
+        "shipmonk/dead-code-detector": "^1.1",
         "spatie/laravel-ignition": "^2.11"
     },
     "autoload": {
@@ -80,7 +84,7 @@
             "vendor/bin/pint --dirty",
             "vendor/bin/peck",
             "npm run build",
-            "vendor/bin/phpstan",
+            "vendor/bin/phpstan clear-result-cache && vendor/bin/phpstan analyze",
             "php artisan test --parallel",
             "npm run e2e"
         ],
@@ -90,7 +94,7 @@
             "vendor/bin/peck -q"
         ],
         "test:sca:ai": [
-            "vendor/bin/phpstan --error-format=json"
+            "vendor/bin/phpstan clear-result-cache && vendor/bin/phpstan --error-format=json"
         ],
         "test:pest:ai": [
             "php artisan test --parallel --compact --colors=never"
@@ -128,5 +132,5 @@
             "type": "composer",
             "url": "https://composer.fluxui.dev"
         }
-        ]
+    ]
 }

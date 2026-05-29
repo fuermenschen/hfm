@@ -1,17 +1,19 @@
 <?php
 
-use App\Models\Athlete;
-use App\Models\Donor;
 use App\Models\ExternalUser;
 use App\Models\User;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Laravel\Pulse\Http\Middleware\Authorize;
 use Opcodes\LogViewer\Http\Middleware\AuthorizeLogViewer;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
+use function Pest\Laravel\seed;
+
 test('all public routes are accessible', function () {
     // Get all registered routes
-    $routes = Route::getRoutes();
+    $routes = Route::getRoutes()->getRoutes();
 
     foreach ($routes as $route) {
         // Skip routes that are not GET requests
@@ -55,7 +57,7 @@ test('all public routes are accessible', function () {
         }
 
         // Test the route
-        $response = $this->get($route->uri);
+        $response = get($route->uri);
 
         // Assert the response is successful
         $response->assertSuccessful();
@@ -64,10 +66,10 @@ test('all public routes are accessible', function () {
 
 // Ensure all authenticated routes are accessible for a signed-in user
 test('all authenticated routes are accessible when logged in', function () {
-    $routes = Route::getRoutes();
+    $routes = Route::getRoutes()->getRoutes();
 
     $user = User::factory()->create();
-    $this->actingAs($user);
+    actingAs($user);
 
     foreach ($routes as $route) {
         // Only GET routes
@@ -100,13 +102,13 @@ test('all authenticated routes are accessible when logged in', function () {
             continue;
         }
 
-        $response = $this->get($route->uri);
+        $response = get($route->uri);
         $response->assertSuccessful();
     }
 });
 
 test('authenticated routes are protected', function () {
-    $routes = Route::getRoutes();
+    $routes = Route::getRoutes()->getRoutes();
 
     foreach ($routes as $route) {
         // Skip routes that are not GET requests
@@ -135,7 +137,7 @@ test('authenticated routes are protected', function () {
         }
 
         // Test the route without authentication
-        $response = $this->get($route->uri);
+        $response = get($route->uri);
 
         // Assert unauthenticated users cannot access (either redirect to login or 403 forbidden)
         if ($response->status() === 403) {
@@ -147,10 +149,10 @@ test('authenticated routes are protected', function () {
 });
 
 test('all external authenticated routes are accessible for external users', function () {
-    $routes = Route::getRoutes();
+    $routes = Route::getRoutes()->getRoutes();
 
     $externalUser = ExternalUser::factory()->create();
-    $this->actingAs($externalUser, 'external');
+    actingAs($externalUser, 'external');
 
     foreach ($routes as $route) {
         if (! in_array('GET', $route->methods())) {
@@ -169,42 +171,37 @@ test('all external authenticated routes are accessible for external users', func
             continue;
         }
 
-        $response = $this->get($route->uri);
+        $response = get($route->uri);
         $response->assertSuccessful();
     }
 });
 
-test('parameterized routes can be accessed with valid parameters', function () {
-    // Test athlete route
-    Artisan::call('db:seed');
-    $athlete = Athlete::factory()->create([
-        'verified' => true,
-    ]);
-    $response = $this->get(route('show-athlete', ['login_token' => $athlete->login_token]));
-    $response->assertRedirect(route('portal.dashboard'));
+test('parameterized signed login routes can be accessed with valid parameters', function () {
+    seed();
 
-    // Test donor route
-    $donor = Donor::factory()->create();
-    $response = $this->get(route('show-donor', ['login_token' => $donor->login_token]));
-    $response->assertRedirect(route('portal.dashboard'));
+    $externalUser = ExternalUser::factory()->create();
+    $response = get(
+        URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid])
+    );
 
+    $response->assertRedirect(route('portal.dashboard'));
 });
 
 test('api-key middleware works', function () {
 
     // Test without API key
-    $response = $this->get(route('queue-worker'));
+    $response = get(route('queue-worker'));
     $response->assertStatus(401);
 
     // Test with invalid API key
-    $response = $this->withHeaders([
+    $response = get(route('queue-worker'), [
         'X-API-Key' => 'invalid-key',
-    ])->get(route('queue-worker'));
+    ]);
     $response->assertStatus(403);
 
     // Test with valid API key
-    $response = $this->withHeaders([
+    $response = get(route('queue-worker'), [
         'X-API-Key' => config('app.api_key'),
-    ])->get(route('queue-worker'));
+    ]);
     $response->assertSuccessful();
 });

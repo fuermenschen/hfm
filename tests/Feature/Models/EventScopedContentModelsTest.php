@@ -9,6 +9,8 @@ use Database\Seeders\EventContentBackfillSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+use function Pest\Laravel\seed;
+
 it('stores sponsors and faqs as global catalog entities', function (): void {
     Sponsor::factory()->create();
     Faq::factory()->create();
@@ -83,8 +85,8 @@ it('adds expected columns for partner, sponsor, and faq models', function (): vo
 });
 
 it('seeds canonical partners and sponsors for 2025 and 2026 through backfill seeder', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
     $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
@@ -101,8 +103,8 @@ it('seeds canonical partners and sponsors for 2025 and 2026 through backfill see
 });
 
 it('keeps faq backfill idempotent when existing faq content changes', function (): void {
-    $this->seed(DonationEventSeeder::class);
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(DonationEventSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
 
@@ -125,7 +127,7 @@ it('keeps faq backfill idempotent when existing faq content changes', function (
     $faqCountBefore = (int) DB::table('faqs')->count();
     $pivotCountBefore = (int) DB::table('donation_event_faq')->count();
 
-    $this->seed(EventContentBackfillSeeder::class);
+    seed(EventContentBackfillSeeder::class);
 
     expect((int) DB::table('faqs')->count())->toBe($faqCountBefore)
         ->and((int) DB::table('donation_event_faq')->count())->toBe($pivotCountBefore);

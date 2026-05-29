@@ -24,8 +24,8 @@ it('returns faked values when all properties are faked', function (): void {
 
     $group = $result[WeblingApiSettings::class] ?? null;
 
-    expect($group)->not->toBeNull();
-    expect($group['group'] ?? null)->toBe('weblingApi');
+    expect($group)->not->toBeNull()
+        ->and($group['group'] ?? null)->toBe('weblingApi');
 
     $settings = $group['settings'] ?? [];
 
@@ -40,12 +40,14 @@ it('returns faked values when all properties are faked', function (): void {
         ->and($settings['accounting_period_id']['type'] ?? null)->toBe('int')
         ->and($settings['debit_account_id']['type'] ?? null)->toBe('int')
         ->and($settings['credit_account_id']['type'] ?? null)->toBe('int')
-        ->and($settings['api_url']['description'] ?? null)->toBeString()->not->toBe('')
+        ->and($settings['api_url']['description'] ?? null)->toBeString()
         ->and($settings['api_key']['encrypted'] ?? null)->toBeTrue()
         ->and($settings['api_url']['encrypted'] ?? null)->toBeFalse()
         ->and($settings)->toHaveKeys([
             'api_url', 'api_key', 'accounting_period_id', 'debit_account_id', 'credit_account_id',
-        ]);
+        ])
+        ->and(($settings['api_url']['description'] ?? null) !== '')->toBeTrue();
+
 });
 
 it('getAllSettings returns metadata and current values from repository', function (): void {
@@ -65,19 +67,20 @@ it('getAllSettings returns metadata and current values from repository', functio
     $result = $service->getAllSettings();
 
     $group = $result[WeblingApiSettings::class] ?? null;
-    expect($group)->not->toBeNull();
-
-    expect($group['group'] ?? null)->toBe('weblingApi')
+    expect($group)->not->toBeNull()
+        ->and($group['group'] ?? null)->toBe('weblingApi')
         ->and($group['title'] ?? null)->toBe('Webling API')
-        ->and($group['description'] ?? null)->toBeString()->not->toBe('');
+        ->and($group['description'] ?? null)->toBeString();
 
     $settings = $group['settings'] ?? [];
 
-    expect($settings['api_key']['encrypted'] ?? null)->toBeTrue()
+    expect(($group['description'] ?? null) !== '')->toBeTrue()
+        ->and($settings['api_key']['encrypted'] ?? null)->toBeTrue()
         ->and($settings['api_url']['value'] ?? null)->toBe('https://repo.example/v1')
         ->and($settings['debit_account_id']['value'] ?? null)->toBe(4100)
         ->and($settings['api_url']['title'] ?? null)->toBe('Webling API URL')
         ->and($settings['api_url']['rules'] ?? null)->toBe(['required', 'regex:/^https:\/\/[a-zA-Z0-9\-]+\.webling\.ch$/']);
+
 });
 
 it('save persists values with type coercion and ignores invalid classes/props', function (): void {

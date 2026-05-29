@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Webling\Letter\Dto\QrInvoiceOptions;
 use App\Services\Webling\Letter\LetterApiClient;
 use App\Services\Webling\Letter\LetterBuilder;
 use App\Services\Webling\Letter\LetterRenderer;
@@ -51,6 +52,8 @@ it('builds and posts a letter for a debitor', function (): void {
         $b->header("Höhenmeter\nfür Menschen")
             ->body1('Liebe:r Anna')
             ->body2('Bitte verwende zur')
-            ->withQrInvoice(fn ($q) => $q->withAmount = false);
+            ->withQrInvoice(function (QrInvoiceOptions $q): void {
+                $q->withAmount = false;
+            });
     }, 12345);
 });

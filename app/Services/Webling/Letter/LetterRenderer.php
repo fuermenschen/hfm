@@ -9,6 +9,9 @@ use App\Services\Webling\Letter\Template\InvoiceLetterTemplate;
 
 class LetterRenderer
 {
+    // Webling letter pipeline currently not active in production flows.
+    // TODO(dead-code): Remove temporary ignores when Webling letter generation is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(public InvoiceLetterTemplate $template = new InvoiceLetterTemplate) {}
 
     /**

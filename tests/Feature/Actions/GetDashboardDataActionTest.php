@@ -1,17 +1,22 @@
 <?php
 
 use App\Actions\GetDashboardDataAction;
-use App\Models\Athlete;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
-use App\Models\Donor;
+use App\Models\DonationEvent;
+use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 
 it('builds dashboard data with expected aggregates', function (): void {
     $sportType = SportType::query()->create(['name' => 'Run']);
+    $donationEvent = DonationEvent::factory()->create();
     $partner = Partner::query()->create(['name' => 'Partner One']);
 
-    $athleteOne = Athlete::factory()->create([
+    $athleteOne = ExternalUser::factory()->create();
+    $athleteOneRegistration = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteOne->id,
+        'donation_event_id' => $donationEvent->id,
         'partner_id' => $partner->id,
         'sport_type_id' => $sportType->id,
         'rounds_estimated' => 10,
@@ -19,7 +24,10 @@ it('builds dashboard data with expected aggregates', function (): void {
         'verified' => true,
     ]);
 
-    $athleteTwo = Athlete::factory()->create([
+    $athleteTwo = ExternalUser::factory()->create();
+    $athleteTwoRegistration = AthleteRegistration::factory()->create([
+        'external_user_id' => $athleteTwo->id,
+        'donation_event_id' => $donationEvent->id,
         'partner_id' => $partner->id,
         'sport_type_id' => $sportType->id,
         'rounds_estimated' => 5,
@@ -27,12 +35,12 @@ it('builds dashboard data with expected aggregates', function (): void {
         'verified' => false,
     ]);
 
-    $donorOne = Donor::factory()->create();
-    $donorTwo = Donor::factory()->create();
+    $donorOne = ExternalUser::factory()->create();
+    $donorTwo = ExternalUser::factory()->create();
 
     $firstDonation = Donation::query()->create([
-        'donor_id' => $donorOne->id,
-        'athlete_id' => $athleteOne->id,
+        'donor_external_user_id' => $donorOne->id,
+        'athlete_registration_id' => $athleteOneRegistration->id,
         'amount_per_round' => 2.0,
         'amount_min' => null,
         'amount_max' => 30.0,
@@ -40,8 +48,8 @@ it('builds dashboard data with expected aggregates', function (): void {
     $firstDonation->forceFill(['verified' => true])->save();
 
     $secondDonation = Donation::query()->create([
-        'donor_id' => $donorTwo->id,
-        'athlete_id' => $athleteTwo->id,
+        'donor_external_user_id' => $donorTwo->id,
+        'athlete_registration_id' => $athleteTwoRegistration->id,
         'amount_per_round' => 1.0,
         'amount_min' => 10.0,
         'amount_max' => null,
@@ -69,7 +77,7 @@ it('builds dashboard data with expected aggregates', function (): void {
             'actualAmounts',
             'mostRecentActivities',
         ])
-        ->and($data['greeting'])->toBeString()->not->toBe('')
+        ->and($data['greeting'])->toBeString()
         ->and($data['athleteCount'])->toBe(2)
         ->and($data['donorCount'])->toBe(2)
         ->and($data['donationCount'])->toBe(2)
@@ -83,5 +91,7 @@ it('builds dashboard data with expected aggregates', function (): void {
         ->and($data['actualTotalAmount'])->toBe(34.0)
         ->and($data['estimatedAmounts'])->toBe([$partner->id => 30.0])
         ->and($data['actualAmounts'])->toBe([$partner->id => 34.0])
-        ->and($data['mostRecentActivities'])->toBeArray();
+        ->and($data['mostRecentActivities'])->toBeArray()
+        ->and($data['greeting'] !== '')->toBeTrue();
+
 });

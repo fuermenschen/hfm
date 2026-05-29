@@ -195,6 +195,10 @@ prepare_worktree_runtime_artifacts() {
     compose_cmd exec -T app npm run build
 }
 
+ensure_runtime_write_permissions() {
+    compose_cmd exec -T app sh -lc 'chown -R www-data:www-data storage bootstrap/cache && chmod -R ug+rwX storage bootstrap/cache'
+}
+
 run_target_deploy() {
     local migrate_log
 
@@ -415,6 +419,7 @@ compose_cmd up --detach --build
 wait_for_app
 
 prepare_worktree_runtime_artifacts
+ensure_runtime_write_permissions
 
 compose_cmd exec -T app php artisan key:generate --force --no-interaction
 
@@ -494,6 +499,7 @@ compose_cmd exec -T app php artisan down --no-interaction
 git -C "$WORKTREE_DIR" checkout --detach "$TARGET_COMMIT_SHA" >/dev/null
 
 prepare_worktree_runtime_artifacts
+ensure_runtime_write_permissions
 
 compose_cmd exec -T app php artisan about
 run_target_deploy

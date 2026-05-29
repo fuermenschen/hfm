@@ -4,49 +4,33 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Models\Donor;
+use App\Models\ExternalUser;
 
 class CollectDonorInvoiceDataAction
 {
-    public function __invoke(Donor $donor): array
+    /**
+     * TODO(refactor-external-user):
+     * Move invoice-line collection to event-scoped donor_event_invoices flow (GH-134).
+     *
+     * Important: donor invoices and association donation invoices stay separate.
+     *
+     * Keep detailed line semantics from legacy flow:
+     * - rounds = athlete.rounds_done fallback 0
+     * - subtotal = rounds * amount_per_round
+     * - total = apply min/max clamps
+     * - include athlete privacy name + partner name in each line
+     * - include min/max nullable fields and rounded amounts for rendering
+     *
+     * Pseudo code for future implementation:
+     * - Resolve external user + donation event context.
+     * - Load event-scoped donations via athlete_registrations.
+     * - Apply min/max logic per donation line.
+     * - Return normalized line data arrays for Webling and letter rendering.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function __invoke(ExternalUser $externalUser): array
     {
-        $donor->load('donations.athlete.partner');
-        $donations = $donor->donations;
-
-        $lines = [];
-
-        foreach ($donations as $donation) {
-            $rounds = (int) ($donation->athlete->rounds_done ?? 0);
-            $perRound = (float) ($donation->amount_per_round ?? 0);
-            $subtotal = $rounds * $perRound;
-
-            $lineTotal = $this->applyMinMax($subtotal, $donation->amount_min, $donation->amount_max);
-
-            $lines[] = [
-                'athlete' => $donation->athlete->privacy_name,
-                'partner' => $donation->athlete->partner?->name,
-                'rounds' => $rounds,
-                'amount_per_round' => round($perRound, 2),
-                'subtotal' => round($subtotal, 2),
-                'min' => $donation->amount_min !== null ? round((float) $donation->amount_min, 2) : null,
-                'max' => $donation->amount_max !== null ? round((float) $donation->amount_max, 2) : null,
-                'total' => round($lineTotal, 2),
-            ];
-        }
-
-        return $lines;
-    }
-
-    protected function applyMinMax(float $amount, ?float $min, ?float $max): float
-    {
-        if ($min !== null && $amount < $min) {
-            $amount = $min;
-        }
-
-        if ($max !== null && $amount > $max) {
-            return $max;
-        }
-
-        return $amount;
+        return [];
     }
 }

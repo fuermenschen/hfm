@@ -65,7 +65,8 @@
             "twint",
             "fn",
             "hardcoded",
-            "preflight"
+            "preflight",
+            "entrypoint"
         ],
         "paths": []
     }

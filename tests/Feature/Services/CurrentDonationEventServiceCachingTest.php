@@ -6,6 +6,9 @@ use App\Settings\EventSettings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+use function Pest\Laravel\freezeTime;
+use function Pest\Laravel\travel;
+
 // Helper to get a fresh service instance (resets once() memoization)
 function freshService(): CurrentDonationEventService
 {
@@ -21,7 +24,7 @@ it('populates cache on first call and serves subsequent calls from cache', funct
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $this->freezeTime();
+    freezeTime();
 
     expect(Cache::missing('current_donation_event'))->toBeTrue();
 
@@ -58,11 +61,11 @@ it('serves from cache within the one-minute TTL', function (): void {
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $this->freezeTime();
+    freezeTime();
 
     freshService()->current();
 
-    $this->travel(30)->seconds();
+    travel(30)->seconds();
 
     DB::enableQueryLog();
     DB::flushQueryLog();
@@ -82,11 +85,11 @@ it('re-queries the database after the one-minute TTL expires', function (): void
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    $this->freezeTime();
+    freezeTime();
 
     freshService()->current();
 
-    $this->travel(61)->seconds();
+    travel(61)->seconds();
 
     DB::enableQueryLog();
     DB::flushQueryLog();
