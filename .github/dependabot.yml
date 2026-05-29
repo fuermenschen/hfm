@@ -1,11 +1,20 @@
 version: 2
 
+registries:
+  flux-pro:
+    type: composer-repository
+    url: https://composer.fluxui.dev
+    username: ${{secrets.FLUX_USERNAME}}
+    password: ${{secrets.FLUX_LICENSE_KEY}}
+
 updates:
   # ─────────────────────────────────────────────
   # COMPOSER — weekly updates (grouped by semver impact)
   # ─────────────────────────────────────────────
   - package-ecosystem: "composer"
     directory: "/"
+    registries:
+      - flux-pro
     schedule:
       interval: "weekly"
       day: "monday"
