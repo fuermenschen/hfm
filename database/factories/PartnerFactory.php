@@ -20,7 +20,7 @@ class PartnerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company(),
+            'name' => fake()->unique()->company(),
             'logo_light_filename' => fake()->slug().'_light.svg',
             'logo_dark_filename' => fake()->slug().'_dark.svg',
             'beneficiary_blurb' => fake()->sentence(12),
