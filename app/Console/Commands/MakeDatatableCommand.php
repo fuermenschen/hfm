@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use Illuminate\Console\Attributes\Description;
+use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Database\Eloquent\Model;
@@ -21,9 +23,8 @@ use function Laravel\Prompts\select;
 use function Laravel\Prompts\suggest;
 use function Laravel\Prompts\warning;
 
-class MakeDatatableCommand extends Command implements PromptsForMissingInput
-{
-    protected $signature = 'make:datatable
+#[Description('Generate an opinionated Livewire datatable with smart defaults and prompts')]
+#[Signature('make:datatable
                             {context : Datatable context (admin, public, or shared)}
                             {name : Datatable component class (e.g. AdminPartnersTable)}
                             {--model= : Model class (e.g. Partner or App\\Models\\Partner)}
@@ -34,10 +35,9 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
                             {--visible= : Comma-separated default visible columns}
                             {--export : Include export actions and methods}
                             {--test : Create a Pest feature test}
-                            {--force : Overwrite existing files}';
-
-    protected $description = 'Generate an opinionated Livewire datatable with smart defaults and prompts';
-
+                            {--force : Overwrite existing files}')]
+class MakeDatatableCommand extends Command implements PromptsForMissingInput
+{
     public function __construct(public Filesystem $files)
     {
         parent::__construct();
