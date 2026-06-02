@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Actions\GetDashboardDataAction;
-use App\Services\AthleteDocumentService;
 use App\Services\CurrentDonationEventService;
-use App\Services\DonationService;
-use App\Services\SettingsService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Mail\Events\MessageSending;
@@ -31,10 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(AthleteDocumentService::class);
-        $this->app->singleton(CurrentDonationEventService::class);
-        $this->app->singleton(SettingsService::class);
-        $this->app->singleton(DonationService::class);
+        // Scoped binding is required because the service uses once() to memoize
+        // current event resolution across repeated view composer resolutions.
+        $this->app->scoped(CurrentDonationEventService::class);
     }
 
     /**
