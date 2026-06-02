@@ -10,7 +10,7 @@ it('renders successfully', function () {
 
 it('can be filled with all inputs', function () {
 
-    Livewire::test(AdminAssociationDonationInvoiceForm::class)
+    $component = Livewire::test(AdminAssociationDonationInvoiceForm::class)
         ->set('company_name', 'Test Company')
         ->set('first_name', 'John')
         ->set('last_name', 'Doe')
@@ -21,6 +21,12 @@ it('can be filled with all inputs', function () {
         ->call('submit')
         ->assertHasNoErrors()
         ->assertFileDownloaded('Spendenrechnung_John_Doe_VereinFuerMenschen.pdf');
+
+    $content = base64_decode(data_get($component->effects, 'download.content'));
+
+    expect($content)->toStartWith('%PDF');
+    expect(str_contains($content, 'Content-Type'))->toBeFalse();
+    expect(str_contains($content, 'Content-Disposition'))->toBeFalse();
 
 });
 
