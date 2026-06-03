@@ -29,9 +29,16 @@ it('can be filled with all inputs', function () {
         ->call('redirectHelper')
         ->assertRedirect(route('home'));
 
-    Notification::assertSentToTimes(
+    Notification::assertSentTo(
         Notification::route('mail', 'john.doe@example.com'),
         AssociationDonationMessage::class,
+        function (AssociationDonationMessage $notification): bool {
+            $pdf = base64_decode($notification->pdf, true);
+
+            return is_string($pdf)
+                && str_starts_with($pdf, '%PDF')
+                && $notification->filename === 'Spendenrechnung_John_Doe_VereinFuerMenschen.pdf';
+        },
     );
 
 });

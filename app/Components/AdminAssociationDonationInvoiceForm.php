@@ -92,9 +92,9 @@ class AdminAssociationDonationInvoiceForm extends Component
             $pdf = $invoice['pdf'];
             $filename = $invoice['filename'];
 
-            $response = response()->streamDownload(function () use ($pdf) {
-                echo $pdf->stream();
-            }, $filename);
+            $response = response()->streamDownload(function () use ($pdf): void {
+                echo $pdf->output();
+            }, $filename, ['Content-Type' => 'application/pdf']);
 
         } catch (Exception $exception) {
 
