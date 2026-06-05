@@ -39,9 +39,9 @@ The wizard stays hidden from public users until registration reopening is handle
 
 ## Data Shape
 
-Add registration-level confirmation and donor-notification preference to `athlete_registrations`.
+Use existing registration confirmation and add donor-notification preference to `athlete_registrations`.
 
-- `confirmed_at` nullable timestamp: registration is confirmed when present.
+- `verified` boolean: registration is confirmed when true.
 - `notify_previous_donors` boolean default true.
 
 Keep existing unique constraint on `(donation_event_id, external_user_id)` as duplicate-registration guard.
@@ -83,7 +83,7 @@ Add a confirmed-registration query path so donor-facing lists only include confi
 ### 6. Registration Created
 
 - Create `ExternalUser` for new participants; reuse logged-in external user for returning participants.
-- Create `AthleteRegistration` with `confirmed_at = null`.
+- Create `AthleteRegistration` with `verified = false`.
 - Send athlete a confirmation email.
 - Show message that registration must be confirmed from email before donors can select them.
 
@@ -93,7 +93,7 @@ Add a confirmed-registration query path so donor-facing lists only include confi
 - Link lifetime matches current login links.
 - Opening link logs user in and lands on the registration confirmation page.
 - User confirms registration by clicking “Registrierung als Sportler:in bestätigen”.
-- Set `confirmed_at`.
+- Set `verified = true`.
 
 ### 8. After Confirmation
 
