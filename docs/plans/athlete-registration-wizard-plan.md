@@ -2,15 +2,15 @@
 
 ## Context
 
-Athlete registration is currently parked. Public page shows registration closed and the old Livewire form is commented out. Existing domain model already uses `external_users` and `athlete_registrations`; legacy `athletes` table is gone.
+Athlete registration has been rebuilt as a guided wizard on top of `external_users` and `athlete_registrations`; legacy `athletes` table is gone.
 
-Current form still carries old shape: one large page, mixed validation/UI/business logic, old registration assumptions, and no active persistence path. New flow should rebuild from the current `ExternalUser` + `AthleteRegistration` model instead of reviving the old component.
+The old `BecomeAthleteForm` remains in place only as legacy code until a separate cleanup pass. The new flow uses the current `ExternalUser` + `AthleteRegistration` model and keeps persistence in actions.
 
 ## Target
 
-Create a guided athlete registration wizard that asks only relevant questions, supports returning external users, creates an event-scoped `athlete_registration`, and confirms that registration by email before it becomes visible to donors.
+Create a guided athlete registration wizard that asks only relevant questions, supports returning external users, creates an event-scoped `athlete_registration`, and records email-confirmed registration state for later donor-facing selection.
 
-The wizard stays hidden from public users until registration reopening is handled separately.
+The wizard is shown on the public athlete registration page when the current donation event has athlete registration open.
 
 ## UX Principles
 
@@ -18,24 +18,26 @@ The wizard stays hidden from public users until registration reopening is handle
 - Ask branching questions early so irrelevant steps disappear.
 - Reuse known `ExternalUser` data instead of asking again.
 - Keep each step focused on one topic or one small group of related fields.
-- Store unfinished guest wizard input in the browser for about one day, then expire it.
-- Use inline validation and visible help text; do not rely on placeholders for instructions.
-- Show a final review screen before submission.
+- Use inline validation and visible help text.
 - Keep back/change actions simple and predictable.
 
 ## Key Decisions
 
 - Existing external users log in through the wizard by entering email directly in the first branch.
-- Login link carries minimal resume context in signed query arguments; no database draft is needed for this path.
-- Browser-stored draft handles unfinished wizard state for new-user paths.
+- Login link carries minimal resume context in signed query arguments.
+- Login and confirmation links intentionally create persistent external-user sessions.
 - External user personal details are not editable in the wizard.
 - Athlete registration confirmation is separate from email ownership. Email ownership is already proven by signed login link.
-- New athlete registrations are not visible/selectable for donors until registration confirmation.
+- New athlete registrations carry confirmation state for later donor-facing selection.
 - Previous donors are notified only after registration confirmation.
 - Previous donor notification uses athlete privacy name.
-- Previous donors means all distinct donors from earlier events for same athlete.
+- Previous donors means all donors from earlier event registrations for the same external user, regardless donation verification state.
 - Previous donor notification is enabled by default; disabling it shows a warning.
-- Group participation is out of scope; wizard step order supports adding and skipping steps.
+- Every registration submission requires explicit privacy/data-use consent in the wizard.
+- Existing current-event registrations cannot be changed from the public wizard; users are directed to log in and manage them in the portal.
+- Deleted external-user accounts require manual admin/support contact before reuse.
+- New-user pre-confirmation profile poisoning is an accepted risk; notification copy tells recipients to contact the team if they did not start the flow.
+- Group participation is out of scope.
 
 ## Data Shape
 
@@ -46,7 +48,7 @@ Use existing registration confirmation and add donor-notification preference to 
 
 Keep existing unique constraint on `(donation_event_id, external_user_id)` as duplicate-registration guard.
 
-Add a confirmed-registration query path so donor-facing lists only include confirmed registrations.
+Donor-facing confirmed-only filtering is handled outside this plan.
 
 ## Flow Outline
 
@@ -60,87 +62,85 @@ Add a confirmed-registration query path so donor-facing lists only include confi
 ### 2. Personal Details
 
 - New users enter personal details.
-- Store step progress in browser with one-day expiry.
-- Create `ExternalUser` only on final submit.
+- Create `ExternalUser` only on final submit; block existing email addresses and route those users through the returning-participant login path.
 
 ### 3. Registration Details
 
 - Ask sport type, estimated rounds, partner/equal split, optional comment.
-- Validate options against current donation event.
+- Validate sport type and partner/equal-split options against current donation event.
 
 ### 4. Previous Donors
 
-- Show only when athlete has previous donors.
+- Show only for authenticated external users with actual previous donor history.
 - Default to informing previous donors.
 - If unchecked, show warning that first donations may take longer.
 
-### 5. Review
-
-- Show only relevant sections.
-- Allow changing prior answers without restarting full flow.
-- Submit creates registration.
-
-### 6. Registration Created
+### 5. Registration Created
 
 - Create `ExternalUser` for new participants; reuse logged-in external user for returning participants.
 - Create `AthleteRegistration` with `verified = false`.
 - Send athlete a confirmation email.
-- Show message that registration must be confirmed from email before donors can select them.
+- Show message that registration must be confirmed from email.
+- If any registration already exists for the current event, block public wizard submission and direct the user to log in to the portal.
 
-### 7. Registration Confirmation
+### 6. Registration Confirmation
 
-- Confirmation email contains login link with registration-confirm intent.
+- Confirmation email contains a signed registration-confirm link.
 - Link lifetime matches current login links.
-- Opening link logs user in and lands on the registration confirmation page.
-- User confirms registration by clicking “Registrierung als Sportler:in bestätigen”.
-- Set `verified = true`.
+- Opening a valid signed link confirms the owned registration, logs the user in, and lands on the registration confirmation page.
+- Set `verified = true` only on the first successful transition.
 
-### 8. After Confirmation
+### 7. After Confirmation
 
-- Registration becomes visible/selectable for donors.
+- Registration is confirmed and ready for later donor-facing selection.
 - If `notify_previous_donors` is true, notify previous donors.
 
 ## Architecture Outline
 
-Use small seams, not a heavy framework.
+Use the fewest seams that keep side effects testable.
 
 - Livewire component owns wizard state, current step, and rendering.
-- Browser draft helper stores and clears unfinished guest state.
-- Registration action owns creation of `ExternalUser` and `AthleteRegistration` in one transaction.
-- Confirmation action owns confirming the registration.
-- Previous donor service owns selecting distinct previous donors.
-- Events/listeners handle side effects after database commit.
-- Notifications own email copy and links.
+- `CreateAthleteRegistrationAction` owns event-scoped registration creation, optional `ExternalUser` creation, and sport type / partner / equal-split validation in one transaction.
+- Existing signed-login flow handles returning-participant authentication and resume redirect.
+- Confirmation notification owns email copy and signed confirmation URL generation.
+- Confirmation route validates the signed URL, confirms the owned registration, logs the external user in, and redirects to the confirmation page.
+- Previous donor notification is triggered inline only after the first atomic transition to confirmed.
 
 ## Suggested Implementation Order
 
-- [ ] Add minimal schema fields for registration confirmation and previous donor notification.
-- [ ] Add confirmed-only filtering where donor-facing athlete lists are built.
-- [ ] Build new wizard component behind existing hidden registration page.
-- [ ] Add browser draft persistence for new-user wizard state.
-- [ ] Add inline existing-user login branch with signed resume context.
-- [ ] Add registration creation action.
-- [ ] Add registration confirmation link and confirmation action/page.
-- [ ] Add previous donor notification after confirmation.
-- [ ] Replace old hidden form reference with new hidden wizard reference.
-- [ ] Remove old athlete form once new tests cover the flow.
+- [x] Add minimal schema fields for registration confirmation and previous donor notification.
+- [x] Build new wizard component and mount it on the athlete registration page.
+- [x] Add one registration creation action for logged-in and new external users.
+- [x] Use existing signed-login flow for returning participants.
+- [x] Add confirmation notification and signed confirmation route.
+- [x] Add previous donor notification after first confirmation.
+- [x] Block existing current-event registrations in the public wizard and direct users to the portal.
+- [x] Add visible submit/action errors to the wizard.
+- [x] Validate sport types against current event.
+- [x] Add explicit privacy/data-use consent.
+- [x] Add spam protection to the public wizard.
+- [x] Route browser journey tests through CI e2e workflow.
 
 ## Testing Focus
 
 - Wizard starts and branches correctly for guest, returning participant, and logged-in external user.
-- Returning participant login link returns to the wizard/confirmation context without manual restart.
-- Browser draft restores new-user wizard input and expires after about one day.
-- Registration creation creates correct `ExternalUser` and `AthleteRegistration` rows.
+- Public page shows wizard only when current event athlete registration is open.
+- Current-step validation blocks invalid transitions and clears now-irrelevant branch answers.
+- Returning participant login link returns to the wizard without manual restart.
+- Registration creation creates correct `ExternalUser` and `AthleteRegistration` rows for new users, and correct `AthleteRegistration` rows for authenticated external users.
 - Duplicate event registration is blocked.
-- Unconfirmed registrations do not appear in donor-facing athlete selection.
-- Confirmation marks registration confirmed and makes it visible.
+- Confirmation marks registration confirmed.
 - Previous donors are notified only after confirmation and only when opted in.
 - Disabling previous donor notification shows warning and prevents those notifications.
+- Sport types unavailable for the current event are hidden and rejected.
+- Privacy/data-use consent is required before submit.
+- Invalid signed confirmation links do not authenticate the external user.
+- Confirmation is idempotent and triggers previous donor notifications only once.
+- Existing current-event registrations are blocked and direct the user to log in to the portal.
 
 ## Non-Goals
 
-- Publicly reopening registration.
 - Editing external user personal details.
 - Group registration.
-- Database-backed wizard drafts.
-- Reworking donor registration beyond confirmed-athlete filtering.
+- Reworking donor registration or donor-facing athlete selection.
+- Removing the old athlete form component in this review scope.

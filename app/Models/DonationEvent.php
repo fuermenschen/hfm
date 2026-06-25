@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -48,6 +49,14 @@ class DonationEvent extends Model
     {
         return $this->belongsToMany(Partner::class, 'donation_event_partner')
             ->withPivot(['sort_order', 'is_published'])
+            ->withTimestamps();
+    }
+
+    /** @return BelongsToMany<SportType, $this, Pivot, 'pivot'> */
+    public function sportTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(SportType::class, 'donation_event_sport_type')
+            ->withPivot(['sort_order', 'is_enabled'])
             ->withTimestamps();
     }
 
@@ -101,6 +110,17 @@ class DonationEvent extends Model
     public function contentPlainText(string $path, ?string $default = null): string
     {
         return trim(strip_tags((string) $this->contentMarkdown($path, $default)));
+    }
+
+    public function athleteRegistrationIsOpen(): bool
+    {
+        if ($this->registration_opens_at === null || $this->athlete_registration_closes_at === null) {
+            return false;
+        }
+
+        $now = Date::now($this->timezone);
+
+        return $now->greaterThanOrEqualTo($this->registration_opens_at) && $now->lessThanOrEqualTo($this->athlete_registration_closes_at);
     }
 
     protected function casts(): array

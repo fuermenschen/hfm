@@ -25,6 +25,34 @@ it('logs external users in via signed portal link', function () {
     assertAuthenticatedAs($externalUser, 'external');
 });
 
+it('logs external users in via signed portal link and resumes athlete registration', function () {
+    $externalUser = ExternalUser::factory()->create();
+
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+        'uuid' => $externalUser->uuid,
+        'redirect' => 'become-athlete',
+    ]);
+
+    get($url)
+        ->assertRedirect(route('become-athlete'));
+
+    assertAuthenticatedAs($externalUser, 'external');
+});
+
+it('ignores unsupported portal signed login redirects', function () {
+    $externalUser = ExternalUser::factory()->create();
+
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+        'uuid' => $externalUser->uuid,
+        'redirect' => 'admin.dashboard',
+    ]);
+
+    get($url)
+        ->assertRedirect(route('portal.dashboard'));
+
+    assertAuthenticatedAs($externalUser, 'external');
+});
+
 it('allows reusing valid external signed login link within ttl', function () {
     $externalUser = ExternalUser::factory()->create();
 
