@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
         $this->seedAdminUsers();
         $this->seedSportTypes();
 
-        $pastEvent = DonationEvent::factory()->defaults()->year(2025)->create();
-        $futureEvent = DonationEvent::factory()->defaults()->year(2026)->create();
+        $pastEvent = DonationEvent::factory()->defaults()->withSportTypes()->year(2025)->create();
+        $futureEvent = DonationEvent::factory()->defaults()->withSportTypes()->year(2026)->create();
 
         Partner::factory()->count(6)->create();
 
