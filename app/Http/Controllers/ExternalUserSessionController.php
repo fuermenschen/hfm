@@ -14,6 +14,7 @@ class ExternalUserSessionController extends Controller
     {
         $externalUser = ExternalUser::query()->where('uuid', $uuid)->firstOrFail();
 
+        auth()->guard('web')->logout();
         auth()->guard('external')->login($externalUser, true);
 
         // Default request intentional: signed middleware + whereUuid route constraint handle input validation.

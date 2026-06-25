@@ -14,6 +14,7 @@ class AdminSessionController extends Controller
     {
         $user = User::query()->where('uuid', $uuid)->firstOrFail();
 
+        auth()->guard('external')->logout();
         auth()->guard('web')->login($user, true);
 
         // Default request intentional: signed middleware + whereUuid route constraint handle input validation.

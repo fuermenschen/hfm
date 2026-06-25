@@ -1,3 +1,9 @@
+@php
+    $adminAuthenticated = auth()->guard('web')->check();
+    $externalAuthenticated = auth()->guard('external')->check();
+    $guest = ! $adminAuthenticated && ! $externalAuthenticated;
+@endphp
+
 <header class="h-[var(--nav-h)]" x-data="{ open: false }" data-site-header>
     <nav class="mx-auto flex items-baseline justify-between p-9" aria-label="Global">
         <a href="{{ route("home") }}" wire:navigate>
@@ -34,7 +40,7 @@
                     {{ $item['name'] }}
                 </a>
             @endforeach
-            @guest
+            @if ($guest)
                 <a href="{{ route('association') }}" wire:navigate
                    @class([
                        'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
@@ -44,8 +50,8 @@
                 >
                     <span>Vereinsmitglied werden</span>
                 </a>
-            @endguest
-            @auth
+            @endif
+            @if ($adminAuthenticated)
                 <a
                     href="{{ route("admin.dashboard") }}"
                     wire:navigate
@@ -53,10 +59,19 @@
                 >
                     Dashboard
                 </a>
-            @endauth
+            @endif
+            @if ($externalAuthenticated)
+                <a
+                    href="{{ route("portal.dashboard") }}"
+                    wire:navigate
+                    class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal"
+                >
+                    Portal
+                </a>
+            @endif
         </div>
         <div class="hidden lg:flex items">
-            @guest
+            @if ($guest)
                 <a href="{{ route('login') }}" wire:navigate
                    @class([
                        'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
@@ -66,9 +81,9 @@
                 >
                     <span>Login</span>
                 </a>
-            @endguest
-            @auth
-                <form method="POST" action="{{ route('admin.logout') }}">
+            @endif
+            @if ($adminAuthenticated || $externalAuthenticated)
+                <form method="POST" action="{{ route($adminAuthenticated ? 'admin.logout' : 'portal.logout') }}">
                     @csrf
                     <button
                         type="submit"
@@ -77,7 +92,7 @@
                         Logout
                     </button>
                 </form>
-            @endauth
+            @endif
         </div>
     </nav>
     <!-- Mobile menu, show/hide based on menu open state. -->
@@ -141,7 +156,7 @@
                                 {{ $item['name'] }}
                             </a>
                         @endforeach
-                        @guest
+                        @if ($guest)
                             <a
                                 href="{{ route('association') }}"
                                 wire:navigate
@@ -149,8 +164,8 @@
                             >
                                 Vereinsmitglied werden
                             </a>
-                        @endguest
-                        @auth
+                        @endif
+                        @if ($adminAuthenticated)
                             <a
                                 href="{{ route("admin.dashboard") }}"
                                 wire:navigate
@@ -158,9 +173,18 @@
                             >
                                 Dashboard
                             </a>
-                        @endauth
+                        @endif
+                        @if ($externalAuthenticated)
+                            <a
+                                href="{{ route("portal.dashboard") }}"
+                                wire:navigate
+                                class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
+                            >
+                                Portal
+                            </a>
+                        @endif
                     </div>
-                    @guest
+                    @if ($guest)
                         <a
                             href="{{ route("login") }}"
                             wire:navigate
@@ -169,9 +193,9 @@
                             <span>Login</span>
 
                         </a>
-                    @endguest
-                    @auth
-                        <form method="POST" action="{{ route('admin.logout') }}">
+                    @endif
+                    @if ($adminAuthenticated || $externalAuthenticated)
+                        <form method="POST" action="{{ route($adminAuthenticated ? 'admin.logout' : 'portal.logout') }}">
                             @csrf
                             <button
                                 type="submit"
@@ -179,7 +203,7 @@
                             >Logout
                             </button>
                         </form>
-                    @endauth
+                    @endif
 
                 </div>
             </div>
