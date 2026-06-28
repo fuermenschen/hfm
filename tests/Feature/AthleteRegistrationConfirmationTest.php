@@ -8,11 +8,12 @@ use App\Notifications\PreviousDonorAthleteRegistered;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertAuthenticatedAs;
-use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\get;
+use function Pest\Laravel\post;
 
-it('logs in external user from signed confirmation link and confirms owned registration', function (): void {
+it('logs in external user from signed confirmation link without confirming registration', function (): void {
     $externalUser = ExternalUser::factory()->create(['first_name' => 'Francesca']);
     $registration = AthleteRegistration::factory()->create([
         'external_user_id' => $externalUser->id,
@@ -20,9 +21,24 @@ it('logs in external user from signed confirmation link and confirms owned regis
     ]);
 
     get(confirmationUrlForTest($externalUser, $registration))
-        ->assertRedirect(route('portal.athlete-registration.confirmed'));
+        ->assertRedirect(route('portal.dashboard'));
 
     assertAuthenticatedAs($externalUser, 'external');
+    expect($registration->refresh()->verified)->toBeFalse();
+});
+
+it('confirms owned registration from authenticated portal action', function (): void {
+    $externalUser = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->create([
+        'external_user_id' => $externalUser->id,
+        'verified' => false,
+    ]);
+
+    actingAs($externalUser, 'external');
+
+    post(route('portal.athlete-registration.confirm.perform', $registration))
+        ->assertRedirect(route('portal.athlete-registration.confirmed'));
+
     expect($registration->refresh()->verified)->toBeTrue();
 });
 
@@ -32,7 +48,9 @@ it('keeps confirmation idempotent', function (): void {
         'external_user_id' => $externalUser->id,
     ]);
 
-    get(confirmationUrlForTest($externalUser, $registration))->assertRedirect(route('portal.athlete-registration.confirmed'));
+    actingAs($externalUser, 'external');
+
+    post(route('portal.athlete-registration.confirm.perform', $registration))->assertRedirect(route('portal.athlete-registration.confirmed'));
 
     expect($registration->refresh()->verified)->toBeTrue();
 });
@@ -52,7 +70,7 @@ it('rejects unsigned confirmation links', function (): void {
     expect($registration->refresh()->verified)->toBeFalse();
 });
 
-it('rejects confirmation links for another external users registration', function (): void {
+it('does not confirm another external users registration from signed login link', function (): void {
     $externalUser = ExternalUser::factory()->create();
     $otherExternalUser = ExternalUser::factory()->create();
     $registration = AthleteRegistration::factory()->create([
@@ -60,10 +78,25 @@ it('rejects confirmation links for another external users registration', functio
         'verified' => false,
     ]);
 
-    get(confirmationUrlForTest($externalUser, $registration))->assertForbidden();
+    get(confirmationUrlForTest($externalUser, $registration))->assertRedirect(route('portal.dashboard'));
 
     expect($registration->refresh()->verified)->toBeFalse();
-    assertGuest('external');
+    assertAuthenticatedAs($externalUser, 'external');
+});
+
+it('rejects portal confirmation for another external users registration', function (): void {
+    $externalUser = ExternalUser::factory()->create();
+    $otherExternalUser = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->create([
+        'external_user_id' => $otherExternalUser->id,
+        'verified' => false,
+    ]);
+
+    actingAs($externalUser, 'external');
+
+    post(route('portal.athlete-registration.confirm.perform', $registration))->assertForbidden();
+
+    expect($registration->refresh()->verified)->toBeFalse();
 });
 
 it('notifies distinct previous donors after first confirmation', function (): void {
@@ -95,7 +128,9 @@ it('notifies distinct previous donors after first confirmation', function (): vo
         'athlete_registration_id' => AthleteRegistration::factory()->forEvent($previousEvent)->create()->id,
     ]);
 
-    get(confirmationUrlForTest($athlete, $currentRegistration))->assertRedirect(route('portal.athlete-registration.confirmed'));
+    actingAs($athlete, 'external');
+
+    post(route('portal.athlete-registration.confirm.perform', $currentRegistration))->assertRedirect(route('portal.athlete-registration.confirmed'));
 
     Notification::assertSentTo($previousDonor, PreviousDonorAthleteRegistered::class);
     Notification::assertSentTo($otherPreviousDonor, PreviousDonorAthleteRegistered::class);
@@ -104,7 +139,7 @@ it('notifies distinct previous donors after first confirmation', function (): vo
     Notification::assertNotSentTo($differentAthleteDonor, PreviousDonorAthleteRegistered::class);
     Notification::assertSentTimes(PreviousDonorAthleteRegistered::class, 2);
 
-    get(confirmationUrlForTest($athlete, $currentRegistration))->assertRedirect(route('portal.athlete-registration.confirmed'));
+    post(route('portal.athlete-registration.confirm.perform', $currentRegistration))->assertRedirect(route('portal.athlete-registration.confirmed'));
 
     Notification::assertSentTimes(PreviousDonorAthleteRegistered::class, 2);
 });
@@ -126,7 +161,9 @@ it('does not notify previous donors when athlete opted out', function (): void {
 
     Donation::factory()->forPair($previousDonor, $previousRegistration)->create();
 
-    get(confirmationUrlForTest($athlete, $currentRegistration))->assertRedirect(route('portal.athlete-registration.confirmed'));
+    actingAs($athlete, 'external');
+
+    post(route('portal.athlete-registration.confirm.perform', $currentRegistration))->assertRedirect(route('portal.athlete-registration.confirmed'));
 
     Notification::assertNotSentTo($previousDonor, PreviousDonorAthleteRegistered::class);
 });

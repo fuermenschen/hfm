@@ -56,7 +56,7 @@
                                 Wir können Menschen informieren, die dich früher schon unterstützt haben.
                                 @break
                             @case('submitted')
-                                Bitte bestätige deine Registrierung über den Link in deiner E-Mail.
+                                Bitte prüfe deine E-Mail und bestätige deine Anmeldung im Portal.
                                 @break
                         @endswitch
                     </flux:text>
@@ -264,7 +264,7 @@
                         </div>
                         <div>
                             <flux:heading size="lg">Anmeldung erhalten</flux:heading>
-                            <flux:text class="mt-2">Wir haben dir eine E-Mail geschickt. Bitte öffne den Link darin, um deine Registrierung zu bestätigen.</flux:text>
+                            <flux:text class="mt-2">Wir haben dir eine E-Mail geschickt. Öffne dein Portal über den Link und bestätige dort deine Anmeldung.</flux:text>
                         </div>
                     </div>
                 </div>

@@ -22,5 +22,8 @@ Route::view('portal/registrierung/bestaetigt', 'pages.athlete-registration-confi
 Route::middleware('auth:external')->group(function (): void {
     Route::get('portal', PortalController::class)->name('portal.dashboard');
 
+    Route::post('portal/registrierung/{athleteRegistration}/bestaetigen', [AthleteRegistrationConfirmationController::class, 'store'])
+        ->name('portal.athlete-registration.confirm.perform');
+
     Route::post('portal/logout', [ExternalUserSessionController::class, 'destroy'])->name('portal.logout');
 });

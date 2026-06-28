@@ -25,6 +25,15 @@
                                         <span class="text-sm text-gray-500">Verifiziert: {{ $registration->verified ? 'Ja' : 'Nein' }}</span>
                                     </div>
 
+                                    @unless ($registration->verified)
+                                        <form method="POST" action="{{ route('portal.athlete-registration.confirm.perform', $registration) }}">
+                                            @csrf
+                                            <flux:button type="submit" variant="primary" size="sm">
+                                                Anmeldung bestätigen
+                                            </flux:button>
+                                        </form>
+                                    @endunless
+
                                     @if ($registration->donations->isEmpty())
                                         <p class="text-sm text-gray-500">Noch keine Spenden für diesen Event.</p>
                                     @else

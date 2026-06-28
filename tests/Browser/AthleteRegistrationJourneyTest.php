@@ -65,6 +65,9 @@ it('lets a logged in external user register and confirm through email link', fun
     expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
 
     $page->navigate($confirmationUrl)
+        ->assertPathIs('/portal')
+        ->assertSee('Verifiziert: Nein')
+        ->click('Anmeldung bestätigen')
         ->assertSee('Anmeldung bestätigt')
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
@@ -171,6 +174,9 @@ it('lets a new guest register and confirm through email link', function (): void
     expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
 
     $page->navigate($confirmationUrl)
+        ->assertPathIs('/portal')
+        ->assertSee('Verifiziert: Nein')
+        ->click('Anmeldung bestätigen')
         ->assertSee('Anmeldung bestätigt')
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 

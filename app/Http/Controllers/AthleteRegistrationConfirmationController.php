@@ -18,7 +18,18 @@ class AthleteRegistrationConfirmationController extends Controller
     {
         $externalUser = ExternalUser::query()->where('uuid', $uuid)->firstOrFail();
 
-        throw_if($athleteRegistration->external_user_id !== $externalUser->id, AuthorizationException::class, 'Diese Registrierung gehört nicht zu deinem Login-Link.');
+        auth()->guard('external')->login($externalUser, true);
+        $request->session()->regenerate();
+
+        return to_route('portal.dashboard');
+    }
+
+    public function store(AthleteRegistration $athleteRegistration): RedirectResponse
+    {
+        $externalUser = auth()->guard('external')->user();
+
+        throw_if(! $externalUser instanceof ExternalUser, AuthorizationException::class);
+        throw_if($athleteRegistration->external_user_id !== $externalUser->id, AuthorizationException::class, 'Diese Registrierung gehört nicht zu deinem Profil.');
 
         $wasConfirmed = AthleteRegistration::query()
             ->whereKey($athleteRegistration->id)
@@ -38,9 +49,6 @@ class AthleteRegistrationConfirmationController extends Controller
                     });
             }
         }
-
-        auth()->guard('external')->login($externalUser, true);
-        $request->session()->regenerate();
 
         return to_route('portal.athlete-registration.confirmed');
     }

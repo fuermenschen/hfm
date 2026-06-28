@@ -28,6 +28,7 @@ The wizard is shown on the public athlete registration page when the current don
 - Login and confirmation links intentionally create persistent external-user sessions.
 - External user personal details are not editable in the wizard.
 - Athlete registration confirmation is separate from email ownership. Email ownership is already proven by signed login link.
+- Confirmation links open the user's portal; the registration is confirmed by an explicit portal action.
 - New athlete registrations carry confirmation state for later donor-facing selection.
 - Previous donors are notified only after registration confirmation.
 - Previous donor notification uses athlete privacy name.
@@ -88,8 +89,9 @@ Donor-facing confirmed-only filtering is handled outside this plan.
 
 - Confirmation email contains a signed registration-confirm link.
 - Link lifetime matches current login links.
-- Opening a valid signed link confirms the owned registration, logs the user in, and lands on the registration confirmation page.
-- Set `verified = true` only on the first successful transition.
+- Opening a valid signed link opens the user's portal.
+- The portal shows a confirmation button for owned unverified registrations.
+- Pressing the portal confirmation button sets `verified = true` only on the first successful transition.
 
 ### 7. After Confirmation
 
@@ -104,7 +106,8 @@ Use the fewest seams that keep side effects testable.
 - `CreateAthleteRegistrationAction` owns event-scoped registration creation, optional `ExternalUser` creation, and sport type / partner / equal-split validation in one transaction.
 - Existing signed-login flow handles returning-participant authentication and resume redirect.
 - Confirmation notification owns email copy and signed confirmation URL generation.
-- Confirmation route validates the signed URL, confirms the owned registration, logs the external user in, and redirects to the confirmation page.
+- Confirmation link route validates the signed URL, logs the external user in, and redirects to the portal.
+- Confirmation POST route confirms the authenticated user's owned registration and redirects to the confirmation page.
 - Previous donor notification is triggered inline only after the first atomic transition to confirmed.
 
 ## Suggested Implementation Order

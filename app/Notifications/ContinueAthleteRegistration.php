@@ -30,7 +30,6 @@ class ContinueAthleteRegistration extends Notification
         return (new MailMessage)
             ->subject('Weiter zur Sportler:innen-Anmeldung')
             ->greeting('Hallo '.$this->firstName)
-            ->line('Du möchtest deine Anmeldung als Sportler:in fortsetzen.')
             ->line('Der unten stehende Link meldet dich sicher an und bringt dich zurück zur Anmeldung.')
             ->action('Anmeldung fortsetzen', $this->loginUrl)
             ->line('Falls du den Link nicht angefordert hast, kannst du diese E-Mail ignorieren oder uns kontaktieren.');
