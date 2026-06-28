@@ -72,7 +72,7 @@
                     @foreach ($steps as $key => $label)
                         @php
                             $isCurrent = $key === $currentStep;
-                            $isAvailable = $currentStep !== 'login-link-sent' && $loop->iteration <= $currentStepNumber && $key !== 'submitted';
+                            $isAvailable = ! in_array($currentStep, ['login-link-sent', 'submitted'], true) && $loop->iteration <= $currentStepNumber && $key !== 'submitted';
                         @endphp
 
                         <button
@@ -228,10 +228,10 @@
                 </div>
             @elseif ($currentStep === 'previous-donors')
                 <div class="space-y-6">
-                    <flux:callout icon="megaphone" color="red">
+                    <flux:callout icon="megaphone" color="green">
                         <flux:callout.heading>Frühere Unterstützer:innen aktivieren</flux:callout.heading>
                         <flux:callout.text>
-                            Nach deiner Bestätigung können frühere Spender:innen informiert werden. Die Nachricht verwendet deinen Datenschutznamen.
+                            Nach deiner Bestätigung werden frühere Spender:innen informiert, dass du wieder teilnimmst.
                         </flux:callout.text>
                     </flux:callout>
 

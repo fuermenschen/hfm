@@ -2,6 +2,7 @@
 
 use App\Components\AthleteRegistrationWizard;
 use App\Models\AthleteRegistration;
+use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
@@ -88,6 +89,8 @@ it('creates external user registration and sends confirmation for new participan
         ->call('submit')
         ->assertSet('currentStep', 'submitted')
         ->assertDontSee('Neue Anmeldung starten')
+        ->call('goTo', 'registration')
+        ->assertSet('currentStep', 'submitted')
         ->call('restart')
         ->assertSet('currentStep', 'start')
         ->assertSet('privacy_accepted', false)
@@ -282,6 +285,43 @@ it('creates unverified registration and sends confirmation notification for logg
         $externalUser,
         fn (ConfirmAthleteRegistration $notification): bool => str_contains($notification->confirmationUrl, (string) $registration->id),
     );
+});
+
+it('stores previous donor notification opt out from the wizard', function (): void {
+    Notification::fake();
+
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    $event = createCurrentEventWithPartner(athleteRegistrationOpen: true);
+    $previousEvent = DonationEvent::factory()->defaults()->create();
+    $externalUser = ExternalUser::factory()->create(['first_name' => 'Francesca']);
+    $previousRegistration = AthleteRegistration::factory()->forVerifiedEventUser($previousEvent, $externalUser)->create();
+
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $previousRegistration)->create();
+
+    Livewire::actingAs($externalUser, 'external')
+        ->test(AthleteRegistrationWizard::class)
+        ->assertSet('currentStep', 'registration')
+        ->assertSet('notify_previous_donors', true)
+        ->set('sport_type_id', $sportType->id)
+        ->set('rounds_estimated', 12)
+        ->set('partner_id', 0)
+        ->call('next')
+        ->assertSet('currentStep', 'previous-donors')
+        ->assertSee('Frühere Unterstützer:innen aktivieren')
+        ->set('notify_previous_donors', false)
+        ->assertSee('Ohne Hinweis an frühere Spender:innen')
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertSet('currentStep', 'submitted');
+
+    $registration = AthleteRegistration::query()
+        ->whereBelongsTo($event)
+        ->whereBelongsTo($externalUser)
+        ->firstOrFail();
+
+    expect($registration->notify_previous_donors)->toBeFalse();
+
+    Notification::assertSentTo($externalUser, ConfirmAthleteRegistration::class);
 });
 
 it('blocks duplicate registration for logged in external user', function (): void {

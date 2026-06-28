@@ -53,12 +53,6 @@
             @endif
         @endauth
 
-        {{--
-        Es freut uns, dass du als Sportler:in bei uns mitmachen möchtest. Bitte fülle das Formular aus, damit wir alle
-        nötigen Informationen zu dir haben.
-        @livewire('become-athlete-form')
-        --}}
-
         @guest('web')
             @unless ($currentDonationEvent?->athleteRegistrationIsOpen())
                 <x-page-subtitle>

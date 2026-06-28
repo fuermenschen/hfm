@@ -4,7 +4,7 @@
 
 Athlete registration has been rebuilt as a guided wizard on top of `external_users` and `athlete_registrations`; legacy `athletes` table is gone.
 
-The old `BecomeAthleteForm` remains in place only as legacy code until a separate cleanup pass. The new flow uses the current `ExternalUser` + `AthleteRegistration` model and keeps persistence in actions.
+The old `BecomeAthleteForm` has been removed. The new flow uses the current `ExternalUser` + `AthleteRegistration` model and keeps persistence in actions.
 
 ## Target
 
@@ -15,7 +15,7 @@ The wizard is shown on the public athlete registration page when the current don
 ## UX Principles
 
 - Use a step-by-step flow with progressive disclosure.
-- Ask branching questions early so irrelevant steps disappear.
+- Ask for email first so returning and new participants land on the relevant path.
 - Reuse known `ExternalUser` data instead of asking again.
 - Keep each step focused on one topic or one small group of related fields.
 - Use inline validation and visible help text.
@@ -23,8 +23,8 @@ The wizard is shown on the public athlete registration page when the current don
 
 ## Key Decisions
 
-- Existing external users log in through the wizard by entering email directly in the first branch.
-- Login link carries minimal resume context in signed query arguments.
+- Existing external users log in through the wizard by entering email directly in the first step.
+- Login link carries a signed redirect back to the athlete registration page.
 - Login and confirmation links intentionally create persistent external-user sessions.
 - External user personal details are not editable in the wizard.
 - Athlete registration confirmation is separate from email ownership. Email ownership is already proven by signed login link.
@@ -34,6 +34,7 @@ The wizard is shown on the public athlete registration page when the current don
 - Previous donors means all donors from earlier event registrations for the same external user, regardless donation verification state.
 - Previous donor notification is enabled by default; disabling it shows a warning.
 - Every registration submission requires explicit privacy/data-use consent in the wizard.
+- Athlete registration is limited to Swiss residents with Swiss ZIP and telephone format.
 - Existing current-event registrations cannot be changed from the public wizard; users are directed to log in and manage them in the portal.
 - Deleted external-user accounts require manual admin/support contact before reuse.
 - New-user pre-confirmation profile poisoning is an accepted risk; notification copy tells recipients to contact the team if they did not start the flow.
@@ -55,13 +56,13 @@ Donor-facing confirmed-only filtering is handled outside this plan.
 ### 1. Start
 
 - If external user is logged in, skip identity questions and continue to registration details.
-- If not logged in, ask whether user has participated before.
-- If yes, ask for email and send signed login link with resume context.
-- If no, continue to personal details.
+- If not logged in, ask for email and email confirmation.
+- If email belongs to an external user, send signed login link and stop until authentication.
+- If email is unknown, continue to personal details with email prefilled.
 
 ### 2. Personal Details
 
-- New users enter personal details.
+- New users enter personal details for Swiss residence only.
 - Create `ExternalUser` only on final submit; block existing email addresses and route those users through the returning-participant login path.
 
 ### 3. Registration Details
@@ -120,12 +121,15 @@ Use the fewest seams that keep side effects testable.
 - [x] Add explicit privacy/data-use consent.
 - [x] Add spam protection to the public wizard.
 - [x] Route browser journey tests through CI e2e workflow.
+- [x] Remove old `BecomeAthleteForm` component and view.
+- [x] Restrict athlete registration personal details to Switzerland.
 
 ## Testing Focus
 
 - Wizard starts and branches correctly for guest, returning participant, and logged-in external user.
 - Public page shows wizard only when current event athlete registration is open.
 - Current-step validation blocks invalid transitions and clears now-irrelevant branch answers.
+- Email lookup sends returning participant login link and unknown emails continue to personal details.
 - Returning participant login link returns to the wizard without manual restart.
 - Registration creation creates correct `ExternalUser` and `AthleteRegistration` rows for new users, and correct `AthleteRegistration` rows for authenticated external users.
 - Duplicate event registration is blocked.
@@ -143,4 +147,3 @@ Use the fewest seams that keep side effects testable.
 - Editing external user personal details.
 - Group registration.
 - Reworking donor registration or donor-facing athlete selection.
-- Removing the old athlete form component in this review scope.

@@ -449,7 +449,7 @@ class AthleteRegistrationWizard extends Component
 
     public function goTo(string $step): void
     {
-        if ($this->currentStep === 'login-link-sent' && $step !== 'start') {
+        if ($this->currentStep === 'submitted' || ($this->currentStep === 'login-link-sent' && $step !== 'start')) {
             return;
         }
 
