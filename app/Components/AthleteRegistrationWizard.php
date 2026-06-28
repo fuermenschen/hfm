@@ -37,6 +37,8 @@ class AthleteRegistrationWizard extends Component
 
     public ?string $returning_email = null;
 
+    public ?string $returning_email_confirmation = null;
+
     public ?string $first_name = null;
 
     public ?string $last_name = null;
@@ -113,18 +115,27 @@ class AthleteRegistrationWizard extends Component
     {
         $this->validateStep($this->currentStep);
 
-        if ($this->shouldSendReturningLoginLink()) {
+        if ($this->shouldLookupEmail()) {
             $this->protectAgainstSpam();
 
             try {
-                $this->sendReturningLoginLink();
+                $externalUser = $this->lookupExternalUserByEmail();
             } catch (ValidationException $validationException) {
                 $this->setErrorBag($validationException->validator->errors());
 
                 return;
             }
 
-            $this->currentStep = 'login-link-sent';
+            if ($externalUser instanceof ExternalUser) {
+                $this->participation = 'returning';
+                $this->currentStep = 'login-link-sent';
+            } else {
+                $this->participation = 'new';
+                $this->email = trim(mb_strtolower((string) $this->returning_email));
+                $this->email_confirmation = $this->email;
+                $this->currentStep = 'personal';
+            }
+
             $this->dispatch('athlete-registration-wizard-step-changed');
 
             return;
@@ -154,8 +165,8 @@ class AthleteRegistrationWizard extends Component
     {
         return match ($step) {
             'start' => $this->isAuthenticatedExternalUser ? [] : [
-                'participation' => ['required', Rule::in(['new', 'returning'])],
-                'returning_email' => [Rule::requiredIf($this->participation === 'returning'), 'nullable', 'email', 'max:255'],
+                'returning_email' => ['required', 'email', 'max:255'],
+                'returning_email_confirmation' => ['required', 'same:returning_email'],
             ],
             'personal' => $this->participation === 'new' && ! $this->isAuthenticatedExternalUser ? [
                 'first_name' => ['required', 'string', 'max:255'],
@@ -231,9 +242,10 @@ class AthleteRegistrationWizard extends Component
     protected function messages(): array
     {
         return [
-            'participation.required' => 'Bitte wähle, ob du schon einmal dabei warst.',
             'returning_email.required' => 'Bitte gib deine E-Mail-Adresse ein.',
             'returning_email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
+            'returning_email_confirmation.required' => 'Bitte bestätige deine E-Mail-Adresse.',
+            'returning_email_confirmation.same' => 'Die E-Mail-Adressen stimmen nicht überein.',
             'first_name.required' => 'Wir benötigen deinen Vornamen.',
             'last_name.required' => 'Wir benötigen deinen Nachnamen.',
             'address.required' => 'Wir benötigen deine Adresse.',
@@ -255,43 +267,53 @@ class AthleteRegistrationWizard extends Component
         ];
     }
 
-    protected function shouldSendReturningLoginLink(): bool
+    protected function shouldLookupEmail(): bool
     {
         return $this->currentStep === 'start'
-            && $this->participation === 'returning'
             && ! $this->isAuthenticatedExternalUser;
     }
 
-    protected function sendReturningLoginLink(): void
+    protected function lookupExternalUserByEmail(): ?ExternalUser
     {
         $normalizedEmail = trim(mb_strtolower((string) $this->returning_email));
-        $rateLimitKey = 'athlete-registration-login-link:'.hash('sha256', $normalizedEmail.'|'.request()->ip());
+        $this->returning_email = $normalizedEmail;
+        $this->returning_email_confirmation = trim(mb_strtolower((string) $this->returning_email_confirmation));
 
-        if (RateLimiter::tooManyAttempts($rateLimitKey, 2)) {
+        $rateLimitKey = 'athlete-registration-login-link:'.hash('sha256', $normalizedEmail.'|'.request()->ip());
+        $ipRateLimitKey = 'athlete-registration-login-link-ip:'.hash('sha256', (string) request()->ip());
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 2) || RateLimiter::tooManyAttempts($ipRateLimitKey, 10)) {
             throw ValidationException::withMessages([
                 'returning_email' => 'Bitte warte kurz, bevor du erneut einen Link anforderst.',
             ]);
         }
 
         RateLimiter::hit($rateLimitKey, 60);
+        RateLimiter::hit($ipRateLimitKey, 600);
+
+        $startedAt = microtime(true);
 
         $externalUser = ExternalUser::query()
             ->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedEmail])
             ->first();
 
-        if (! $externalUser instanceof ExternalUser) {
-            Sleep::sleep(random_int(0, 3));
+        if ($externalUser instanceof ExternalUser) {
+            $loginUrl = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+                'uuid' => $externalUser->uuid,
+                'redirect' => 'become-athlete',
+            ]);
 
-            return;
+            Notification::route('mail', $normalizedEmail)
+                ->notify(new ContinueAthleteRegistration($externalUser->first_name, $loginUrl));
         }
 
-        $loginUrl = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
-            'uuid' => $externalUser->uuid,
-            'redirect' => 'become-athlete',
-        ]);
+        $remainingSeconds = 3 - (microtime(true) - $startedAt);
 
-        Notification::route('mail', $normalizedEmail)
-            ->notify(new ContinueAthleteRegistration($externalUser->first_name, $loginUrl));
+        if ($remainingSeconds > 0) {
+            Sleep::sleep($remainingSeconds);
+        }
+
+        return $externalUser instanceof ExternalUser ? $externalUser : null;
     }
 
     protected function nextStep(): ?string
@@ -386,6 +408,7 @@ class AthleteRegistrationWizard extends Component
             'currentStep',
             'participation',
             'returning_email',
+            'returning_email_confirmation',
             'first_name',
             'last_name',
             'address',
@@ -513,16 +536,6 @@ class AthleteRegistrationWizard extends Component
         $this->sendConfirmation($athleteRegistration);
 
         return true;
-    }
-
-    public function updatedParticipation(?string $value): void
-    {
-        $this->resetValidation();
-
-        if ($value === 'new') {
-            $this->returning_email = null;
-            $this->notify_previous_donors = true;
-        }
     }
 
     public function updatedPartnerId(?int $value): void

@@ -84,9 +84,9 @@ it('lets a returning guest resume registration through a signed login link', fun
     $page = visit(route('become-athlete'));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Wie möchtest du starten?')
-        ->click('[wire\\:model\\.live="participation"] ui-radio[value="returning"]')
+        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->type('[wire\\:model\\.blur="returning_email"]', 'francesca@example.com')
+        ->type('[wire\\:model\\.blur="returning_email_confirmation"]', 'francesca@example.com')
         ->click('Weiter')
         ->assertSee('Login-Link verschickt');
 
@@ -129,8 +129,9 @@ it('lets a new guest register and confirm through email link', function (): void
     $page = visit(route('become-athlete'));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Wie möchtest du starten?')
-        ->click('[wire\\:model\\.live="participation"] ui-radio[value="new"]')
+        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->type('[wire\\:model\\.blur="returning_email"]', 'mira@example.com')
+        ->type('[wire\\:model\\.blur="returning_email_confirmation"]', 'mira@example.com')
         ->click('Weiter')
         ->assertSee('Deine Angaben')
         ->type('[wire\\:model\\.blur="first_name"]', 'Mira')
@@ -139,8 +140,6 @@ it('lets a new guest register and confirm through email link', function (): void
         ->type('[wire\\:model\\.blur="zip_code"]', '8406')
         ->type('[wire\\:model\\.blur="city"]', 'Winterthur')
         ->type('[wire\\:model\\.blur="phone_number"]', '079 123 45 67')
-        ->type('[wire\\:model\\.blur="email"]', 'mira@example.com')
-        ->type('[wire\\:model\\.blur="email_confirmation"]', 'mira@example.com')
         ->click('Weiter')
         ->assertSee('Dein sportlicher Einsatz')
         ->click($sportType->name)

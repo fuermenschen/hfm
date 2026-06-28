@@ -15,7 +15,7 @@
                     <flux:heading size="lg" class="mt-1">
                         @switch($currentStep)
                             @case('start')
-                                Wie möchtest du starten?
+                                Mit welcher E-Mail-Adresse möchtest du dich anmelden?
                                 @break
                             @case('personal')
                                 Deine Angaben
@@ -37,13 +37,13 @@
                     <flux:text class="mt-2 max-w-xl">
                         @switch($currentStep)
                             @case('start')
-                                Wir stellen nur Fragen, die für deinen Weg nötig sind.
+                                Wir prüfen, ob bereits ein Profil für dich existiert.
                                 @break
                             @case('personal')
                                 Neue Teilnehmer:innen erfassen ihre Kontaktdaten einmalig.
                                 @break
                             @case('login-link-sent')
-                                Falls deine E-Mail-Adresse bekannt ist, haben wir dir einen Link geschickt.
+                                Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.
                                 @break
                             @case('registration')
                                 @if ($isAuthenticatedExternalUser && $externalUser)
@@ -100,23 +100,31 @@
 
             @if ($currentStep === 'start')
                 <div class="space-y-6">
-                    <flux:radio.group wire:model.live="participation" label="Warst du schon einmal als Sportler:in dabei?" variant="cards" class="flex-col">
-                        <flux:radio value="returning" icon="check-circle" label="Ja, ich war schon einmal dabei" description="Wir senden dir einen Link und verwenden bekannte Angaben wieder." />
-                        <flux:radio value="new" icon="user-plus" label="Nein, ich bin neu" description="Du gibst deine Kontaktdaten im nächsten Schritt ein." />
-                    </flux:radio.group>
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <flux:input
+                            wire:model.blur="returning_email"
+                            label="E-Mail-Adresse"
+                            description:trailing="Wenn wir dich kennen, schicken wir dir damit einen sicheren Link zurück in die Anmeldung."
+                            icon-trailing="envelope"
+                            type="email"
+                            autocomplete="email"
+                            required
+                        />
 
-                    @if ($participation === 'returning')
-                        <div class="max-w-xl">
-                            <flux:input
-                                wire:model.blur="returning_email"
-                                label="E-Mail-Adresse"
-                                description:trailing="Wir schicken dir damit einen sicheren Link zurück in die Anmeldung."
-                                icon-trailing="envelope"
-                                type="email"
-                                autocomplete="email"
-                            />
-                        </div>
-                    @endif
+                        <flux:input
+                            wire:model.blur="returning_email_confirmation"
+                            label="E-Mail bestätigen"
+                            icon-trailing="envelope"
+                            type="email"
+                            autocomplete="off"
+                            required
+                        />
+                    </div>
+
+                    <flux:callout wire:loading wire:target="next" icon="shield-check" variant="secondary">
+                        <flux:callout.heading>Wir prüfen, ob wir deine E-Mail-Adresse bereits im System haben...</flux:callout.heading>
+                        <flux:callout.text>Wir verzögern diese Prüfung absichtlich kurz, damit bestehende Profile besser geschützt sind.</flux:callout.text>
+                    </flux:callout>
                 </div>
             @elseif ($currentStep === 'login-link-sent')
                 <div class="grid min-h-80 place-items-center text-center">
@@ -126,7 +134,7 @@
                         </div>
                         <div>
                             <flux:heading size="lg">Login-Link verschickt</flux:heading>
-                            <flux:text class="mt-2">Falls deine E-Mail-Adresse bekannt ist, findest du jetzt einen Link in deinem Postfach. Er bringt dich zurück zu dieser Anmeldung.</flux:text>
+                            <flux:text class="mt-2">Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.</flux:text>
                         </div>
                         <flux:button variant="ghost" wire:click="goTo('start')">Andere E-Mail-Adresse verwenden</flux:button>
                     </div>

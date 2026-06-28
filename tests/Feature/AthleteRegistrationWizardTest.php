@@ -6,15 +6,18 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
+use App\Models\User;
 use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
 use App\Settings\EventSettings;
+use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Sleep;
 use Livewire\Livewire;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
 it('keeps wizard hidden when athlete registration is closed', function (): void {
@@ -22,7 +25,7 @@ it('keeps wizard hidden when athlete registration is closed', function (): void 
 
     get(route('become-athlete'))
         ->assertSuccessful()
-        ->assertDontSee('Wie möchtest du starten?')
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->assertSee('Newsletter Anmeldung');
 });
 
@@ -31,11 +34,26 @@ it('shows wizard when athlete registration is open', function (): void {
 
     get(route('become-athlete'))
         ->assertSuccessful()
-        ->assertSee('Wie möchtest du starten?')
+        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertSee('Wir verzögern diese Prüfung absichtlich kurz')
         ->assertDontSee('Newsletter Anmeldung');
 });
 
+it('hides wizard for logged in admins', function (): void {
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    actingAs(User::factory()->create(), 'web');
+
+    get(route('become-athlete'))
+        ->assertSuccessful()
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertDontSee('Newsletter Anmeldung')
+        ->assertSee('Du bist als Admin angemeldet.')
+        ->assertSee('privaten Browser-Tab');
+});
+
 it('creates external user registration and sends confirmation for new participants', function (): void {
+    Sleep::fake();
     Notification::fake();
 
     $sportType = SportType::query()->create(['name' => 'Laufen']);
@@ -43,9 +61,12 @@ it('creates external user registration and sends confirmation for new participan
 
     Livewire::test(AthleteRegistrationWizard::class)
         ->assertSet('currentStep', 'start')
-        ->set('participation', 'new')
+        ->set('returning_email', 'francesca@example.com')
+        ->set('returning_email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'personal')
+        ->assertSet('email', 'francesca@example.com')
+        ->assertSet('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertHasErrors(['first_name' => ['required']])
         ->set('first_name', 'Francesca')
@@ -68,7 +89,10 @@ it('creates external user registration and sends confirmation for new participan
         ->assertSet('currentStep', 'start')
         ->assertSet('privacy_accepted', false)
         ->assertSet('email', null)
+        ->assertSet('returning_email_confirmation', null)
         ->assertSet('sport_type_id', null);
+
+    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
 
     $externalUser = ExternalUser::query()->where('email', 'francesca@example.com')->firstOrFail();
     $registration = AthleteRegistration::query()
@@ -93,7 +117,9 @@ it('blocks new participant submit when email already belongs to an external user
 
     Livewire::test(AthleteRegistrationWizard::class)
         ->set('participation', 'new')
-        ->call('next')
+        ->set('returning_email', 'francesca@example.com')
+        ->set('returning_email_confirmation', 'francesca@example.com')
+        ->call('goTo', 'personal')
         ->set('first_name', 'Francesca')
         ->set('last_name', 'Arslan')
         ->set('address', 'Zelglistrasse 41')
@@ -116,6 +142,21 @@ it('blocks new participant submit when email already belongs to an external user
     Notification::assertNothingSent();
 });
 
+it('requires matching email confirmation before lookup', function (): void {
+    Notification::fake();
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    Livewire::test(AthleteRegistrationWizard::class)
+        ->set('returning_email', 'francesca@example.com')
+        ->set('returning_email_confirmation', 'mira@example.com')
+        ->call('next')
+        ->assertSet('currentStep', 'start')
+        ->assertHasErrors(['returning_email_confirmation' => ['same']]);
+
+    Sleep::assertNeverSlept();
+    Notification::assertNothingSent();
+});
+
 it('starts at registration step for logged in external users', function (): void {
     createCurrentEventWithPartner(athleteRegistrationOpen: true);
     $externalUser = ExternalUser::factory()->create(['first_name' => 'Francesca']);
@@ -124,7 +165,7 @@ it('starts at registration step for logged in external users', function (): void
         ->test(AthleteRegistrationWizard::class)
         ->assertSet('currentStep', 'registration')
         ->assertSee('Bestehendes Profil erkannt')
-        ->assertDontSee('Wie möchtest du starten?');
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
 it('creates unverified registration and sends confirmation notification for logged in external user', function (): void {
@@ -262,7 +303,9 @@ it('treats soft deleted external user emails as known emails for new participant
 
     Livewire::test(AthleteRegistrationWizard::class)
         ->set('participation', 'new')
-        ->call('next')
+        ->set('returning_email', 'francesca@example.com')
+        ->set('returning_email_confirmation', 'francesca@example.com')
+        ->call('goTo', 'personal')
         ->set('first_name', 'Francesca')
         ->set('last_name', 'Arslan')
         ->set('address', 'Zelglistrasse 41')
@@ -285,14 +328,16 @@ it('treats soft deleted external user emails as known emails for new participant
 });
 
 it('rate limits returning guest login link requests', function (): void {
+    Sleep::fake();
     Notification::fake();
     createCurrentEventWithPartner(athleteRegistrationOpen: true);
     ExternalUser::factory()->create(['email' => 'rate-limit@example.com']);
-    RateLimiter::clear('athlete-registration-login-link:'.sha1('rate-limit@example.com|127.0.0.1'));
+    RateLimiter::clear('athlete-registration-login-link:'.hash('sha256', 'rate-limit@example.com|127.0.0.1'));
+    RateLimiter::clear('athlete-registration-login-link-ip:'.hash('sha256', '127.0.0.1'));
 
     Livewire::test(AthleteRegistrationWizard::class)
-        ->set('participation', 'returning')
         ->set('returning_email', 'rate-limit@example.com')
+        ->set('returning_email_confirmation', 'rate-limit@example.com')
         ->call('next')
         ->assertSet('currentStep', 'login-link-sent')
         ->call('goTo', 'start')
@@ -305,6 +350,7 @@ it('rate limits returning guest login link requests', function (): void {
 });
 
 it('sends login link and stops for returning guest participants', function (): void {
+    Sleep::fake();
     Notification::fake();
     createCurrentEventWithPartner(athleteRegistrationOpen: true);
     $externalUser = ExternalUser::factory()->create([
@@ -313,11 +359,13 @@ it('sends login link and stops for returning guest participants', function (): v
     ]);
 
     Livewire::test(AthleteRegistrationWizard::class)
-        ->set('participation', 'returning')
         ->set('returning_email', 'FRANCESCA@example.com')
+        ->set('returning_email_confirmation', 'FRANCESCA@example.com')
         ->call('next')
         ->assertSet('currentStep', 'login-link-sent')
-        ->assertSee('Login-Link verschickt');
+        ->assertSee('Wir haben dir einen Link geschickt');
+
+    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
 
     Notification::assertSentOnDemand(
         ContinueAthleteRegistration::class,
@@ -328,6 +376,7 @@ it('sends login link and stops for returning guest participants', function (): v
 });
 
 it('keeps returning guest participants on the login link step until they authenticate', function (): void {
+    Sleep::fake();
     Notification::fake();
 
     $sportType = SportType::query()->create(['name' => 'Laufen']);
@@ -335,8 +384,8 @@ it('keeps returning guest participants on the login link step until they authent
     ExternalUser::factory()->create(['email' => 'francesca@example.com']);
 
     Livewire::test(AthleteRegistrationWizard::class)
-        ->set('participation', 'returning')
         ->set('returning_email', 'francesca@example.com')
+        ->set('returning_email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'login-link-sent')
         ->call('goTo', 'registration')
@@ -352,18 +401,22 @@ it('keeps returning guest participants on the login link step until they authent
     expect(AthleteRegistration::query()->count())->toBe(0);
 });
 
-it('shows same returning guest success state for unknown emails without sending notification', function (): void {
+it('continues to personal details for unknown emails without sending notification', function (): void {
     Sleep::fake();
     Notification::fake();
 
     createCurrentEventWithPartner(athleteRegistrationOpen: true);
 
     Livewire::test(AthleteRegistrationWizard::class)
-        ->set('participation', 'returning')
         ->set('returning_email', 'unknown@example.com')
+        ->set('returning_email_confirmation', 'unknown@example.com')
         ->call('next')
-        ->assertSet('currentStep', 'login-link-sent')
-        ->assertSee('Login-Link verschickt');
+        ->assertSet('currentStep', 'personal')
+        ->assertSet('email', 'unknown@example.com')
+        ->assertSet('email_confirmation', 'unknown@example.com')
+        ->assertSee('Deine Angaben');
+
+    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
 
     Notification::assertNothingSent();
 });
