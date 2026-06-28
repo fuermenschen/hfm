@@ -1,12 +1,12 @@
 <div
-    class="mt-8"
+    class="mt-8 w-full"
     x-data
     x-on:athlete-registration-wizard-step-changed.window="$nextTick(() => $refs.card.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
 >
-    <flux:card x-ref="card" class="mx-auto max-w-3xl scroll-mt-6 p-0 overflow-hidden">
+    <div x-ref="card" class="w-full scroll-mt-6 overflow-hidden border-y border-zinc-200 dark:border-zinc-700">
         <x-honeypot livewire-model="extraFields" />
 
-        <div class="border-b border-zinc-200 px-5 py-5 dark:border-zinc-700 sm:px-8">
+        <div class="border-b border-zinc-200 py-5 dark:border-zinc-700">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <flux:text size="sm" class="font-medium text-hfm-red dark:text-hfm-lightred">
@@ -78,7 +78,7 @@
                         <button
                             type="button"
                             @if ($isAvailable) wire:click="goTo('{{ $key }}')" @else disabled @endif
-                            class="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition {{ $isCurrent ? 'border-hfm-red bg-hfm-red/10 text-hfm-red dark:border-hfm-lightred dark:bg-hfm-lightred/10 dark:text-hfm-lightred' : 'border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300' }} {{ $isAvailable ? 'hover:border-hfm-red/60 hover:text-hfm-red dark:hover:border-hfm-lightred/60 dark:hover:text-hfm-lightred' : 'cursor-not-allowed opacity-50' }}"
+                            class="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition {{ $isCurrent ? 'border-hfm-red bg-hfm-red/10 text-hfm-red dark:border-hfm-lightred dark:bg-hfm-lightred/10 dark:text-hfm-lightred' : 'border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300' }} {{ $isAvailable ? 'cursor-pointer hover:border-hfm-red/60 hover:text-hfm-red dark:hover:border-hfm-lightred/60 dark:hover:text-hfm-lightred' : 'cursor-not-allowed opacity-50' }}"
                         >
                             <span class="flex size-5 shrink-0 items-center justify-center rounded-full {{ $isCurrent ? 'bg-hfm-red text-white dark:bg-hfm-lightred dark:text-hfm-dark' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300' }}">
                                 {{ $loop->iteration }}
@@ -90,7 +90,7 @@
             </div>
         </div>
 
-        <div class="min-h-[clamp(24rem,58svh,40rem)] px-5 py-6 sm:px-8 sm:py-8" wire:key="athlete-registration-wizard-{{ $currentStep }}">
+        <div class="py-6 sm:py-8" wire:key="athlete-registration-wizard-{{ $currentStep }}">
             @if ($errors->any())
                 <flux:callout icon="exclamation-triangle" variant="danger" class="mb-6">
                     <flux:callout.heading>Anmeldung noch nicht möglich</flux:callout.heading>
@@ -102,8 +102,9 @@
                 <div class="space-y-6">
                     <div class="grid gap-6 sm:grid-cols-2">
                         <flux:input
-                            wire:model.blur="returning_email"
+                            wire:model.live.blur="returning_email"
                             label="E-Mail-Adresse"
+                            placeholder="francesca.arslan@posteo.ch"
                             description:trailing="Wenn wir dich kennen, schicken wir dir damit einen sicheren Link zurück in die Anmeldung."
                             icon-trailing="envelope"
                             type="email"
@@ -112,8 +113,9 @@
                         />
 
                         <flux:input
-                            wire:model.blur="returning_email_confirmation"
+                            wire:model.live.blur="returning_email_confirmation"
                             label="E-Mail bestätigen"
+                            placeholder="francesca.arslan@posteo.ch"
                             icon-trailing="envelope"
                             type="email"
                             autocomplete="off"
@@ -121,7 +123,7 @@
                         />
                     </div>
 
-                    <flux:callout wire:loading wire:target="next" icon="shield-check" variant="secondary">
+                    <flux:callout wire:loading.flex wire:target="next" icon="shield-check" variant="secondary" class="w-full sm:col-span-2">
                         <flux:callout.heading>Wir prüfen, ob wir deine E-Mail-Adresse bereits im System haben...</flux:callout.heading>
                         <flux:callout.text>Wir verzögern diese Prüfung absichtlich kurz, damit bestehende Profile besser geschützt sind.</flux:callout.text>
                     </flux:callout>
@@ -149,16 +151,16 @@
                     </flux:callout>
                 @else
                     <div class="grid gap-6 sm:grid-cols-2">
-                        <flux:input wire:model.blur="first_name" label="Vorname" icon-trailing="user" autocomplete="given-name" required />
-                        <flux:input wire:model.blur="last_name" label="Nachname" icon-trailing="user" autocomplete="family-name" required />
-                        <flux:input wire:model.blur="address" label="Adresse" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
+                        <flux:input wire:model.live.blur="first_name" label="Vorname" placeholder="Francesca" icon-trailing="user" autocomplete="given-name" required />
+                        <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
+                        <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
 
-                        <flux:input wire:model.blur="zip_code" label="PLZ" mask="9999" placeholder="8406" autocomplete="postal-code" icon-trailing="map-pin" required />
+                        <flux:input wire:model.live.blur="zip_code" label="PLZ" mask="9999" placeholder="8406" autocomplete="postal-code" icon-trailing="map-pin" required />
 
-                        <flux:input wire:model.blur="city" label="Ort" icon-trailing="map-pin" autocomplete="address-level2" required />
-                        <flux:input wire:model.blur="phone_number" label="Telefon" mask="999 999 99 99" placeholder="079 123 45 67" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
-                        <flux:input wire:model.blur="email" label="E-Mail" icon-trailing="envelope" autocomplete="email" type="email" required />
-                        <flux:input wire:model.blur="email_confirmation" label="E-Mail bestätigen" icon-trailing="envelope" autocomplete="off" type="email" required />
+                        <flux:input wire:model.live.blur="city" label="Ort" placeholder="Winterthur" icon-trailing="map-pin" autocomplete="address-level2" required />
+                        <flux:input wire:model.live.blur="phone_number" label="Telefon" mask="999 999 99 99" placeholder="079 123 45 67" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
+                        <flux:input wire:model.live.blur="email" label="E-Mail" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="email" type="email" required />
+                        <flux:input wire:model.live.blur="email_confirmation" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="off" type="email" required />
                     </div>
                 @endif
             @elseif ($currentStep === 'registration')
@@ -177,27 +179,21 @@
                     @else
                         <flux:radio.group wire:model.live="sport_type_id" label="Sportart" variant="pills">
                             @foreach ($sportTypes as $sportType)
-                                <flux:radio wire:key="sport-type-{{ $sportType->id }}" value="{{ $sportType->id }}" label="{{ $sportType->name }}" />
+                                <flux:radio wire:key="sport-type-{{ $sportType->id }}" value="{{ $sportType->id }}" label="{{ $sportType->name }}" class="cursor-pointer" />
                             @endforeach
                         </flux:radio.group>
                     @endif
 
-                    <div class="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-                        <flux:input
-                            wire:model.blur="rounds_estimated"
-                            label="Geschätzte Anzahl Runden"
-                            description:trailing="Hilft Spender:innen beim Einschätzen ihres Beitrags."
-                            icon-trailing="fire"
-                            type="number"
-                            min="1"
-                            required
-                        />
-
-                        <flux:callout icon="information-circle" variant="secondary" inline>
-                            <flux:callout.heading>Keine Sorge</flux:callout.heading>
-                            <flux:callout.text>Du darfst später mehr oder weniger Runden schaffen als geschätzt.</flux:callout.text>
-                        </flux:callout>
-                    </div>
+                    <flux:input
+                        wire:model.live.blur="rounds_estimated"
+                        label="Geschätzte Anzahl Runden"
+                        description:trailing="Dies hilft Spender:innen beim Einschätzen ihres Beitrags pro Runde. Keine Sorge, du kannst auch weniger oder mehr Runden absolvieren."
+                        placeholder="11"
+                        icon-trailing="fire"
+                        type="number"
+                        min="1"
+                        required
+                    />
 
                     <flux:radio.group wire:model.live="partner_id" label="Ich sammle für" variant="cards" class="flex-col">
                         @if ($allowEqualSplitOption)
@@ -212,10 +208,11 @@
                     </flux:radio.group>
 
                     <flux:textarea
-                        wire:model.blur="comment"
+                        wire:model.live.blur="comment"
                         label="Kommentar"
                         badge="optional"
                         description:trailing="Kurz, persönlich, motivierend. Maximal 2000 Zeichen."
+                        placeholder="Ich freu mich druf. Bin zwar nöd mega sportlich, aber das isch ja egal. Hauptsach es chunnt e gueti Summe zäme!"
                         rows="4"
                     />
 
@@ -275,10 +272,14 @@
         </div>
 
         @if (! in_array($currentStep, ['submitted', 'login-link-sent'], true))
-            <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 px-5 py-5 dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-                <flux:button variant="ghost" icon="arrow-left" wire:click="back" :disabled="$currentStepNumber === 1">
-                    Zurück
-                </flux:button>
+            <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 py-5 dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between">
+                @if ($currentStepNumber > 1)
+                    <flux:button variant="ghost" icon="arrow-left" wire:click="back">
+                        Zurück
+                    </flux:button>
+                @else
+                    <span></span>
+                @endif
 
                 @if ($isFinalStep)
                     <flux:button variant="primary" icon:trailing="check" wire:click="submit" class="data-loading:opacity-50">
@@ -291,5 +292,5 @@
                 @endif
             </div>
         @endif
-    </flux:card>
+    </div>
 </div>

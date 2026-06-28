@@ -144,6 +144,18 @@ it('requires swiss residence and telephone format for new participants', functio
     Notification::assertNothingSent();
 });
 
+it('validates personal fields when they are updated', function (): void {
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    Livewire::test(AthleteRegistrationWizard::class)
+        ->set('participation', 'new')
+        ->call('goTo', 'personal')
+        ->set('first_name', '')
+        ->assertHasErrors(['first_name' => ['required']])
+        ->set('phone_number', '0791234567')
+        ->assertHasErrors(['phone_number' => ['regex']]);
+});
+
 it('blocks new participant submit when email already belongs to an external user', function (): void {
     Notification::fake();
 

@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Sleep;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
 use Spatie\Honeypot\Http\Livewire\Concerns\UsesSpamProtection;
@@ -36,38 +37,81 @@ class AthleteRegistrationWizard extends Component
 
     public ?string $participation = null;
 
+    #[Validate('required', message: 'Bitte gib deine E-Mail-Adresse ein.')]
+    #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
+    #[Validate('max:255')]
     public ?string $returning_email = null;
 
+    #[Validate('required', message: 'Bitte bestätige deine E-Mail-Adresse.')]
+    #[Validate('same:returning_email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
     public ?string $returning_email_confirmation = null;
 
+    #[Validate('required', message: 'Wir benötigen deinen Vornamen.')]
+    #[Validate('string')]
+    #[Validate('max:255')]
     public ?string $first_name = null;
 
+    #[Validate('required', message: 'Wir benötigen deinen Nachnamen.')]
+    #[Validate('string')]
+    #[Validate('max:255')]
     public ?string $last_name = null;
 
+    #[Validate('required', message: 'Wir benötigen deine Adresse.')]
+    #[Validate('string')]
+    #[Validate('max:255')]
     public ?string $address = null;
 
+    #[Validate('required', message: 'Wir benötigen deine Postleitzahl.')]
+    #[Validate('string')]
+    #[Validate('regex:/^[1-9]\d{3}$/', message: 'Ungültige Postleitzahl')]
     public ?string $zip_code = null;
 
+    #[Validate('required', message: 'Wir benötigen deinen Wohnort.')]
+    #[Validate('string')]
+    #[Validate('max:255')]
     public ?string $city = null;
 
+    #[Validate('required')]
+    #[Validate('in:CH', message: 'Die Anmeldung ist aktuell nur für Personen mit Wohnsitz in der Schweiz möglich.')]
     public string $country_of_residence = 'CH';
 
+    #[Validate('required', message: 'Wir benötigen deine Telefonnummer.')]
+    #[Validate('string')]
+    #[Validate('regex:/^0\d{2} \d{3} \d{2} \d{2}$/', message: 'Bitte gib eine Schweizer Telefonnummer im Format 079 123 45 67 ein.')]
     public ?string $phone_number = null;
 
+    #[Validate('required', message: 'Wir benötigen deine E-Mail-Adresse.')]
+    #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
+    #[Validate('max:255')]
     public ?string $email = null;
 
+    #[Validate('required', message: 'Bitte bestätige deine E-Mail-Adresse.')]
+    #[Validate('same:email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
     public ?string $email_confirmation = null;
 
+    #[Validate('required', message: 'Bitte wähle eine Sportart.')]
+    #[Validate('integer')]
     public ?int $sport_type_id = null;
 
+    #[Validate('required', message: 'Bitte gib deine geschätzten Runden an.')]
+    #[Validate('integer')]
+    #[Validate('min:1', message: 'Die geschätzten Runden müssen mindestens 1 sein.')]
+    #[Validate('max:255')]
     public ?int $rounds_estimated = null;
 
+    #[Validate('required', message: 'Bitte wähle, für wen du sammeln möchtest.')]
+    #[Validate('integer')]
     public ?int $partner_id = null;
 
+    #[Validate('nullable')]
+    #[Validate('string')]
+    #[Validate('max:2000', message: 'Der Kommentar darf nicht länger als 2000 Zeichen sein.')]
     public ?string $comment = null;
 
+    #[Validate('boolean')]
     public bool $notify_previous_donors = true;
 
+    #[Validate('accepted', message: 'Bitte bestätige, dass wir deine Daten für die Organisation des Anlasses verwenden dürfen.')]
     public bool $privacy_accepted = false;
 
     public bool $allowEqualSplitOption = true;
