@@ -92,7 +92,7 @@ it('creates external user registration and sends confirmation for new participan
         ->assertSet('returning_email_confirmation', null)
         ->assertSet('sport_type_id', null);
 
-    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
+    Sleep::assertNeverSlept();
 
     $externalUser = ExternalUser::query()->where('email', 'francesca@example.com')->firstOrFail();
     $registration = AthleteRegistration::query()
@@ -365,7 +365,7 @@ it('sends login link and stops for returning guest participants', function (): v
         ->assertSet('currentStep', 'login-link-sent')
         ->assertSee('Wir haben dir einen Link geschickt');
 
-    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
+    Sleep::assertNeverSlept();
 
     Notification::assertSentOnDemand(
         ContinueAthleteRegistration::class,
@@ -416,9 +416,30 @@ it('continues to personal details for unknown emails without sending notificatio
         ->assertSet('email_confirmation', 'unknown@example.com')
         ->assertSee('Deine Angaben');
 
-    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
+    Sleep::assertNeverSlept();
 
     Notification::assertNothingSent();
+});
+
+it('delays email lookup in production', function (): void {
+    Sleep::fake();
+    Notification::fake();
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    $previousEnvironment = app()->environment();
+    app()->detectEnvironment(fn (): string => 'production');
+
+    try {
+        Livewire::test(AthleteRegistrationWizard::class)
+            ->set('returning_email', 'unknown@example.com')
+            ->set('returning_email_confirmation', 'unknown@example.com')
+            ->call('next')
+            ->assertSet('currentStep', 'personal');
+    } finally {
+        app()->detectEnvironment(fn (): string => $previousEnvironment);
+    }
+
+    Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
 });
 
 function createCurrentEventWithPartner(bool $athleteRegistrationOpen = false): DonationEvent

@@ -307,13 +307,18 @@ class AthleteRegistrationWizard extends Component
                 ->notify(new ContinueAthleteRegistration($externalUser->first_name, $loginUrl));
         }
 
-        $remainingSeconds = 3 - (microtime(true) - $startedAt);
+        $remainingSeconds = $this->emailLookupDelaySeconds() - (microtime(true) - $startedAt);
 
-        if ($remainingSeconds > 0) {
+        if ($remainingSeconds > 0 && app()->isProduction()) {
             Sleep::sleep($remainingSeconds);
         }
 
         return $externalUser instanceof ExternalUser ? $externalUser : null;
+    }
+
+    protected function emailLookupDelaySeconds(): int
+    {
+        return 3;
     }
 
     protected function nextStep(): ?string
