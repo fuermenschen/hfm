@@ -153,17 +153,10 @@
                         <flux:input wire:model.blur="last_name" label="Nachname" icon-trailing="user" autocomplete="family-name" required />
                         <flux:input wire:model.blur="address" label="Adresse" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
 
-                        <flux:input.group label="PLZ">
-                            <flux:select wire:model.live="country_of_residence" variant="listbox">
-                                <flux:select.option value="CH">Schweiz</flux:select.option>
-                                <flux:select.option value="DE">Deutschland</flux:select.option>
-                                <flux:select.option value="AT">Österreich</flux:select.option>
-                            </flux:select>
-                            <flux:input wire:model.blur="zip_code" autocomplete="postal-code" icon-trailing="map-pin" required />
-                        </flux:input.group>
+                        <flux:input wire:model.blur="zip_code" label="PLZ" mask="9999" placeholder="8406" autocomplete="postal-code" icon-trailing="map-pin" required />
 
                         <flux:input wire:model.blur="city" label="Ort" icon-trailing="map-pin" autocomplete="address-level2" required />
-                        <flux:input wire:model.blur="phone_number" label="Telefon" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
+                        <flux:input wire:model.blur="phone_number" label="Telefon" mask="999 999 99 99" placeholder="079 123 45 67" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
                         <flux:input wire:model.blur="email" label="E-Mail" icon-trailing="envelope" autocomplete="email" type="email" required />
                         <flux:input wire:model.blur="email_confirmation" label="E-Mail bestätigen" icon-trailing="envelope" autocomplete="off" type="email" required />
                     </div>
@@ -276,9 +269,6 @@
                             <flux:heading size="lg">Anmeldung erhalten</flux:heading>
                             <flux:text class="mt-2">Wir haben dir eine E-Mail geschickt. Bitte öffne den Link darin, um deine Registrierung zu bestätigen.</flux:text>
                         </div>
-                        @unless ($isAuthenticatedExternalUser)
-                            <flux:button variant="primary" wire:click="restart">Neue Anmeldung starten</flux:button>
-                        @endunless
                     </div>
                 </div>
             @endif

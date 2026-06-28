@@ -29,7 +29,21 @@
                 <p class="mt-1">Bitte logge dich aus oder öffne einen privaten Browser-Tab, um das Formular zu sehen.</p>
             </div>
         @else
-            @if ($currentDonationEvent?->athleteRegistrationIsOpen())
+            @if ($currentAthleteRegistration ?? null)
+                <div class="mt-6 mb-9 rounded-lg border border-hfm-red/40 bg-hfm-red/10 px-9 py-6">
+                    <p class="font-semibold text-hfm-red">Du bist für diesen Anlass bereits als Sportler:in angemeldet.</p>
+                    <p class="mt-1">
+                        @if ($currentAthleteRegistration->verified)
+                            Du findest deine Anmeldung im Portal.
+                        @else
+                            Bitte bestätige deine Anmeldung über den Link in deiner E-Mail oder im Portal.
+                        @endif
+                    </p>
+                    <p class="mt-4">
+                        <x-inline-link href="{{ route('portal.dashboard') }}">Zum Portal</x-inline-link>
+                    </p>
+                </div>
+            @elseif ($currentDonationEvent?->athleteRegistrationIsOpen())
                 @livewire('athlete-registration-wizard')
             @else
                 <div class="mt-6 mb-9 rounded-lg border border-hfm-red/40 bg-hfm-red/10 px-9 py-6">

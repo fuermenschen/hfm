@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class CreateAthleteRegistrationAction
 {
-    private const ExistingRegistrationMessage = 'Du bist für diesen Anlass bereits als Sportler:in angemeldet. Bitte logge dich im Portal ein, um deine Anmeldung zu verwalten.';
+    private const ExistingRegistrationMessage = 'Du bist für diesen Anlass bereits als Sportler:in angemeldet. Bitte öffne dein Portal, um deine Anmeldung zu prüfen.';
 
     /**
      * @param  array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null  $externalUserData
@@ -98,7 +98,7 @@ class CreateAthleteRegistrationAction
             throw ValidationException::withMessages([
                 'email' => $knownExternalUser->trashed()
                     ? 'Diese E-Mail-Adresse kann nicht automatisch weiterverwendet werden. Bitte kontaktiere uns, damit wir dein Profil prüfen können.'
-                    : 'Diese E-Mail-Adresse ist bereits bekannt. Bitte wähle "Ich war schon einmal dabei" oder logge dich im Portal ein.',
+                    : 'Diese E-Mail-Adresse ist bereits bekannt. Bitte verwende den Login-Link oder öffne dein Portal.',
             ]);
         }
 

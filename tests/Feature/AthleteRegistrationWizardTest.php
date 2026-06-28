@@ -67,6 +67,8 @@ it('creates external user registration and sends confirmation for new participan
         ->assertSet('currentStep', 'personal')
         ->assertSet('email', 'francesca@example.com')
         ->assertSet('email_confirmation', 'francesca@example.com')
+        ->assertDontSee('Deutschland')
+        ->assertDontSee('Österreich')
         ->call('next')
         ->assertHasErrors(['first_name' => ['required']])
         ->set('first_name', 'Francesca')
@@ -85,6 +87,7 @@ it('creates external user registration and sends confirmation for new participan
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertSet('currentStep', 'submitted')
+        ->assertDontSee('Neue Anmeldung starten')
         ->call('restart')
         ->assertSet('currentStep', 'start')
         ->assertSet('privacy_accepted', false)
@@ -102,10 +105,43 @@ it('creates external user registration and sends confirmation for new participan
 
     expect($externalUser->first_name)->toBe('Francesca')
         ->and($externalUser->email)->toBe('francesca@example.com')
+        ->and($externalUser->country_of_residence)->toBe('CH')
         ->and($registration->verified)->toBeFalse()
         ->and($registration->partner_id)->toBeNull();
 
     Notification::assertSentTo($externalUser, ConfirmAthleteRegistration::class);
+});
+
+it('requires swiss residence and telephone format for new participants', function (): void {
+    Sleep::fake();
+    Notification::fake();
+
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    Livewire::test(AthleteRegistrationWizard::class)
+        ->set('participation', 'new')
+        ->call('goTo', 'personal')
+        ->set('first_name', 'Francesca')
+        ->set('last_name', 'Arslan')
+        ->set('address', 'Zelglistrasse 41')
+        ->set('zip_code', '8406')
+        ->set('city', 'Winterthur')
+        ->set('country_of_residence', 'DE')
+        ->set('phone_number', '0791234567')
+        ->set('email', 'francesca@example.com')
+        ->set('email_confirmation', 'francesca@example.com')
+        ->call('next')
+        ->assertHasErrors([
+            'country_of_residence' => ['in'],
+            'phone_number' => ['regex'],
+        ])
+        ->assertSee('nur für Personen mit Wohnsitz in der Schweiz')
+        ->assertSee('079 123 45 67');
+
+    expect(ExternalUser::query()->count())->toBe(0)
+        ->and(AthleteRegistration::query()->count())->toBe(0);
+
+    Notification::assertNothingSent();
 });
 
 it('blocks new participant submit when email already belongs to an external user', function (): void {
@@ -168,6 +204,42 @@ it('starts at registration step for logged in external users', function (): void
         ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
+it('hides wizard for logged in external users with verified current registration', function (): void {
+    $event = createCurrentEventWithPartner(athleteRegistrationOpen: true);
+    $externalUser = ExternalUser::factory()->create();
+    AthleteRegistration::factory()->forVerifiedEventUser($event, $externalUser)->create();
+
+    actingAs($externalUser, 'external');
+
+    get(route('become-athlete'))
+        ->assertSuccessful()
+        ->assertSee('Du bist für diesen Anlass bereits als Sportler:in angemeldet.')
+        ->assertSee('Du findest deine Anmeldung im Portal.')
+        ->assertSee('Zum Portal')
+        ->assertDontSee('Dein sportlicher Einsatz')
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
+});
+
+it('hides wizard for logged in external users with unverified current registration', function (): void {
+    $event = createCurrentEventWithPartner(athleteRegistrationOpen: true);
+    $externalUser = ExternalUser::factory()->create();
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'external_user_id' => $externalUser->id,
+        'verified' => false,
+    ]);
+
+    actingAs($externalUser, 'external');
+
+    get(route('become-athlete'))
+        ->assertSuccessful()
+        ->assertSee('Du bist für diesen Anlass bereits als Sportler:in angemeldet.')
+        ->assertSee('Bitte bestätige deine Anmeldung über den Link in deiner E-Mail oder im Portal.')
+        ->assertSee('Zum Portal')
+        ->assertDontSee('Dein sportlicher Einsatz')
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
+});
+
 it('creates unverified registration and sends confirmation notification for logged in external user', function (): void {
     Notification::fake();
 
@@ -217,7 +289,7 @@ it('blocks duplicate registration for logged in external user', function (): voi
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['registration'])
-        ->assertSee('Bitte logge dich im Portal ein');
+        ->assertSee('Bitte öffne dein Portal');
 
     expect(AthleteRegistration::query()->whereBelongsTo($event)->whereBelongsTo($externalUser)->count())->toBe(1);
 
@@ -244,7 +316,7 @@ it('blocks existing unverified registration for logged in external user', functi
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['registration'])
-        ->assertSee('Bitte logge dich im Portal ein');
+        ->assertSee('Bitte öffne dein Portal');
 
     expect(AthleteRegistration::query()->whereBelongsTo($event)->whereBelongsTo($externalUser)->count())->toBe(1)
         ->and($registration->refresh()->verified)->toBeFalse();
@@ -360,7 +432,7 @@ it('sends login link and stops for returning guest participants', function (): v
 
     Livewire::test(AthleteRegistrationWizard::class)
         ->set('returning_email', 'FRANCESCA@example.com')
-        ->set('returning_email_confirmation', 'FRANCESCA@example.com')
+        ->set('returning_email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'login-link-sent')
         ->assertSee('Wir haben dir einen Link geschickt');

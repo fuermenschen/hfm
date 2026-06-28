@@ -11,6 +11,7 @@ use App\Models\Partner;
 use App\Models\SportType;
 use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
+use App\Rules\ValidZipCode;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -113,6 +114,10 @@ class AthleteRegistrationWizard extends Component
 
     public function next(): void
     {
+        if ($this->shouldLookupEmail()) {
+            $this->normalizeLookupEmails();
+        }
+
         $this->validateStep($this->currentStep);
 
         if ($this->shouldLookupEmail()) {
@@ -172,10 +177,10 @@ class AthleteRegistrationWizard extends Component
                 'first_name' => ['required', 'string', 'max:255'],
                 'last_name' => ['required', 'string', 'max:255'],
                 'address' => ['required', 'string', 'max:255'],
-                'zip_code' => ['required', 'string', 'max:20'],
+                'zip_code' => ['required', 'string', new ValidZipCode('CH')],
                 'city' => ['required', 'string', 'max:255'],
-                'country_of_residence' => ['required', Rule::in(['CH', 'DE', 'AT'])],
-                'phone_number' => ['required', 'string', 'max:40'],
+                'country_of_residence' => ['required', Rule::in(['CH'])],
+                'phone_number' => ['required', 'string', 'regex:/^0\d{2} \d{3} \d{2} \d{2}$/'],
                 'email' => ['required', 'email', 'max:255'],
                 'email_confirmation' => ['required', 'same:email'],
             ] : [],
@@ -252,6 +257,8 @@ class AthleteRegistrationWizard extends Component
             'zip_code.required' => 'Wir benötigen deine Postleitzahl.',
             'city.required' => 'Wir benötigen deinen Wohnort.',
             'phone_number.required' => 'Wir benötigen deine Telefonnummer.',
+            'phone_number.regex' => 'Bitte gib eine Schweizer Telefonnummer im Format 079 123 45 67 ein.',
+            'country_of_residence.in' => 'Die Anmeldung ist aktuell nur für Personen mit Wohnsitz in der Schweiz möglich.',
             'email.required' => 'Wir benötigen deine E-Mail-Adresse.',
             'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
             'email_confirmation.required' => 'Bitte bestätige deine E-Mail-Adresse.',
@@ -273,11 +280,15 @@ class AthleteRegistrationWizard extends Component
             && ! $this->isAuthenticatedExternalUser;
     }
 
+    protected function normalizeLookupEmails(): void
+    {
+        $this->returning_email = trim(mb_strtolower((string) $this->returning_email));
+        $this->returning_email_confirmation = trim(mb_strtolower((string) $this->returning_email_confirmation));
+    }
+
     protected function lookupExternalUserByEmail(): ?ExternalUser
     {
-        $normalizedEmail = trim(mb_strtolower((string) $this->returning_email));
-        $this->returning_email = $normalizedEmail;
-        $this->returning_email_confirmation = trim(mb_strtolower((string) $this->returning_email_confirmation));
+        $normalizedEmail = (string) $this->returning_email;
 
         $rateLimitKey = 'athlete-registration-login-link:'.hash('sha256', $normalizedEmail.'|'.request()->ip());
         $ipRateLimitKey = 'athlete-registration-login-link-ip:'.hash('sha256', (string) request()->ip());
@@ -528,7 +539,7 @@ class AthleteRegistrationWizard extends Component
                 'address' => (string) $this->address,
                 'zip_code' => (string) $this->zip_code,
                 'city' => (string) $this->city,
-                'country_of_residence' => $this->country_of_residence,
+                'country_of_residence' => 'CH',
                 'phone_number' => (string) $this->phone_number,
                 'email' => (string) $this->email,
             ]);
