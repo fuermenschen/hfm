@@ -41,7 +41,7 @@ it('lets a logged in external user register and confirm through email link', fun
         ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->wait(0.2)
-        ->click('Anmeldung absenden')
+        ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten')
         ->assertSee('Wir haben dir eine E-Mail geschickt');
 
@@ -72,7 +72,7 @@ it('lets a logged in external user register and confirm through email link', fun
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
         ->assertSee('Verifiziert: Nein')
-        ->click('Anmeldung bestätigen')
+        ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
         ->assertSee('Anmeldung bestätigt')
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
@@ -97,7 +97,7 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'francesca@example.com')
         ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
         ->wait(0.2)
-        ->click('Weiter')
+        ->pressAndWaitFor('Weiter', 0.2)
         ->assertSee('Login-Link verschickt');
 
     $loginUrl = null;
@@ -123,7 +123,7 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->click($partner->name)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->wait(0.2)
-        ->click('Anmeldung absenden')
+        ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten');
 
     $registration = AthleteRegistration::query()
@@ -147,7 +147,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'mira@example.com')
         ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
         ->wait(0.2)
-        ->click('Weiter')
+        ->pressAndWaitFor('Weiter', 0.2)
         ->assertSee('Deine Angaben')
         ->type('[wire\\:model\\.live\\.blur="first_name"]', 'Mira')
         ->type('[wire\\:model\\.live\\.blur="last_name"]', 'Keller')
@@ -157,7 +157,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->type('[wire\\:model\\.live\\.blur="phone_number"]', '079 123 45 67')
         ->keys('[wire\\:model\\.live\\.blur="phone_number"]', 'Tab')
         ->wait(0.2)
-        ->click('Weiter')
+        ->pressAndWaitFor('Weiter', 0.2)
         ->assertSee('Sportart')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '10')
@@ -166,7 +166,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->click($partner->name)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->wait(0.2)
-        ->click('Anmeldung absenden')
+        ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten')
         ->assertSee('Wir haben dir eine E-Mail geschickt');
 
@@ -193,7 +193,7 @@ it('lets a new guest register and confirm through email link', function (): void
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
         ->assertSee('Verifiziert: Nein')
-        ->click('Anmeldung bestätigen')
+        ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
         ->assertSee('Anmeldung bestätigt')
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
