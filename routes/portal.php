@@ -19,6 +19,11 @@ Route::view('portal/registrierung/bestaetigt', 'pages.athlete-registration-confi
     ->middleware('auth:external')
     ->name('portal.athlete-registration.confirmed');
 
+Route::get('portal/login/{uuid}/spende/{donation}/bestaetigen', fn () => to_route('portal.dashboard'))
+    ->middleware('signed')
+    ->name('portal.donation.confirm')
+    ->whereUuid('uuid');
+
 Route::middleware('auth:external')->group(function (): void {
     Route::get('portal', PortalController::class)->name('portal.dashboard');
 

@@ -54,19 +54,25 @@ Preserve the old form's "Wie funktioniert das?" info for amounts. Show as a coll
 
 ## Tasks
 
-### Phase 1: Foundation
+### Phase 1: Foundation ✅
 
-- [ ] Add `donorRegistrationIsOpen()` method to `DonationEvent` model (uses `registration_opens_at` + `donor_registration_closes_at`, mirrors `athleteRegistrationIsOpen()`)
-- [ ] Create `CreateDonationAction` (mirrors `CreateAthleteRegistrationAction`)
+- [x] Add `donorRegistrationIsOpen()` method to `DonationEvent` model (uses `registration_opens_at` + `donor_registration_closes_at`, mirrors `athleteRegistrationIsOpen()`)
+- [x] Create `CreateDonationAction` (mirrors `CreateAthleteRegistrationAction`)
   - Validates event is open for donor registration
   - Normalizes external user data (new vs existing)
   - Validates `athlete_registration_id` belongs to current event and is verified
   - Creates `ExternalUser` if new, creates `Donation` with `verified = false`
   - Allows multiple donations per donor per event (different athletes)
-- [ ] Create `DonorRegistrationWizard` Livewire component
+- [x] Create `DonorRegistrationWizard` Livewire component
   - Reuse step navigation pattern from `AthleteRegistrationWizard`
   - Same email lookup / rate limiting / timing protection
   - Same honeypot spam protection
+- [x] Create `ConfirmDonorRegistration` and `ContinueDonorRegistration` notifications
+- [x] Add `verified` to `Donation` model fillable + casts
+- [x] Add stub route `portal.donation.confirm`
+- [x] Write tests for `CreateDonationAction` and `DonorRegistrationWizard`
+- [x] Fix authenticated-user `restart()` flow so it returns to `donation`
+- [x] Add `DonorRegistrationWizard` to public honeypot coverage
 
 ### Phase 2: Wizard Component
 
