@@ -4,12 +4,14 @@ use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\User;
 use App\Notifications\PreviousDonorAthleteRegistered;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertAuthenticatedAs;
+use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
 
@@ -20,11 +22,24 @@ it('logs in external user from signed confirmation link without confirming regis
         'verified' => false,
     ]);
 
-    get(confirmationUrlForTest($externalUser, $registration))
+    get(confirmationUrlForTest($externalUser))
         ->assertRedirect(route('portal.dashboard'));
 
     assertAuthenticatedAs($externalUser, 'external');
     expect($registration->refresh()->verified)->toBeFalse();
+});
+
+it('logs out admin session from signed confirmation link', function (): void {
+    $user = User::factory()->create();
+    $externalUser = ExternalUser::factory()->create();
+
+    actingAs($user, 'web');
+
+    get(confirmationUrlForTest($externalUser))
+        ->assertRedirect(route('portal.dashboard'));
+
+    assertGuest('web');
+    assertAuthenticatedAs($externalUser, 'external');
 });
 
 it('confirms owned registration from authenticated portal action', function (): void {
@@ -64,7 +79,6 @@ it('rejects unsigned confirmation links', function (): void {
 
     get(route('portal.athlete-registration.confirm', [
         'uuid' => $externalUser->uuid,
-        'athleteRegistration' => $registration,
     ]))->assertForbidden();
 
     expect($registration->refresh()->verified)->toBeFalse();
@@ -78,7 +92,7 @@ it('does not confirm another external users registration from signed login link'
         'verified' => false,
     ]);
 
-    get(confirmationUrlForTest($externalUser, $registration))->assertRedirect(route('portal.dashboard'));
+    get(confirmationUrlForTest($externalUser))->assertRedirect(route('portal.dashboard'));
 
     expect($registration->refresh()->verified)->toBeFalse();
     assertAuthenticatedAs($externalUser, 'external');
@@ -168,10 +182,9 @@ it('does not notify previous donors when athlete opted out', function (): void {
     Notification::assertNotSentTo($previousDonor, PreviousDonorAthleteRegistered::class);
 });
 
-function confirmationUrlForTest(ExternalUser $externalUser, AthleteRegistration $registration): string
+function confirmationUrlForTest(ExternalUser $externalUser): string
 {
     return URL::temporarySignedRoute('portal.athlete-registration.confirm', now()->addMinutes(15), [
         'uuid' => $externalUser->uuid,
-        'athleteRegistration' => $registration,
     ]);
 }

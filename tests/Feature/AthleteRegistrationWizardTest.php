@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\CreateAthleteRegistrationAction;
 use App\Components\AthleteRegistrationWizard;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Sleep;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -231,7 +233,7 @@ it('hides wizard for logged in external users with verified current registration
         ->assertSee('Du bist für diesen Anlass bereits als Sportler:in angemeldet.')
         ->assertSee('Du findest deine Anmeldung im Portal.')
         ->assertSee('Zum Portal')
-        ->assertDontSee('Dein sportlicher Einsatz')
+        ->assertDontSee('Dein Einsatz')
         ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
@@ -251,7 +253,7 @@ it('hides wizard for logged in external users with unverified current registrati
         ->assertSee('Du bist für diesen Anlass bereits als Sportler:in angemeldet.')
         ->assertSee('Bitte bestätige deine Anmeldung über den Link in deiner E-Mail oder im Portal.')
         ->assertSee('Zum Portal')
-        ->assertDontSee('Dein sportlicher Einsatz')
+        ->assertDontSee('Dein Einsatz')
         ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
@@ -283,7 +285,7 @@ it('creates unverified registration and sends confirmation notification for logg
 
     Notification::assertSentTo(
         $externalUser,
-        fn (ConfirmAthleteRegistration $notification): bool => str_contains($notification->confirmationUrl, (string) $registration->id),
+        fn (ConfirmAthleteRegistration $notification): bool => str_contains($notification->confirmationUrl, $externalUser->uuid),
     );
 });
 
@@ -564,6 +566,52 @@ it('delays email lookup in production', function (): void {
     }
 
     Sleep::assertSlept(fn (CarbonInterval $duration): bool => $duration->totalSeconds >= 2.9);
+});
+
+it('shows email error when duplicate email appears during registration creation', function (): void {
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    $event = createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    $action = new class extends CreateAthleteRegistrationAction
+    {
+        /**
+         * @param  array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null  $externalUserData
+         * @return array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null
+         */
+        protected function normalizeExternalUserData(?ExternalUser $externalUser, ?array $externalUserData): ?array
+        {
+            $externalUserData = parent::normalizeExternalUserData($externalUser, $externalUserData);
+
+            ExternalUser::factory()->create(['email' => $externalUserData['email']]);
+
+            return $externalUserData;
+        }
+    };
+
+    $hasEmailError = false;
+
+    try {
+        $action($event, null, [
+            'sport_type_id' => $sportType->id,
+            'rounds_estimated' => 10,
+            'partner_id' => 0,
+            'comment' => null,
+            'notify_previous_donors' => true,
+        ], [
+            'first_name' => 'Francesca',
+            'last_name' => 'Arslan',
+            'address' => 'Zelglistrasse 41',
+            'zip_code' => '8406',
+            'city' => 'Winterthur',
+            'country_of_residence' => 'CH',
+            'phone_number' => '079 123 45 67',
+            'email' => 'francesca@example.com',
+        ]);
+    } catch (ValidationException $validationException) {
+        $hasEmailError = array_key_exists('email', $validationException->errors());
+    }
+
+    expect($hasEmailError)->toBeTrue();
 });
 
 function createCurrentEventWithPartner(bool $athleteRegistrationOpen = false): DonationEvent

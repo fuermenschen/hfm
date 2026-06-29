@@ -554,7 +554,6 @@ class AthleteRegistrationWizard extends Component
         $externalUser = $athleteRegistration->externalUser;
         $confirmationUrl = URL::temporarySignedRoute('portal.athlete-registration.confirm', now()->addMinutes(15), [
             'uuid' => $externalUser->uuid,
-            'athleteRegistration' => $athleteRegistration,
         ]);
 
         $externalUser->notify(new ConfirmAthleteRegistration($externalUser->first_name, $confirmationUrl));

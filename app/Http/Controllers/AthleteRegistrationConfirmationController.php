@@ -14,10 +14,11 @@ use Illuminate\Http\Request;
 
 class AthleteRegistrationConfirmationController extends Controller
 {
-    public function __invoke(Request $request, string $uuid, AthleteRegistration $athleteRegistration): RedirectResponse
+    public function __invoke(Request $request, string $uuid): RedirectResponse
     {
         $externalUser = ExternalUser::query()->where('uuid', $uuid)->firstOrFail();
 
+        auth()->guard('web')->logout();
         auth()->guard('external')->login($externalUser, true);
         $request->session()->regenerate();
 

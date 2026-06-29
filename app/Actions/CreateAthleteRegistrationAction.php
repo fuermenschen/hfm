@@ -63,13 +63,36 @@ class CreateAthleteRegistrationAction
             });
         } catch (QueryException $queryException) {
             if ($queryException->getCode() === '23000') {
-                throw ValidationException::withMessages([
-                    'registration' => self::ExistingRegistrationMessage,
-                ]);
+                $this->throwClassifiedIntegrityValidationException($donationEvent, $externalUser, $externalUserData, $queryException);
             }
 
             throw $queryException;
         }
+    }
+
+    /**
+     * @param  array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null  $externalUserData
+     */
+    protected function throwClassifiedIntegrityValidationException(DonationEvent $donationEvent, ?ExternalUser $externalUser, ?array $externalUserData, QueryException $queryException): never
+    {
+        if ($externalUser instanceof ExternalUser && AthleteRegistration::query()
+            ->whereBelongsTo($donationEvent)
+            ->whereBelongsTo($externalUser)
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'registration' => self::ExistingRegistrationMessage,
+            ]);
+        }
+
+        if ($externalUserData !== null && ExternalUser::withTrashed()
+            ->whereRaw('LOWER(TRIM(email)) = ?', [$externalUserData['email']])
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'email' => 'Diese E-Mail-Adresse ist bereits bekannt. Bitte verwende den Login-Link oder öffne dein Portal.',
+            ]);
+        }
+
+        throw $queryException;
     }
 
     /**

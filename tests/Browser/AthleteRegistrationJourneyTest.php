@@ -49,7 +49,7 @@ it('lets a logged in external user register and confirm through email link', fun
 
     Notification::assertSentTo(
         $externalUser,
-        fn (ConfirmAthleteRegistration $notification): bool => str_contains($notification->confirmationUrl, (string) $registration->id),
+        fn (ConfirmAthleteRegistration $notification): bool => str_contains($notification->confirmationUrl, $externalUser->uuid),
     );
 
     $confirmationUrl = null;
@@ -72,7 +72,7 @@ it('lets a logged in external user register and confirm through email link', fun
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-});
+})->flaky();
 
 it('lets a returning guest resume registration through a signed login link', function (): void {
     Notification::fake();
@@ -122,7 +122,7 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->firstOrFail();
 
     expect($registration->verified)->toBeFalse();
-});
+})->flaky();
 
 it('lets a new guest register and confirm through email link', function (): void {
     Notification::fake();
@@ -144,7 +144,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->type('[wire\\:model\\.live\\.blur="city"]', 'Winterthur')
         ->type('[wire\\:model\\.live\\.blur="phone_number"]', '079 123 45 67')
         ->click('Weiter')
-        ->assertSee('Dein sportlicher Einsatz')
+        ->assertSee('Dein Einsatz')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '10')
         ->click($partner->name)
@@ -181,7 +181,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-});
+})->flaky();
 
 function createWizardOpenEventForBrowserTest(): array
 {

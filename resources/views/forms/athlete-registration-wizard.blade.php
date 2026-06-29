@@ -24,7 +24,7 @@
                                 Bitte prüfe deine E-Mail
                                 @break
                             @case('registration')
-                                Dein sportlicher Einsatz
+                                Dein Einsatz
                                 @break
                             @case('previous-donors')
                                 Frühere Spender:innen informieren?

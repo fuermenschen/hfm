@@ -40,6 +40,19 @@ it('logs out admin sessions when external users log in', function () {
     assertAuthenticatedAs($externalUser, 'external');
 });
 
+it('keeps admin session when both guards are authenticated', function () {
+    $user = User::factory()->create();
+    $externalUser = ExternalUser::factory()->create();
+
+    actingAs($user, 'web');
+    actingAs($externalUser, 'external');
+
+    get(route('home'))->assertSuccessful();
+
+    assertAuthenticatedAs($user, 'web');
+    assertGuest('external');
+});
+
 it('logs out external sessions when admin users log in', function () {
     $user = User::factory()->create();
     $externalUser = ExternalUser::factory()->create();

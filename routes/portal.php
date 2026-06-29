@@ -10,7 +10,7 @@ Route::get('portal/login/{uuid}', [ExternalUserSessionController::class, 'store'
     ->name('portal.login.uuid')
     ->whereUuid('uuid');
 
-Route::get('portal/login/{uuid}/registrierung/{athleteRegistration}/bestaetigen', AthleteRegistrationConfirmationController::class)
+Route::get('portal/login/{uuid}/registrierung/bestaetigen', AthleteRegistrationConfirmationController::class)
     ->middleware('signed')
     ->name('portal.athlete-registration.confirm')
     ->whereUuid('uuid');
