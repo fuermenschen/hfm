@@ -33,9 +33,14 @@ it('lets a logged in external user register and confirm through email link', fun
         ->assertDontSee('Vorname')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '12')
+        ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
+        ->wait(0.2)
         ->click($partner->name)
         ->type('[wire\\:model\\.live\\.blur="comment"]', 'Ich freue mich auf den Lauf.')
+        ->keys('[wire\\:model\\.live\\.blur="comment"]', 'Tab')
+        ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->wait(0.2)
         ->click('Anmeldung absenden')
         ->assertSee('Anmeldung erhalten')
         ->assertSee('Wir haben dir eine E-Mail geschickt');
@@ -72,7 +77,7 @@ it('lets a logged in external user register and confirm through email link', fun
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-})->flaky();
+});
 
 it('lets a returning guest resume registration through a signed login link', function (): void {
     Notification::fake();
@@ -90,6 +95,8 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->type('[wire\\:model\\.live\\.blur="returning_email"]', 'francesca@example.com')
         ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'francesca@example.com')
+        ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
+        ->wait(0.2)
         ->click('Weiter')
         ->assertSee('Login-Link verschickt');
 
@@ -111,8 +118,11 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->assertSee('Francesca Arslan')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '12')
+        ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
+        ->wait(0.2)
         ->click($partner->name)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->wait(0.2)
         ->click('Anmeldung absenden')
         ->assertSee('Anmeldung erhalten');
 
@@ -122,7 +132,7 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->firstOrFail();
 
     expect($registration->verified)->toBeFalse();
-})->flaky();
+});
 
 it('lets a new guest register and confirm through email link', function (): void {
     Notification::fake();
@@ -135,6 +145,8 @@ it('lets a new guest register and confirm through email link', function (): void
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->type('[wire\\:model\\.live\\.blur="returning_email"]', 'mira@example.com')
         ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'mira@example.com')
+        ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
+        ->wait(0.2)
         ->click('Weiter')
         ->assertSee('Deine Angaben')
         ->type('[wire\\:model\\.live\\.blur="first_name"]', 'Mira')
@@ -143,12 +155,17 @@ it('lets a new guest register and confirm through email link', function (): void
         ->type('[wire\\:model\\.live\\.blur="zip_code"]', '8406')
         ->type('[wire\\:model\\.live\\.blur="city"]', 'Winterthur')
         ->type('[wire\\:model\\.live\\.blur="phone_number"]', '079 123 45 67')
+        ->keys('[wire\\:model\\.live\\.blur="phone_number"]', 'Tab')
+        ->wait(0.2)
         ->click('Weiter')
-        ->assertSee('Dein Einsatz')
+        ->assertSee('Sportart')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '10')
+        ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
+        ->wait(0.2)
         ->click($partner->name)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->wait(0.2)
         ->click('Anmeldung absenden')
         ->assertSee('Anmeldung erhalten')
         ->assertSee('Wir haben dir eine E-Mail geschickt');
@@ -181,7 +198,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-})->flaky();
+});
 
 function createWizardOpenEventForBrowserTest(): array
 {

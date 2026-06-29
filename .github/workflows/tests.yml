@@ -71,6 +71,15 @@ jobs:
       - name: Run Tests
         run: php artisan test --parallel
 
+      - name: Upload Browser Screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-screenshots
+          path: tests/Browser/Screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
+
   migration-tests:
     uses: ./.github/workflows/mariadb-migration-tests.yml
     secrets: inherit
