@@ -74,20 +74,24 @@ Preserve the old form's "Wie funktioniert das?" info for amounts. Show as a coll
 - [x] Fix authenticated-user `restart()` flow so it returns to `donation`
 - [x] Add `DonorRegistrationWizard` to public honeypot coverage
 
-### Phase 2: Wizard Component
+### Phase 2: Wizard Component ✅
 
-- [ ] Implement `mount()` — load current event, verified athlete registrations for selection (with sportType, partner, externalUser eager-loaded)
-- [ ] Implement `rulesForStep()` with per-step validation
-- [ ] Implement `next()`, `back()`, `goTo()`, `restart()`, `submit()`
-- [ ] Implement `visibleSteps()` — dynamic step list based on auth state and participation type
-- [ ] Implement `lookupExternalUserByEmail()` — reuse pattern, send `ContinueDonorRegistration` notification
-- [ ] Implement `updatedAthleteRegistrationId()` — load selected athlete context (name, sport, partner, rounds, comment) into public properties for reactive display
-- [ ] Implement submit flow — call `CreateDonationAction`, send `ConfirmDonorRegistration` notification
+Shipped in commit `919fb2a` alongside Phase 1. Component lives at `app/Components/DonorRegistrationWizard.php` (641 lines). Tests pass (`tests/Feature/DonorRegistrationWizardTest.php`, 21/21 with `CreateDonationActionTest`).
 
-### Phase 3: Notifications
+- [x] Implement `mount()` — load current event, verified athlete registrations for selection (with sportType, partner, externalUser eager-loaded) (`DonorRegistrationWizard.php:136`)
+- [x] Implement `rulesForStep()` with per-step validation (`:209`)
+- [x] Implement `next()`, `back()`, `goTo()`, `restart()`, `submit()` (`:155`/`:384`/`:407`/`:422`/`:461`)
+- [x] Implement `visibleSteps()` — dynamic step list based on auth state and participation type (`:359`)
+- [x] Implement `lookupExternalUserByEmail()` — reuse pattern, send `ContinueDonorRegistration` notification (`:294`)
+- [x] Implement `updatedAthleteRegistrationId()` — load selected athlete context (name, sport, partner, rounds, comment) into public properties for reactive display (`:577`)
+- [x] Implement submit flow — call `CreateDonationAction`, send `ConfirmDonorRegistration` notification (`:494`/`:537`)
 
-- [ ] Create `ConfirmDonorRegistration` notification (mirrors `ConfirmAthleteRegistration`)
-- [ ] Create `ContinueDonorRegistration` notification (mirrors `ContinueAthleteRegistration`)
+### Phase 3: Notifications ✅
+
+Shipped in commit `919fb2a`. Files at `app/Notifications/ConfirmDonorRegistration.php` and `app/Notifications/ContinueDonorRegistration.php`.
+
+- [x] Create `ConfirmDonorRegistration` notification (mirrors `ConfirmAthleteRegistration`)
+- [x] Create `ContinueDonorRegistration` notification (mirrors `ContinueAthleteRegistration`)
 
 ### Phase 4: Views
 
