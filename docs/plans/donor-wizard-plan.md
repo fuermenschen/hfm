@@ -124,7 +124,7 @@ Wizard view shipped in commit `919fb2a` (`resources/views/forms/donor-registrati
 - [x] Unit/Feature tests for `CreateDonationAction`
 - [x] Feature tests for `DonorRegistrationWizard` (step navigation, validation, submit)
 - [x] Feature test for `BecomeDonorController` (open/closed/no-athletes/admin states)
-- [ ] Browser test for full donor registration journey
+- [x] Browser test for full donor registration journey
 - [x] Update existing `PublicFormsHoneypotTest` for new wizard component
 
 ### Phase 7: Cleanup ✅

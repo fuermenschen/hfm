@@ -27,6 +27,7 @@ class ExternalUserSessionController extends Controller
     {
         return match ($request->query('redirect')) {
             'become-athlete' => 'become-athlete',
+            'become-donor' => 'become-donor',
             default => 'portal.dashboard',
         };
     }
