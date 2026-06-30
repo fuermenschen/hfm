@@ -65,11 +65,22 @@
                         <x-page-subsubtitle>{{ $eventTitles[$eventId] ?? 'Unbekannter Event' }}</x-page-subsubtitle>
                         <ul role="list" class="divide-y divide-gray-900/10 dark:divide-gray-100/30">
                             @foreach ($donations as $donation)
-                                <li class="py-4 flex flex-wrap justify-between gap-2">
-                                    <span>
-                                        {{ $donation->athleteRegistration?->externalUser?->privacy_name ?? 'Unbekannte:r Sportler:in' }}
-                                    </span>
-                                    <span>Fr. {{ sprintf('%1.2f', $donation->amount_per_round) }} / Runde</span>
+                                <li class="py-4 space-y-2">
+                                    <div class="flex flex-wrap justify-between gap-2">
+                                        <span>
+                                            {{ $donation->athleteRegistration?->externalUser?->privacy_name ?? 'Unbekannte:r Sportler:in' }}
+                                        </span>
+                                        <span>Fr. {{ sprintf('%1.2f', $donation->amount_per_round) }} / Runde</span>
+                                    </div>
+
+                                    @unless ($donation->verified)
+                                        <form method="POST" action="{{ route('portal.donation.confirm.perform', $donation) }}">
+                                            @csrf
+                                            <flux:button type="submit" variant="primary" size="sm">
+                                                Spende bestätigen
+                                            </flux:button>
+                                        </form>
+                                    @endunless
                                 </li>
                             @endforeach
                         </ul>
