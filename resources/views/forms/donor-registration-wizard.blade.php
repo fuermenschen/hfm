@@ -13,46 +13,10 @@
                         Schritt {{ $currentStepNumber }} von {{ count($steps) }}
                     </flux:text>
                     <flux:heading size="lg" class="mt-1">
-                        @switch($currentStep)
-                            @case('start')
-                                Mit welcher E-Mail-Adresse möchtest du dich anmelden?
-                                @break
-                            @case('personal')
-                                Deine Angaben
-                                @break
-                            @case('login-link-sent')
-                                Bitte prüfe deine E-Mail
-                                @break
-                            @case('donation')
-                                Deine Spende
-                                @break
-                            @case('submitted')
-                                Anmeldung erhalten
-                                @break
-                        @endswitch
+                        {{ $currentStepTitle }}
                     </flux:heading>
                     <flux:text class="mt-2 max-w-xl">
-                        @switch($currentStep)
-                            @case('start')
-                                Wir prüfen, ob bereits ein Profil für dich existiert.
-                                @break
-                            @case('personal')
-                                Neue Spender:innen erfassen ihre Kontaktdaten einmalig.
-                                @break
-                            @case('login-link-sent')
-                                Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.
-                                @break
-                            @case('donation')
-                                @if ($isAuthenticatedExternalUser && $externalUser)
-                                    Du meldest dich mit deinem bestehenden Profil als {{ $externalUser->full_name }} an.
-                                @else
-                                    Wähle eine:n Sportler:in und lege deinen Beitrag fest.
-                                @endif
-                                @break
-                            @case('submitted')
-                                Bitte prüfe deine E-Mail und bestätige deine Spende im Portal.
-                                @break
-                        @endswitch
+                        {{ $currentStepDescription }}
                     </flux:text>
                 </div>
 
@@ -71,7 +35,8 @@
 
                         <button
                             type="button"
-                            @if ($isAvailable) wire:click="goTo('{{ $key }}')" @else disabled @endif
+                            @if ($isAvailable) wire:click="goTo('{{ $key }}')" @endif
+                            @disabled(! $isAvailable)
                             class="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition {{ $isCurrent ? 'border-hfm-red bg-hfm-red/10 text-hfm-red dark:border-hfm-lightred dark:bg-hfm-lightred/10 dark:text-hfm-lightred' : 'border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300' }} {{ $isAvailable ? 'cursor-pointer hover:border-hfm-red/60 hover:text-hfm-red dark:hover:border-hfm-lightred/60 dark:hover:text-hfm-lightred' : 'cursor-not-allowed opacity-50' }}"
                         >
                             <span class="flex size-5 shrink-0 items-center justify-center rounded-full {{ $isCurrent ? 'bg-hfm-red text-white dark:bg-hfm-lightred dark:text-hfm-dark' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300' }}">
@@ -149,7 +114,7 @@
                         <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
                         <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
 
-                        <flux:input wire:model.live.blur="zip_code" label="PLZ" :mask="$country_of_residence === 'DE' ? '99999' : '9999'" :placeholder="$country_of_residence === 'DE' ? '57123' : '8406'" autocomplete="postal-code" icon-trailing="map-pin" required />
+                        <flux:input wire:model.live.blur="zip_code" label="PLZ" :mask="$zipCodeMask" :placeholder="$zipCodePlaceholder" autocomplete="postal-code" icon-trailing="map-pin" required />
 
                         <flux:input wire:model.live.blur="city" label="Ort" placeholder="Winterthur" icon-trailing="map-pin" autocomplete="address-level2" required />
 
@@ -159,7 +124,7 @@
                             <flux:select.option value="AT">Österreich</flux:select.option>
                         </flux:select>
 
-                        <flux:input wire:model.live.blur="phone_national" label="Telefon" :placeholder="$phone_country === 'CH' ? '79 123 45 67' : ($phone_country === 'DE' ? '151 23456789' : '650 1234567')" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
+                        <flux:input wire:model.live.blur="phone_national" label="Telefon" :placeholder="$phonePlaceholder" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
 
                         <flux:select wire:model.live="phone_country" label="Ländervorwahl" class="sm:col-span-2">
                             <flux:select.option value="CH">Schweiz (+41)</flux:select.option>
@@ -232,7 +197,7 @@
                             prefix="Fr."
                             type="number"
                             step="0.01"
-                            min="1"
+                            min="0.05"
                         />
 
                         <flux:input

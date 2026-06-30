@@ -204,8 +204,7 @@ it('shows athlete context when athlete is selected', function (): void {
         ->assertSet('currentAthleteName', $athleteRegistration->externalUser->privacy_name)
         ->assertSet('currentSportType', 'Laufen')
         ->assertSet('currentPartner', 'Brühlgut Stiftung')
-        ->assertSet('currentRounds', 10)
-        ->assertSet('currentAthleteComment', 'Ich laufe für den guten Zweck!');
+        ->assertSet('currentRounds', 10);
 });
 
 it('only exposes sanitized athlete fields to Livewire', function (): void {
@@ -231,7 +230,6 @@ it('only exposes sanitized athlete fields to Livewire', function (): void {
             'sport_type',
             'partner',
             'rounds_estimated',
-            'comment',
         ])
         ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->last_name)
         ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->email)

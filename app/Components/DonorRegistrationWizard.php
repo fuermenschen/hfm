@@ -120,7 +120,7 @@ class DonorRegistrationWizard extends Component
     public bool $isAuthenticatedExternalUser = false;
 
     /**
-     * @var array<int, array{id: int, privacy_name: string, sport_type: string, partner: string|null, rounds_estimated: int|null, comment: string|null}>
+     * @var array<int, array{id: int, privacy_name: string, sport_type: string, partner: string|null, rounds_estimated: int|null}>
      */
     public array $athleteRegistrations = [];
 
@@ -621,13 +621,67 @@ class DonorRegistrationWizard extends Component
 
     public function render(): Factory|View
     {
+        $externalUser = $this->externalUser();
+
         return view('forms.donor-registration-wizard', [
             'steps' => $this->visibleSteps(),
             'currentStepNumber' => $this->currentStepNumber(),
+            'currentStepTitle' => $this->currentStepTitle(),
+            'currentStepDescription' => $this->currentStepDescription($externalUser),
             'progressValue' => $this->progressValue(),
             'isFinalStep' => $this->nextStep() === null,
-            'externalUser' => $this->externalUser(),
+            'externalUser' => $externalUser,
+            'phonePlaceholder' => $this->phonePlaceholder(),
+            'zipCodeMask' => $this->zipCodeMask(),
+            'zipCodePlaceholder' => $this->zipCodePlaceholder(),
         ]);
+    }
+
+    protected function currentStepTitle(): string
+    {
+        return match ($this->currentStep) {
+            'start' => 'Mit welcher E-Mail-Adresse möchtest du dich anmelden?',
+            'personal' => 'Deine Angaben',
+            'login-link-sent' => 'Bitte prüfe deine E-Mail',
+            'donation' => 'Deine Spende',
+            'submitted' => 'Anmeldung erhalten',
+            default => '',
+        };
+    }
+
+    protected function currentStepDescription(?ExternalUser $externalUser): string
+    {
+        if ($this->currentStep === 'donation' && $this->isAuthenticatedExternalUser && $externalUser instanceof ExternalUser) {
+            return sprintf('Du meldest dich mit deinem bestehenden Profil als %s an.', $externalUser->full_name);
+        }
+
+        return match ($this->currentStep) {
+            'start' => 'Wir prüfen, ob bereits ein Profil für dich existiert.',
+            'personal' => 'Neue Spender:innen erfassen ihre Kontaktdaten einmalig.',
+            'login-link-sent' => 'Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.',
+            'donation' => 'Wähle eine:n Sportler:in und lege deinen Beitrag fest.',
+            'submitted' => 'Bitte prüfe deine E-Mail und bestätige deine Spende im Portal.',
+            default => '',
+        };
+    }
+
+    protected function phonePlaceholder(): string
+    {
+        return match ($this->phone_country) {
+            'DE' => '151 23456789',
+            'AT' => '650 1234567',
+            default => '79 123 45 67',
+        };
+    }
+
+    protected function zipCodeMask(): string
+    {
+        return $this->country_of_residence === 'DE' ? '99999' : '9999';
+    }
+
+    protected function zipCodePlaceholder(): string
+    {
+        return $this->country_of_residence === 'DE' ? '57123' : '8406';
     }
 
     protected function currentStepNumber(): int
