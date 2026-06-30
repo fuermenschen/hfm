@@ -40,6 +40,7 @@ it('lets a logged in external user register and confirm through email link', fun
         ->keys('[wire\\:model\\.live\\.blur="comment"]', 'Tab')
         ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten')
@@ -122,6 +123,7 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->wait(0.2)
         ->click($partner->name)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten');
@@ -165,6 +167,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->wait(0.2)
         ->click($partner->name)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten')
