@@ -93,9 +93,11 @@ Shipped in commit `919fb2a`. Files at `app/Notifications/ConfirmDonorRegistratio
 - [x] Create `ConfirmDonorRegistration` notification (mirrors `ConfirmAthleteRegistration`)
 - [x] Create `ContinueDonorRegistration` notification (mirrors `ContinueAthleteRegistration`)
 
-### Phase 4: Views
+### Phase 4: Views ✅
 
-- [ ] Create `resources/views/forms/donor-registration-wizard.blade.php`
+Wizard view shipped in commit `919fb2a` (`resources/views/forms/donor-registration-wizard.blade.php`, 318 lines). Page view wired in this phase.
+
+- [x] Create `resources/views/forms/donor-registration-wizard.blade.php`
   - Mirror athlete wizard structure (progress bar, step navigation, back/next buttons)
   - Step-specific content:
     - `start`: email lookup fields
@@ -103,34 +105,34 @@ Shipped in commit `919fb2a`. Files at `app/Notifications/ConfirmDonorRegistratio
     - `personal`: personal data fields (country selector for CH/DE/AT + phone with country code selector)
     - `donation`: athlete selector (radio cards or searchable select), **reactive athlete context card** (privacy name, sport, partner, rounds, comment), amount fields with "Wie funktioniert das?" info, comment, privacy checkbox
     - `submitted`: success screen + "Weitere:n Sportler:in unterstützen" button to restart wizard
-- [ ] Update `resources/views/pages/become-donor.blade.php`
-  - Add `BecomeDonorController` usage (check existing donation, event open state, verified athletes count)
+- [x] Update `resources/views/pages/become-donor.blade.php`
+  - Add `BecomeDonorController` usage (check event open state, verified athletes count)
   - Mount `donor-registration-wizard` when event is open AND verified athletes exist
   - Show "Aktuell sind noch keine Sportler:innen angemeldet" message when no verified athletes
   - Show appropriate messages when closed
 
-### Phase 5: Controller & Routes
+### Phase 5: Controller & Routes ✅
 
-- [ ] Create `BecomeDonorController` (mirrors `BecomeAthleteController`)
+- [x] Create `BecomeDonorController` (mirrors `BecomeAthleteController`)
   - Inject `CurrentDonationEventService`
-  - Pass `currentDonation` (existing donation for this event + user) to view
   - Pass `hasVerifiedAthletes` boolean to view (controls form availability)
-- [ ] Update route to use controller instead of direct view
+  - Multiple donations per donor per event allowed — wizard always shown when open + verified athletes exist. `CreateDonationAction` prevents same-athlete duplicates via unique constraint.
+- [x] Update route to use controller instead of direct view
 
 ### Phase 6: Tests
 
-- [ ] Unit/Feature tests for `CreateDonationAction`
-- [ ] Feature tests for `DonorRegistrationWizard` (step navigation, validation, submit)
-- [ ] Feature test for `BecomeDonorController` (open/closed/already-registered states)
+- [x] Unit/Feature tests for `CreateDonationAction`
+- [x] Feature tests for `DonorRegistrationWizard` (step navigation, validation, submit)
+- [x] Feature test for `BecomeDonorController` (open/closed/no-athletes/admin states)
 - [ ] Browser test for full donor registration journey
-- [ ] Update existing `PublicFormsHoneypotTest` for new wizard component
+- [x] Update existing `PublicFormsHoneypotTest` for new wizard component
 
-### Phase 7: Cleanup
+### Phase 7: Cleanup ✅
 
-- [ ] Delete `BecomeDonorForm` component
-- [ ] Delete `become-donor-form.blade.php` view
-- [ ] Delete `BecomeAthleteForm` (already deleted) and `BecomeDonorForm` test files
-- [ ] Remove dead-code ignore comments from old form
+- [x] Delete `BecomeDonorForm` component
+- [x] Delete `become-donor-form.blade.php` view
+- [x] Delete `BecomeAthleteForm` (already deleted) and `BecomeDonorForm` test files
+- [x] Remove dead-code ignore comments from old form
 
 ## Key Differences from Athlete Wizard
 

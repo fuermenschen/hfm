@@ -324,5 +324,44 @@ it('hides wizard for logged in admins', function (): void {
 
     get(route('become-donor'))
         ->assertSuccessful()
-        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertSee('Du bist als Admin angemeldet.')
+        ->assertSee('privaten Browser-Tab');
+});
+
+it('mounts wizard on become-donor page when registration is open and verified athletes exist', function (): void {
+    createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+
+    get(route('become-donor'))
+        ->assertSuccessful()
+        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertDontSee('Newsletter Anmeldung');
+});
+
+it('shows no-athletes message when registration is open but no verified athletes', function (): void {
+    $event = DonationEvent::factory()->defaults()->create([
+        'registration_opens_at' => now()->subDay(),
+        'donor_registration_closes_at' => now()->addDay(),
+    ]);
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+    Cache::forget('current_donation_event');
+
+    get(route('become-donor'))
+        ->assertSuccessful()
+        ->assertSee('Aktuell sind noch keine Sportler:innen angemeldet.')
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertSee('Newsletter Anmeldung');
+});
+
+it('shows closed message when donor registration is not open', function (): void {
+    createDonorTestEventWithAthlete(donorRegistrationOpen: false);
+
+    get(route('become-donor'))
+        ->assertSuccessful()
+        ->assertSee('Die Anmeldung als Spender:in ist aktuell noch nicht offen.')
+        ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertSee('Newsletter Anmeldung');
 });
