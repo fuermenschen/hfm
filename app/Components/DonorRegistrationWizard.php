@@ -14,7 +14,6 @@ use App\Rules\ValidZipCode;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -120,8 +119,10 @@ class DonorRegistrationWizard extends Component
 
     public bool $isAuthenticatedExternalUser = false;
 
-    /** @var Collection<int, AthleteRegistration> */
-    public Collection $athleteRegistrations;
+    /**
+     * @var array<int, array{id: int, privacy_name: string, sport_type: string, partner: string|null, rounds_estimated: int|null, comment: string|null}>
+     */
+    public array $athleteRegistrations = [];
 
     public ?string $currentAthleteName = null;
 
@@ -130,8 +131,6 @@ class DonorRegistrationWizard extends Component
     public ?string $currentPartner = null;
 
     public ?int $currentRounds = null;
-
-    public ?string $currentAthleteComment = null;
 
     public function mount(): void
     {
@@ -146,10 +145,20 @@ class DonorRegistrationWizard extends Component
         $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
 
         $this->athleteRegistrations = AthleteRegistration::query()
+            ->select(['id', 'external_user_id', 'sport_type_id', 'partner_id', 'rounds_estimated'])
             ->whereBelongsTo($currentDonationEvent)
             ->where('verified', true)
-            ->with(['externalUser', 'sportType', 'partner'])->oldest()
-            ->get();
+            ->with(['externalUser:id,first_name,last_name', 'sportType:id,name', 'partner:id,name'])
+            ->oldest()
+            ->get()
+            ->map(fn (AthleteRegistration $registration): array => [
+                'id' => $registration->id,
+                'privacy_name' => $registration->externalUser->privacyName(),
+                'sport_type' => $registration->sportType->name,
+                'partner' => $registration->partner?->name,
+                'rounds_estimated' => $registration->rounds_estimated,
+            ])
+            ->all();
     }
 
     public function next(): void
@@ -240,7 +249,7 @@ class DonorRegistrationWizard extends Component
     /** @return array<int, int> */
     protected function validAthleteRegistrationIds(): array
     {
-        return $this->athleteRegistrations->pluck('id')->map(fn (int $id): int => $id)->all();
+        return array_map(fn (array $registration): int => $registration['id'], $this->athleteRegistrations);
     }
 
     /** @return array<string, string> */
@@ -446,7 +455,6 @@ class DonorRegistrationWizard extends Component
             'currentSportType',
             'currentPartner',
             'currentRounds',
-            'currentAthleteComment',
         ]);
 
         if ($this->isAuthenticatedExternalUser) {
@@ -582,19 +590,18 @@ class DonorRegistrationWizard extends Component
             return;
         }
 
-        $registration = $this->athleteRegistrations->firstWhere('id', $value);
+        $registration = collect($this->athleteRegistrations)->firstWhere('id', $value);
 
-        if (! $registration instanceof AthleteRegistration) {
+        if (! is_array($registration)) {
             $this->resetAthleteContext();
 
             return;
         }
 
-        $this->currentAthleteName = $registration->externalUser->privacy_name;
-        $this->currentSportType = $registration->sportType->name;
-        $this->currentPartner = $registration->partner->name ?? ucfirst(__('app.equal_split'));
-        $this->currentRounds = $registration->rounds_estimated;
-        $this->currentAthleteComment = $registration->comment;
+        $this->currentAthleteName = $registration['privacy_name'];
+        $this->currentSportType = $registration['sport_type'];
+        $this->currentPartner = $registration['partner'] ?? ucfirst(__('app.equal_split'));
+        $this->currentRounds = $registration['rounds_estimated'];
     }
 
     protected function resetAthleteContext(): void
@@ -603,7 +610,6 @@ class DonorRegistrationWizard extends Component
         $this->currentSportType = null;
         $this->currentPartner = null;
         $this->currentRounds = null;
-        $this->currentAthleteComment = null;
     }
 
     protected function externalUser(): ?ExternalUser

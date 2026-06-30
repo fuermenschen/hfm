@@ -208,6 +208,36 @@ it('shows athlete context when athlete is selected', function (): void {
         ->assertSet('currentAthleteComment', 'Ich laufe für den guten Zweck!');
 });
 
+it('only exposes sanitized athlete fields to Livewire', function (): void {
+    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    $athleteRegistration = AthleteRegistration::query()
+        ->whereBelongsTo($event)
+        ->with('externalUser')
+        ->firstOrFail();
+
+    $component = Livewire::test(DonorRegistrationWizard::class)
+        ->set('participation', 'new')
+        ->call('goTo', 'donation')
+        ->assertSee($athleteRegistration->externalUser->privacy_name)
+        ->assertDontSee($athleteRegistration->externalUser->full_name);
+
+    $registrations = $component->get('athleteRegistrations');
+    $serializedRegistrations = json_encode($registrations, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+    expect($registrations)->toHaveCount(1)
+        ->and(array_keys($registrations[0]))->toBe([
+            'id',
+            'privacy_name',
+            'sport_type',
+            'partner',
+            'rounds_estimated',
+            'comment',
+        ])
+        ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->last_name)
+        ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->email)
+        ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->address);
+});
+
 it('allows restart after submission for multiple donations', function (): void {
     Sleep::fake();
     Notification::fake();

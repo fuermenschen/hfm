@@ -182,7 +182,7 @@
                         </flux:callout>
                     @endif
 
-                    @if ($athleteRegistrations->isEmpty())
+                    @if ($athleteRegistrations === [])
                         <flux:callout icon="exclamation-triangle" variant="warning">
                             <flux:callout.heading>Keine Sportler:innen verfügbar</flux:callout.heading>
                             <flux:callout.text>Aktuell sind noch keine Sportler:innen für diesen Anlass angemeldet.</flux:callout.text>
@@ -191,11 +191,11 @@
                         <flux:radio.group wire:model.live="athlete_registration_id" label="Ich unterstütze" variant="cards" class="flex-col">
                             @foreach ($athleteRegistrations as $registration)
                                 <flux:radio
-                                    wire:key="athlete-{{ $registration->id }}"
-                                    value="{{ $registration->id }}"
+                                    wire:key="athlete-{{ $registration['id'] }}"
+                                    value="{{ $registration['id'] }}"
                                     icon="user"
-                                    label="{{ $registration->externalUser->privacy_name }}"
-                                    description="{{ $registration->sportType->name }} · {{ $registration->partner?->name ?? ucfirst(__('app.equal_split')) }}"
+                                    label="{{ $registration['privacy_name'] }}"
+                                    description="{{ $registration['sport_type'] }} · {{ $registration['partner'] ?? ucfirst(__('app.equal_split')) }}"
                                 />
                             @endforeach
                         </flux:radio.group>
@@ -206,10 +206,6 @@
                                 <flux:callout.text>
                                     <strong>{{ $currentSportType }}</strong> · {{ $currentPartner }}<br>
                                     Geschätzte Runden: <strong>{{ $currentRounds }}</strong>
-                                    @if ($currentAthleteComment)
-                                        <br><br>
-                                        <em>«{{ $currentAthleteComment }}»</em>
-                                    @endif
                                 </flux:callout.text>
                             </flux:callout>
                         @endif
