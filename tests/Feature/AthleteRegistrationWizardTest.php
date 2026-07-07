@@ -38,6 +38,7 @@ it('shows wizard when athlete registration is open', function (): void {
     get(route('become-athlete'))
         ->assertSuccessful()
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertDontSee('Schritt')
         ->assertSee('Wir verzögern diese Prüfung absichtlich kurz')
         ->assertDontSee('Newsletter Anmeldung');
 });
@@ -70,6 +71,7 @@ it('creates external user registration and sends confirmation for new participan
         ->assertSet('currentStep', 'personal')
         ->assertSet('email', 'francesca@example.com')
         ->assertSet('email_confirmation', 'francesca@example.com')
+        ->assertSee('Schritt 1 von 3')
         ->assertDontSee('Deutschland')
         ->assertDontSee('Österreich')
         ->call('next')
@@ -84,12 +86,14 @@ it('creates external user registration and sends confirmation for new participan
         ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'registration')
+        ->assertSee('Schritt 2 von 3')
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertSet('currentStep', 'submitted')
+        ->assertSee('Schritt 3 von 3')
         ->assertDontSee('Neue Anmeldung starten')
         ->call('goTo', 'registration')
         ->assertSet('currentStep', 'submitted')
@@ -217,6 +221,7 @@ it('starts at registration step for logged in external users', function (): void
     Livewire::actingAs($externalUser, 'external')
         ->test(AthleteRegistrationWizard::class)
         ->assertSet('currentStep', 'registration')
+        ->assertSee('Schritt 1 von 2')
         ->assertSee('Bestehendes Profil erkannt')
         ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
@@ -266,13 +271,15 @@ it('creates unverified registration and sends confirmation notification for logg
 
     Livewire::actingAs($externalUser, 'external')
         ->test(AthleteRegistrationWizard::class)
+        ->assertSee('Schritt 1 von 2')
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
         ->set('comment', 'Ich freue mich auf den Lauf.')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertSet('currentStep', 'submitted');
+        ->assertSet('currentStep', 'submitted')
+        ->assertSee('Schritt 2 von 2');
 
     $registration = AthleteRegistration::query()
         ->whereBelongsTo($event)
@@ -303,18 +310,21 @@ it('stores previous donor notification opt out from the wizard', function (): vo
     Livewire::actingAs($externalUser, 'external')
         ->test(AthleteRegistrationWizard::class)
         ->assertSet('currentStep', 'registration')
+        ->assertSee('Schritt 1 von 3')
         ->assertSet('notify_previous_donors', true)
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
         ->call('next')
         ->assertSet('currentStep', 'previous-donors')
+        ->assertSee('Schritt 2 von 3')
         ->assertSee('Frühere Unterstützer:innen aktivieren')
         ->set('notify_previous_donors', false)
         ->assertSee('Ohne Hinweis an frühere Spender:innen')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertSet('currentStep', 'submitted');
+        ->assertSet('currentStep', 'submitted')
+        ->assertSee('Schritt 3 von 3');
 
     $registration = AthleteRegistration::query()
         ->whereBelongsTo($event)
@@ -489,6 +499,7 @@ it('sends login link and stops for returning guest participants', function (): v
         ->set('returning_email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'login-link-sent')
+        ->assertDontSee('Schritt')
         ->assertSee('Wir haben dir einen Link geschickt');
 
     Sleep::assertNeverSlept();

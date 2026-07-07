@@ -607,27 +607,60 @@ class AthleteRegistrationWizard extends Component
     public function render(): Factory|View
     {
         return view('forms.athlete-registration-wizard', [
-            'steps' => $this->visibleSteps(),
-            'currentStepNumber' => $this->currentStepNumber(),
+            'displaySteps' => $this->displaySteps(),
+            'currentDisplayStepNumber' => $this->currentDisplayStepNumber(),
             'progressValue' => $this->progressValue(),
             'hasPreviousDonors' => $this->hasPreviousDonors(),
             'isFinalStep' => $this->nextStep() === null,
+            'canGoBack' => $this->previousStep() !== null,
             'externalUser' => $this->externalUser(),
         ]);
     }
 
-    protected function currentStepNumber(): int
+    /** @return array<string, string> */
+    protected function displaySteps(): array
     {
-        $index = array_search($this->currentStep, $this->visibleStepKeys(), true);
+        if (in_array($this->currentStep, ['start', 'login-link-sent'], true)) {
+            return [];
+        }
+
+        $steps = [
+            'registration' => 'Sport',
+        ];
+
+        if (! $this->isAuthenticatedExternalUser && $this->participation === 'new') {
+            $steps = [
+                'personal' => 'Person',
+                ...$steps,
+            ];
+        }
+
+        if ($this->hasPreviousDonors()) {
+            $steps['previous-donors'] = 'Frühere Spender:innen';
+        }
+
+        $steps['submitted'] = 'Bestätigung';
+
+        return $steps;
+    }
+
+    protected function currentDisplayStepNumber(): int
+    {
+        $index = array_search($this->currentStep, array_keys($this->displaySteps()), true);
 
         return is_int($index) ? $index + 1 : 1;
     }
 
     protected function progressValue(): int
     {
-        $steps = $this->visibleStepKeys();
+        $steps = $this->displaySteps();
+
+        if ($steps === []) {
+            return 0;
+        }
+
         $stepCount = max(count($steps), 1);
 
-        return (int) round(($this->currentStepNumber() / $stepCount) * 100);
+        return (int) round(($this->currentDisplayStepNumber() / $stepCount) * 100);
     }
 }
