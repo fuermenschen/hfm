@@ -233,7 +233,7 @@
             @elseif ($currentStep === 'previous-donors')
                 <div class="space-y-6">
                     <flux:callout icon="megaphone" color="green">
-                        <flux:callout.heading>Frühere Unterstützer:innen aktivieren</flux:callout.heading>
+                        <flux:callout.heading>Frühere Spender:innen informieren</flux:callout.heading>
                         <flux:callout.text>
                             Nach deiner Bestätigung werden frühere Spender:innen informiert, dass du wieder teilnimmst.
                         </flux:callout.text>
