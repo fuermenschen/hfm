@@ -13,7 +13,6 @@ use App\Notifications\ContinueDonorRegistration;
 use App\Settings\EventSettings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Sleep;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -68,7 +67,6 @@ it('shows wizard when donor registration is open', function (): void {
 });
 
 it('creates external user and donation for new donors', function (): void {
-    Sleep::fake();
     Notification::fake();
 
     $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
@@ -121,7 +119,6 @@ it('creates external user and donation for new donors', function (): void {
 });
 
 it('sends login link when returning email found', function (): void {
-    Sleep::fake();
     Notification::fake();
 
     createDonorTestEventWithAthlete(donorRegistrationOpen: true);
@@ -279,7 +276,6 @@ it('lists athletes alphabetically by public label', function (): void {
 });
 
 it('allows restart after submission for multiple donations', function (): void {
-    Sleep::fake();
     Notification::fake();
 
     $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
@@ -313,10 +309,7 @@ it('allows restart after submission for multiple donations', function (): void {
 });
 
 it('skips personal step for authenticated external users', function (): void {
-    Sleep::fake();
-    Notification::fake();
-
-    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    createDonorTestEventWithAthlete(donorRegistrationOpen: true);
     $externalUser = ExternalUser::factory()->create();
 
     actingAs($externalUser, 'external');

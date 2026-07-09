@@ -17,7 +17,7 @@ use function Pest\Laravel\actingAs;
 it('lets a logged in external user donate through the wizard', function (): void {
     Notification::fake();
 
-    [$event, $athleteRegistration] = createDonorWizardOpenEventForBrowserTest();
+    $athleteRegistration = createDonorWizardOpenEventForBrowserTest();
     $externalUser = ExternalUser::factory()->create([
         'first_name' => 'Francesca',
         'last_name' => 'Arslan',
@@ -66,7 +66,7 @@ it('lets a logged in external user donate through the wizard', function (): void
 it('lets a returning guest resume donation through a signed login link', function (): void {
     Notification::fake();
 
-    [$event, $athleteRegistration] = createDonorWizardOpenEventForBrowserTest();
+    $athleteRegistration = createDonorWizardOpenEventForBrowserTest();
     $externalUser = ExternalUser::factory()->create([
         'first_name' => 'Francesca',
         'last_name' => 'Arslan',
@@ -120,7 +120,7 @@ it('lets a returning guest resume donation through a signed login link', functio
 it('lets a new guest create an external user and donation', function (): void {
     Notification::fake();
 
-    [$event, $athleteRegistration] = createDonorWizardOpenEventForBrowserTest();
+    $athleteRegistration = createDonorWizardOpenEventForBrowserTest();
 
     $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
 
@@ -168,7 +168,7 @@ it('lets a new guest create an external user and donation', function (): void {
     Notification::assertSentTo($externalUser, ConfirmDonorRegistration::class);
 });
 
-function createDonorWizardOpenEventForBrowserTest(): array
+function createDonorWizardOpenEventForBrowserTest(): AthleteRegistration
 {
     $event = DonationEvent::factory()->defaults()->create([
         'registration_opens_at' => now()->subDay(),
@@ -209,5 +209,5 @@ function createDonorWizardOpenEventForBrowserTest(): array
 
     Cache::forget('current_donation_event');
 
-    return [$event, $athleteRegistration];
+    return $athleteRegistration;
 }

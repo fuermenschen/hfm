@@ -36,12 +36,4 @@ class ConfirmDonorRegistration extends Notification
             ->line('Erst nach der Bestätigung wird deine Spende aktiv.')
             ->line('Falls du diese Anmeldung nicht gestartet hast, kontaktiere uns bitte.');
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [];
-    }
 }

@@ -7,8 +7,6 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
-use App\Settings\EventSettings;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 function createDonorTestEvent(bool $donorRegistrationOpen = false): DonationEvent
@@ -23,12 +21,6 @@ function createDonorTestEvent(bool $donorRegistrationOpen = false): DonationEven
 
     $sportType = SportType::query()->firstOrCreate(['name' => 'Laufen']);
     $event->sportTypes()->attach($sportType, ['sort_order' => 1, 'is_enabled' => true]);
-
-    $settings = app(EventSettings::class);
-    $settings->current_event_id = $event->id;
-    $settings->save();
-
-    Cache::forget('current_donation_event');
 
     return $event;
 }
@@ -79,8 +71,7 @@ it('creates donation for new donor with new external user', function (): void {
         'email' => 'francesca@example.com',
     ]);
 
-    expect($donation)->toBeInstanceOf(Donation::class)
-        ->and($donation->amount_per_round)->toBe(5.00)
+    expect($donation->amount_per_round)->toBe(5.00)
         ->and($donation->amount_min)->toBe(50.00)
         ->and($donation->amount_max)->toBe(200.00)
         ->and($donation->comment)->toBe('Tolle Sache!')

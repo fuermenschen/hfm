@@ -167,13 +167,15 @@ class DonorRegistrationWizard extends Component
 
     public function next(): void
     {
-        if ($this->shouldLookupEmail()) {
+        $shouldLookupEmail = $this->shouldLookupEmail();
+
+        if ($shouldLookupEmail) {
             $this->normalizeLookupEmails();
         }
 
         $this->validateStep($this->currentStep);
 
-        if ($this->shouldLookupEmail()) {
+        if ($shouldLookupEmail) {
             $this->protectAgainstSpam();
 
             try {
@@ -189,7 +191,7 @@ class DonorRegistrationWizard extends Component
                 $this->currentStep = 'login-link-sent';
             } else {
                 $this->participation = 'new';
-                $this->email = trim(mb_strtolower((string) $this->returning_email));
+                $this->email = $this->returning_email;
                 $this->email_confirmation = $this->email;
                 $this->currentStep = 'personal';
             }
@@ -253,7 +255,7 @@ class DonorRegistrationWizard extends Component
     /** @return array<int, int> */
     protected function validAthleteRegistrationIds(): array
     {
-        return array_map(fn (array $registration): int => $registration['id'], $this->athleteRegistrations);
+        return array_column($this->athleteRegistrations, 'id');
     }
 
     /** @return array<string, string> */
@@ -594,7 +596,7 @@ class DonorRegistrationWizard extends Component
             return;
         }
 
-        $registration = collect($this->athleteRegistrations)->firstWhere('id', $value);
+        $registration = array_find($this->athleteRegistrations, fn (array $registration): bool => $registration['id'] === $value);
 
         if (! is_array($registration)) {
             $this->resetAthleteContext();
@@ -610,10 +612,7 @@ class DonorRegistrationWizard extends Component
 
     protected function resetAthleteContext(): void
     {
-        $this->currentAthleteName = null;
-        $this->currentSportType = null;
-        $this->currentPartner = null;
-        $this->currentRounds = null;
+        $this->reset(['currentAthleteName', 'currentSportType', 'currentPartner', 'currentRounds']);
     }
 
     protected function externalUser(): ?ExternalUser
@@ -727,7 +726,7 @@ class DonorRegistrationWizard extends Component
             return 0;
         }
 
-        $stepCount = max(count($steps), 1);
+        $stepCount = count($steps);
 
         return (int) round(($this->currentDisplayStepNumber() / $stepCount) * 100);
     }

@@ -48,13 +48,11 @@ class CreateDonationAction
                 ]);
             });
         } catch (QueryException $queryException) {
-            if ($queryException->getCode() === '23000') {
-                throw ValidationException::withMessages([
-                    'athlete_registration_id' => self::ExistingDonationMessage,
-                ]);
-            }
+            throw_if($queryException->getCode() !== '23000', $queryException);
 
-            throw $queryException;
+            throw ValidationException::withMessages([
+                'athlete_registration_id' => self::ExistingDonationMessage,
+            ]);
         }
     }
 
@@ -93,24 +91,15 @@ class CreateDonationAction
 
     protected function validateAthleteRegistration(DonationEvent $donationEvent, int $athleteRegistrationId): AthleteRegistration
     {
-        $athleteRegistration = AthleteRegistration::query()
+        return AthleteRegistration::query()
             ->whereBelongsTo($donationEvent)
             ->whereKey($athleteRegistrationId)
             ->where('verified', true)
-            ->first();
-
-        if (! $athleteRegistration instanceof AthleteRegistration) {
-            throw ValidationException::withMessages([
+            ->firstOr(fn () => throw ValidationException::withMessages([
                 'athlete_registration_id' => 'Die gewählte Sportler:in ist für den aktuellen Anlass nicht verfügbar oder noch nicht bestätigt.',
-            ]);
-        }
-
-        return $athleteRegistration;
+            ]));
     }
 
-    /**
-     * Format phone number for storage.
-     */
     public static function formatPhoneNumber(string $phoneNational, string $phoneCountry): string
     {
         $phoneNumber = new PhoneNumber($phoneNational, $phoneCountry);

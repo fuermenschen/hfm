@@ -24,11 +24,10 @@ it('logs in external user from signed confirmation link without confirming donat
 });
 
 it('logs out admin session from signed confirmation link', function (): void {
-    $admin = User::factory()->create();
     $externalUser = ExternalUser::factory()->create();
     $donation = Donation::factory()->forDonorExternalUser($externalUser)->create(['verified' => false]);
 
-    actingAs($admin, 'web');
+    actingAs(User::factory()->create(), 'web');
 
     get(donorConfirmationUrlForTest($externalUser, $donation))
         ->assertRedirect(route('portal.dashboard'));

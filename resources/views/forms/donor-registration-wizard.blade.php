@@ -9,7 +9,7 @@
         <div class="border-b border-zinc-200 py-5 dark:border-zinc-700">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    @if ($displaySteps !== [])
+                    @if ($displaySteps)
                         <flux:text size="sm" class="font-medium text-hfm-red dark:text-hfm-lightred">
                             Schritt {{ $currentDisplayStepNumber }} von {{ count($displaySteps) }}
                         </flux:text>
@@ -25,7 +25,7 @@
                 <flux:badge color="red" class="w-fit">Spende</flux:badge>
             </div>
 
-            @if ($displaySteps !== [])
+            @if ($displaySteps)
                 <div class="mt-5 space-y-3">
                     <flux:progress value="{{ $progressValue }}" class="h-2" />
 

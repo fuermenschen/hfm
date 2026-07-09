@@ -34,12 +34,4 @@ class ContinueDonorRegistration extends Notification
             ->action('Anmeldung fortsetzen', $this->loginUrl)
             ->line('Falls du den Link nicht angefordert hast, kannst du diese E-Mail ignorieren oder uns kontaktieren.');
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [];
-    }
 }
