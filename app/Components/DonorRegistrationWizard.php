@@ -120,7 +120,7 @@ class DonorRegistrationWizard extends Component
     public bool $isAuthenticatedExternalUser = false;
 
     /**
-     * @var array<int, array{id: int, privacy_name: string, sport_type: string, partner: string|null, rounds_estimated: int|null}>
+     * @var array<int, array{id: int, display_name: string, privacy_name: string, public_id_string: string, sport_type: string, partner: string|null, rounds_estimated: int|null}>
      */
     public array $athleteRegistrations = [];
 
@@ -148,16 +148,20 @@ class DonorRegistrationWizard extends Component
             ->select(['id', 'external_user_id', 'sport_type_id', 'partner_id', 'rounds_estimated'])
             ->whereBelongsTo($currentDonationEvent)
             ->where('verified', true)
-            ->with(['externalUser:id,first_name,last_name', 'sportType:id,name', 'partner:id,name'])
+            ->with(['externalUser:id,first_name,last_name,public_id', 'sportType:id,name', 'partner:id,name'])
             ->oldest()
             ->get()
             ->map(fn (AthleteRegistration $registration): array => [
                 'id' => $registration->id,
+                'display_name' => sprintf('%s (%s)', $registration->externalUser->privacyName(), $registration->externalUser->public_id_string),
                 'privacy_name' => $registration->externalUser->privacyName(),
+                'public_id_string' => $registration->externalUser->public_id_string,
                 'sport_type' => $registration->sportType->name,
                 'partner' => $registration->partner?->name,
                 'rounds_estimated' => $registration->rounds_estimated,
             ])
+            ->sortBy('display_name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
             ->all();
     }
 

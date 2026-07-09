@@ -26,12 +26,15 @@ it('lets a logged in external user donate through the wizard', function (): void
 
     actingAs($externalUser, 'external');
 
+    $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
+
     visit(route('become-donor'))
         ->assertNoJavaScriptErrors()
         ->assertSee('Bestehendes Profil erkannt')
         ->assertSee('Francesca Arslan')
         ->assertDontSee('Vorname')
-        ->click('Claudia M.')
+        ->click('[data-flux-select-button]')
+        ->click($athleteOption)
         ->assertSee('Geschätzte Runden: 10')
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '7.50')
         ->type('[wire\:model\.live\.blur="amount_min"]', '50')
@@ -93,11 +96,14 @@ it('lets a returning guest resume donation through a signed login link', functio
 
     expect($loginUrl)->toBeString()->not()->toBeEmpty();
 
+    $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
+
     $page->navigate($loginUrl)
         ->assertPathIs('/spenderin-werden')
         ->assertSee('Bestehendes Profil erkannt')
         ->assertSee('Francesca Arslan')
-        ->click('Claudia M.')
+        ->click('[data-flux-select-button]')
+        ->click($athleteOption)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '5.00')
         ->click('[wire\:model\.live="privacy_accepted"]')
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')
@@ -115,6 +121,8 @@ it('lets a new guest create an external user and donation', function (): void {
     Notification::fake();
 
     [$event, $athleteRegistration] = createDonorWizardOpenEventForBrowserTest();
+
+    $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
 
     $page = visit(route('become-donor'));
 
@@ -136,7 +144,8 @@ it('lets a new guest create an external user and donation', function (): void {
         ->wait(0.2)
         ->pressAndWaitFor('Weiter', 0.2)
         ->assertSee('Deine Spende')
-        ->click('Claudia M.')
+        ->click('[data-flux-select-button]')
+        ->click($athleteOption)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '10.00')
         ->click('[wire\:model\.live="privacy_accepted"]')
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')

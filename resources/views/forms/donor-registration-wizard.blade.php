@@ -157,17 +157,18 @@
                             <flux:callout.text>Aktuell sind noch keine Sportler:innen für diesen Anlass angemeldet.</flux:callout.text>
                         </flux:callout>
                     @else
-                        <flux:radio.group wire:model.live="athlete_registration_id" label="Ich unterstütze" variant="cards" class="flex-col">
+                        <flux:select wire:model.live="athlete_registration_id" label="Ich unterstütze" variant="listbox" searchable placeholder="Sportler:in suchen..." empty="Keine Sportler:innen gefunden">
+                            <x-slot name="search">
+                                <flux:select.search class="px-4" placeholder="suchen..." />
+                            </x-slot>
+
                             @foreach ($athleteRegistrations as $registration)
-                                <flux:radio
-                                    wire:key="athlete-{{ $registration['id'] }}"
-                                    value="{{ $registration['id'] }}"
-                                    icon="user"
-                                    label="{{ $registration['privacy_name'] }}"
-                                    description="{{ $registration['sport_type'] }} · {{ $registration['partner'] ?? ucfirst(__('app.equal_split')) }}"
-                                />
+                                <flux:select.option wire:key="athlete-{{ $registration['id'] }}" value="{{ $registration['id'] }}" label="{{ $registration['display_name'] }}" data-test="athlete-option-{{ $registration['id'] }}">
+                                    <span class="font-medium">{{ $registration['privacy_name'] }}</span>
+                                    <span class="font-light">&nbsp;({{ $registration['public_id_string'] }})</span>
+                                </flux:select.option>
                             @endforeach
-                        </flux:radio.group>
+                        </flux:select>
 
                         @if ($currentAthleteName)
                             <flux:callout icon="information-circle" variant="secondary">

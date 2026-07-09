@@ -223,7 +223,9 @@ it('only exposes sanitized athlete fields to Livewire', function (): void {
     $component = Livewire::test(DonorRegistrationWizard::class)
         ->set('participation', 'new')
         ->call('goTo', 'donation')
+        ->assertSee('suchen...')
         ->assertSee($athleteRegistration->externalUser->privacy_name)
+        ->assertSee($athleteRegistration->externalUser->public_id_string)
         ->assertDontSee($athleteRegistration->externalUser->full_name);
 
     $registrations = $component->get('athleteRegistrations');
@@ -232,7 +234,9 @@ it('only exposes sanitized athlete fields to Livewire', function (): void {
     expect($registrations)->toHaveCount(1)
         ->and(array_keys($registrations[0]))->toBe([
             'id',
+            'display_name',
             'privacy_name',
+            'public_id_string',
             'sport_type',
             'partner',
             'rounds_estimated',
@@ -240,6 +244,38 @@ it('only exposes sanitized athlete fields to Livewire', function (): void {
         ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->last_name)
         ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->email)
         ->and($serializedRegistrations)->not->toContain($athleteRegistration->externalUser->address);
+});
+
+it('lists athletes alphabetically by public label', function (): void {
+    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    $partner = Partner::query()->firstOrFail();
+    $sportType = SportType::query()->firstOrFail();
+
+    foreach ([['Anna', 'Zimmer'], ['Bea', 'Alder']] as [$firstName, $lastName]) {
+        $athleteUser = ExternalUser::factory()->create([
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+        ]);
+
+        AthleteRegistration::query()->create([
+            'donation_event_id' => $event->id,
+            'external_user_id' => $athleteUser->id,
+            'sport_type_id' => $sportType->id,
+            'partner_id' => $partner->id,
+            'rounds_estimated' => 10,
+            'rounds_done' => 0,
+            'verified' => true,
+        ]);
+    }
+
+    $registrations = Livewire::test(DonorRegistrationWizard::class)
+        ->get('athleteRegistrations');
+
+    expect(array_column($registrations, 'privacy_name'))->toBe([
+        'Anna Z.',
+        'Bea A.',
+        'Claudia M.',
+    ]);
 });
 
 it('allows restart after submission for multiple donations', function (): void {
