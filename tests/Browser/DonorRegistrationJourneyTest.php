@@ -32,7 +32,7 @@ it('lets a logged in external user donate through the wizard', function (): void
         ->assertSee('Francesca Arslan')
         ->assertDontSee('Vorname')
         ->click('Claudia M.')
-        ->assertSee('Ich laufe für den guten Zweck!')
+        ->assertSee('Geschätzte Runden: 10')
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '7.50')
         ->type('[wire\:model\.live\.blur="amount_min"]', '50')
         ->type('[wire\:model\.live\.blur="amount_max"]', '200')
