@@ -9,9 +9,11 @@
         <div class="border-b border-zinc-200 py-5 dark:border-zinc-700">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <flux:text size="sm" class="font-medium text-hfm-red dark:text-hfm-lightred">
-                        Schritt {{ $currentStepNumber }} von {{ count($steps) }}
-                    </flux:text>
+                    @if ($displaySteps !== [])
+                        <flux:text size="sm" class="font-medium text-hfm-red dark:text-hfm-lightred">
+                            Schritt {{ $currentDisplayStepNumber }} von {{ count($displaySteps) }}
+                        </flux:text>
+                    @endif
                     <flux:heading size="lg" class="mt-1">
                         {{ $currentStepTitle }}
                     </flux:heading>
@@ -23,30 +25,32 @@
                 <flux:badge color="red" class="w-fit">Spende</flux:badge>
             </div>
 
-            <div class="mt-5 space-y-3">
-                <flux:progress value="{{ $progressValue }}" class="h-2" />
+            @if ($displaySteps !== [])
+                <div class="mt-5 space-y-3">
+                    <flux:progress value="{{ $progressValue }}" class="h-2" />
 
-                <div class="hidden gap-2 sm:flex">
-                    @foreach ($steps as $key => $label)
-                        @php
-                            $isCurrent = $key === $currentStep;
-                            $isAvailable = ! in_array($currentStep, ['login-link-sent', 'submitted'], true) && $loop->iteration <= $currentStepNumber && $key !== 'submitted';
-                        @endphp
+                    <div class="hidden gap-2 sm:flex">
+                        @foreach ($displaySteps as $key => $label)
+                            @php
+                                $isCurrent = $key === $currentStep;
+                                $isAvailable = ! in_array($currentStep, ['login-link-sent', 'submitted'], true) && $loop->iteration <= $currentDisplayStepNumber && $key !== 'submitted';
+                            @endphp
 
-                        <button
-                            type="button"
-                            @if ($isAvailable) wire:click="goTo('{{ $key }}')" @endif
-                            @disabled(! $isAvailable)
-                            class="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition {{ $isCurrent ? 'border-hfm-red bg-hfm-red/10 text-hfm-red dark:border-hfm-lightred dark:bg-hfm-lightred/10 dark:text-hfm-lightred' : 'border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300' }} {{ $isAvailable ? 'cursor-pointer hover:border-hfm-red/60 hover:text-hfm-red dark:hover:border-hfm-lightred/60 dark:hover:text-hfm-lightred' : 'cursor-not-allowed opacity-50' }}"
-                        >
-                            <span class="flex size-5 shrink-0 items-center justify-center rounded-full {{ $isCurrent ? 'bg-hfm-red text-white dark:bg-hfm-lightred dark:text-hfm-dark' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300' }}">
-                                {{ $loop->iteration }}
-                            </span>
-                            <span class="truncate">{{ $label }}</span>
-                        </button>
-                    @endforeach
+                            <button
+                                type="button"
+                                @if ($isAvailable) wire:click="goTo('{{ $key }}')" @endif
+                                @disabled(! $isAvailable)
+                                class="flex min-w-0 flex-1 items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition {{ $isCurrent ? 'border-hfm-red bg-hfm-red/10 text-hfm-red dark:border-hfm-lightred dark:bg-hfm-lightred/10 dark:text-hfm-lightred' : 'border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300' }} {{ $isAvailable ? 'cursor-pointer hover:border-hfm-red/60 hover:text-hfm-red dark:hover:border-hfm-lightred/60 dark:hover:text-hfm-lightred' : 'cursor-not-allowed opacity-50' }}"
+                            >
+                                <span class="flex size-5 shrink-0 items-center justify-center rounded-full {{ $isCurrent ? 'bg-hfm-red text-white dark:bg-hfm-lightred dark:text-hfm-dark' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-300' }}">
+                                    {{ $loop->iteration }}
+                                </span>
+                                <span class="truncate">{{ $label }}</span>
+                            </button>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <div class="py-6 sm:py-8" wire:key="donor-registration-wizard-{{ $currentStep }}">
@@ -256,7 +260,7 @@
 
         @if (! in_array($currentStep, ['submitted', 'login-link-sent'], true))
             <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 py-5 dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between">
-                @if ($currentStepNumber > 1)
+                @if ($canGoBack)
                     <flux:button variant="ghost" icon="arrow-left" wire:click="back">
                         Zurück
                     </flux:button>

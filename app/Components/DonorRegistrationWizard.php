@@ -624,12 +624,13 @@ class DonorRegistrationWizard extends Component
         $externalUser = $this->externalUser();
 
         return view('forms.donor-registration-wizard', [
-            'steps' => $this->visibleSteps(),
-            'currentStepNumber' => $this->currentStepNumber(),
+            'displaySteps' => $this->displaySteps(),
+            'currentDisplayStepNumber' => $this->currentDisplayStepNumber(),
             'currentStepTitle' => $this->currentStepTitle(),
             'currentStepDescription' => $this->currentStepDescription($externalUser),
             'progressValue' => $this->progressValue(),
             'isFinalStep' => $this->nextStep() === null,
+            'canGoBack' => $this->previousStep() !== null,
             'externalUser' => $externalUser,
             'phonePlaceholder' => $this->phonePlaceholder(),
             'zipCodeMask' => $this->zipCodeMask(),
@@ -684,18 +685,46 @@ class DonorRegistrationWizard extends Component
         return $this->country_of_residence === 'DE' ? '57123' : '8406';
     }
 
-    protected function currentStepNumber(): int
+    /** @return array<string, string> */
+    protected function displaySteps(): array
     {
-        $index = array_search($this->currentStep, $this->visibleStepKeys(), true);
+        if (in_array($this->currentStep, ['start', 'login-link-sent'], true)) {
+            return [];
+        }
+
+        $steps = [
+            'donation' => 'Spende',
+        ];
+
+        if (! $this->isAuthenticatedExternalUser && $this->participation === 'new') {
+            $steps = [
+                'personal' => 'Person',
+                ...$steps,
+            ];
+        }
+
+        $steps['submitted'] = 'Bestätigung';
+
+        return $steps;
+    }
+
+    protected function currentDisplayStepNumber(): int
+    {
+        $index = array_search($this->currentStep, array_keys($this->displaySteps()), true);
 
         return is_int($index) ? $index + 1 : 1;
     }
 
     protected function progressValue(): int
     {
-        $steps = $this->visibleStepKeys();
+        $steps = $this->displaySteps();
+
+        if ($steps === []) {
+            return 0;
+        }
+
         $stepCount = max(count($steps), 1);
 
-        return (int) round(($this->currentStepNumber() / $stepCount) * 100);
+        return (int) round(($this->currentDisplayStepNumber() / $stepCount) * 100);
     }
 }

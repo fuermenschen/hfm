@@ -63,6 +63,7 @@ it('shows wizard when donor registration is open', function (): void {
 
     Livewire::test(DonorRegistrationWizard::class)
         ->assertSet('currentStep', 'start')
+        ->assertDontSee('Schritt')
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
@@ -75,11 +76,13 @@ it('creates external user and donation for new donors', function (): void {
 
     Livewire::test(DonorRegistrationWizard::class)
         ->assertSet('currentStep', 'start')
+        ->assertDontSee('Schritt')
         ->set('returning_email', 'francesca@example.com')
         ->set('returning_email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'personal')
         ->assertSet('email', 'francesca@example.com')
+        ->assertSee('Schritt 1 von 3')
         ->set('first_name', 'Francesca')
         ->set('last_name', 'Arslan')
         ->set('address', 'Zelglistrasse 41')
@@ -92,6 +95,7 @@ it('creates external user and donation for new donors', function (): void {
         ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'donation')
+        ->assertSee('Schritt 2 von 3')
         ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 7.50)
         ->set('amount_min', 50.00)
@@ -99,7 +103,8 @@ it('creates external user and donation for new donors', function (): void {
         ->set('comment', 'Tolle Sache!')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertSet('currentStep', 'submitted');
+        ->assertSet('currentStep', 'submitted')
+        ->assertSee('Schritt 3 von 3');
 
     $externalUser = ExternalUser::query()->where('email', 'francesca@example.com')->firstOrFail();
     $donation = Donation::query()->whereBelongsTo($externalUser, 'donorExternalUser')->firstOrFail();
@@ -127,7 +132,8 @@ it('sends login link when returning email found', function (): void {
         ->set('returning_email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'login-link-sent')
-        ->assertSet('participation', 'returning');
+        ->assertSet('participation', 'returning')
+        ->assertDontSee('Schritt');
 
     Notification::assertSentTo(
         Notification::route('mail', 'francesca@example.com'),
@@ -282,7 +288,8 @@ it('skips personal step for authenticated external users', function (): void {
     Livewire::test(DonorRegistrationWizard::class)
         ->assertSet('currentStep', 'donation')
         ->assertSet('isAuthenticatedExternalUser', true)
-        ->assertSet('participation', 'returning');
+        ->assertSet('participation', 'returning')
+        ->assertSee('Schritt 1 von 2');
 });
 
 it('restarts on donation step for authenticated external users', function (): void {
@@ -363,6 +370,7 @@ it('mounts wizard on become-donor page when registration is open and verified at
     get(route('become-donor'))
         ->assertSuccessful()
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
+        ->assertDontSee('Schritt')
         ->assertDontSee('Newsletter Anmeldung');
 });
 
