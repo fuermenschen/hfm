@@ -318,7 +318,7 @@ it('stores previous donor notification opt out from the wizard', function (): vo
         ->call('next')
         ->assertSet('currentStep', 'previous-donors')
         ->assertSee('Schritt 2 von 3')
-        ->assertSee('Frühere Unterstützer:innen aktivieren')
+        ->assertSee('Frühere Spender:innen informieren')
         ->set('notify_previous_donors', false)
         ->assertSee('Ohne Hinweis an frühere Spender:innen')
         ->set('privacy_accepted', true)
