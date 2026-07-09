@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ApiKey;
 use App\Http\Middleware\EnsureActivePublishedEvent;
+use App\Http\Middleware\EnsureSingleAuthenticatedGuard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->appendToGroup('web', [
+            EnsureSingleAuthenticatedGuard::class,
+        ]);
+
         $middleware->alias([
             'api-key' => ApiKey::class,
             'active-event' => EnsureActivePublishedEvent::class,

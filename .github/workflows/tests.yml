@@ -44,6 +44,9 @@ jobs:
       - name: Install Node Dependencies
         run: npm install
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
       - name: Create SQLite Database
         run: mkdir -p database && touch database/database.sqlite
 
@@ -67,6 +70,15 @@ jobs:
 
       - name: Run Tests
         run: php artisan test --parallel
+
+      - name: Upload Browser Screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-screenshots
+          path: tests/Browser/Screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
 
   migration-tests:
     uses: ./.github/workflows/mariadb-migration-tests.yml

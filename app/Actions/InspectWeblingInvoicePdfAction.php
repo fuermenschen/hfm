@@ -122,6 +122,6 @@ class InspectWeblingInvoicePdfAction
      */
     protected function containsAny(string $haystack, array $needles): bool
     {
-        return array_any($needles, fn ($needle): bool => $needle !== '' && str_contains($haystack, $needle));
+        return array_any($needles, fn (string $needle): bool => $needle !== '' && str_contains($haystack, $needle));
     }
 }

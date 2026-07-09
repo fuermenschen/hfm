@@ -25,6 +25,120 @@ it('logs external users in via signed portal link', function () {
     assertAuthenticatedAs($externalUser, 'external');
 });
 
+it('logs out admin sessions when external users log in', function () {
+    $user = User::factory()->create();
+    $externalUser = ExternalUser::factory()->create();
+
+    actingAs($user, 'web');
+
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid]);
+
+    get($url)
+        ->assertRedirect(route('portal.dashboard'));
+
+    assertGuest('web');
+    assertAuthenticatedAs($externalUser, 'external');
+});
+
+it('keeps admin session when both guards are authenticated', function () {
+    $user = User::factory()->create();
+    $externalUser = ExternalUser::factory()->create();
+
+    actingAs($user, 'web');
+    actingAs($externalUser, 'external');
+
+    get(route('home'))->assertSuccessful();
+
+    assertAuthenticatedAs($user, 'web');
+    assertGuest('external');
+});
+
+it('logs out external sessions when admin users log in', function () {
+    $user = User::factory()->create();
+    $externalUser = ExternalUser::factory()->create();
+
+    actingAs($externalUser, 'external');
+
+    $url = URL::temporarySignedRoute('login-uuid', now()->addMinutes(15), ['uuid' => $user->uuid]);
+
+    get($url)
+        ->assertRedirect(route('admin.dashboard'));
+
+    assertGuest('external');
+    assertAuthenticatedAs($user, 'web');
+});
+
+it('shows guest login links when no guard is authenticated', function () {
+    get(route('home'))
+        ->assertSuccessful()
+        ->assertSeeText('Login')
+        ->assertSee('href="'.route('login').'"', false)
+        ->assertSeeText('Vereinsmitglied werden')
+        ->assertDontSeeText('Dashboard')
+        ->assertDontSeeText('Portal')
+        ->assertDontSeeText('Logout');
+});
+
+it('shows admin dashboard and logout links for admin users', function () {
+    $user = User::factory()->create();
+
+    actingAs($user, 'web');
+
+    get(route('home'))
+        ->assertSuccessful()
+        ->assertSeeText('Dashboard')
+        ->assertSee('href="'.route('admin.dashboard').'"', false)
+        ->assertSeeText('Logout')
+        ->assertSee('action="'.route('admin.logout').'"', false)
+        ->assertDontSeeText('Portal')
+        ->assertDontSeeText('Login')
+        ->assertDontSeeText('Vereinsmitglied werden');
+});
+
+it('shows portal and portal logout links for external users', function () {
+    $externalUser = ExternalUser::factory()->create();
+
+    actingAs($externalUser, 'external');
+
+    get(route('home'))
+        ->assertSuccessful()
+        ->assertSeeText('Portal')
+        ->assertSee('href="'.route('portal.dashboard').'"', false)
+        ->assertSeeText('Logout')
+        ->assertSee('action="'.route('portal.logout').'"', false)
+        ->assertDontSeeText('Dashboard')
+        ->assertDontSeeText('Login')
+        ->assertDontSeeText('Vereinsmitglied werden');
+});
+
+it('logs external users in via signed portal link and resumes athlete registration', function () {
+    $externalUser = ExternalUser::factory()->create();
+
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+        'uuid' => $externalUser->uuid,
+        'redirect' => 'become-athlete',
+    ]);
+
+    get($url)
+        ->assertRedirect(route('become-athlete'));
+
+    assertAuthenticatedAs($externalUser, 'external');
+});
+
+it('ignores unsupported portal signed login redirects', function () {
+    $externalUser = ExternalUser::factory()->create();
+
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+        'uuid' => $externalUser->uuid,
+        'redirect' => 'admin.dashboard',
+    ]);
+
+    get($url)
+        ->assertRedirect(route('portal.dashboard'));
+
+    assertAuthenticatedAs($externalUser, 'external');
+});
+
 it('allows reusing valid external signed login link within ttl', function () {
     $externalUser = ExternalUser::factory()->create();
 

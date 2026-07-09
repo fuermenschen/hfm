@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\DonationEvent;
+use App\Models\SportType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -74,5 +75,21 @@ class DonationEventFactory extends Factory
                 ],
             ],
         ]);
+    }
+
+    public function withSportTypes(): static
+    {
+        return $this->afterCreating(function (DonationEvent $event): void {
+            $sportTypes = SportType::query()->orderBy('id')->pluck('id');
+
+            $event->sportTypes()->syncWithoutDetaching(
+                $sportTypes->mapWithKeys(fn (int $sportTypeId, int $index): array => [
+                    $sportTypeId => [
+                        'sort_order' => ($index + 1) * 10,
+                        'is_enabled' => true,
+                    ],
+                ])->all(),
+            );
+        });
     }
 }

@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'rounds_estimated',
     'rounds_done',
     'comment',
+    'notify_previous_donors',
     'verified',
 ])]
 class AthleteRegistration extends Model
@@ -62,6 +63,7 @@ class AthleteRegistration extends Model
         return [
             'rounds_estimated' => 'integer',
             'rounds_done' => 'integer',
+            'notify_previous_donors' => 'boolean',
             'verified' => 'boolean',
         ];
     }

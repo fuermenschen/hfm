@@ -7,6 +7,7 @@ use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
+use App\Models\SportType;
 use App\Services\CurrentDonationEventService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Cache;
@@ -20,6 +21,8 @@ it('seeds local development graph with external users and two events', function 
 
     expect(DonationEvent::query()->whereIn('slug', ['2025', '2026'])->count())->toBe(2)
         ->and(Partner::query()->count())->toBe(6)
+        ->and(SportType::query()->count())->toBe(5)
+        ->and(DonationEvent::query()->orderBy('slug')->withCount('sportTypes')->pluck('sport_types_count')->all())->toBe([5, 5])
         ->and(ExternalUser::query()->count())->toBe(100)
         ->and(AthleteRegistration::query()->count())->toBe(33)
         ->and(Donation::query()->count())->toBe(220)

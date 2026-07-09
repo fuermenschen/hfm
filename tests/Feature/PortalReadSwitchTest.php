@@ -86,3 +86,22 @@ it('renders merged external user portal data grouped by donation event', functio
         ->assertSeeText($supporter->privacy_name)
         ->assertSeeText($otherAthlete->privacy_name);
 });
+
+it('shows confirmation button only for unverified athlete registrations', function (): void {
+    $externalUser = ExternalUser::factory()->create(['first_name' => 'Alex']);
+    $unverifiedRegistration = AthleteRegistration::factory()->create([
+        'external_user_id' => $externalUser->id,
+        'verified' => false,
+    ]);
+    AthleteRegistration::factory()->create([
+        'external_user_id' => $externalUser->id,
+        'verified' => true,
+    ]);
+
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
+        ->assertSuccessful()
+        ->assertSee('Anmeldung bestätigen')
+        ->assertSee(route('portal.athlete-registration.confirm.perform', $unverifiedRegistration));
+});

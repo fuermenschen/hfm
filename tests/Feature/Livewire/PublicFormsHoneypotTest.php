@@ -1,7 +1,7 @@
 <?php
 
 use App\Components\AssociationDonationForm;
-use App\Components\BecomeAthleteForm;
+use App\Components\AthleteRegistrationWizard;
 use App\Components\BecomeDonorForm;
 use App\Components\ContactForm;
 use App\Components\LoginForm;
@@ -16,9 +16,9 @@ it('adds honeypot fields to all public form views', function (string $viewPath):
     'resources/views/forms/contact-form.blade.php',
     'resources/views/forms/login-form.blade.php',
     'resources/views/forms/newsletter-registration-form.blade.php',
-    'resources/views/forms/become-athlete-form.blade.php',
     'resources/views/forms/become-donor-form.blade.php',
     'resources/views/forms/association-donation-form.blade.php',
+    'resources/views/forms/athlete-registration-wizard.blade.php',
 ]);
 
 it('enables spam protection on all public form components', function (string $componentClass): void {
@@ -35,7 +35,7 @@ it('enables spam protection on all public form components', function (string $co
     'contact form' => [ContactForm::class],
     'login form' => [LoginForm::class],
     'newsletter form' => [NewsletterRegistrationForm::class],
-    'become athlete form' => [BecomeAthleteForm::class],
     'become donor form' => [BecomeDonorForm::class],
     'association donation form' => [AssociationDonationForm::class],
+    'athlete registration wizard' => [AthleteRegistrationWizard::class],
 ]);
