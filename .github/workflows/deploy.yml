@@ -125,9 +125,9 @@ jobs:
               echo "Failed to put application in maintenance mode. Continuing deployment..."
             fi
 
-            echo "Pulling latest changes from the repository..."
-            git reset --hard
-            git pull origin main || { echo "Git pull failed! Exiting."; exit 1; }
+            echo "Fetching latest changes from the repository..."
+            git fetch origin main || { echo "Git fetch failed! Exiting."; exit 1; }
+            git reset --hard origin/main || { echo "Git reset to origin/main failed! Exiting."; exit 1; }
 
             echo "Decrypting environment file..."
             $PHP_BIN artisan env:decrypt --env=production --key=${{ secrets.ENV_PRODUCTION_KEY }} --force --filename=.env || { echo "Environment decryption failed! Exiting."; exit 1; }
