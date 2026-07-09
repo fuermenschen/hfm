@@ -118,9 +118,21 @@
                         <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
                         <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
 
-                        <flux:input wire:model.live.blur="zip_code" label="PLZ" :mask="$zipCodeMask" :placeholder="$zipCodePlaceholder" autocomplete="postal-code" icon-trailing="map-pin" required />
+                        <flux:field>
+                            <flux:label>PLZ / Ort</flux:label>
 
-                        <flux:input wire:model.live.blur="city" label="Ort" placeholder="Winterthur" icon-trailing="map-pin" autocomplete="address-level2" required />
+                            <flux:input.group data-test="zip-city-group" style="display: flex; width: 100%;">
+                                <div data-flux-input style="flex: 0 0 33.333333%;">
+                                    <flux:input wire:model.live.blur="zip_code" :mask="$zipCodeMask" :placeholder="$zipCodePlaceholder" autocomplete="postal-code" required />
+                                </div>
+                                <div data-flux-input style="flex: 0 0 66.666667%;">
+                                    <flux:input wire:model.live.blur="city" placeholder="Winterthur" autocomplete="address-level2" required />
+                                </div>
+                            </flux:input.group>
+
+                            <flux:error name="zip_code" />
+                            <flux:error name="city" />
+                        </flux:field>
 
                         <flux:select wire:model.live="country_of_residence" label="Land" class="sm:col-span-2">
                             <flux:select.option value="CH">Schweiz</flux:select.option>
@@ -128,13 +140,25 @@
                             <flux:select.option value="AT">Österreich</flux:select.option>
                         </flux:select>
 
-                        <flux:input wire:model.live.blur="phone_national" label="Telefon" :placeholder="$phonePlaceholder" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
+                        <flux:field>
+                            <flux:label>Telefon</flux:label>
 
-                        <flux:select wire:model.live="phone_country" label="Ländervorwahl" class="sm:col-span-2">
-                            <flux:select.option value="CH">Schweiz (+41)</flux:select.option>
-                            <flux:select.option value="DE">Deutschland (+49)</flux:select.option>
-                            <flux:select.option value="AT">Österreich (+43)</flux:select.option>
-                        </flux:select>
+                            <flux:input.group style="display: flex; width: 100%;">
+                                <div style="flex: 0 0 33.333333%;">
+                                    <flux:select wire:model.live="phone_country" aria-label="Ländervorwahl">
+                                        <flux:select.option value="CH">Schweiz (+41)</flux:select.option>
+                                        <flux:select.option value="DE">Deutschland (+49)</flux:select.option>
+                                        <flux:select.option value="AT">Österreich (+43)</flux:select.option>
+                                    </flux:select>
+                                </div>
+                                <div style="flex: 0 0 66.666667%;">
+                                    <flux:input wire:model.live.blur="phone_national" :placeholder="$phonePlaceholder" autocomplete="tel" type="tel" required />
+                                </div>
+                            </flux:input.group>
+
+                            <flux:error name="phone_country" />
+                            <flux:error name="phone_national" />
+                        </flux:field>
 
                         <flux:input wire:model.live.blur="email" label="E-Mail" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="email" type="email" required />
                         <flux:input wire:model.live.blur="email_confirmation" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="off" type="email" required />
@@ -171,13 +195,9 @@
                         </flux:select>
 
                         @if ($currentAthleteName)
-                            <flux:callout icon="information-circle" variant="secondary">
-                                <flux:callout.heading>{{ $currentAthleteName }}</flux:callout.heading>
-                                <flux:callout.text>
-                                    <strong>{{ $currentSportType }}</strong> · {{ $currentPartner }}<br>
-                                    Geschätzte Runden: <strong>{{ $currentRounds }}</strong>
-                                </flux:callout.text>
-                            </flux:callout>
+                            <flux:text>
+                                <strong>{{ $currentAthleteName }}</strong> hat geschätzt, <strong>{{ $currentRounds }}</strong> Runden zu absolvieren, um Spenden für die Organisation <strong>{{ $currentPartner }}</strong> zu sammeln. Die gewählte Sportart ist: <strong>{{ $currentSportType }}</strong>.
+                            </flux:text>
                         @endif
                     @endif
 

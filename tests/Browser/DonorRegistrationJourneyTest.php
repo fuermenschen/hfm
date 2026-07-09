@@ -35,7 +35,7 @@ it('lets a logged in external user donate through the wizard', function (): void
         ->assertDontSee('Vorname')
         ->click('[data-flux-select-button]')
         ->click($athleteOption)
-        ->assertSee('Geschätzte Runden: 10')
+        ->assertSee('Claudia M. hat geschätzt, 10 Runden zu absolvieren')
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '7.50')
         ->type('[wire\:model\.live\.blur="amount_min"]', '50')
         ->type('[wire\:model\.live\.blur="amount_max"]', '200')
