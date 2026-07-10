@@ -105,65 +105,56 @@
                     </div>
                 </div>
             @elseif ($currentStep === 'personal')
-                @if ($participation === 'returning')
-                    <flux:callout icon="check-circle" variant="success">
-                        <flux:callout.heading>Bekannte Angaben werden wiederverwendet</flux:callout.heading>
-                        <flux:callout.text>
-                            Nach dem Login überspringen wiederkehrende Spender:innen diesen Schritt. Persönliche Daten werden im Wizard nicht editiert.
-                        </flux:callout.text>
-                    </flux:callout>
-                @else
-                    <div class="grid gap-6 sm:grid-cols-2">
-                        <flux:input wire:model.live.blur="first_name" label="Vorname" placeholder="Francesca" icon-trailing="user" autocomplete="given-name" required />
-                        <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
-                        <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
+                <div class="grid gap-6 sm:grid-cols-2">
+                    <flux:input wire:model.live.blur="first_name" label="Vorname" placeholder="Francesca" icon-trailing="user" autocomplete="given-name" required />
+                    <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
+                    <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
 
-                        <flux:field>
-                            <flux:label>PLZ / Ort</flux:label>
+                    <flux:field>
+                        <flux:label>PLZ / Ort</flux:label>
 
-                            <flux:input.group data-test="zip-city-group" style="display: flex; width: 100%;">
-                                <div data-flux-input style="flex: 0 0 33.333333%;">
-                                    <flux:input wire:model.live.blur="zip_code" :mask="$zipCodeMask" :placeholder="$zipCodePlaceholder" autocomplete="postal-code" required />
-                                </div>
-                                <div data-flux-input style="flex: 0 0 66.666667%;">
-                                    <flux:input wire:model.live.blur="city" placeholder="Winterthur" autocomplete="address-level2" required />
-                                </div>
-                            </flux:input.group>
+                        <flux:input.group data-test="zip-city-group" style="display: flex; width: 100%;">
+                            <div data-flux-input style="flex: 0 0 33.333333%;">
+                                <flux:input wire:model.live.blur="zip_code" :mask="$zipCodeMask" :placeholder="$zipCodePlaceholder" autocomplete="postal-code" required />
+                            </div>
+                            <div data-flux-input style="flex: 0 0 66.666667%;">
+                                <flux:input wire:model.live.blur="city" placeholder="Winterthur" autocomplete="address-level2" required />
+                            </div>
+                        </flux:input.group>
 
-                            <flux:error name="zip_code" />
-                            <flux:error name="city" />
-                        </flux:field>
+                        <flux:error name="zip_code" />
+                        <flux:error name="city" />
+                    </flux:field>
 
-                        <flux:select wire:model.live="country_of_residence" label="Land" class="sm:col-span-2">
-                            <flux:select.option value="CH">Schweiz</flux:select.option>
-                            <flux:select.option value="DE">Deutschland</flux:select.option>
-                            <flux:select.option value="AT">Österreich</flux:select.option>
-                        </flux:select>
+                    <flux:select wire:model.live="country_of_residence" label="Land" class="sm:col-span-2">
+                        <flux:select.option value="CH">Schweiz</flux:select.option>
+                        <flux:select.option value="DE">Deutschland</flux:select.option>
+                        <flux:select.option value="AT">Österreich</flux:select.option>
+                    </flux:select>
 
-                        <flux:field>
-                            <flux:label>Telefon</flux:label>
+                    <flux:field>
+                        <flux:label>Telefon</flux:label>
 
-                            <flux:input.group style="display: flex; width: 100%;">
-                                <div style="flex: 0 0 33.333333%;">
-                                    <flux:select wire:model.live="phone_country" aria-label="Ländervorwahl">
-                                        <flux:select.option value="CH">Schweiz (+41)</flux:select.option>
-                                        <flux:select.option value="DE">Deutschland (+49)</flux:select.option>
-                                        <flux:select.option value="AT">Österreich (+43)</flux:select.option>
-                                    </flux:select>
-                                </div>
-                                <div style="flex: 0 0 66.666667%;">
-                                    <flux:input wire:model.live.blur="phone_national" :placeholder="$phonePlaceholder" autocomplete="tel" type="tel" required />
-                                </div>
-                            </flux:input.group>
+                        <flux:input.group style="display: flex; width: 100%;">
+                            <div style="flex: 0 0 33.333333%;">
+                                <flux:select wire:model.live="phone_country" aria-label="Ländervorwahl">
+                                    <flux:select.option value="CH">Schweiz (+41)</flux:select.option>
+                                    <flux:select.option value="DE">Deutschland (+49)</flux:select.option>
+                                    <flux:select.option value="AT">Österreich (+43)</flux:select.option>
+                                </flux:select>
+                            </div>
+                            <div style="flex: 0 0 66.666667%;">
+                                <flux:input wire:model.live.blur="phone_national" :placeholder="$phonePlaceholder" autocomplete="tel" type="tel" required />
+                            </div>
+                        </flux:input.group>
 
-                            <flux:error name="phone_country" />
-                            <flux:error name="phone_national" />
-                        </flux:field>
+                        <flux:error name="phone_country" />
+                        <flux:error name="phone_national" />
+                    </flux:field>
 
-                        <flux:input wire:model.live.blur="email" label="E-Mail" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="email" type="email" required />
-                        <flux:input wire:model.live.blur="email_confirmation" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="off" type="email" required />
-                    </div>
-                @endif
+                    <flux:input wire:model.live.blur="email" label="E-Mail" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="email" type="email" required />
+                    <flux:input wire:model.live.blur="email_confirmation" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="off" type="email" required />
+                </div>
             @elseif ($currentStep === 'donation')
                 <div class="space-y-7">
                     @if ($isAuthenticatedExternalUser && $externalUser)

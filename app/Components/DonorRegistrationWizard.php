@@ -228,7 +228,7 @@ class DonorRegistrationWizard extends Component
                 'returning_email' => ['required', 'email', 'max:255'],
                 'returning_email_confirmation' => ['required', 'same:returning_email'],
             ],
-            'personal' => $this->participation === 'new' && ! $this->isAuthenticatedExternalUser ? [
+            'personal' => [
                 'first_name' => ['required', 'string', 'max:255'],
                 'last_name' => ['required', 'string', 'max:255'],
                 'address' => ['required', 'string', 'max:255'],
@@ -239,7 +239,7 @@ class DonorRegistrationWizard extends Component
                 'phone_national' => ['required', 'phone:phone_country'],
                 'email' => ['required', 'email', 'max:255'],
                 'email_confirmation' => ['required', 'same:email'],
-            ] : [],
+            ],
             'donation' => [
                 'athlete_registration_id' => ['required', 'integer', Rule::in($this->validAthleteRegistrationIds())],
                 'amount_per_round' => ['required', 'numeric', 'min:0.05'],

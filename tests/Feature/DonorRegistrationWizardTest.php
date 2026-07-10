@@ -8,6 +8,7 @@ use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Models\User;
+use App\Notifications\AthleteNewDonation;
 use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
 use App\Settings\EventSettings;
@@ -116,6 +117,7 @@ it('creates external user and donation for new donors', function (): void {
         ->and($donation->athlete_registration_id)->toBe($athleteRegistration->id);
 
     Notification::assertSentTo($externalUser, ConfirmDonorRegistration::class);
+    Notification::assertSentTo($athleteRegistration->externalUser, AthleteNewDonation::class);
 });
 
 it('sends login link when returning email found', function (): void {

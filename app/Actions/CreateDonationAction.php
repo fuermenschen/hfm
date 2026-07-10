@@ -8,6 +8,7 @@ use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Notifications\AthleteNewDonation;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -34,7 +35,7 @@ class CreateDonationAction
         $athleteRegistration = $this->validateAthleteRegistration($donationEvent, $data['athlete_registration_id']);
 
         try {
-            return DB::transaction(function () use ($externalUser, $externalUserData, $data, $athleteRegistration): Donation {
+            $donation = DB::transaction(function () use ($externalUser, $externalUserData, $data, $athleteRegistration): Donation {
                 $externalUser ??= ExternalUser::query()->create($externalUserData);
 
                 return Donation::query()->create([
@@ -47,6 +48,10 @@ class CreateDonationAction
                     'verified' => false,
                 ]);
             });
+
+            $this->notifyAthlete($donation);
+
+            return $donation;
         } catch (QueryException $queryException) {
             throw_if($queryException->getCode() !== '23000', $queryException);
 
@@ -54,6 +59,23 @@ class CreateDonationAction
                 'athlete_registration_id' => self::ExistingDonationMessage,
             ]);
         }
+    }
+
+    protected function notifyAthlete(Donation $donation): void
+    {
+        $donation->loadMissing([
+            'athleteRegistration.externalUser',
+            'donorExternalUser',
+        ]);
+
+        $athlete = $donation->athleteRegistration->externalUser;
+        $donor = $donation->donorExternalUser;
+
+        $athlete->notify(new AthleteNewDonation(
+            $athlete->first_name,
+            $donor->privacy_name,
+            $athlete->public_id_string,
+        ));
     }
 
     /**

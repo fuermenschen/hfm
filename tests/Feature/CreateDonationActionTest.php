@@ -7,6 +7,8 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
+use App\Notifications\AthleteNewDonation;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 function createDonorTestEvent(bool $donorRegistrationOpen = false): DonationEvent
@@ -51,6 +53,7 @@ function createVerifiedAthleteRegistration(DonationEvent $event): AthleteRegistr
 it('creates donation for new donor with new external user', function (): void {
     $event = createDonorTestEvent(donorRegistrationOpen: true);
     $athleteRegistration = createVerifiedAthleteRegistration($event);
+    Notification::fake();
 
     $action = resolve(CreateDonationAction::class);
 
@@ -82,12 +85,20 @@ it('creates donation for new donor with new external user', function (): void {
     expect($externalUser)->toBeInstanceOf(ExternalUser::class)
         ->and($externalUser->first_name)->toBe('Francesca')
         ->and($externalUser->email)->toBe('francesca@example.com');
+
+    Notification::assertSentTo(
+        $athleteRegistration->externalUser,
+        fn (AthleteNewDonation $notification): bool => $notification->first_name === 'Claudia'
+            && $notification->donor_name === 'Francesca A.'
+            && $notification->public_id_string === $athleteRegistration->externalUser->public_id_string,
+    );
 });
 
 it('creates donation for existing external user', function (): void {
     $event = createDonorTestEvent(donorRegistrationOpen: true);
     $athleteRegistration = createVerifiedAthleteRegistration($event);
     $existingUser = ExternalUser::factory()->create(['email' => 'francesca@example.com']);
+    Notification::fake();
 
     $action = resolve(CreateDonationAction::class);
 
@@ -207,6 +218,7 @@ it('allows multiple donations to different athletes in same event', function ():
     $athlete1 = createVerifiedAthleteRegistration($event);
     $athlete2 = createVerifiedAthleteRegistration($event);
     $donor = ExternalUser::factory()->create();
+    Notification::fake();
 
     $action = resolve(CreateDonationAction::class);
 
@@ -236,6 +248,7 @@ it('throws on duplicate donation to same athlete', function (): void {
     $event = createDonorTestEvent(donorRegistrationOpen: true);
     $athleteRegistration = createVerifiedAthleteRegistration($event);
     $donor = ExternalUser::factory()->create();
+    Notification::fake();
 
     $action = resolve(CreateDonationAction::class);
 
