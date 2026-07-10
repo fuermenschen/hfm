@@ -8,6 +8,7 @@ use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Notifications\AthleteNewDonation;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
@@ -268,6 +269,77 @@ it('throws on duplicate donation to same athlete', function (): void {
         'comment' => null,
     ]);
 })->throws(ValidationException::class, 'Du unterstützt diese:n Sportler:in für diesen Anlass bereits.');
+
+it('shows email error when duplicate email appears during donation creation', function (): void {
+    $event = createDonorTestEvent(donorRegistrationOpen: true);
+    $athleteRegistration = createVerifiedAthleteRegistration($event);
+
+    $action = new class extends CreateDonationAction
+    {
+        /**
+         * @param  array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null  $externalUserData
+         * @return array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null
+         */
+        protected function normalizeExternalUserData(?ExternalUser $externalUser, ?array $externalUserData): ?array
+        {
+            $externalUserData = parent::normalizeExternalUserData($externalUser, $externalUserData);
+
+            ExternalUser::factory()->create(['email' => $externalUserData['email']]);
+
+            return $externalUserData;
+        }
+    };
+
+    $hasEmailError = false;
+
+    try {
+        $action($event, null, [
+            'athlete_registration_id' => $athleteRegistration->id,
+            'amount_per_round' => 5.00,
+            'amount_min' => null,
+            'amount_max' => null,
+            'comment' => null,
+        ], [
+            'first_name' => 'Francesca',
+            'last_name' => 'Arslan',
+            'address' => 'Zelglistrasse 41',
+            'zip_code' => '8406',
+            'city' => 'Winterthur',
+            'country_of_residence' => 'CH',
+            'phone_number' => '+41 79 123 45 67',
+            'email' => 'francesca@example.com',
+        ]);
+    } catch (ValidationException $validationException) {
+        $hasEmailError = array_key_exists('email', $validationException->errors());
+    }
+
+    expect($hasEmailError)->toBeTrue();
+});
+
+it('rethrows unrelated integrity errors during donation creation', function (): void {
+    $event = createDonorTestEvent(donorRegistrationOpen: true);
+    $athleteRegistration = createVerifiedAthleteRegistration($event);
+    $donor = ExternalUser::factory()->create();
+
+    $action = new class extends CreateDonationAction
+    {
+        protected function validateAthleteRegistration(DonationEvent $donationEvent, int $athleteRegistrationId): AthleteRegistration
+        {
+            $athleteRegistration = parent::validateAthleteRegistration($donationEvent, $athleteRegistrationId);
+            $athleteRegistration->delete();
+
+            return $athleteRegistration;
+        }
+    };
+
+    $action($event, $donor, [
+        'athlete_registration_id' => $athleteRegistration->id,
+        'amount_per_round' => 5.00,
+        'amount_min' => null,
+        'amount_max' => null,
+        'comment' => null,
+    ]);
+})->throws(QueryException::class);
 
 it('formats phone number correctly', function (): void {
     expect(CreateDonationAction::formatPhoneNumber('79 123 45 67', 'CH'))->toBe('+41 79 123 45 67')

@@ -144,6 +144,10 @@ class DonorRegistrationWizard extends Component
 
         $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
 
+        if ($currentDonationEvent === null) {
+            return;
+        }
+
         $this->athleteRegistrations = AthleteRegistration::query()
             ->select(['id', 'external_user_id', 'sport_type_id', 'partner_id', 'rounds_estimated'])
             ->whereBelongsTo($currentDonationEvent)

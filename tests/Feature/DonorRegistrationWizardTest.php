@@ -67,6 +67,16 @@ it('shows wizard when donor registration is open', function (): void {
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
+it('mounts with empty athlete list when no current event is configured', function (): void {
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = null;
+    $settings->save();
+    Cache::forget('current_donation_event');
+
+    Livewire::test(DonorRegistrationWizard::class)
+        ->assertSet('athleteRegistrations', []);
+});
+
 it('creates external user and donation for new donors', function (): void {
     Notification::fake();
 
