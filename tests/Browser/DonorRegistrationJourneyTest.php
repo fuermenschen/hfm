@@ -41,8 +41,8 @@ it('lets a logged in external user donate through the wizard', function (): void
         ->type('[wire\:model\.live\.blur="amount_max"]', '200')
         ->type('[wire\:model\.live\.blur="comment"]', 'Tolle Sache!')
         ->click('[wire\:model\.live="privacy_accepted"]')
-        ->wait(0.2)
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')
+        ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten')
         ->assertSee('Wir haben dir eine E-Mail geschickt');
