@@ -31,8 +31,8 @@ class ConfirmDonorRegistration extends Notification
             ->subject('Bitte bestätige deine Spende')
             ->greeting('Hallo '.$this->firstName)
             ->line('Deine Anmeldung als Spender:in ist bei uns eingegangen. Vielen Dank!')
-            ->line('Bitte öffne den unten stehenden Link und bestätige deine Spende.')
-            ->action('Spende bestätigen', $this->confirmationUrl)
+            ->line('Bitte öffne den unten stehenden Link. Er bringt dich ins Portal, wo du deine Spende mit «Spende bestätigen» final bestätigst.')
+            ->action('Zum Portal', $this->confirmationUrl)
             ->line('Erst nach der Bestätigung wird deine Spende aktiv.')
             ->line('Falls du diese Anmeldung nicht gestartet hast, kontaktiere uns bitte.');
     }
