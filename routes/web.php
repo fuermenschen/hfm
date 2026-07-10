@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminSessionController;
 use App\Http\Controllers\BecomeAthleteController;
+use App\Http\Controllers\BecomeDonorController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 // Main Menu
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('sportlerin-werden', BecomeAthleteController::class)->middleware('active-event')->name('become-athlete');
-Route::view('spenderin-werden', 'pages.become-donor')->middleware('active-event')->name('become-donor');
+Route::get('spenderin-werden', BecomeDonorController::class)->middleware('active-event')->name('become-donor');
 Route::view('newsletter', 'pages.newsletter')->name('newsletter');
 Route::get('newsletter/abmelden/{email}', [NewsletterSubscriptionController::class, 'show'])
     ->name('newsletter.unsubscribe')

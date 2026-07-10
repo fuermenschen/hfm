@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'amount_max',
     'amount_min',
     'comment',
+    'verified',
 ])]
 class Donation extends Model
 {
@@ -35,5 +36,12 @@ class Donation extends Model
     public function athleteRegistration(): BelongsTo
     {
         return $this->belongsTo(AthleteRegistration::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'verified' => 'boolean',
+        ];
     }
 }

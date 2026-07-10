@@ -5,6 +5,7 @@
         @component('components.page-title')
             Spender:in werden
         @endcomponent
+
         <div
             class="w-full max-w-2xl mx-auto text-left sm:text-center">Du lässt lieber andere schwitzen und möchtest als
             Spender:in einen Beitrag für Winterthurer Benefizpartner:innen leisten? Hier bist du goldrichtig zur
@@ -22,21 +23,34 @@
             Anmeldeformular
         </x-page-subtitle>
 
-        <div class="mt-6 mb-9 rounded-lg border border-hfm-red/40 bg-hfm-red/10 px-9 py-6">
-            <p class="font-semibold text-hfm-red">Die Anmeldung als Spender:in ist aktuell noch nicht offen.</p>
-            <p class="mt-1">Melde dich für den Newsletter an. Wir informieren dich, sobald das Spendenformular wieder verfügbar ist.</p>
-        </div>
+        @auth('web')
+            <div class="mt-6 mb-9 rounded-lg border border-hfm-red/40 bg-hfm-red/10 px-9 py-6">
+                <p class="font-semibold text-hfm-red">Du bist als Admin angemeldet.</p>
+                <p class="mt-1">Bitte logge dich aus oder öffne einen privaten Browser-Tab, um das Formular zu sehen.</p>
+            </div>
+        @else
+            @if ($currentDonationEvent?->donorRegistrationIsOpen() && $hasVerifiedAthletes)
+                @livewire('donor-registration-wizard')
+            @else
+                <div class="mt-6 mb-9 rounded-lg border border-hfm-red/40 bg-hfm-red/10 px-9 py-6">
+                    @if ($currentDonationEvent?->donorRegistrationIsOpen())
+                        <p class="font-semibold text-hfm-red">Aktuell sind noch keine Sportler:innen angemeldet.</p>
+                        <p class="mt-1">Versuche es später erneut oder melde dich für den Newsletter an.</p>
+                    @else
+                        <p class="font-semibold text-hfm-red">Die Anmeldung als Spender:in ist aktuell noch nicht offen.</p>
+                        <p class="mt-1">Melde dich für den Newsletter an. Wir informieren dich, sobald das Spendenformular wieder verfügbar ist.</p>
+                    @endif
+                </div>
+            @endif
+        @endauth
 
-        {{--
-        Es freut uns, dass du Spender:in werden möchtest. Indem du das Formular ausfüllst, hilfst du den Sportler:innen,
-        Spenden für unsere Benefizpartner:innen zu sammeln.
-
-        @livewire('become-donor-form')
-        --}}
-
-        <x-page-subtitle>
-            Newsletter Anmeldung
-        </x-page-subtitle>
-        @livewire('newsletter-registration-form')
+        @guest('web')
+            @unless ($currentDonationEvent?->donorRegistrationIsOpen() && $hasVerifiedAthletes)
+                <x-page-subtitle>
+                    Newsletter Anmeldung
+                </x-page-subtitle>
+                @livewire('newsletter-registration-form')
+            @endunless
+        @endguest
     </div>
 @endsection

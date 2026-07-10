@@ -123,6 +123,17 @@ class DonationEvent extends Model
         return $now->greaterThanOrEqualTo($this->registration_opens_at) && $now->lessThanOrEqualTo($this->athlete_registration_closes_at);
     }
 
+    public function donorRegistrationIsOpen(): bool
+    {
+        if ($this->registration_opens_at === null || $this->donor_registration_closes_at === null) {
+            return false;
+        }
+
+        $now = Date::now($this->timezone);
+
+        return $now->greaterThanOrEqualTo($this->registration_opens_at) && $now->lessThanOrEqualTo($this->donor_registration_closes_at);
+    }
+
     protected function casts(): array
     {
         return [

@@ -173,7 +173,7 @@ class GetCurrentEventPublicDataAction
             ->sortBy([
                 fn (Faq $faq) => $faq->group_name,
                 fn (Faq $faq) => $faq->group_sort_order,
-                fn (Faq $faq) => strtolower($faq->title),
+                fn (Faq $faq): string => strtolower($faq->title),
             ])
             ->values();
     }
