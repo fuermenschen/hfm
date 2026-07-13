@@ -17,7 +17,7 @@ class CreateAthleteRegistrationAction
 
     /**
      * @param  array{first_name: string, last_name: string, address: string, zip_code: string, city: string, country_of_residence: string, phone_number: string, email: string}|null  $externalUserData
-     * @param  array{sport_type_id: int, rounds_estimated: int, partner_id: int|null, comment: string|null, notify_previous_donors: bool}  $data
+     * @param  array{sport_type_id: int, rounds_estimated: int, partner_id: int|null, adult: bool, comment: string|null, notify_previous_donors: bool}  $data
      */
     public function __invoke(DonationEvent $donationEvent, ?ExternalUser $externalUser, array $data, ?array $externalUserData = null): AthleteRegistration
     {
@@ -53,6 +53,7 @@ class CreateAthleteRegistrationAction
                     'donation_event_id' => $donationEvent->id,
                     'external_user_id' => $externalUser->id,
                     'sport_type_id' => $data['sport_type_id'],
+                    'adult' => $data['adult'],
                     'rounds_estimated' => $data['rounds_estimated'],
                     'rounds_done' => 0,
                     'partner_id' => $partnerId,

@@ -90,6 +90,7 @@ it('creates external user registration and sends confirmation for new participan
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '0')
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertSet('currentStep', 'submitted')
@@ -102,6 +103,7 @@ it('creates external user registration and sends confirmation for new participan
         ->assertSet('privacy_accepted', false)
         ->assertSet('email', null)
         ->assertSet('returning_email_confirmation', null)
+        ->assertSet('adult', null)
         ->assertSet('sport_type_id', null);
 
     Sleep::assertNeverSlept();
@@ -116,6 +118,7 @@ it('creates external user registration and sends confirmation for new participan
         ->and($externalUser->email)->toBe('francesca@example.com')
         ->and($externalUser->country_of_residence)->toBe('CH')
         ->and($registration->verified)->toBeFalse()
+        ->and($registration->adult)->toBeFalse()
         ->and($registration->partner_id)->toBeNull();
 
     Notification::assertSentTo($externalUser, ConfirmAthleteRegistration::class);
@@ -189,6 +192,7 @@ it('blocks new participant submit when email already belongs to an external user
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['email']);
@@ -275,6 +279,7 @@ it('creates unverified registration and sends confirmation notification for logg
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->set('comment', 'Ich freue mich auf den Lauf.')
         ->set('privacy_accepted', true)
         ->call('submit')
@@ -288,6 +293,7 @@ it('creates unverified registration and sends confirmation notification for logg
 
     expect($registration->verified)->toBeFalse()
         ->and($registration->partner_id)->toBeNull()
+        ->and($registration->adult)->toBeTrue()
         ->and($registration->rounds_estimated)->toBe(12);
 
     Notification::assertSentTo(
@@ -315,6 +321,7 @@ it('stores previous donor notification opt out from the wizard', function (): vo
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->call('next')
         ->assertSet('currentStep', 'previous-donors')
         ->assertSee('Schritt 2 von 3')
@@ -350,6 +357,7 @@ it('blocks duplicate registration for logged in external user', function (): voi
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['registration'])
@@ -377,6 +385,7 @@ it('blocks existing unverified registration for logged in external user', functi
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['registration'])
@@ -400,9 +409,31 @@ it('requires privacy consent before registration submission', function (): void 
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->call('submit')
         ->assertHasErrors(['privacy_accepted' => ['accepted']])
         ->assertSee('Bitte bestätige, dass wir deine Daten für die Organisation des Anlasses verwenden dürfen.');
+
+    expect(AthleteRegistration::query()->count())->toBe(0);
+    Notification::assertNothingSent();
+});
+
+it('requires adult confirmation before registration submission', function (): void {
+    Notification::fake();
+
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+    $externalUser = ExternalUser::factory()->create();
+
+    Livewire::actingAs($externalUser, 'external')
+        ->test(AthleteRegistrationWizard::class)
+        ->set('sport_type_id', $sportType->id)
+        ->set('rounds_estimated', 12)
+        ->set('partner_id', 0)
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertHasErrors(['adult' => ['required']])
+        ->assertSee('Bitte bestätige, ob du volljährig bist.');
 
     expect(AthleteRegistration::query()->count())->toBe(0);
     Notification::assertNothingSent();
@@ -424,6 +455,7 @@ it('rejects sport types not enabled for the current event', function (): void {
         ->set('sport_type_id', $disabledSportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->call('next')
         ->assertHasErrors(['sport_type_id' => ['in']]);
 
@@ -454,6 +486,7 @@ it('treats soft deleted external user emails as known emails for new participant
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['email'])
@@ -530,6 +563,7 @@ it('keeps returning guest participants on the login link step until they authent
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
         ->set('partner_id', 0)
+        ->set('adult', '1')
         ->call('submit')
         ->assertSet('currentStep', 'login-link-sent')
         ->assertHasErrors(['registration'])
@@ -606,6 +640,7 @@ it('shows email error when duplicate email appears during registration creation'
             'sport_type_id' => $sportType->id,
             'rounds_estimated' => 10,
             'partner_id' => 0,
+            'adult' => true,
             'comment' => null,
             'notify_previous_donors' => true,
         ], [

@@ -36,6 +36,8 @@ it('lets a logged in external user register and confirm through email link', fun
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
         ->wait(0.2)
         ->click($partner->name)
+        ->click('Ja')
+        ->wait(0.2)
         ->type('[wire\\:model\\.live\\.blur="comment"]', 'Ich freue mich auf den Lauf.')
         ->keys('[wire\\:model\\.live\\.blur="comment"]', 'Tab')
         ->wait(0.2)
@@ -51,7 +53,8 @@ it('lets a logged in external user register and confirm through email link', fun
         ->whereBelongsTo($externalUser)
         ->firstOrFail();
 
-    expect($registration->verified)->toBeFalse();
+    expect($registration->verified)->toBeFalse()
+        ->and($registration->adult)->toBeTrue();
 
     Notification::assertSentTo(
         $externalUser,
@@ -122,6 +125,8 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
         ->wait(0.2)
         ->click($partner->name)
+        ->click('Nein')
+        ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
@@ -133,7 +138,8 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->whereBelongsTo($externalUser)
         ->firstOrFail();
 
-    expect($registration->verified)->toBeFalse();
+    expect($registration->verified)->toBeFalse()
+        ->and($registration->adult)->toBeFalse();
 });
 
 it('lets a new guest register and confirm through email link', function (): void {
@@ -166,6 +172,8 @@ it('lets a new guest register and confirm through email link', function (): void
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
         ->wait(0.2)
         ->click($partner->name)
+        ->click('Ja')
+        ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
@@ -179,7 +187,8 @@ it('lets a new guest register and confirm through email link', function (): void
         ->whereBelongsTo($externalUser)
         ->firstOrFail();
 
-    expect($registration->verified)->toBeFalse();
+    expect($registration->verified)->toBeFalse()
+        ->and($registration->adult)->toBeTrue();
 
     $confirmationUrl = null;
     Notification::assertSentTo(
