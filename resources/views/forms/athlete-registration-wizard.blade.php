@@ -95,13 +95,6 @@
         </div>
 
         <div class="py-6 sm:py-8" wire:key="athlete-registration-wizard-{{ $currentStep }}">
-            @if ($errors->any())
-                <flux:callout icon="exclamation-triangle" variant="danger" class="mb-6">
-                    <flux:callout.heading>Anmeldung noch nicht möglich</flux:callout.heading>
-                    <flux:callout.text>{{ $errors->first() }}</flux:callout.text>
-                </flux:callout>
-            @endif
-
             @if ($currentStep === 'start')
                 <div class="space-y-6">
                     <div class="grid gap-6 sm:grid-cols-2">
