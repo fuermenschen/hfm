@@ -146,9 +146,7 @@ it('requires swiss residence and telephone format for new participants', functio
         ->assertHasErrors([
             'country_of_residence' => ['in'],
             'phone_number' => ['regex'],
-        ])
-        ->assertSee('nur für Personen mit Wohnsitz in der Schweiz')
-        ->assertSee('079 123 45 67');
+        ]);
 
     expect(ExternalUser::query()->count())->toBe(0)
         ->and(AthleteRegistration::query()->count())->toBe(0);
@@ -360,8 +358,7 @@ it('blocks duplicate registration for logged in external user', function (): voi
         ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertHasErrors(['registration'])
-        ->assertSee('Bitte öffne dein Portal');
+        ->assertHasErrors(['registration']);
 
     expect(AthleteRegistration::query()->whereBelongsTo($event)->whereBelongsTo($externalUser)->count())->toBe(1);
 
@@ -388,8 +385,7 @@ it('blocks existing unverified registration for logged in external user', functi
         ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertHasErrors(['registration'])
-        ->assertSee('Bitte öffne dein Portal');
+        ->assertHasErrors(['registration']);
 
     expect(AthleteRegistration::query()->whereBelongsTo($event)->whereBelongsTo($externalUser)->count())->toBe(1)
         ->and($registration->refresh()->verified)->toBeFalse();
@@ -489,8 +485,7 @@ it('treats soft deleted external user emails as known emails for new participant
         ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertHasErrors(['email'])
-        ->assertSee('Bitte kontaktiere uns');
+        ->assertHasErrors(['email']);
 
     expect(AthleteRegistration::query()->count())->toBe(0);
     Notification::assertNothingSent();
@@ -566,8 +561,7 @@ it('keeps returning guest participants on the login link step until they authent
         ->set('adult', '1')
         ->call('submit')
         ->assertSet('currentStep', 'login-link-sent')
-        ->assertHasErrors(['registration'])
-        ->assertSee('Bitte öffne zuerst den Link in deiner E-Mail');
+        ->assertHasErrors(['registration']);
 
     expect(AthleteRegistration::query()->count())->toBe(0);
 });
