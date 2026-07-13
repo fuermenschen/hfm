@@ -358,7 +358,8 @@ it('blocks duplicate registration for logged in external user', function (): voi
         ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertHasErrors(['registration']);
+        ->assertHasErrors(['registration'])
+        ->assertSee('Bitte öffne dein Portal');
 
     expect(AthleteRegistration::query()->whereBelongsTo($event)->whereBelongsTo($externalUser)->count())->toBe(1);
 
@@ -385,7 +386,8 @@ it('blocks existing unverified registration for logged in external user', functi
         ->set('adult', '1')
         ->set('privacy_accepted', true)
         ->call('submit')
-        ->assertHasErrors(['registration']);
+        ->assertHasErrors(['registration'])
+        ->assertSee('Bitte öffne dein Portal');
 
     expect(AthleteRegistration::query()->whereBelongsTo($event)->whereBelongsTo($externalUser)->count())->toBe(1)
         ->and($registration->refresh()->verified)->toBeFalse();
@@ -429,6 +431,28 @@ it('requires adult confirmation before registration submission', function (): vo
         ->set('privacy_accepted', true)
         ->call('submit')
         ->assertHasErrors(['adult' => ['required']])
+        ->assertSee('Bitte bestätige, ob du volljährig bist.');
+
+    expect(AthleteRegistration::query()->count())->toBe(0);
+    Notification::assertNothingSent();
+});
+
+it('rejects invalid adult confirmation before registration submission', function (): void {
+    Notification::fake();
+
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+    $externalUser = ExternalUser::factory()->create();
+
+    Livewire::actingAs($externalUser, 'external')
+        ->test(AthleteRegistrationWizard::class)
+        ->set('sport_type_id', $sportType->id)
+        ->set('rounds_estimated', 12)
+        ->set('partner_id', 0)
+        ->set('adult', 'invalid')
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertHasErrors(['adult' => ['in']])
         ->assertSee('Bitte bestätige, ob du volljährig bist.');
 
     expect(AthleteRegistration::query()->count())->toBe(0);
@@ -561,7 +585,8 @@ it('keeps returning guest participants on the login link step until they authent
         ->set('adult', '1')
         ->call('submit')
         ->assertSet('currentStep', 'login-link-sent')
-        ->assertHasErrors(['registration']);
+        ->assertHasErrors(['registration'])
+        ->assertSee('Bitte öffne zuerst den Link in deiner E-Mail');
 
     expect(AthleteRegistration::query()->count())->toBe(0);
 });

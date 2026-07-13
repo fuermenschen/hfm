@@ -319,6 +319,7 @@ class AthleteRegistrationWizard extends Component
             'partner_id.required' => 'Bitte wähle, für wen du sammeln möchtest.',
             'partner_id.in' => 'Die gewählte Option ist für den aktuellen Anlass nicht verfügbar.',
             'adult.required' => 'Bitte bestätige, ob du volljährig bist.',
+            'adult.in' => 'Bitte bestätige, ob du volljährig bist.',
             'comment.max' => 'Der Kommentar darf nicht länger als 2000 Zeichen sein.',
             'privacy_accepted.accepted' => 'Bitte bestätige, dass wir deine Daten für die Organisation des Anlasses verwenden dürfen.',
         ];
