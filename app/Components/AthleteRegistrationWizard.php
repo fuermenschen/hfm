@@ -103,6 +103,10 @@ class AthleteRegistrationWizard extends Component
     #[Validate('integer')]
     public ?int $partner_id = null;
 
+    #[Validate('required', message: 'Bitte bestätige, ob du volljährig bist.')]
+    #[Validate('in:0,1')]
+    public ?string $adult = null;
+
     #[Validate('nullable')]
     #[Validate('string')]
     #[Validate('max:2000', message: 'Der Kommentar darf nicht länger als 2000 Zeichen sein.')]
@@ -232,6 +236,7 @@ class AthleteRegistrationWizard extends Component
                 'sport_type_id' => ['required', 'integer', Rule::in($this->validSportTypeIds())],
                 'rounds_estimated' => ['required', 'integer', 'min:1', 'max:255'],
                 'partner_id' => ['required', 'integer', Rule::in($this->validPartnerIds())],
+                'adult' => ['required', Rule::in(['0', '1'])],
                 'comment' => ['nullable', 'string', 'max:2000'],
                 'privacy_accepted' => [Rule::when(! $this->hasPreviousDonors(), ['accepted'], ['nullable'])],
             ],
@@ -313,6 +318,8 @@ class AthleteRegistrationWizard extends Component
             'rounds_estimated.min' => 'Die geschätzten Runden müssen mindestens 1 sein.',
             'partner_id.required' => 'Bitte wähle, für wen du sammeln möchtest.',
             'partner_id.in' => 'Die gewählte Option ist für den aktuellen Anlass nicht verfügbar.',
+            'adult.required' => 'Bitte bestätige, ob du volljährig bist.',
+            'adult.in' => 'Bitte bestätige, ob du volljährig bist.',
             'comment.max' => 'Der Kommentar darf nicht länger als 2000 Zeichen sein.',
             'privacy_accepted.accepted' => 'Bitte bestätige, dass wir deine Daten für die Organisation des Anlasses verwenden dürfen.',
         ];
@@ -481,6 +488,7 @@ class AthleteRegistrationWizard extends Component
             'sport_type_id',
             'rounds_estimated',
             'partner_id',
+            'adult',
             'comment',
             'notify_previous_donors',
             'privacy_accepted',
@@ -533,6 +541,7 @@ class AthleteRegistrationWizard extends Component
                 'sport_type_id' => (int) $this->sport_type_id,
                 'rounds_estimated' => (int) $this->rounds_estimated,
                 'partner_id' => $this->partner_id,
+                'adult' => $this->adult === '1',
                 'comment' => $this->comment,
                 'notify_previous_donors' => $this->notify_previous_donors,
             ]);
@@ -574,6 +583,7 @@ class AthleteRegistrationWizard extends Component
                 'sport_type_id' => (int) $this->sport_type_id,
                 'rounds_estimated' => (int) $this->rounds_estimated,
                 'partner_id' => $this->partner_id,
+                'adult' => $this->adult === '1',
                 'comment' => $this->comment,
                 'notify_previous_donors' => $this->notify_previous_donors,
             ], [

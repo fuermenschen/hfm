@@ -150,6 +150,30 @@ it('sends login link when returning email found', function (): void {
     );
 });
 
+it('shows donation error when returning guest submits without opening login link', function (): void {
+    Notification::fake();
+
+    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    $athleteRegistration = AthleteRegistration::query()->whereBelongsTo($event)->firstOrFail();
+    ExternalUser::factory()->create(['email' => 'francesca@example.com']);
+
+    Livewire::test(DonorRegistrationWizard::class)
+        ->set('returning_email', 'francesca@example.com')
+        ->set('returning_email_confirmation', 'francesca@example.com')
+        ->call('next')
+        ->assertSet('currentStep', 'login-link-sent')
+        ->call('goTo', 'donation')
+        ->assertSet('currentStep', 'login-link-sent')
+        ->set('athlete_registration_id', $athleteRegistration->id)
+        ->set('amount_per_round', 5.00)
+        ->call('submit')
+        ->assertSet('currentStep', 'login-link-sent')
+        ->assertHasErrors(['donation'])
+        ->assertSee('Bitte öffne zuerst den Link in deiner E-Mail');
+
+    expect(Donation::query()->count())->toBe(0);
+});
+
 it('validates amount constraints', function (): void {
     $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
     $athleteRegistration = AthleteRegistration::query()->whereBelongsTo($event)->firstOrFail();

@@ -95,12 +95,12 @@
         </div>
 
         <div class="py-6 sm:py-8" wire:key="athlete-registration-wizard-{{ $currentStep }}">
-            @if ($errors->any())
+            @error('registration')
                 <flux:callout icon="exclamation-triangle" variant="danger" class="mb-6">
                     <flux:callout.heading>Anmeldung noch nicht möglich</flux:callout.heading>
-                    <flux:callout.text>{{ $errors->first() }}</flux:callout.text>
+                    <flux:callout.text>{{ $message }}</flux:callout.text>
                 </flux:callout>
-            @endif
+            @enderror
 
             @if ($currentStep === 'start')
                 <div class="space-y-6">
@@ -181,7 +181,7 @@
                     @if ($sportTypes->isEmpty())
                         <flux:callout icon="exclamation-triangle" variant="warning" heading="Keine Sportarten verfügbar" />
                     @else
-                        <flux:radio.group wire:model.live="sport_type_id" label="Sportart" variant="pills">
+                        <flux:radio.group wire:model.live="sport_type_id" label="Sportart" variant="buttons">
                             @foreach ($sportTypes as $sportType)
                                 <flux:radio wire:key="sport-type-{{ $sportType->id }}" value="{{ $sportType->id }}" label="{{ $sportType->name }}" class="cursor-pointer" />
                             @endforeach
@@ -209,6 +209,11 @@
                         @empty
                             <flux:radio disabled value="-1" label="Keine Partner:innen verfügbar" />
                         @endforelse
+                    </flux:radio.group>
+
+                    <flux:radio.group wire:model.live="adult" label="Bist du volljährig?" variant="buttons">
+                        <flux:radio value="1" label="Ja" class="cursor-pointer" />
+                        <flux:radio value="0" label="Nein" class="cursor-pointer" />
                     </flux:radio.group>
 
                     <flux:textarea

@@ -26,6 +26,7 @@ class AthleteRegistrationFactory extends Factory
             'sport_type_id' => fn () => SportType::query()->value('id')
                 ?? SportType::query()->create(['name' => fake()->unique()->word()])->id,
             'partner_id' => null,
+            'adult' => fake()->boolean(80),
             'rounds_estimated' => fake()->numberBetween(1, 10),
             'rounds_done' => fake()->numberBetween(0, 15),
             'comment' => fake()->optional()->text(2000),
