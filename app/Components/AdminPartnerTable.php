@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Components;
 
 use App\Models\Partner;
+use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
@@ -120,10 +121,12 @@ class AdminPartnerTable extends AbstractDatatableComponent
      */
     protected function editRules(): array
     {
+        $logoPaths = $this->partnerLogoPaths();
+
         return [
             'editForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')->ignore($this->editingId)],
-            'editForm.logo_light_filename' => ['nullable', 'string', 'max:255'],
-            'editForm.logo_dark_filename' => ['nullable', 'string', 'max:255'],
+            'editForm.logo_light_filename' => ['nullable', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_light_filename'))],
+            'editForm.logo_dark_filename' => ['nullable', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_dark_filename'))],
             'editForm.beneficiary_blurb' => ['nullable', 'string'],
             'editForm.url' => ['nullable', 'url', 'max:255'],
         ];
@@ -168,6 +171,30 @@ class AdminPartnerTable extends AbstractDatatableComponent
         $value = trim($value);
 
         return $value === '' ? null : $value;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function partnerLogoPaths(): array
+    {
+        return collect(resolve(AdminFileStorage::class)->files('partners', recursive: true))
+            ->pluck('path')
+            ->map(fn (string $path): string => str($path)->after('partners/')->toString())
+            ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $logoPaths
+     * @return array<int, string>
+     */
+    protected function allowedPartnerLogoPaths(array $logoPaths, string $field): array
+    {
+        $currentPath = $this->editingId === null
+            ? null
+            : $this->nullableString(Partner::query()->whereKey($this->editingId)->value($field));
+
+        return array_values(array_unique(array_filter([...$logoPaths, $currentPath])));
     }
 
     public function displayValue(mixed $row, string $column): string

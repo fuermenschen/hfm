@@ -42,7 +42,7 @@ class Partner extends Model
             return null;
         }
 
-        return Storage::disk('public')->url('partners/'.$this->logo_light_filename);
+        return Storage::disk('public')->url($this->logoPath($this->logo_light_filename));
     }
 
     public function logoDarkUrl(): ?string
@@ -51,6 +51,11 @@ class Partner extends Model
             return null;
         }
 
-        return Storage::disk('public')->url('partners/'.$this->logo_dark_filename);
+        return Storage::disk('public')->url($this->logoPath($this->logo_dark_filename));
+    }
+
+    protected function logoPath(string $path): string
+    {
+        return 'partners/'.ltrim($path, '/');
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Faq;
 use App\Models\Partner;
 use App\Models\Sponsor;
 use App\Support\Datatable\DatatableValueFormatter;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 it('renders partners in admin table and includes donation event assignment count', function (): void {
@@ -37,10 +38,16 @@ it('renders partners in admin table and includes donation event assignment count
 });
 
 it('edits partners from admin table modal state', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/old-light.svg', 'svg');
+    Storage::disk('public')->put('partners/old-dark.svg', 'svg');
+    Storage::disk('public')->put('partners/nested/old-dark.svg', 'svg');
+    Storage::disk('public')->put('partners/new-light.svg', 'svg');
+
     $partner = Partner::query()->create([
         'name' => 'Old Partner',
         'logo_light_filename' => 'old-light.svg',
-        'logo_dark_filename' => 'old-dark.svg',
+        'logo_dark_filename' => 'nested/old-dark.svg',
         'beneficiary_blurb' => 'Old text',
         'url' => 'https://old.example.test',
     ]);
@@ -50,7 +57,10 @@ it('edits partners from admin table modal state', function (): void {
         ->assertSet('editingId', $partner->id)
         ->assertSet('editModalOpen', true)
         ->assertSet('editForm.name', 'Old Partner')
+        ->assertSet('editForm.logo_light_filename', 'old-light.svg')
+        ->assertSet('editForm.logo_dark_filename', 'nested/old-dark.svg')
         ->set('editForm.name', 'New Partner')
+        ->set('editForm.logo_light_filename', 'new-light.svg')
         ->set('editForm.url', 'https://new.example.test')
         ->call('saveEdit')
         ->assertSet('editingId', null)
@@ -59,6 +69,7 @@ it('edits partners from admin table modal state', function (): void {
     $partner->refresh();
 
     expect($partner->name)->toBe('New Partner')
+        ->and($partner->logo_light_filename)->toBe('new-light.svg')
         ->and($partner->url)->toBe('https://new.example.test');
 });
 

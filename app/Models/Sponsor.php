@@ -40,6 +40,11 @@ class Sponsor extends Model
             return null;
         }
 
-        return Storage::disk('public')->url('sponsors/'.$this->logo_filename);
+        return Storage::disk('public')->url($this->logoPath($this->logo_filename));
+    }
+
+    protected function logoPath(string $path): string
+    {
+        return 'sponsors/'.ltrim($path, '/');
     }
 }

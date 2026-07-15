@@ -119,15 +119,9 @@
                     <flux:error name="editForm.name" />
                 </flux:field>
 
-                <flux:field>
-                    <flux:input label="Logo hell" wire:model="editForm.logo_light_filename" />
-                    <flux:error name="editForm.logo_light_filename" />
-                </flux:field>
+                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" wire:model="editForm.logo_light_filename" :selected="$editForm['logo_light_filename'] ?? null" />
 
-                <flux:field>
-                    <flux:input label="Logo dunkel" wire:model="editForm.logo_dark_filename" />
-                    <flux:error name="editForm.logo_dark_filename" />
-                </flux:field>
+                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" wire:model="editForm.logo_dark_filename" :selected="$editForm['logo_dark_filename'] ?? null" />
 
                 <flux:field class="sm:col-span-2">
                     <flux:textarea label="Kurztext" wire:model="editForm.beneficiary_blurb" />
