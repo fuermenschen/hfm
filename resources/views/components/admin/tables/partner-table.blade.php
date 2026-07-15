@@ -1,22 +1,22 @@
 <div>
     <x-datatable>
         <x-slot:toolbar>
-            <x-datatable.partials.toolbar-grid>
+            <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
                     <flux:input wire:model.live.debounce.300ms="search" placeholder="Partner:innen suchen..." icon="magnifying-glass" />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
-                    <x-datatable.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                    <x-datatable.selection-toolbar :selected-count="$this->selectedCount()" />
                 </x-slot:topRight>
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        <x-datatable.partials.export-dropdown />
-                        <x-datatable.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
+                        <x-datatable.export-dropdown />
+                        <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
-            </x-datatable.partials.toolbar-grid>
+            </x-datatable.toolbar-grid>
         </x-slot:toolbar>
 
         <flux:checkbox.group wire:model.live="checkboxValues">
@@ -28,12 +28,15 @@
                             <flux:checkbox.all />
                         </flux:field>
                     </flux:table.column>
+                    @if ($this->canEditRows())
+                        <flux:table.column class="w-1 whitespace-nowrap">Aktion</flux:table.column>
+                    @endif
                     @foreach ($visibleColumns as $columnKey => $columnDefinition)
                         @php($headerAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
                         @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
                         <flux:table.column class="{{ $headerClass }}">
                             @if ($columnDefinition['sortable'])
-                                @include('components.datatable.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                                @include('components.datatable.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
                             @else
                                 <span>{{ $columnDefinition['label'] }}</span>
                             @endif
@@ -57,6 +60,11 @@
                                     <flux:checkbox value="{{ $row->id }}" />
                                 </flux:field>
                             </flux:table.cell>
+                            @if ($this->canEditRows())
+                                <flux:table.cell class="w-1 whitespace-nowrap">
+                                    <flux:button size="xs" variant="ghost" icon="pencil-square" wire:click="openEdit({{ $row->id }})">Bearbeiten</flux:button>
+                                </flux:table.cell>
+                            @endif
                             @foreach ($visibleColumns as $columnKey => $columnDefinition)
                                 @php($cellAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
                                 @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
@@ -92,9 +100,54 @@
         </flux:checkbox.group>
 
         <x-slot:footer>
-            <x-datatable.partials.per-page-select />
+            <x-datatable.per-page-select />
 
             <flux:pagination :paginator="$partners" />
         </x-slot:footer>
     </x-datatable>
+
+    <flux:modal name="{{ $this->editModalName() }}" wire:model.self="editModalOpen" class="md:w-xl" wire:close="cancelEdit">
+        <form wire:submit="saveEdit" class="space-y-6">
+            <div>
+                <flux:heading size="lg">Partner:in bearbeiten</flux:heading>
+                <flux:text class="mt-2">Änderungen am Partner:innen-Eintrag speichern.</flux:text>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field class="sm:col-span-2">
+                    <flux:input label="Name" wire:model="editForm.name" />
+                    <flux:error name="editForm.name" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:input label="Logo hell" wire:model="editForm.logo_light_filename" />
+                    <flux:error name="editForm.logo_light_filename" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:input label="Logo dunkel" wire:model="editForm.logo_dark_filename" />
+                    <flux:error name="editForm.logo_dark_filename" />
+                </flux:field>
+
+                <flux:field class="sm:col-span-2">
+                    <flux:textarea label="Kurztext" wire:model="editForm.beneficiary_blurb" />
+                    <flux:error name="editForm.beneficiary_blurb" />
+                </flux:field>
+
+                <flux:field class="sm:col-span-2">
+                    <flux:input label="URL" wire:model="editForm.url" />
+                    <flux:error name="editForm.url" />
+                </flux:field>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelEdit">Abbrechen</flux:button>
+                <flux:button type="submit" variant="primary" wire:target="saveEdit" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="saveEdit">Speichern</span>
+                    <span wire:loading wire:target="saveEdit">Speichert...</span>
+                </flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </div>

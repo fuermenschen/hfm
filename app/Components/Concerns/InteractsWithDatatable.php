@@ -6,8 +6,10 @@ namespace App\Components\Concerns;
 
 use App\Support\Datatable\DatatableValueFormatter;
 use Flux\Flux;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Spatie\SimpleExcel\SimpleExcelWriter;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -32,6 +34,15 @@ trait InteractsWithDatatable
      * @var array<int, string>
      */
     public array $visibleColumns = [];
+
+    public ?int $editingId = null;
+
+    public bool $editModalOpen = false;
+
+    /**
+     * @var array<string, mixed>
+     */
+    public array $editForm = [];
 
     protected ?DatatableValueFormatter $datatableValueFormatter = null;
 
@@ -335,6 +346,96 @@ trait InteractsWithDatatable
             text: $text,
             variant: 'warning',
         );
+    }
+
+    public function openEdit(int $id): void
+    {
+        if (! $this->canEditRows()) {
+            return;
+        }
+
+        $record = $this->editableRecord($id);
+
+        $this->editingId = (int) $record->getKey();
+        $this->resetErrorBag();
+        $this->fillEditForm($record);
+        $this->editModalOpen = true;
+
+        Flux::modal($this->editModalName())->show();
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->editingId = null;
+        $this->editForm = [];
+        $this->editModalOpen = false;
+        $this->resetErrorBag();
+
+        Flux::modal($this->editModalName())->close();
+    }
+
+    public function saveEdit(): void
+    {
+        if (! $this->canEditRows() || $this->editingId === null) {
+            return;
+        }
+
+        $validated = $this->validate($this->editRules(), [], $this->editValidationAttributes());
+        $formData = data_get($validated, 'editForm', []);
+
+        if (! is_array($formData)) {
+            $formData = [];
+        }
+
+        $this->saveEditedRecord($this->editableRecord($this->editingId), $formData);
+
+        $this->cancelEdit();
+
+        Flux::toast(heading: 'Gespeichert', text: 'Eintrag wurde aktualisiert.', variant: 'success');
+    }
+
+    public function canEditRows(): bool
+    {
+        return false;
+    }
+
+    public function editModalName(): string
+    {
+        return Str::kebab(class_basename(static::class)).'-edit';
+    }
+
+    protected function editableRecord(int $id): Model
+    {
+        throw new \LogicException(static::class.' must define editableRecord() to edit rows.');
+    }
+
+    protected function fillEditForm(Model $record): void
+    {
+        throw new \LogicException(static::class.' must define fillEditForm() to edit rows.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function editRules(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function editValidationAttributes(): array
+    {
+        return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function saveEditedRecord(Model $record, array $data): void
+    {
+        throw new \LogicException(static::class.' must define saveEditedRecord() to edit rows.');
     }
 
     /**

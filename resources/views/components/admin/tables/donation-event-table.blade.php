@@ -1,22 +1,22 @@
 <div>
     <x-datatable>
         <x-slot:toolbar>
-            <x-datatable.partials.toolbar-grid>
+            <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
                     <flux:input wire:model.live.debounce.300ms="search" placeholder="Anlässe suchen..." icon="magnifying-glass" />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
-                    <x-datatable.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                    <x-datatable.selection-toolbar :selected-count="$this->selectedCount()" />
                 </x-slot:topRight>
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        <x-datatable.partials.export-dropdown />
-                        <x-datatable.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
+                        <x-datatable.export-dropdown />
+                        <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
-            </x-datatable.partials.toolbar-grid>
+            </x-datatable.toolbar-grid>
         </x-slot:toolbar>
 
         <flux:checkbox.group wire:model.live="checkboxValues">
@@ -33,7 +33,7 @@
                         @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
                         <flux:table.column class="{{ $headerClass }}">
                             @if ($columnDefinition['sortable'])
-                                @include('components.datatable.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                                @include('components.datatable.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
                             @else
                                 <span>{{ $columnDefinition['label'] }}</span>
                             @endif
@@ -143,7 +143,7 @@
         </flux:checkbox.group>
 
         <x-slot:footer>
-            <x-datatable.partials.per-page-select />
+            <x-datatable.per-page-select />
 
             <flux:pagination :paginator="$donationEvents" />
         </x-slot:footer>

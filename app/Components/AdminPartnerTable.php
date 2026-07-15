@@ -6,6 +6,8 @@ namespace App\Components;
 
 use App\Models\Partner;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminPartnerTable extends AbstractDatatableComponent
@@ -88,6 +90,84 @@ class AdminPartnerTable extends AbstractDatatableComponent
             'donation_events_count',
             'created_at',
         ];
+    }
+
+    public function canEditRows(): bool
+    {
+        return true;
+    }
+
+    protected function editableRecord(int $id): Model
+    {
+        return Partner::query()->findOrFail($id);
+    }
+
+    protected function fillEditForm(Model $record): void
+    {
+        throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
+
+        $this->editForm = [
+            'name' => $record->name,
+            'logo_light_filename' => $record->logo_light_filename,
+            'logo_dark_filename' => $record->logo_dark_filename,
+            'beneficiary_blurb' => $record->beneficiary_blurb,
+            'url' => $record->url,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function editRules(): array
+    {
+        return [
+            'editForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')->ignore($this->editingId)],
+            'editForm.logo_light_filename' => ['nullable', 'string', 'max:255'],
+            'editForm.logo_dark_filename' => ['nullable', 'string', 'max:255'],
+            'editForm.beneficiary_blurb' => ['nullable', 'string'],
+            'editForm.url' => ['nullable', 'url', 'max:255'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function editValidationAttributes(): array
+    {
+        return [
+            'editForm.name' => 'Name',
+            'editForm.logo_light_filename' => 'Logo hell',
+            'editForm.logo_dark_filename' => 'Logo dunkel',
+            'editForm.beneficiary_blurb' => 'Kurztext',
+            'editForm.url' => 'URL',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function saveEditedRecord(Model $record, array $data): void
+    {
+        throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
+
+        $record->fill([
+            'name' => $data['name'],
+            'logo_light_filename' => $this->nullableString($data['logo_light_filename'] ?? null),
+            'logo_dark_filename' => $this->nullableString($data['logo_dark_filename'] ?? null),
+            'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
+            'url' => $this->nullableString($data['url'] ?? null),
+        ])->save();
+    }
+
+    protected function nullableString(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 
     public function displayValue(mixed $row, string $column): string

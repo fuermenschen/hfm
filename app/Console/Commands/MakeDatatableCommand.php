@@ -119,7 +119,7 @@ class MakeDatatableCommand extends Command implements PromptsForMissingInput
             '{{ searchableColumnsCode }}' => $searchableColumnsCode,
             '{{ exportMethodsCode }}' => $exportMethodsCode,
             '{{ responseImport }}' => $includeExport ? 'use Symfony\\Component\\HttpFoundation\\Response as HttpResponse;' : '',
-            '{{ exportToolbarBlock }}' => $includeExport ? '<x-datatable.partials.export-dropdown />' : '',
+            '{{ exportToolbarBlock }}' => $includeExport ? '<x-datatable.export-dropdown />' : '',
         ];
 
         $componentContents = $this->renderStub('stubs/datatable/component.stub', $replacements);

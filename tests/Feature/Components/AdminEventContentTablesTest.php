@@ -36,6 +36,32 @@ it('renders partners in admin table and includes donation event assignment count
         });
 });
 
+it('edits partners from admin table modal state', function (): void {
+    $partner = Partner::query()->create([
+        'name' => 'Old Partner',
+        'logo_light_filename' => 'old-light.svg',
+        'logo_dark_filename' => 'old-dark.svg',
+        'beneficiary_blurb' => 'Old text',
+        'url' => 'https://old.example.test',
+    ]);
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openEdit', $partner->id)
+        ->assertSet('editingId', $partner->id)
+        ->assertSet('editModalOpen', true)
+        ->assertSet('editForm.name', 'Old Partner')
+        ->set('editForm.name', 'New Partner')
+        ->set('editForm.url', 'https://new.example.test')
+        ->call('saveEdit')
+        ->assertSet('editingId', null)
+        ->assertSet('editModalOpen', false);
+
+    $partner->refresh();
+
+    expect($partner->name)->toBe('New Partner')
+        ->and($partner->url)->toBe('https://new.example.test');
+});
+
 it('renders sponsors in admin table and includes donation event assignment count', function (): void {
     $event = DonationEvent::factory()->create();
 
