@@ -101,6 +101,40 @@ it('renders sponsors in admin table and includes donation event assignment count
         });
 });
 
+it('edits sponsors from admin table modal state', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/old-logo.svg', 'svg');
+    Storage::disk('public')->put('sponsors/nested/new-logo.svg', 'svg');
+
+    $sponsor = Sponsor::query()->create([
+        'name' => 'Old Sponsor',
+        'description' => 'Old description',
+        'logo_filename' => 'old-logo.svg',
+        'url' => 'https://old.example.test',
+    ]);
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openEdit', $sponsor->id)
+        ->assertSet('editingId', $sponsor->id)
+        ->assertSet('editModalOpen', true)
+        ->assertSet('editForm.name', 'Old Sponsor')
+        ->assertSet('editForm.logo_filename', 'old-logo.svg')
+        ->set('editForm.name', 'New Sponsor')
+        ->set('editForm.description', 'New description')
+        ->set('editForm.logo_filename', 'nested/new-logo.svg')
+        ->set('editForm.url', 'https://new.example.test')
+        ->call('saveEdit')
+        ->assertSet('editingId', null)
+        ->assertSet('editModalOpen', false);
+
+    $sponsor->refresh();
+
+    expect($sponsor->name)->toBe('New Sponsor')
+        ->and($sponsor->description)->toBe('New description')
+        ->and($sponsor->logo_filename)->toBe('nested/new-logo.svg')
+        ->and($sponsor->url)->toBe('https://new.example.test');
+});
+
 it('renders faqs in admin table and includes donation event assignment count', function (): void {
     $events = DonationEvent::factory()->count(2)->create();
 
