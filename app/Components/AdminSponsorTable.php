@@ -96,6 +96,70 @@ class AdminSponsorTable extends AbstractDatatableComponent
         return true;
     }
 
+    public function canCreateRows(): bool
+    {
+        return true;
+    }
+
+    public function canDeleteRows(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function defaultCreateForm(): array
+    {
+        return [
+            'name' => '',
+            'description' => null,
+            'logo_filename' => '',
+            'url' => null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function createRules(): array
+    {
+        $logoPaths = $this->sponsorLogoPaths();
+
+        return [
+            'createForm.name' => ['required', 'string', 'max:255', Rule::unique('sponsors', 'name')],
+            'createForm.description' => ['nullable', 'string'],
+            'createForm.logo_filename' => ['required', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.url' => ['nullable', 'url', 'max:255'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function createValidationAttributes(): array
+    {
+        return [
+            'createForm.name' => 'Name',
+            'createForm.description' => 'Beschreibung',
+            'createForm.logo_filename' => 'Logo',
+            'createForm.url' => 'URL',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function createRecord(array $data): Model
+    {
+        return Sponsor::query()->create([
+            'name' => $data['name'],
+            'description' => $this->nullableString($data['description'] ?? null),
+            'logo_filename' => trim((string) $data['logo_filename']),
+            'url' => $this->nullableString($data['url'] ?? null),
+        ]);
+    }
+
     protected function editableRecord(int $id): Model
     {
         return Sponsor::query()->findOrFail($id);

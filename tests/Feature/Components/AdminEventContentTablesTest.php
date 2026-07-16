@@ -73,6 +73,38 @@ it('edits partners from admin table modal state', function (): void {
         ->and($partner->url)->toBe('https://new.example.test');
 });
 
+it('creates and deletes partners from admin table modal state', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openCreate')
+        ->assertSet('createModalOpen', true)
+        ->set('createForm.name', 'Created Partner')
+        ->set('createForm.logo_light_filename', 'light.svg')
+        ->set('createForm.logo_dark_filename', 'dark.svg')
+        ->set('createForm.beneficiary_blurb', 'Created text')
+        ->set('createForm.url', 'https://created.example.test')
+        ->call('saveCreate')
+        ->assertSet('createModalOpen', false)
+        ->assertHasNoErrors();
+
+    $partner = Partner::query()->where('name', 'Created Partner')->firstOrFail();
+    $event = DonationEvent::factory()->create();
+    $partner->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('confirmDeleteRow', $partner->id)
+        ->assertSet('deletingId', $partner->id)
+        ->assertSet('deletingLabel', 'Created Partner')
+        ->call('deleteRow')
+        ->assertSet('deletingId', null);
+
+    expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse()
+        ->and($event->partners()->whereKey($partner->id)->exists())->toBeFalse();
+});
+
 it('renders sponsors in admin table and includes donation event assignment count', function (): void {
     $event = DonationEvent::factory()->create();
 
@@ -133,6 +165,36 @@ it('edits sponsors from admin table modal state', function (): void {
         ->and($sponsor->description)->toBe('New description')
         ->and($sponsor->logo_filename)->toBe('nested/new-logo.svg')
         ->and($sponsor->url)->toBe('https://new.example.test');
+});
+
+it('creates and deletes sponsors from admin table modal state', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openCreate')
+        ->assertSet('createModalOpen', true)
+        ->set('createForm.name', 'Created Sponsor')
+        ->set('createForm.description', 'Created description')
+        ->set('createForm.logo_filename', 'logo.svg')
+        ->set('createForm.url', 'https://created-sponsor.example.test')
+        ->call('saveCreate')
+        ->assertSet('createModalOpen', false)
+        ->assertHasNoErrors();
+
+    $sponsor = Sponsor::query()->where('name', 'Created Sponsor')->firstOrFail();
+    $event = DonationEvent::factory()->create();
+    $sponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('confirmDeleteRow', $sponsor->id)
+        ->assertSet('deletingId', $sponsor->id)
+        ->assertSet('deletingLabel', 'Created Sponsor')
+        ->call('deleteRow')
+        ->assertSet('deletingId', null);
+
+    expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse()
+        ->and($event->sponsors()->whereKey($sponsor->id)->exists())->toBeFalse();
 });
 
 it('renders faqs in admin table and includes donation event assignment count', function (): void {

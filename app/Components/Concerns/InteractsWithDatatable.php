@@ -39,10 +39,21 @@ trait InteractsWithDatatable
 
     public bool $editModalOpen = false;
 
+    public bool $createModalOpen = false;
+
+    public ?int $deletingId = null;
+
+    public ?string $deletingLabel = null;
+
     /**
      * @var array<string, mixed>
      */
     public array $editForm = [];
+
+    /**
+     * @var array<string, mixed>
+     */
+    public array $createForm = [];
 
     protected ?DatatableValueFormatter $datatableValueFormatter = null;
 
@@ -346,6 +357,149 @@ trait InteractsWithDatatable
             text: $text,
             variant: 'warning',
         );
+    }
+
+    public function openCreate(): void
+    {
+        if (! $this->canCreateRows()) {
+            return;
+        }
+
+        $this->editingId = null;
+        $this->createForm = $this->defaultCreateForm();
+        $this->resetErrorBag();
+        $this->createModalOpen = true;
+
+        Flux::modal($this->createModalName())->show();
+    }
+
+    public function cancelCreate(): void
+    {
+        $this->createForm = [];
+        $this->createModalOpen = false;
+        $this->resetErrorBag();
+
+        Flux::modal($this->createModalName())->close();
+    }
+
+    public function saveCreate(): void
+    {
+        if (! $this->canCreateRows()) {
+            return;
+        }
+
+        $validated = $this->validate($this->createRules(), [], $this->createValidationAttributes());
+        $formData = data_get($validated, 'createForm', []);
+
+        if (! is_array($formData)) {
+            $formData = [];
+        }
+
+        $this->createRecord($formData);
+        $this->cancelCreate();
+
+        Flux::toast(heading: 'Erstellt', text: 'Eintrag wurde erstellt.', variant: 'success');
+    }
+
+    public function confirmDeleteRow(int $id): void
+    {
+        if (! $this->canDeleteRows()) {
+            return;
+        }
+
+        $record = $this->deletableRecord($id);
+
+        $this->deletingId = (int) $record->getKey();
+        $this->deletingLabel = $this->deleteLabel($record);
+
+        Flux::modal($this->deleteModalName())->show();
+    }
+
+    public function cancelDeleteRow(): void
+    {
+        $this->deletingId = null;
+        $this->deletingLabel = null;
+
+        Flux::modal($this->deleteModalName())->close();
+    }
+
+    public function deleteRow(): void
+    {
+        if (! $this->canDeleteRows() || $this->deletingId === null) {
+            return;
+        }
+
+        $this->deleteRecord($this->deletableRecord($this->deletingId));
+        $this->cancelDeleteRow();
+
+        Flux::toast(heading: 'Gelöscht', text: 'Eintrag wurde gelöscht.', variant: 'success');
+    }
+
+    public function canCreateRows(): bool
+    {
+        return false;
+    }
+
+    public function canDeleteRows(): bool
+    {
+        return false;
+    }
+
+    public function createModalName(): string
+    {
+        return Str::kebab(class_basename(static::class)).'-create';
+    }
+
+    public function deleteModalName(): string
+    {
+        return Str::kebab(class_basename(static::class)).'-delete';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function defaultCreateForm(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function createRules(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function createValidationAttributes(): array
+    {
+        return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function createRecord(array $data): Model
+    {
+        throw new \LogicException(static::class.' must define createRecord() to create rows.');
+    }
+
+    protected function deletableRecord(int $id): Model
+    {
+        return $this->editableRecord($id);
+    }
+
+    protected function deleteLabel(Model $record): string
+    {
+        return (string) ($record->getAttribute('name') ?? '#'.$record->getKey());
+    }
+
+    protected function deleteRecord(Model $record): void
+    {
+        $record->delete();
     }
 
     public function openEdit(int $id): void

@@ -98,6 +98,74 @@ class AdminPartnerTable extends AbstractDatatableComponent
         return true;
     }
 
+    public function canCreateRows(): bool
+    {
+        return true;
+    }
+
+    public function canDeleteRows(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function defaultCreateForm(): array
+    {
+        return [
+            'name' => '',
+            'logo_light_filename' => null,
+            'logo_dark_filename' => null,
+            'beneficiary_blurb' => null,
+            'url' => null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function createRules(): array
+    {
+        $logoPaths = $this->partnerLogoPaths();
+
+        return [
+            'createForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')],
+            'createForm.logo_light_filename' => ['nullable', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.logo_dark_filename' => ['nullable', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.beneficiary_blurb' => ['nullable', 'string'],
+            'createForm.url' => ['nullable', 'url', 'max:255'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function createValidationAttributes(): array
+    {
+        return [
+            'createForm.name' => 'Name',
+            'createForm.logo_light_filename' => 'Logo hell',
+            'createForm.logo_dark_filename' => 'Logo dunkel',
+            'createForm.beneficiary_blurb' => 'Kurztext',
+            'createForm.url' => 'URL',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function createRecord(array $data): Model
+    {
+        return Partner::query()->create([
+            'name' => $data['name'],
+            'logo_light_filename' => $this->nullableString($data['logo_light_filename'] ?? null),
+            'logo_dark_filename' => $this->nullableString($data['logo_dark_filename'] ?? null),
+            'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
+            'url' => $this->nullableString($data['url'] ?? null),
+        ]);
+    }
+
     protected function editableRecord(int $id): Model
     {
         return Partner::query()->findOrFail($id);
