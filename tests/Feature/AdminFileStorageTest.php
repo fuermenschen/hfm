@@ -4,10 +4,12 @@ use App\Models\Partner;
 use App\Models\Sponsor;
 use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
     Storage::fake('public');
+    Storage::fake('local');
 });
 
 it('stores arbitrary files in nested directories', function (): void {
@@ -36,6 +38,7 @@ it('suffixes duplicate filenames', function (): void {
 it('lists files with optional extension filters', function (): void {
     Storage::disk('public')->put('partners/logo.svg', 'svg');
     Storage::disk('public')->put('partners/readme.txt', 'txt');
+    Storage::disk('public')->put('partners/.gitignore', 'ignored');
     Storage::disk('public')->put('partners/nested/photo.webp', 'webp');
 
     $storage = app(AdminFileStorage::class);
@@ -50,21 +53,35 @@ it('lists files with optional extension filters', function (): void {
         ]);
 });
 
+it('creates directories', function (): void {
+    $path = app(AdminFileStorage::class)->createDirectory('documents', 'reports');
+
+    expect($path)->toBe('documents/reports')
+        ->and(Storage::disk('public')->directories('documents'))->toContain('documents/reports');
+});
+
 it('rejects traversal paths', function (): void {
     $storage = app(AdminFileStorage::class);
 
     expect(fn () => $storage->store(UploadedFile::fake()->create('file.txt'), '../private'))
+        ->toThrow(InvalidArgumentException::class)
+        ->and(fn () => $storage->createDirectory('documents', '../private'))
         ->toThrow(InvalidArgumentException::class)
         ->and(fn () => $storage->delete('partners/../secret.txt'))
         ->toThrow(InvalidArgumentException::class);
 });
 
 it('deletes unreferenced files', function (): void {
+    Carbon::setTestNow('2026-07-15 12:34:56');
+
     Storage::disk('public')->put('documents/free.pdf', 'pdf');
 
     app(AdminFileStorage::class)->delete('documents/free.pdf');
 
     Storage::disk('public')->assertMissing('documents/free.pdf');
+    Storage::disk('local')->assertExists('trash/admin-files/documents/free.deleted-20260715-123456.pdf');
+
+    Carbon::setTestNow();
 });
 
 it('blocks deleting referenced partner and sponsor files', function (): void {

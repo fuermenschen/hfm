@@ -20,6 +20,8 @@ class AdminFiles extends Component
 
     public ?TemporaryUploadedFile $file = null;
 
+    public ?string $newFolderName = null;
+
     public ?string $pendingDeletePath = null;
 
     /**
@@ -35,6 +37,7 @@ class AdminFiles extends Component
         return view('components.admin-files', [
             'files' => $files->files($directory),
             'directories' => $files->directories($directory),
+            'breadcrumbs' => $this->breadcrumbs($directory),
         ]);
     }
 
@@ -56,13 +59,20 @@ class AdminFiles extends Component
         }
     }
 
+    public function updatedFile(): void
+    {
+        if ($this->file instanceof TemporaryUploadedFile) {
+            $this->storeFile();
+        }
+    }
+
     public function storeFile(): void
     {
-        $this->validate();
-
         if (! $this->file instanceof TemporaryUploadedFile) {
             return;
         }
+
+        $this->validate();
 
         try {
             $path = $this->files()->store($this->file, $this->directory);
@@ -74,12 +84,36 @@ class AdminFiles extends Component
 
         $this->reset('file');
 
+        Flux::modal('upload-admin-file')->close();
         Flux::toast(heading: 'Datei hochgeladen', text: $path, variant: 'success');
     }
 
     public function openDirectory(string $directory): void
     {
         $this->directory = $this->files()->normalizeDirectory($directory);
+    }
+
+    public function openParentDirectory(): void
+    {
+        $directory = $this->files()->normalizeDirectory($this->directory);
+
+        $this->directory = dirname($directory) === '.' ? '' : dirname($directory);
+    }
+
+    public function createFolder(): void
+    {
+        try {
+            $path = $this->files()->createDirectory($this->directory, (string) $this->newFolderName);
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            throw ValidationException::withMessages([
+                'newFolderName' => $invalidArgumentException->getMessage(),
+            ]);
+        }
+
+        $this->newFolderName = null;
+
+        Flux::modal('create-admin-folder')->close();
+        Flux::toast(heading: 'Ordner erstellt', text: $path, variant: 'success');
     }
 
     public function confirmDelete(string $path): void
@@ -135,5 +169,33 @@ class AdminFiles extends Component
         } catch (\InvalidArgumentException) {
             return '';
         }
+    }
+
+    /**
+     * @return array<int, array{label:string, path:string, current:bool}>
+     */
+    protected function breadcrumbs(string $directory): array
+    {
+        $breadcrumbs = [[
+            'label' => 'Dateien',
+            'path' => '',
+            'current' => $directory === '',
+        ]];
+
+        $path = '';
+        foreach (explode('/', $directory) as $segment) {
+            if ($segment === '') {
+                continue;
+            }
+
+            $path = $path === '' ? $segment : $path.'/'.$segment;
+            $breadcrumbs[] = [
+                'label' => $segment,
+                'path' => $path,
+                'current' => $path === $directory,
+            ];
+        }
+
+        return $breadcrumbs;
     }
 }

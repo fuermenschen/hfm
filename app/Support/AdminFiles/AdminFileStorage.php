@@ -20,6 +20,20 @@ class AdminFileStorage
         return $file->storeAs($directory, $filename, 'public');
     }
 
+    public function createDirectory(string $directory, string $name): string
+    {
+        $directory = $this->normalizeDirectory($directory);
+        $name = $this->normalizeDirectory($name);
+
+        throw_if($name === '', \InvalidArgumentException::class, 'Folder name cannot be empty.');
+
+        $path = $this->joinPath($directory, $name);
+
+        Storage::disk('public')->makeDirectory($path);
+
+        return $path;
+    }
+
     /**
      * @param  array<int, string>  $extensions
      * @return array<int, array{path:string, name:string, directory:string, url:string, size:int, last_modified:int, extension:string}>
@@ -37,6 +51,7 @@ class AdminFileStorage
             : Storage::disk('public')->files($directory);
 
         return collect($paths)
+            ->reject(fn (string $path): bool => str_starts_with(basename($path), '.'))
             ->filter(fn (string $path): bool => $extensions === [] || in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), $extensions, true))
             ->sort()
             ->values()
@@ -72,7 +87,7 @@ class AdminFileStorage
 
         throw_if($references !== [], \RuntimeException::class, 'Datei wird noch verwendet und kann nicht gelöscht werden.');
 
-        Storage::disk('public')->delete($path);
+        $this->moveToTrash($path);
     }
 
     public function normalizeDirectory(string $directory): string
@@ -143,6 +158,41 @@ class AdminFileStorage
     protected function joinPath(string $directory, string $filename): string
     {
         return $directory === '' ? $filename : $directory.'/'.$filename;
+    }
+
+    protected function moveToTrash(string $path): void
+    {
+        $publicDisk = Storage::disk('public');
+        $localDisk = Storage::disk('local');
+        $trashPath = $this->trashPath($path);
+        $stream = $publicDisk->readStream($path);
+
+        throw_if($stream === false, \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
+
+        try {
+            $stored = $localDisk->put($trashPath, $stream);
+        } finally {
+            fclose($stream);
+        }
+
+        throw_if(! $stored, \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
+
+        $publicDisk->delete($path);
+    }
+
+    protected function trashPath(string $path): string
+    {
+        $directory = dirname($path) === '.' ? '' : dirname($path);
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $name = pathinfo($path, PATHINFO_FILENAME);
+        $deletedAt = now()->format('Ymd-His');
+        $filename = $extension === ''
+            ? $name.'.deleted-'.$deletedAt
+            : $name.'.deleted-'.$deletedAt.'.'.$extension;
+
+        $trashDirectory = $this->joinPath('trash/admin-files', $directory);
+
+        return $this->joinPath($trashDirectory, $filename);
     }
 
     /**
