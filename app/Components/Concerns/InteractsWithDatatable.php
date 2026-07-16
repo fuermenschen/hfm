@@ -361,6 +361,8 @@ trait InteractsWithDatatable
 
     public function openCreate(): void
     {
+        $this->ensureAuthenticated();
+
         if (! $this->canCreateRows()) {
             return;
         }
@@ -384,6 +386,8 @@ trait InteractsWithDatatable
 
     public function saveCreate(): void
     {
+        $this->ensureAuthenticated();
+
         if (! $this->canCreateRows()) {
             return;
         }
@@ -403,6 +407,8 @@ trait InteractsWithDatatable
 
     public function confirmDeleteRow(int $id): void
     {
+        $this->ensureAuthenticated();
+
         if (! $this->canDeleteRows()) {
             return;
         }
@@ -425,11 +431,21 @@ trait InteractsWithDatatable
 
     public function deleteRow(): void
     {
+        $this->ensureAuthenticated();
+
         if (! $this->canDeleteRows() || $this->deletingId === null) {
             return;
         }
 
-        $this->deleteRecord($this->deletableRecord($this->deletingId));
+        try {
+            $this->deleteRecord($this->deletableRecord($this->deletingId));
+        } catch (\RuntimeException $runtimeException) {
+            $this->addError('deletingId', $runtimeException->getMessage());
+            Flux::toast(heading: 'Nicht gelöscht', text: $runtimeException->getMessage(), variant: 'danger');
+
+            return;
+        }
+
         $this->cancelDeleteRow();
 
         Flux::toast(heading: 'Gelöscht', text: 'Eintrag wurde gelöscht.', variant: 'success');
@@ -504,6 +520,8 @@ trait InteractsWithDatatable
 
     public function openEdit(int $id): void
     {
+        $this->ensureAuthenticated();
+
         if (! $this->canEditRows()) {
             return;
         }
@@ -530,6 +548,8 @@ trait InteractsWithDatatable
 
     public function saveEdit(): void
     {
+        $this->ensureAuthenticated();
+
         if (! $this->canEditRows() || $this->editingId === null) {
             return;
         }
@@ -592,11 +612,18 @@ trait InteractsWithDatatable
         throw new \LogicException(static::class.' must define saveEditedRecord() to edit rows.');
     }
 
+    protected function ensureAuthenticated(): void
+    {
+        abort_unless(Auth::check(), 403);
+    }
+
     /**
      * @param  array<int, array<string, scalar|null>>  $rows
      */
     protected function exportRowsToDownload(array $rows, string $filePrefix, string $format): ?HttpResponse
     {
+        $this->ensureAuthenticated();
+
         if (! in_array($format, ['xlsx', 'csv'], true)) {
             Flux::toast(
                 heading: 'Ungültiges Format',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,7 +43,9 @@ class Partner extends Model
             return null;
         }
 
-        return Storage::disk('public')->url($this->logoPath($this->logo_light_filename));
+        $path = $this->logoPath($this->logo_light_filename);
+
+        return $path === null ? null : Storage::disk('public')->url($path);
     }
 
     public function logoDarkUrl(): ?string
@@ -51,11 +54,17 @@ class Partner extends Model
             return null;
         }
 
-        return Storage::disk('public')->url($this->logoPath($this->logo_dark_filename));
+        $path = $this->logoPath($this->logo_dark_filename);
+
+        return $path === null ? null : Storage::disk('public')->url($path);
     }
 
-    protected function logoPath(string $path): string
+    protected function logoPath(string $path): ?string
     {
-        return 'partners/'.ltrim($path, '/');
+        try {
+            return resolve(AdminFileStorage::class)->normalizePath('partners/'.ltrim($path, '/'));
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
     }
 }

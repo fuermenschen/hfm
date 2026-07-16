@@ -60,6 +60,21 @@ it('creates directories', function (): void {
         ->and(Storage::disk('public')->directories('documents'))->toContain('documents/reports');
 });
 
+it('throws when directory creation fails', function (): void {
+    Storage::shouldReceive('disk')
+        ->with('public')
+        ->andReturn(new class
+        {
+            public function makeDirectory(string $path): bool
+            {
+                return false;
+            }
+        });
+
+    expect(fn () => app(AdminFileStorage::class)->createDirectory('documents', 'reports'))
+        ->toThrow(RuntimeException::class, 'Ordner konnte nicht erstellt werden.');
+});
+
 it('rejects traversal paths', function (): void {
     $storage = app(AdminFileStorage::class);
 
@@ -79,9 +94,48 @@ it('deletes unreferenced files', function (): void {
     app(AdminFileStorage::class)->delete('documents/free.pdf');
 
     Storage::disk('public')->assertMissing('documents/free.pdf');
-    Storage::disk('local')->assertExists('trash/admin-files/documents/free.deleted-20260715-123456.pdf');
+    $trashedFiles = Storage::disk('local')->files('trash/admin-files/documents');
+
+    expect($trashedFiles)->toHaveCount(1)
+        ->and($trashedFiles[0])->toStartWith('trash/admin-files/documents/free.deleted-20260715-123456-')
+        ->toEndWith('.pdf');
 
     Carbon::setTestNow();
+});
+
+it('throws when public file deletion fails after trashing', function (): void {
+    $stream = fopen('php://temp', 'r+');
+    fwrite($stream, 'pdf');
+    rewind($stream);
+
+    $publicDisk = new class($stream)
+    {
+        public function __construct(private mixed $stream) {}
+
+        public function readStream(string $path): mixed
+        {
+            return $this->stream;
+        }
+
+        public function delete(string $path): bool
+        {
+            return false;
+        }
+    };
+
+    $localDisk = new class
+    {
+        public function put(string $path, mixed $contents): bool
+        {
+            return true;
+        }
+    };
+
+    Storage::shouldReceive('disk')->with('public')->andReturn($publicDisk);
+    Storage::shouldReceive('disk')->with('local')->andReturn($localDisk);
+
+    expect(fn () => app(AdminFileStorage::class)->delete('documents/free.pdf'))
+        ->toThrow(RuntimeException::class, 'Datei konnte nicht gelöscht werden.');
 });
 
 it('blocks deleting referenced partner and sponsor files', function (): void {

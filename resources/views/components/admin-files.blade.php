@@ -22,38 +22,7 @@
             </div>
         </div>
 
-        <div
-            x-data="{
-                dragging: false,
-                uploading: false,
-                uploadFile(file) {
-                    if (! file) return
-
-                    this.uploading = true
-                    $wire.upload('file', file, () => {
-                        $wire.storeFile()
-                        this.uploading = false
-                    }, () => {
-                        this.uploading = false
-                    })
-                },
-            }"
-            x-on:dragover.prevent="dragging = true"
-            x-on:dragleave.prevent="dragging = false"
-            x-on:drop.prevent="dragging = false; uploadFile($event.dataTransfer.files[0])"
-            class="space-y-2 rounded-lg transition-colors"
-            x-bind:class="dragging ? 'bg-blue-50 dark:bg-blue-950/30' : ''"
-        >
-            <div x-show="dragging" x-cloak class="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                <flux:icon.cloud-arrow-up class="size-4" />
-                Datei hier ablegen zum Hochladen nach <span class="font-medium">{{ $directory === '' ? '/' : $directory }}</span>
-            </div>
-
-            <div x-show="uploading" x-cloak class="flex items-center gap-2 rounded-lg bg-zinc-50 px-4 py-2 text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                <flux:icon.arrow-path class="size-4 animate-spin" />
-                Datei wird hochgeladen...
-            </div>
-
+        <div class="space-y-2">
             <flux:table>
                 <flux:table.columns>
                     <flux:table.column>Datei</flux:table.column>

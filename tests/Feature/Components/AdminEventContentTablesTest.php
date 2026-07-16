@@ -1,15 +1,24 @@
 <?php
 
+use App\Components\AdminExternalUserTable;
 use App\Components\AdminFaqTable;
 use App\Components\AdminPartnerTable;
 use App\Components\AdminSponsorTable;
+use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\Faq;
 use App\Models\Partner;
 use App\Models\Sponsor;
+use App\Models\User;
 use App\Support\Datatable\DatatableValueFormatter;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+
+use function Pest\Laravel\actingAs;
+
+beforeEach(function (): void {
+    actingAs(User::factory()->create());
+});
 
 it('renders partners in admin table and includes donation event assignment count', function (): void {
     $events = DonationEvent::factory()->count(2)->create();
@@ -91,8 +100,6 @@ it('creates and deletes partners from admin table modal state', function (): voi
         ->assertHasNoErrors();
 
     $partner = Partner::query()->where('name', 'Created Partner')->firstOrFail();
-    $event = DonationEvent::factory()->create();
-    $partner->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
 
     Livewire::test(AdminPartnerTable::class)
         ->call('confirmDeleteRow', $partner->id)
@@ -101,8 +108,60 @@ it('creates and deletes partners from admin table modal state', function (): voi
         ->call('deleteRow')
         ->assertSet('deletingId', null);
 
-    expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse()
-        ->and($event->partners()->whereKey($partner->id)->exists())->toBeFalse();
+    expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse();
+});
+
+it('does not delete partners assigned to events', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    $partner = Partner::query()->create([
+        'name' => 'Event Partner',
+        'logo_light_filename' => 'light.svg',
+        'logo_dark_filename' => 'dark.svg',
+    ]);
+    $event = DonationEvent::factory()->create();
+    $partner->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('confirmDeleteRow', $partner->id)
+        ->call('deleteRow')
+        ->assertSet('deletingId', $partner->id)
+        ->assertHasErrors('deletingId');
+
+    expect(Partner::query()->whereKey($partner->id)->exists())->toBeTrue()
+        ->and($event->partners()->whereKey($partner->id)->exists())->toBeTrue();
+});
+
+it('does not delete partners selected by athlete registrations', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    $partner = Partner::query()->create([
+        'name' => 'Registration Partner',
+        'logo_light_filename' => 'light.svg',
+        'logo_dark_filename' => 'dark.svg',
+    ]);
+
+    AthleteRegistration::factory()->withPartner($partner)->create();
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('confirmDeleteRow', $partner->id)
+        ->call('deleteRow')
+        ->assertSet('deletingId', $partner->id)
+        ->assertHasErrors('deletingId');
+
+    expect(Partner::query()->whereKey($partner->id)->exists())->toBeTrue();
+});
+
+it('rejects unauthenticated table mutations', function (): void {
+    auth()->logout();
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openCreate')
+        ->assertForbidden();
 });
 
 it('renders sponsors in admin table and includes donation event assignment count', function (): void {
@@ -183,8 +242,6 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
         ->assertHasNoErrors();
 
     $sponsor = Sponsor::query()->where('name', 'Created Sponsor')->firstOrFail();
-    $event = DonationEvent::factory()->create();
-    $sponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
 
     Livewire::test(AdminSponsorTable::class)
         ->call('confirmDeleteRow', $sponsor->id)
@@ -193,8 +250,37 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
         ->call('deleteRow')
         ->assertSet('deletingId', null);
 
-    expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse()
-        ->and($event->sponsors()->whereKey($sponsor->id)->exists())->toBeFalse();
+    expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse();
+});
+
+it('does not delete sponsors assigned to events', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+
+    $sponsor = Sponsor::query()->create([
+        'name' => 'Event Sponsor',
+        'description' => 'Assigned sponsor',
+        'logo_filename' => 'logo.svg',
+    ]);
+    $event = DonationEvent::factory()->create();
+    $sponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('confirmDeleteRow', $sponsor->id)
+        ->call('deleteRow')
+        ->assertSet('deletingId', $sponsor->id)
+        ->assertHasErrors('deletingId');
+
+    expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeTrue()
+        ->and($event->sponsors()->whereKey($sponsor->id)->exists())->toBeTrue();
+});
+
+it('rejects unauthenticated exports', function (): void {
+    auth()->logout();
+
+    Livewire::test(AdminExternalUserTable::class)
+        ->call('exportAll', 'csv')
+        ->assertForbidden();
 });
 
 it('renders faqs in admin table and includes donation event assignment count', function (): void {

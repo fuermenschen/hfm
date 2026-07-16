@@ -16,8 +16,11 @@ class AdminFileStorage
     {
         $directory = $this->normalizeDirectory($directory);
         $filename = $this->availableFilename($directory, $this->safeFilename($file->getClientOriginalName()));
+        $path = $file->storeAs($directory, $filename, 'public');
 
-        return $file->storeAs($directory, $filename, 'public');
+        throw_if(! is_string($path) || $path === '', \RuntimeException::class, 'Datei konnte nicht gespeichert werden.');
+
+        return $path;
     }
 
     public function createDirectory(string $directory, string $name): string
@@ -29,7 +32,7 @@ class AdminFileStorage
 
         $path = $this->joinPath($directory, $name);
 
-        Storage::disk('public')->makeDirectory($path);
+        throw_unless(Storage::disk('public')->makeDirectory($path), \RuntimeException::class, 'Ordner konnte nicht erstellt werden.');
 
         return $path;
     }
@@ -167,7 +170,7 @@ class AdminFileStorage
         $trashPath = $this->trashPath($path);
         $stream = $publicDisk->readStream($path);
 
-        throw_if($stream === false, \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
+        throw_if($stream === null, \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
 
         try {
             $stored = $localDisk->put($trashPath, $stream);
@@ -177,7 +180,7 @@ class AdminFileStorage
 
         throw_if(! $stored, \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
 
-        $publicDisk->delete($path);
+        throw_unless($publicDisk->delete($path), \RuntimeException::class, 'Datei konnte nicht gelöscht werden.');
     }
 
     protected function trashPath(string $path): string
@@ -186,9 +189,10 @@ class AdminFileStorage
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         $name = pathinfo($path, PATHINFO_FILENAME);
         $deletedAt = now()->format('Ymd-His');
+        $suffix = Str::random(8);
         $filename = $extension === ''
-            ? $name.'.deleted-'.$deletedAt
-            : $name.'.deleted-'.$deletedAt.'.'.$extension;
+            ? $name.'.deleted-'.$deletedAt.'-'.$suffix
+            : $name.'.deleted-'.$deletedAt.'-'.$suffix.'.'.$extension;
 
         $trashDirectory = $this->joinPath('trash/admin-files', $directory);
 

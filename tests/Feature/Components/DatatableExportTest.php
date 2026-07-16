@@ -6,10 +6,17 @@ use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
+use function Pest\Laravel\actingAs;
+
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    actingAs(User::factory()->create());
+});
 
 it('exports selected external users as csv', function (): void {
     $externalUser = ExternalUser::factory()->create();

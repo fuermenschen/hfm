@@ -13,14 +13,23 @@ use function Pest\Laravel\get;
 beforeEach(function (): void {
     Storage::fake('public');
     Storage::fake('local');
+
+    actingAs(User::factory()->create());
 });
 
 it('renders the admin files page', function (): void {
-    actingAs(User::factory()->create());
-
     get('/admin/dateien')
         ->assertSuccessful()
         ->assertSee('Dateien');
+});
+
+it('rejects unauthenticated file mutations', function (): void {
+    auth()->logout();
+
+    Livewire::test(AdminFiles::class)
+        ->set('newFolderName', 'reports')
+        ->call('createFolder')
+        ->assertForbidden();
 });
 
 it('uploads files to selected directories', function (): void {
@@ -83,6 +92,25 @@ it('deletes unreferenced files', function (): void {
     Storage::disk('public')->assertMissing('documents/free.pdf');
 });
 
+it('rejects deleting files that are not listed as deletable', function (): void {
+    Storage::disk('public')->put('documents/.secret', 'secret');
+
+    Livewire::test(AdminFiles::class)
+        ->call('confirmDelete', 'documents/.secret')
+        ->assertHasErrors('pendingDeletePath')
+        ->set('pendingDeletePath', 'documents/.secret')
+        ->call('deleteFile')
+        ->assertHasErrors('pendingDeletePath');
+
+    Storage::disk('public')->assertExists('documents/.secret');
+});
+
+it('uses flux file upload without custom javascript upload handling', function (): void {
+    Livewire::test(AdminFiles::class)
+        ->assertSee('flux-file-upload', false)
+        ->assertDontSee('$wire.upload', false);
+});
+
 it('blocks deleting referenced files', function (): void {
     $partner = Partner::query()->create([
         'name' => 'Referenced Partner',
@@ -106,4 +134,16 @@ it('rejects invalid target directories', function (): void {
         ->set('file', UploadedFile::fake()->create('file.txt'))
         ->call('storeFile')
         ->assertHasErrors('directory');
+});
+
+it('rejects unsupported upload types', function (): void {
+    Livewire::test(AdminFiles::class)
+        ->set('file', UploadedFile::fake()->create('payload.html', 1, 'text/html'))
+        ->assertHasErrors('file');
+});
+
+it('rejects supported mime types with unsupported extensions', function (): void {
+    Livewire::test(AdminFiles::class)
+        ->set('file', UploadedFile::fake()->create('payload.php', 1, 'text/plain'))
+        ->assertHasErrors('file');
 });

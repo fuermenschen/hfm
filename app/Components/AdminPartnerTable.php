@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Actions\DeletePartnerAction;
 use App\Models\Partner;
 use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Database\Eloquent\Builder;
@@ -228,6 +229,13 @@ class AdminPartnerTable extends AbstractDatatableComponent
             'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
             'url' => $this->nullableString($data['url'] ?? null),
         ])->save();
+    }
+
+    protected function deleteRecord(Model $record): void
+    {
+        throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
+
+        resolve(DeletePartnerAction::class)->handle($record);
     }
 
     protected function nullableString(mixed $value): ?string

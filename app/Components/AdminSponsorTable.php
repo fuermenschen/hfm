@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Actions\DeleteSponsorAction;
 use App\Models\Sponsor;
 use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Database\Eloquent\Builder;
@@ -218,6 +219,13 @@ class AdminSponsorTable extends AbstractDatatableComponent
             'logo_filename' => trim((string) $data['logo_filename']),
             'url' => $this->nullableString($data['url'] ?? null),
         ])->save();
+    }
+
+    protected function deleteRecord(Model $record): void
+    {
+        throw_unless($record instanceof Sponsor, \LogicException::class, 'Expected sponsor record.');
+
+        resolve(DeleteSponsorAction::class)->handle($record);
     }
 
     protected function nullableString(mixed $value): ?string

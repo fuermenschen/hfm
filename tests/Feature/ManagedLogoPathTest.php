@@ -21,3 +21,18 @@ it('always resolves sponsor logos inside the sponsors folder', function (): void
 
     expect($sponsor->logoUrl())->toBe(Storage::disk('public')->url('sponsors/nested/logo.svg'));
 });
+
+it('rejects logo traversal paths', function (): void {
+    $partner = new Partner([
+        'logo_light_filename' => '../secret.svg',
+        'logo_dark_filename' => 'nested/../secret.svg',
+    ]);
+
+    $sponsor = new Sponsor([
+        'logo_filename' => '../secret.svg',
+    ]);
+
+    expect($partner->logoLightUrl())->toBeNull()
+        ->and($partner->logoDarkUrl())->toBeNull()
+        ->and($sponsor->logoUrl())->toBeNull();
+});

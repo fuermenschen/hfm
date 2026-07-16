@@ -19,7 +19,7 @@
 
     @if ($selectedUrl !== null)
         <flux:text class="text-xs">
-            <a href="{{ $selectedUrl }}" target="_blank" class="text-accent hover:underline">Ausgewählte Datei öffnen</a>
+            <a href="{{ $selectedUrl }}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Ausgewählte Datei öffnen</a>
         </flux:text>
     @endif
 

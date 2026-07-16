@@ -43,5 +43,6 @@ it('renders a preview link for selected files', function (): void {
     $html = Blade::render('<x-admin.file-select directory="assets" selected="logo.svg" />');
 
     expect($html)->toContain('Ausgewählte Datei öffnen')
-        ->and($html)->toContain(Storage::disk('public')->url('assets/logo.svg'));
+        ->and($html)->toContain(Storage::disk('public')->url('assets/logo.svg'))
+        ->and($html)->toContain('rel="noopener noreferrer"');
 });
