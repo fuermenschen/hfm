@@ -111,6 +111,20 @@ it('creates and deletes partners from admin table modal state', function (): voi
     expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse();
 });
 
+it('rejects non-image partner logos', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/document.pdf', 'pdf');
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openCreate')
+        ->set('createForm.name', 'Invalid Logo Partner')
+        ->set('createForm.logo_light_filename', 'document.pdf')
+        ->call('saveCreate')
+        ->assertHasErrors('createForm.logo_light_filename');
+
+    expect(Partner::query()->where('name', 'Invalid Logo Partner')->exists())->toBeFalse();
+});
+
 it('does not delete partners assigned to events', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('partners/light.svg', 'svg');
@@ -251,6 +265,20 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
         ->assertSet('deletingId', null);
 
     expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse();
+});
+
+it('rejects non-image sponsor logos', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/document.pdf', 'pdf');
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openCreate')
+        ->set('createForm.name', 'Invalid Logo Sponsor')
+        ->set('createForm.logo_filename', 'document.pdf')
+        ->call('saveCreate')
+        ->assertHasErrors('createForm.logo_filename');
+
+    expect(Sponsor::query()->where('name', 'Invalid Logo Sponsor')->exists())->toBeFalse();
 });
 
 it('does not delete sponsors assigned to events', function (): void {

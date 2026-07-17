@@ -244,7 +244,7 @@ class AdminSponsorTable extends AbstractDatatableComponent
      */
     protected function sponsorLogoPaths(): array
     {
-        return collect(resolve(AdminFileStorage::class)->files('sponsors', recursive: true))
+        return collect(resolve(AdminFileStorage::class)->files('sponsors', recursive: true, extensions: ['svg', 'png', 'jpg', 'jpeg', 'webp']))
             ->pluck('path')
             ->map(fn (string $path): string => str($path)->after('sponsors/')->toString())
             ->all();
