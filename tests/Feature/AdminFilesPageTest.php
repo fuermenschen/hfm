@@ -52,6 +52,7 @@ it('lists folders and opens directories', function (): void {
         ->call('openDirectory', 'documents')
         ->assertSet('directory', 'documents')
         ->assertSee('report.pdf')
+        ->assertSee('rel="noopener noreferrer"', false)
         ->assertDontSee('.gitignore');
 });
 
@@ -66,6 +67,16 @@ it('shows breadcrumbs and opens parent directories', function (): void {
         ->assertSee('..')
         ->call('openParentDirectory')
         ->assertSet('directory', 'documents');
+});
+
+it('handles invalid directory navigation', function (): void {
+    Livewire::test(AdminFiles::class)
+        ->call('openDirectory', '../private')
+        ->assertSet('directory', '')
+        ->assertHasErrors('directory')
+        ->set('directory', '../private')
+        ->call('openParentDirectory')
+        ->assertSet('directory', '');
 });
 
 it('creates folders in the current directory', function (): void {

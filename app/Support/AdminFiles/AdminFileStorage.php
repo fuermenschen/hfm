@@ -28,7 +28,7 @@ class AdminFileStorage
         $directory = $this->normalizeDirectory($directory);
         $name = $this->normalizeDirectory($name);
 
-        throw_if($name === '', \InvalidArgumentException::class, 'Folder name cannot be empty.');
+        throw_if($name === '', \InvalidArgumentException::class, 'Ordnername darf nicht leer sein.');
 
         $path = $this->joinPath($directory, $name);
 
@@ -254,11 +254,12 @@ class AdminFileStorage
     protected function moveToTrash(string $path): void
     {
         $publicDisk = Storage::disk('public');
-        $localDisk = Storage::disk('local');
         $trashPath = $this->trashPath($path);
         $stream = $publicDisk->readStream($path);
 
-        throw_if($stream === null, \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
+        throw_unless(is_resource($stream), \RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
+
+        $localDisk = Storage::disk('local');
 
         try {
             $stored = $localDisk->put($trashPath, $stream);

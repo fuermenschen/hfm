@@ -107,12 +107,17 @@ class AdminFiles extends Component
 
     public function openDirectory(string $directory): void
     {
-        $this->directory = $this->files()->normalizeDirectory($directory);
+        try {
+            $this->directory = $this->files()->normalizeDirectory($directory);
+            $this->resetErrorBag('directory');
+        } catch (\InvalidArgumentException) {
+            $this->addError('directory', 'Ungültiger Ordner.');
+        }
     }
 
     public function openParentDirectory(): void
     {
-        $directory = $this->files()->normalizeDirectory($this->directory);
+        $directory = $this->safeDirectory();
 
         $this->directory = dirname($directory) === '.' ? '' : dirname($directory);
     }

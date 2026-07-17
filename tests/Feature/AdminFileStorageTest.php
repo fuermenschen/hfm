@@ -60,6 +60,11 @@ it('creates directories', function (): void {
         ->and(Storage::disk('public')->directories('documents'))->toContain('documents/reports');
 });
 
+it('rejects empty directory names in German', function (): void {
+    expect(fn () => app(AdminFileStorage::class)->createDirectory('documents', ''))
+        ->toThrow(InvalidArgumentException::class, 'Ordnername darf nicht leer sein.');
+});
+
 it('deletes empty directories', function (): void {
     Storage::disk('public')->makeDirectory('documents/empty');
 
@@ -196,6 +201,21 @@ it('throws when public file deletion fails after trashing', function (): void {
 
     expect(fn () => app(AdminFileStorage::class)->delete('documents/free.pdf'))
         ->toThrow(RuntimeException::class, 'Datei konnte nicht gelöscht werden.');
+});
+
+it('throws when public file cannot be opened for trashing', function (): void {
+    $publicDisk = new class
+    {
+        public function readStream(string $path): false
+        {
+            return false;
+        }
+    };
+
+    Storage::shouldReceive('disk')->with('public')->andReturn($publicDisk);
+
+    expect(fn () => app(AdminFileStorage::class)->delete('documents/free.pdf'))
+        ->toThrow(RuntimeException::class, 'Datei konnte nicht in den Papierkorb verschoben werden.');
 });
 
 it('blocks deleting referenced partner and sponsor files', function (): void {

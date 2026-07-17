@@ -71,7 +71,7 @@
                                 <div class="flex min-w-0 items-center gap-3">
                                     <flux:icon.document class="size-5 text-zinc-500" />
                                     <div class="min-w-0">
-                                        <a href="{{ $fileItem['url'] }}" target="_blank" class="font-medium hover:underline">{{ $fileItem['name'] }}</a>
+                                        <a href="{{ $fileItem['url'] }}" target="_blank" rel="noopener noreferrer" class="font-medium hover:underline">{{ $fileItem['name'] }}</a>
                                         <div class="truncate text-xs text-zinc-500">{{ $fileItem['path'] }}</div>
                                     </div>
                                 </div>
