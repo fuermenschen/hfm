@@ -56,7 +56,12 @@
                             </flux:table.cell>
                             <flux:table.cell></flux:table.cell>
                             <flux:table.cell></flux:table.cell>
-                            <flux:table.cell></flux:table.cell>
+                            <flux:table.cell class="py-0 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <flux:button size="xs" wire:click="confirmRenameDirectory(@js($childDirectory))">Umbenennen</flux:button>
+                                    <flux:button size="xs" variant="danger" wire:click="confirmDeleteDirectory(@js($childDirectory))">Löschen</flux:button>
+                                </div>
+                            </flux:table.cell>
                         </flux:table.row>
                     @endforeach
 
@@ -74,7 +79,10 @@
                             <flux:table.cell>{{ \Illuminate\Support\Number::fileSize($fileItem['size']) }}</flux:table.cell>
                             <flux:table.cell>{{ date('d.m.Y H:i', $fileItem['last_modified']) }}</flux:table.cell>
                             <flux:table.cell class="py-0 text-right">
-                                <flux:button size="xs" variant="danger" wire:click="confirmDelete(@js($fileItem['path']))">Löschen</flux:button>
+                                <div class="flex justify-end gap-2">
+                                    <flux:button size="xs" wire:click="confirmRenameFile(@js($fileItem['path']))">Umbenennen</flux:button>
+                                    <flux:button size="xs" variant="danger" wire:click="confirmDelete(@js($fileItem['path']))">Löschen</flux:button>
+                                </div>
                             </flux:table.cell>
                         </flux:table.row>
                     @endforeach
@@ -126,11 +134,62 @@
                 <flux:text class="mt-2">Zielordner: {{ $directory === '' ? '/' : $directory }}</flux:text>
             </div>
 
+            <flux:callout variant="warning" heading="Öffentlich zugänglich" text="Hochgeladene Dateien sind sofort über eine öffentliche URL abrufbar. Keine vertraulichen oder personenbezogenen Daten hochladen." />
+
             <flux:file-upload wire:model="file" label="Datei">
-                <flux:file-upload.dropzone heading="Datei hier ablegen oder klicken" text="Maximal 1 GB" with-progress />
+                <flux:file-upload.dropzone heading="Datei hier ablegen oder klicken" text="Maximal 100 MB" with-progress />
             </flux:file-upload>
 
             <flux:error name="file" />
+        </div>
+    </flux:modal>
+
+    <flux:modal name="rename-admin-entry" class="min-w-96">
+        <form wire:submit="renameEntry" class="space-y-6">
+            <div>
+                <flux:heading size="lg">{{ $pendingRenameDirectory ? 'Ordner umbenennen' : 'Datei umbenennen' }}</flux:heading>
+                <flux:text class="mt-2">{{ $pendingRenamePath }}</flux:text>
+            </div>
+
+            <flux:field>
+                <flux:label>Neuer Name</flux:label>
+                <flux:input wire:model="newName" autofocus />
+                <flux:error name="newName" />
+            </flux:field>
+
+            @if ($pendingRenameReferences !== [])
+                <flux:callout variant="warning">
+                    <flux:callout.heading>Diese Datei wird noch verwendet</flux:callout.heading>
+                    <flux:callout.text>
+                        @foreach ($pendingRenameReferences as $reference)
+                            <div>{{ $reference['label'] }}</div>
+                        @endforeach
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelRename">Abbrechen</flux:button>
+                <flux:button type="submit" variant="primary" :disabled="$pendingRenameReferences !== []">Umbenennen</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    <flux:modal name="delete-admin-directory" class="min-w-96">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Leeren Ordner löschen?</flux:heading>
+                <flux:text class="mt-2">{{ $pendingDeleteDirectory }}</flux:text>
+            </div>
+
+            <flux:error name="pendingDeleteDirectory" />
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelDeleteDirectory">Abbrechen</flux:button>
+                <flux:button type="button" variant="danger" wire:click="deleteDirectory">Löschen</flux:button>
+            </div>
         </div>
     </flux:modal>
 

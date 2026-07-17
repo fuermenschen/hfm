@@ -25,6 +25,19 @@ class AdminFiles extends Component
 
     public ?string $pendingDeletePath = null;
 
+    public ?string $pendingDeleteDirectory = null;
+
+    public ?string $pendingRenamePath = null;
+
+    public bool $pendingRenameDirectory = false;
+
+    public ?string $newName = null;
+
+    /**
+     * @var array<int, array{label:string, model:string, id:int, field:string}>
+     */
+    public array $pendingRenameReferences = [];
+
     /**
      * @var array<int, array{label:string, model:string, id:int, field:string}>
      */
@@ -46,7 +59,8 @@ class AdminFiles extends Component
     {
         return [
             'directory' => ['nullable', 'string', 'max:255'],
-            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,png,jpg,jpeg,webp,svg,txt,csv,xlsx', 'extensions:pdf,png,jpg,jpeg,webp,svg,txt,csv,xlsx'],
+            'file' => ['required', 'file', 'max:102400', 'mimes:pdf,png,jpg,jpeg,webp,svg,txt,csv,xlsx', 'extensions:pdf,png,jpg,jpeg,webp,svg,txt,csv,xlsx'],
+            'newName' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -174,6 +188,124 @@ class AdminFiles extends Component
         Flux::modal('delete-admin-file')->close();
     }
 
+    public function confirmDeleteDirectory(string $directory): void
+    {
+        $this->ensureAuthenticated();
+
+        try {
+            $this->pendingDeleteDirectory = $this->manageableDirectory($directory);
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            throw ValidationException::withMessages([
+                'pendingDeleteDirectory' => $invalidArgumentException->getMessage(),
+            ]);
+        }
+
+        Flux::modal('delete-admin-directory')->show();
+    }
+
+    public function deleteDirectory(): void
+    {
+        $this->ensureAuthenticated();
+
+        if ($this->pendingDeleteDirectory === null) {
+            return;
+        }
+
+        try {
+            $directory = $this->manageableDirectory($this->pendingDeleteDirectory);
+            $this->files()->deleteEmptyDirectory($directory);
+        } catch (\InvalidArgumentException|\RuntimeException $runtimeException) {
+            throw ValidationException::withMessages([
+                'pendingDeleteDirectory' => $runtimeException->getMessage(),
+            ]);
+        }
+
+        $this->pendingDeleteDirectory = null;
+
+        Flux::modal('delete-admin-directory')->close();
+        Flux::toast(heading: 'Ordner gelöscht', text: $directory, variant: 'success');
+    }
+
+    public function cancelDeleteDirectory(): void
+    {
+        $this->pendingDeleteDirectory = null;
+
+        Flux::modal('delete-admin-directory')->close();
+    }
+
+    public function confirmRenameFile(string $path): void
+    {
+        $this->ensureAuthenticated();
+
+        try {
+            $path = $this->deletablePath($path);
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            throw ValidationException::withMessages([
+                'newName' => $invalidArgumentException->getMessage(),
+            ]);
+        }
+
+        $this->pendingRenameReferences = $this->files()->references($path);
+        $this->beginRename($path, false);
+    }
+
+    public function confirmRenameDirectory(string $directory): void
+    {
+        $this->ensureAuthenticated();
+
+        try {
+            $directory = $this->manageableDirectory($directory);
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            throw ValidationException::withMessages([
+                'newName' => $invalidArgumentException->getMessage(),
+            ]);
+        }
+
+        $this->pendingRenameReferences = [];
+        $this->beginRename($directory, true);
+    }
+
+    public function renameEntry(): void
+    {
+        $this->ensureAuthenticated();
+
+        if ($this->pendingRenamePath === null) {
+            return;
+        }
+
+        $this->validateOnly('newName', [
+            'newName' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $path = $this->pendingRenameDirectory
+                ? $this->files()->renameEmptyDirectory($this->manageableDirectory($this->pendingRenamePath), (string) $this->newName)
+                : $this->files()->renameFile($this->deletablePath($this->pendingRenamePath), (string) $this->newName);
+        } catch (\InvalidArgumentException|\RuntimeException $runtimeException) {
+            throw ValidationException::withMessages([
+                'newName' => $runtimeException->getMessage(),
+            ]);
+        }
+
+        $this->pendingRenamePath = null;
+        $this->pendingRenameDirectory = false;
+        $this->newName = null;
+        $this->pendingRenameReferences = [];
+
+        Flux::modal('rename-admin-entry')->close();
+        Flux::toast(heading: 'Umbenannt', text: $path, variant: 'success');
+    }
+
+    public function cancelRename(): void
+    {
+        $this->pendingRenamePath = null;
+        $this->pendingRenameDirectory = false;
+        $this->newName = null;
+        $this->pendingRenameReferences = [];
+
+        Flux::modal('rename-admin-entry')->close();
+    }
+
     protected function files(): AdminFileStorage
     {
         return resolve(AdminFileStorage::class);
@@ -193,6 +325,25 @@ class AdminFiles extends Component
         throw_unless($availablePaths->contains($path), \InvalidArgumentException::class, 'Datei ist nicht löschbar.');
 
         return $path;
+    }
+
+    protected function manageableDirectory(string $directory): string
+    {
+        $directory = $this->files()->normalizeDirectory($directory);
+        $parent = dirname($directory) === '.' ? '' : dirname($directory);
+
+        throw_unless(in_array($directory, $this->files()->directories($parent), true), \InvalidArgumentException::class, 'Ordner ist nicht verfügbar.');
+
+        return $directory;
+    }
+
+    protected function beginRename(string $path, bool $directory): void
+    {
+        $this->pendingRenamePath = $path;
+        $this->pendingRenameDirectory = $directory;
+        $this->newName = basename($path);
+
+        Flux::modal('rename-admin-entry')->show();
     }
 
     protected function safeDirectory(): string

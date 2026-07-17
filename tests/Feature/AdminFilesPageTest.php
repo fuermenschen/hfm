@@ -20,7 +20,8 @@ beforeEach(function (): void {
 it('renders the admin files page', function (): void {
     get('/admin/dateien')
         ->assertSuccessful()
-        ->assertSee('Dateien');
+        ->assertSee('Dateien')
+        ->assertSee('Hochgeladene Dateien sind sofort über eine öffentliche URL abrufbar.');
 });
 
 it('rejects unauthenticated file mutations', function (): void {
@@ -79,6 +80,62 @@ it('creates folders in the current directory', function (): void {
     expect(Storage::disk('public')->directories('documents'))->toContain('documents/reports');
 });
 
+it('renames empty folders', function (): void {
+    Storage::disk('public')->makeDirectory('documents/drafts');
+
+    Livewire::test(AdminFiles::class)
+        ->call('confirmRenameDirectory', 'documents/drafts')
+        ->assertHasNoErrors()
+        ->assertSet('pendingRenamePath', 'documents/drafts')
+        ->set('newName', 'archive')
+        ->call('renameEntry')
+        ->assertSet('pendingRenamePath', null)
+        ->assertHasNoErrors();
+
+    expect(Storage::disk('public')->directoryExists('documents/drafts'))->toBeFalse()
+        ->and(Storage::disk('public')->directoryExists('documents/archive'))->toBeTrue();
+});
+
+it('deletes empty folders', function (): void {
+    Storage::disk('public')->makeDirectory('documents/empty');
+
+    Livewire::test(AdminFiles::class)
+        ->call('confirmDeleteDirectory', 'documents/empty')
+        ->assertHasNoErrors()
+        ->assertSet('pendingDeleteDirectory', 'documents/empty')
+        ->call('deleteDirectory')
+        ->assertSet('pendingDeleteDirectory', null)
+        ->assertHasNoErrors();
+
+    expect(Storage::disk('public')->directoryExists('documents/empty'))->toBeFalse();
+});
+
+it('does not delete non-empty folders', function (): void {
+    Storage::disk('public')->put('documents/reports/file.txt', 'content');
+
+    Livewire::test(AdminFiles::class)
+        ->call('confirmDeleteDirectory', 'documents/reports')
+        ->call('deleteDirectory')
+        ->assertHasErrors('pendingDeleteDirectory');
+
+    Storage::disk('public')->assertExists('documents/reports/file.txt');
+});
+
+it('renames unreferenced files', function (): void {
+    Storage::disk('public')->put('documents/draft.pdf', 'pdf');
+
+    Livewire::test(AdminFiles::class)
+        ->call('confirmRenameFile', 'documents/draft.pdf')
+        ->assertSet('pendingRenamePath', 'documents/draft.pdf')
+        ->set('newName', 'Final.pdf')
+        ->call('renameEntry')
+        ->assertSet('pendingRenamePath', null)
+        ->assertHasNoErrors();
+
+    Storage::disk('public')->assertMissing('documents/draft.pdf');
+    Storage::disk('public')->assertExists('documents/final.pdf');
+});
+
 it('deletes unreferenced files', function (): void {
     Storage::disk('public')->put('documents/free.pdf', 'pdf');
 
@@ -111,6 +168,13 @@ it('uses flux file upload without custom javascript upload handling', function (
         ->assertDontSee('$wire.upload', false);
 });
 
+it('limits uploads to 100 MB', function (): void {
+    expect(config('livewire.temporary_file_upload.rules'))->toContain('max:102400')
+        ->and((new AdminFiles)->rules()['file'])->toContain('max:102400');
+
+    Livewire::test(AdminFiles::class)->assertSee('Maximal 100 MB');
+});
+
 it('blocks deleting referenced files', function (): void {
     $partner = Partner::query()->create([
         'name' => 'Referenced Partner',
@@ -126,6 +190,25 @@ it('blocks deleting referenced files', function (): void {
         ->assertHasErrors('pendingDeletePath');
 
     Storage::disk('public')->assertExists('partners/logo.svg');
+});
+
+it('blocks renaming referenced files', function (): void {
+    $partner = Partner::query()->create([
+        'name' => 'Referenced Partner',
+        'logo_light_filename' => 'logo.svg',
+    ]);
+
+    Storage::disk('public')->put('partners/logo.svg', 'svg');
+
+    Livewire::test(AdminFiles::class)
+        ->call('confirmRenameFile', 'partners/logo.svg')
+        ->assertSet('pendingRenameReferences.0.label', 'Partner:in Logo hell #'.$partner->id)
+        ->set('newName', 'renamed.svg')
+        ->call('renameEntry')
+        ->assertHasErrors('newName');
+
+    Storage::disk('public')->assertExists('partners/logo.svg');
+    Storage::disk('public')->assertMissing('partners/renamed.svg');
 });
 
 it('rejects invalid target directories', function (): void {

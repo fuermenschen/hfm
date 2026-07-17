@@ -37,6 +37,51 @@ class AdminFileStorage
         return $path;
     }
 
+    public function deleteEmptyDirectory(string $directory): void
+    {
+        $directory = $this->emptyDirectory($directory);
+
+        throw_unless($this->removeEmptyDirectory($directory), \RuntimeException::class, 'Ordner konnte nicht gelöscht werden.');
+    }
+
+    public function renameEmptyDirectory(string $directory, string $name): string
+    {
+        $directory = $this->emptyDirectory($directory);
+        $parent = dirname($directory) === '.' ? '' : dirname($directory);
+        $target = $this->joinPath($parent, $this->safeDirectoryName($name));
+        $disk = Storage::disk('public');
+
+        throw_if($target === $directory, \InvalidArgumentException::class, 'Der neue Ordnername ist unverändert.');
+        throw_if($disk->exists($target) || $disk->directoryExists($target), \InvalidArgumentException::class, 'Eine Datei oder ein Ordner mit diesem Namen existiert bereits.');
+        throw_unless($disk->makeDirectory($target), \RuntimeException::class, 'Ordner konnte nicht umbenannt werden.');
+
+        if (! $this->removeEmptyDirectory($directory)) {
+            $this->removeEmptyDirectory($target);
+
+            throw new \RuntimeException('Ordner konnte nicht umbenannt werden.');
+        }
+
+        return $target;
+    }
+
+    public function renameFile(string $path, string $name): string
+    {
+        $path = $this->normalizePath($path);
+        $disk = Storage::disk('public');
+
+        throw_unless($disk->exists($path), \InvalidArgumentException::class, 'Datei wurde nicht gefunden.');
+        throw_if($this->references($path) !== [], \RuntimeException::class, 'Datei wird noch verwendet und kann nicht umbenannt werden.');
+
+        $directory = dirname($path) === '.' ? '' : dirname($path);
+        $target = $this->joinPath($directory, $this->renamedFilename($path, $name));
+
+        throw_if($target === $path, \InvalidArgumentException::class, 'Der neue Dateiname ist unverändert.');
+        throw_if($disk->exists($target) || $disk->directoryExists($target), \InvalidArgumentException::class, 'Eine Datei oder ein Ordner mit diesem Namen existiert bereits.');
+        throw_unless($disk->move($path, $target), \RuntimeException::class, 'Datei konnte nicht umbenannt werden.');
+
+        return $target;
+    }
+
     /**
      * @param  array<int, string>  $extensions
      * @return array<int, array{path:string, name:string, directory:string, url:string, size:int, last_modified:int, extension:string}>
@@ -139,6 +184,49 @@ class AdminFileStorage
         $name = Str::slug($name) ?: 'file';
 
         return $extension === '' ? $name : $name.'.'.$extension;
+    }
+
+    protected function safeDirectoryName(string $name): string
+    {
+        $name = trim($name);
+
+        throw_if(in_array($name, ['', '.', '..'], true) || str_contains($name, '/') || str_contains($name, '\\') || preg_match('/[[:cntrl:]]/u', $name) === 1, \InvalidArgumentException::class, 'Ungültiger Ordnername.');
+
+        return $name;
+    }
+
+    protected function emptyDirectory(string $directory): string
+    {
+        $directory = $this->normalizeDirectory($directory);
+        $disk = Storage::disk('public');
+
+        throw_if($directory === '', \InvalidArgumentException::class, 'Der Hauptordner kann nicht geändert werden.');
+        throw_unless($disk->directoryExists($directory), \InvalidArgumentException::class, 'Ordner wurde nicht gefunden.');
+        throw_if($disk->allFiles($directory) !== [] || $disk->allDirectories($directory) !== [], \InvalidArgumentException::class, 'Nur leere Ordner können geändert werden.');
+
+        return $directory;
+    }
+
+    /** Avoid recursive deletion if a file appears after the emptiness check. */
+    protected function removeEmptyDirectory(string $directory): bool
+    {
+        return @rmdir(Storage::disk('public')->path($directory));
+    }
+
+    protected function renamedFilename(string $path, string $name): string
+    {
+        $name = trim($name);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $requestedExtension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        throw_if($name === '', \InvalidArgumentException::class, 'Dateiname darf nicht leer sein.');
+        throw_if($requestedExtension !== '' && $requestedExtension !== $extension, \InvalidArgumentException::class, 'Die Dateiendung darf nicht geändert werden.');
+
+        if ($requestedExtension !== '') {
+            $name = pathinfo($name, PATHINFO_FILENAME);
+        }
+
+        return $this->safeFilename($extension === '' ? $name : $name.'.'.$extension);
     }
 
     protected function availableFilename(string $directory, string $filename): string

@@ -60,6 +60,66 @@ it('creates directories', function (): void {
         ->and(Storage::disk('public')->directories('documents'))->toContain('documents/reports');
 });
 
+it('deletes empty directories', function (): void {
+    Storage::disk('public')->makeDirectory('documents/empty');
+
+    app(AdminFileStorage::class)->deleteEmptyDirectory('documents/empty');
+
+    expect(Storage::disk('public')->directoryExists('documents/empty'))->toBeFalse();
+});
+
+it('does not delete non-empty directories', function (): void {
+    Storage::disk('public')->put('documents/hidden/.gitkeep', '');
+    Storage::disk('public')->makeDirectory('documents/nested/empty');
+
+    $storage = app(AdminFileStorage::class);
+
+    expect(fn () => $storage->deleteEmptyDirectory('documents/hidden'))
+        ->toThrow(InvalidArgumentException::class, 'Nur leere Ordner können geändert werden.')
+        ->and(fn () => $storage->deleteEmptyDirectory('documents/nested'))
+        ->toThrow(InvalidArgumentException::class, 'Nur leere Ordner können geändert werden.');
+});
+
+it('renames empty directories', function (): void {
+    Storage::disk('public')->makeDirectory('documents/old name');
+
+    $path = app(AdminFileStorage::class)->renameEmptyDirectory('documents/old name', 'new name');
+
+    expect($path)->toBe('documents/new name')
+        ->and(Storage::disk('public')->directoryExists('documents/old name'))->toBeFalse()
+        ->and(Storage::disk('public')->directoryExists('documents/new name'))->toBeTrue();
+});
+
+it('rejects directory rename collisions', function (): void {
+    Storage::disk('public')->makeDirectory('documents/source');
+    Storage::disk('public')->makeDirectory('documents/target');
+
+    expect(fn () => app(AdminFileStorage::class)->renameEmptyDirectory('documents/source', 'target'))
+        ->toThrow(InvalidArgumentException::class, 'Eine Datei oder ein Ordner mit diesem Namen existiert bereits.');
+});
+
+it('renames files while preserving their extension', function (): void {
+    Storage::disk('public')->put('documents/old-report.pdf', 'pdf');
+
+    $path = app(AdminFileStorage::class)->renameFile('documents/old-report.pdf', 'Final Report.pdf');
+
+    expect($path)->toBe('documents/final-report.pdf');
+    Storage::disk('public')->assertMissing('documents/old-report.pdf');
+    Storage::disk('public')->assertExists('documents/final-report.pdf');
+});
+
+it('rejects file extension changes and collisions', function (): void {
+    Storage::disk('public')->put('documents/source.pdf', 'pdf');
+    Storage::disk('public')->put('documents/target.pdf', 'pdf');
+
+    $storage = app(AdminFileStorage::class);
+
+    expect(fn () => $storage->renameFile('documents/source.pdf', 'source.txt'))
+        ->toThrow(InvalidArgumentException::class, 'Die Dateiendung darf nicht geändert werden.')
+        ->and(fn () => $storage->renameFile('documents/source.pdf', 'target.pdf'))
+        ->toThrow(InvalidArgumentException::class, 'Eine Datei oder ein Ordner mit diesem Namen existiert bereits.');
+});
+
 it('throws when directory creation fails', function (): void {
     Storage::shouldReceive('disk')
         ->with('public')
@@ -169,7 +229,9 @@ it('blocks deleting referenced partner and sponsor files', function (): void {
             'field' => 'logo_filename',
         ])
         ->and(fn () => $storage->delete('partners/logo-light.svg'))->toThrow(RuntimeException::class)
-        ->and(fn () => $storage->delete('sponsors/logo.svg'))->toThrow(RuntimeException::class);
+        ->and(fn () => $storage->delete('sponsors/logo.svg'))->toThrow(RuntimeException::class)
+        ->and(fn () => $storage->renameFile('partners/logo-light.svg', 'renamed.svg'))->toThrow(RuntimeException::class)
+        ->and(fn () => $storage->renameFile('sponsors/logo.svg', 'renamed.svg'))->toThrow(RuntimeException::class);
 
     Storage::disk('public')->assertExists(['partners/logo-light.svg', 'sponsors/logo.svg']);
 });
