@@ -153,7 +153,7 @@ class AdminFileStorage
     {
         $segments = $this->safeSegments($path);
 
-        throw_if($segments === [], \InvalidArgumentException::class, 'File path cannot be empty.');
+        throw_if($segments === [], \InvalidArgumentException::class, 'Dateipfad darf nicht leer sein.');
 
         return implode('/', $segments);
     }
@@ -169,7 +169,7 @@ class AdminFileStorage
             ->map(fn (string $segment): string => trim($segment))
             ->reject(fn (string $segment): bool => $segment === '')
             ->map(function (string $segment): string {
-                throw_if($segment === '.' || $segment === '..' || preg_match('/[[:cntrl:]]/u', $segment) === 1, \InvalidArgumentException::class, 'Invalid file path.');
+                throw_if($segment === '.' || $segment === '..' || preg_match('/[[:cntrl:]]/u', $segment) === 1, \InvalidArgumentException::class, 'Ungültiger Dateipfad.');
 
                 return $segment;
             })

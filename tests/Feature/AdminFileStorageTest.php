@@ -144,11 +144,13 @@ it('rejects traversal paths', function (): void {
     $storage = app(AdminFileStorage::class);
 
     expect(fn () => $storage->store(UploadedFile::fake()->create('file.txt'), '../private'))
-        ->toThrow(InvalidArgumentException::class)
+        ->toThrow(InvalidArgumentException::class, 'Ungültiger Dateipfad.')
         ->and(fn () => $storage->createDirectory('documents', '../private'))
-        ->toThrow(InvalidArgumentException::class)
+        ->toThrow(InvalidArgumentException::class, 'Ungültiger Dateipfad.')
         ->and(fn () => $storage->delete('partners/../secret.txt'))
-        ->toThrow(InvalidArgumentException::class);
+        ->toThrow(InvalidArgumentException::class, 'Ungültiger Dateipfad.')
+        ->and(fn () => $storage->normalizePath(''))
+        ->toThrow(InvalidArgumentException::class, 'Dateipfad darf nicht leer sein.');
 });
 
 it('deletes unreferenced files', function (): void {

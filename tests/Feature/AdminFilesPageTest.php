@@ -21,6 +21,7 @@ it('renders the admin files page', function (): void {
     get('/admin/dateien')
         ->assertSuccessful()
         ->assertSee('Dateien')
+        ->assertSee('Noch keine Dateien vorhanden.')
         ->assertSee('Hochgeladene Dateien sind sofort über eine öffentliche URL abrufbar.');
 });
 

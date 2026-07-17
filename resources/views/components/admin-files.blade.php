@@ -92,7 +92,7 @@
                             <flux:table.cell colspan="4" class="text-center">
                                 <div class="flex flex-col items-center gap-2 py-8 text-zinc-500 dark:text-zinc-400">
                                     <flux:icon.cloud-arrow-up class="size-8" />
-                                    <div>Dateien hierher ziehen oder über „Datei hochladen“ auswählen.</div>
+                                    <div>Noch keine Dateien vorhanden. Über „Datei hochladen“ kannst du Dateien hinzufügen.</div>
                                 </div>
                             </flux:table.cell>
                         </flux:table.row>
