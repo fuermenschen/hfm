@@ -23,7 +23,7 @@ class SponsorFactory extends Factory
             'name' => fake()->company(),
             'description' => fake()->sentence(16),
             'logo_filename' => fake()->slug().'.svg',
-            'url' => fake()->optional()->url(),
+            'url' => fake()->url(),
         ];
     }
 }

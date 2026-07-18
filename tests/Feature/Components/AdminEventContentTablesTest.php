@@ -23,13 +23,13 @@ beforeEach(function (): void {
 it('renders partners in admin table and includes donation event assignment count', function (): void {
     $events = DonationEvent::factory()->count(2)->create();
 
-    $assignedPartner = Partner::query()->create([
+    $assignedPartner = Partner::factory()->create([
         'name' => 'Bruehlgut Stiftung',
         'logo_light_filename' => 'bruehlgut_light.svg',
         'logo_dark_filename' => 'bruehlgut_dark.svg',
     ]);
 
-    $unassignedPartner = Partner::query()->create([
+    $unassignedPartner = Partner::factory()->create([
         'name' => 'Unassigned Partner',
     ]);
 
@@ -53,7 +53,7 @@ it('edits partners from admin table modal state', function (): void {
     Storage::disk('public')->put('partners/nested/old-dark.svg', 'svg');
     Storage::disk('public')->put('partners/new-light.svg', 'svg');
 
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Old Partner',
         'logo_light_filename' => 'old-light.svg',
         'logo_dark_filename' => 'nested/old-dark.svg',
@@ -130,7 +130,7 @@ it('does not delete partners assigned to events', function (): void {
     Storage::disk('public')->put('partners/light.svg', 'svg');
     Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Event Partner',
         'logo_light_filename' => 'light.svg',
         'logo_dark_filename' => 'dark.svg',
@@ -153,7 +153,7 @@ it('does not delete partners selected by athlete registrations', function (): vo
     Storage::disk('public')->put('partners/light.svg', 'svg');
     Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Registration Partner',
         'logo_light_filename' => 'light.svg',
         'logo_dark_filename' => 'dark.svg',
@@ -181,20 +181,24 @@ it('rejects unauthenticated table mutations', function (): void {
 it('renders sponsors in admin table and includes donation event assignment count', function (): void {
     $event = DonationEvent::factory()->create();
 
-    $assignedSponsor = Sponsor::query()->create([
+    $assignedSponsor = Sponsor::factory()->create([
         'name' => 'Rohner Spiller',
         'description' => 'Druckpartner',
         'logo_filename' => 'rohner_spiller.svg',
         'url' => 'https://example.test/rohner',
     ]);
 
-    $unassignedSponsor = Sponsor::query()->create([
+    $unassignedSponsor = Sponsor::factory()->create([
         'name' => 'Unassigned Sponsor',
         'description' => 'Noch ohne Anlass',
         'logo_filename' => 'unassigned.svg',
     ]);
 
-    $assignedSponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+    $assignedSponsor->donationEvents()->attach($event->id, [
+        'contribution_text' => 'Event contribution',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
 
     Livewire::test(AdminSponsorTable::class)
         ->assertSee('Rohner Spiller')
@@ -211,7 +215,7 @@ it('edits sponsors from admin table modal state', function (): void {
     Storage::disk('public')->put('sponsors/old-logo.svg', 'svg');
     Storage::disk('public')->put('sponsors/nested/new-logo.svg', 'svg');
 
-    $sponsor = Sponsor::query()->create([
+    $sponsor = Sponsor::factory()->create([
         'name' => 'Old Sponsor',
         'description' => 'Old description',
         'logo_filename' => 'old-logo.svg',
@@ -285,13 +289,17 @@ it('does not delete sponsors assigned to events', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('sponsors/logo.svg', 'svg');
 
-    $sponsor = Sponsor::query()->create([
+    $sponsor = Sponsor::factory()->create([
         'name' => 'Event Sponsor',
         'description' => 'Assigned sponsor',
         'logo_filename' => 'logo.svg',
     ]);
     $event = DonationEvent::factory()->create();
-    $sponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+    $sponsor->donationEvents()->attach($event->id, [
+        'contribution_text' => 'Event contribution',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
 
     Livewire::test(AdminSponsorTable::class)
         ->call('confirmDeleteRow', $sponsor->id)
@@ -342,12 +350,12 @@ it('applies configured truncation for tooltip columns in event content tables', 
     $longSponsorUrl = 'https://example.test/'.str_repeat('sponsor-segment/', 8);
     $longFaqContent = str_repeat('Ausfuehrlicher FAQ Inhalt ', 8);
 
-    Partner::query()->create([
+    Partner::factory()->create([
         'name' => 'Long Partner',
         'url' => $longPartnerUrl,
     ]);
 
-    Sponsor::query()->create([
+    Sponsor::factory()->create([
         'name' => 'Long Sponsor',
         'description' => 'Beschreibung',
         'logo_filename' => 'long.svg',

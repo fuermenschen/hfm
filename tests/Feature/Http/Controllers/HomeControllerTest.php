@@ -25,6 +25,7 @@ it('renders home page with partners and sponsors for active event', function ():
     $sponsor = Sponsor::factory()->create(['name' => 'Test Sponsor']);
     $event->sponsors()->attach($sponsor->id, [
         'size' => 'large',
+        'contribution_text' => 'Event contribution',
         'sort_order' => 1,
         'is_published' => true,
     ]);
@@ -48,6 +49,7 @@ it('does not show unpublished partners or sponsors on home', function (): void {
     $sponsor = Sponsor::factory()->create(['name' => 'Hidden Sponsor']);
     $event->sponsors()->attach($sponsor->id, [
         'size' => 'small',
+        'contribution_text' => 'Hidden contribution',
         'sort_order' => 1,
         'is_published' => false,
     ]);

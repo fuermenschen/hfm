@@ -39,6 +39,7 @@ it('returns published sponsors with size attribute', function (): void {
 
     $event->sponsors()->attach($sponsor->id, [
         'size' => 'large',
+        'contribution_text' => 'Event contribution',
         'sort_order' => 1,
         'is_published' => true,
     ]);

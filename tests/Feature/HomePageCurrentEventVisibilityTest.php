@@ -56,6 +56,7 @@ it('shows only 2026 partner set and no sponsors on home', function (): void {
     $event2025->partners()->attach($helpline, ['sort_order' => 2, 'is_published' => true]);
     $event2025->sponsors()->attach(Sponsor::factory()->create(), [
         'size' => 'medium',
+        'contribution_text' => 'Event contribution',
         'sort_order' => 1,
         'is_published' => true,
     ]);
@@ -95,6 +96,7 @@ it('shows 2025 partners and sponsors on home', function (): void {
     foreach (['Rohner Spiller', 'TM Kommunikation', 'Veloplus', 'Intersport Egli'] as $index => $name) {
         $event->sponsors()->attach(Sponsor::factory()->create(['name' => $name]), [
             'size' => 'medium',
+            'contribution_text' => 'Event contribution',
             'sort_order' => $index + 1,
             'is_published' => true,
         ]);

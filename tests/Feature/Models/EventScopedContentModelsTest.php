@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Faq;
-use App\Models\Partner;
 use App\Models\Sponsor;
 use Illuminate\Support\Facades\Schema;
 
@@ -13,23 +12,6 @@ it('stores sponsors and faqs as global catalog entities', function (): void {
         ->and(Schema::hasColumn('faqs', 'donation_event_id'))->toBeFalse()
         ->and(Sponsor::query()->count())->toBe(1)
         ->and(Faq::query()->count())->toBe(1);
-});
-
-it('supports partner logo rendering based on available logo paths', function (): void {
-    $withoutLogo = Partner::query()->create([
-        'name' => 'Partner Ohne Logo',
-        'logo_light_filename' => null,
-        'logo_dark_filename' => null,
-    ]);
-
-    $regular = Partner::query()->create([
-        'name' => 'Bruehlgut Stiftung',
-        'logo_light_filename' => 'bruehlgut_light.svg',
-        'logo_dark_filename' => 'bruehlgut_dark.svg',
-    ]);
-
-    expect($withoutLogo->shouldDisplayLogo())->toBeFalse()
-        ->and($regular->shouldDisplayLogo())->toBeTrue();
 });
 
 it('adds expected columns for partner, sponsor, and faq models', function (): void {
@@ -76,4 +58,18 @@ it('adds expected columns for partner, sponsor, and faq models', function (): vo
             'sort_order',
             'is_enabled',
         ]))->toBeTrue();
+});
+
+it('requires partner and sponsor public content', function (): void {
+    $partnerColumns = collect(Schema::getColumns('partners'))->keyBy('name');
+    $sponsorColumns = collect(Schema::getColumns('sponsors'))->keyBy('name');
+    $sponsorPivotColumns = collect(Schema::getColumns('donation_event_sponsor'))->keyBy('name');
+
+    expect($partnerColumns['logo_light_filename']['nullable'])->toBeFalse()
+        ->and($partnerColumns['logo_dark_filename']['nullable'])->toBeFalse()
+        ->and($partnerColumns['beneficiary_blurb']['nullable'])->toBeFalse()
+        ->and($partnerColumns['url']['nullable'])->toBeFalse()
+        ->and($sponsorColumns['description']['nullable'])->toBeFalse()
+        ->and($sponsorColumns['url']['nullable'])->toBeFalse()
+        ->and($sponsorPivotColumns['contribution_text']['nullable'])->toBeFalse();
 });

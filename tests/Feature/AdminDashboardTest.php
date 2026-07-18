@@ -23,7 +23,7 @@ it('renders the admin dashboard for authenticated users', function () {
 
 it('renders partner cards even when partner totals are missing', function () {
     $user = User::factory()->create();
-    Partner::query()->create(['name' => 'Test Partner']);
+    Partner::factory()->create(['name' => 'Test Partner']);
 
     actingAs($user);
 

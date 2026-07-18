@@ -18,9 +18,9 @@ it('renders successfully and shows per-partner section', function () {
 
 it('splits "alle zu gleichen Teilen" amount across remaining partners', function () {
     // Create partners
-    $equal = Partner::create(['name' => 'alle zu gleichen Teilen']);
-    $b = Partner::create(['name' => 'B Partner']);
-    $c = Partner::create(['name' => 'C Partner']);
+    $equal = Partner::factory()->create(['name' => 'alle zu gleichen Teilen']);
+    $b = Partner::factory()->create(['name' => 'B Partner']);
+    $c = Partner::factory()->create(['name' => 'C Partner']);
     $donationEvent = DonationEvent::factory()->create(['has_equal_split_option' => true]);
 
     // Create athletes assigned to partners with completed rounds
@@ -100,7 +100,7 @@ it('splits "alle zu gleichen Teilen" amount across remaining partners', function
 
 it('does not expose single athlete results anymore', function () {
     $sportType = SportType::create(['name' => 'Run']);
-    $partner = Partner::create(['name' => 'Partner X']);
+    $partner = Partner::factory()->create(['name' => 'Partner X']);
     $donationEvent = DonationEvent::factory()->create();
 
     $zero = ExternalUser::factory()->create([
@@ -135,7 +135,7 @@ it('does not expose single athlete results anymore', function () {
 });
 
 it('counts unique donors via external user identities', function () {
-    $partner = Partner::create(['name' => 'Partner X']);
+    $partner = Partner::factory()->create(['name' => 'Partner X']);
     $sportType = SportType::create(['name' => 'Run']);
     $donationEvent = DonationEvent::factory()->create();
 

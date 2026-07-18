@@ -22,7 +22,7 @@ it('renders athlete welcome letter with embedded png qr code', function (): void
         }
     });
 
-    $partner = Partner::create(['name' => 'Brühlgut Stiftung']);
+    $partner = Partner::factory()->create(['name' => 'Brühlgut Stiftung']);
     $sportType = SportType::create(['name' => 'Laufen']);
 
     $athleteIdentity = ExternalUser::factory()->create([
