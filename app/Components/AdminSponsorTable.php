@@ -114,9 +114,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
     {
         return [
             'name' => '',
-            'description' => null,
+            'description' => '',
             'logo_filename' => '',
-            'url' => null,
+            'url' => '',
         ];
     }
 
@@ -129,9 +129,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
 
         return [
             'createForm.name' => ['required', 'string', 'max:255', Rule::unique('sponsors', 'name')],
-            'createForm.description' => ['nullable', 'string'],
+            'createForm.description' => ['required', 'string'],
             'createForm.logo_filename' => ['required', 'string', 'max:255', Rule::in($logoPaths)],
-            'createForm.url' => ['nullable', 'url', 'max:255'],
+            'createForm.url' => ['required', 'url', 'max:255'],
         ];
     }
 
@@ -155,9 +155,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
     {
         return Sponsor::query()->create([
             'name' => $data['name'],
-            'description' => $this->nullableString($data['description'] ?? null),
+            'description' => trim((string) $data['description']),
             'logo_filename' => trim((string) $data['logo_filename']),
-            'url' => $this->nullableString($data['url'] ?? null),
+            'url' => trim((string) $data['url']),
         ]);
     }
 
@@ -187,9 +187,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
 
         return [
             'editForm.name' => ['required', 'string', 'max:255', Rule::unique('sponsors', 'name')->ignore($this->editingId)],
-            'editForm.description' => ['nullable', 'string'],
+            'editForm.description' => ['required', 'string'],
             'editForm.logo_filename' => ['required', 'string', 'max:255', Rule::in($this->allowedSponsorLogoPaths($logoPaths))],
-            'editForm.url' => ['nullable', 'url', 'max:255'],
+            'editForm.url' => ['required', 'url', 'max:255'],
         ];
     }
 
@@ -215,9 +215,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
 
         $record->fill([
             'name' => $data['name'],
-            'description' => $this->nullableString($data['description'] ?? null),
+            'description' => trim((string) $data['description']),
             'logo_filename' => trim((string) $data['logo_filename']),
-            'url' => $this->nullableString($data['url'] ?? null),
+            'url' => trim((string) $data['url']),
         ])->save();
     }
 
@@ -226,17 +226,6 @@ class AdminSponsorTable extends AbstractDatatableComponent
         throw_unless($record instanceof Sponsor, \LogicException::class, 'Expected sponsor record.');
 
         resolve(DeleteSponsorAction::class)->handle($record);
-    }
-
-    protected function nullableString(mixed $value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $value = trim($value);
-
-        return $value === '' ? null : $value;
     }
 
     /**
@@ -258,9 +247,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
     {
         $currentPath = $this->editingId === null
             ? null
-            : $this->nullableString(Sponsor::query()->whereKey($this->editingId)->value('logo_filename'));
+            : Sponsor::query()->whereKey($this->editingId)->value('logo_filename');
 
-        return array_values(array_unique(array_filter([...$logoPaths, $currentPath])));
+        return array_values(array_unique(is_string($currentPath) ? [...$logoPaths, $currentPath] : $logoPaths));
     }
 
     public function displayValue(mixed $row, string $column): string

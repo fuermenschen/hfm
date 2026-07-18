@@ -111,6 +111,50 @@ it('creates and deletes partners from admin table modal state', function (): voi
     expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse();
 });
 
+it('requires partner public content when creating', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openCreate')
+        ->set('createForm.name', 'Required Partner')
+        ->set('createForm.logo_light_filename', 'light.svg')
+        ->set('createForm.logo_dark_filename', 'dark.svg')
+        ->set('createForm.beneficiary_blurb', 'Required text')
+        ->set('createForm.url', 'https://required.example.test')
+        ->set('createForm.'.$field, '')
+        ->call('saveCreate')
+        ->assertHasErrors(['createForm.'.$field => 'required']);
+})->with([
+    'light logo' => 'logo_light_filename',
+    'dark logo' => 'logo_dark_filename',
+    'short text' => 'beneficiary_blurb',
+    'URL' => 'url',
+]);
+
+it('requires partner public content when editing', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    $partner = Partner::factory()->create([
+        'logo_light_filename' => 'light.svg',
+        'logo_dark_filename' => 'dark.svg',
+    ]);
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openEdit', $partner->id)
+        ->set('editForm.'.$field, '')
+        ->call('saveEdit')
+        ->assertHasErrors(['editForm.'.$field => 'required']);
+})->with([
+    'light logo' => 'logo_light_filename',
+    'dark logo' => 'logo_dark_filename',
+    'short text' => 'beneficiary_blurb',
+    'URL' => 'url',
+]);
+
 it('rejects non-image partner logos', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('partners/document.pdf', 'pdf');
@@ -270,6 +314,42 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
 
     expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse();
 });
+
+it('requires sponsor public content when creating', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openCreate')
+        ->set('createForm.name', 'Required Sponsor')
+        ->set('createForm.description', 'Required description')
+        ->set('createForm.logo_filename', 'logo.svg')
+        ->set('createForm.url', 'https://required.example.test')
+        ->set('createForm.'.$field, '')
+        ->call('saveCreate')
+        ->assertHasErrors(['createForm.'.$field => 'required']);
+})->with([
+    'description' => 'description',
+    'logo' => 'logo_filename',
+    'URL' => 'url',
+]);
+
+it('requires sponsor public content when editing', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+
+    $sponsor = Sponsor::factory()->create(['logo_filename' => 'logo.svg']);
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openEdit', $sponsor->id)
+        ->set('editForm.'.$field, '')
+        ->call('saveEdit')
+        ->assertHasErrors(['editForm.'.$field => 'required']);
+})->with([
+    'description' => 'description',
+    'logo' => 'logo_filename',
+    'URL' => 'url',
+]);
 
 it('rejects non-image sponsor logos', function (): void {
     Storage::fake('public');
