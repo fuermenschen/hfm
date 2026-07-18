@@ -13,7 +13,6 @@ use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
 use App\Settings\EventSettings;
 use Carbon\CarbonInterval;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Sleep;
@@ -702,8 +701,6 @@ function createCurrentEventWithPartner(bool $athleteRegistrationOpen = false): D
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
-
-    Cache::forget('current_donation_event');
 
     return $event;
 }

@@ -9,7 +9,6 @@ use App\Models\SportType;
 use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
 use App\Settings\EventSettings;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 
 use function Pest\Laravel\actingAs;
@@ -206,8 +205,6 @@ function createDonorWizardOpenEventForBrowserTest(): AthleteRegistration
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
-
-    Cache::forget('current_donation_event');
 
     return $athleteRegistration;
 }

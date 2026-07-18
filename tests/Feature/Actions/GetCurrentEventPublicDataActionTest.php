@@ -48,8 +48,8 @@ it('returns published sponsors with event attributes', function (): void {
     $result = $action($event);
 
     expect($result['sponsors'])->toHaveCount(1);
-    expect($result['sponsors']->first()->size)->toBe('large')
-        ->and($result['sponsors']->first()->contribution_text)->toBe('Event contribution');
+    expect($result['sponsors']->first()->pivot?->getAttribute('size'))->toBe('large')
+        ->and($result['sponsors']->first()->pivot?->getAttribute('contribution_text'))->toBe('Event contribution');
 });
 
 it('returns each event contribution for a shared sponsor', function (): void {
@@ -70,8 +70,8 @@ it('returns each event contribution for a shared sponsor', function (): void {
 
     $action = new GetCurrentEventPublicDataAction;
 
-    expect($action($eventA)['sponsors']->first()->contribution_text)->toBe('Contribution A')
-        ->and($action($eventB)['sponsors']->first()->contribution_text)->toBe('Contribution B');
+    expect($action($eventA)['sponsors']->first()->pivot?->getAttribute('contribution_text'))->toBe('Contribution A')
+        ->and($action($eventB)['sponsors']->first()->pivot?->getAttribute('contribution_text'))->toBe('Contribution B');
 });
 
 it('returns event faqs and global faqs merged and sorted', function (): void {

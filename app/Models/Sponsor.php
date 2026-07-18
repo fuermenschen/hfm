@@ -13,11 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @property string $size
- * @property string $contribution_text
- * @property Pivot $pivot
- */
+/** @property-read Pivot|null $pivot */
 #[Fillable([
     'name',
     'description',

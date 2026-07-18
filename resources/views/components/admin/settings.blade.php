@@ -21,11 +21,6 @@
                     <flux:callout.heading icon="exclamation-triangle">Änderungen gelten sofort</flux:callout.heading>
                     <flux:callout.text>Gespeicherte Einstellungen werden unmittelbar aktiv und können das Verhalten im gesamten System beeinflussen.</flux:callout.text>
                 </flux:callout>
-
-                <flux:callout variant="warning">
-                    <flux:callout.heading icon="clock">Cache-Verzögerung</flux:callout.heading>
-                    <flux:callout.text>Öffentliche Seiteninhalte (z.B. aktueller Anlass, Partner, Sponsoren, FAQs) werden bis zu einer Minute zwischengespeichert. Änderungen an diesen Inhalten können daher kurz verzögert sichtbar werden.</flux:callout.text>
-                </flux:callout>
             </div>
         </flux:tab.panel>
 

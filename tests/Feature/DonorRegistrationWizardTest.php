@@ -12,7 +12,6 @@ use App\Notifications\AthleteNewDonation;
 use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
 use App\Settings\EventSettings;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -53,8 +52,6 @@ function createDonorTestEventWithAthlete(bool $donorRegistrationOpen = false): D
     $settings->current_event_id = $event->id;
     $settings->save();
 
-    Cache::forget('current_donation_event');
-
     return $event;
 }
 
@@ -71,8 +68,6 @@ it('mounts with empty athlete list when no current event is configured', functio
     $settings = app(EventSettings::class);
     $settings->current_event_id = null;
     $settings->save();
-    Cache::forget('current_donation_event');
-
     Livewire::test(DonorRegistrationWizard::class)
         ->assertSet('athleteRegistrations', []);
 });
@@ -448,8 +443,6 @@ it('shows no-athletes message when registration is open but no verified athletes
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
-    Cache::forget('current_donation_event');
-
     get(route('become-donor'))
         ->assertSuccessful()
         ->assertSee('Aktuell sind noch keine Sportler:innen angemeldet.')
