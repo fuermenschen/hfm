@@ -6,7 +6,13 @@
 
 <flux:field>
     @if ($label !== null)
-        <flux:label>{{ $label }}</flux:label>
+        <div class="flex items-center gap-1">
+            <flux:label>{{ $label }}</flux:label>
+
+            @if ($help !== null)
+                <x-admin.field-info :label="$label" :text="$help" />
+            @endif
+        </div>
     @endif
 
     <flux:select {{ $attributes->whereStartsWith('wire:model') }} variant="listbox" searchable clearable :placeholder="$placeholder">

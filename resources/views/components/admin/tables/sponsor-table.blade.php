@@ -128,14 +128,22 @@
                 </flux:field>
 
                 <flux:field class="sm:col-span-2">
-                    <flux:textarea label="Beschreibung" wire:model="createForm.description" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>Beschreibung</flux:label>
+                        <x-admin.field-info label="Beschreibung" text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst." />
+                    </div>
+                    <flux:textarea wire:model="createForm.description" />
                     <flux:error name="createForm.description" />
                 </flux:field>
 
-                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" wire:model="createForm.logo_filename" :selected="$createForm['logo_filename'] ?? null" />
+                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt." wire:model="createForm.logo_filename" :selected="$createForm['logo_filename'] ?? null" />
 
                 <flux:field>
-                    <flux:input label="URL" wire:model="createForm.url" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>URL</flux:label>
+                        <x-admin.field-info label="URL" text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet." />
+                    </div>
+                    <flux:input wire:model="createForm.url" />
                     <flux:error name="createForm.url" />
                 </flux:field>
             </div>
@@ -165,14 +173,22 @@
                 </flux:field>
 
                 <flux:field class="sm:col-span-2">
-                    <flux:textarea label="Beschreibung" wire:model="editForm.description" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>Beschreibung</flux:label>
+                        <x-admin.field-info label="Beschreibung" text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst." />
+                    </div>
+                    <flux:textarea wire:model="editForm.description" />
                     <flux:error name="editForm.description" />
                 </flux:field>
 
-                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" wire:model="editForm.logo_filename" :selected="$editForm['logo_filename'] ?? null" />
+                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt." wire:model="editForm.logo_filename" :selected="$editForm['logo_filename'] ?? null" />
 
                 <flux:field>
-                    <flux:input label="URL" wire:model="editForm.url" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>URL</flux:label>
+                        <x-admin.field-info label="URL" text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet." />
+                    </div>
+                    <flux:input wire:model="editForm.url" />
                     <flux:error name="editForm.url" />
                 </flux:field>
             </div>

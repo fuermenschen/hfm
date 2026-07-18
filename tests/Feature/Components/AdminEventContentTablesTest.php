@@ -46,6 +46,15 @@ it('renders partners in admin table and includes donation event assignment count
         });
 });
 
+it('explains partner public content fields in German', function (): void {
+    Livewire::test(AdminPartnerTable::class)
+        ->assertSee('Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet.')
+        ->assertSee('Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet.')
+        ->assertSee('Dieser allgemeine Kurztext beschreibt die begünstigte Organisation.')
+        ->assertSee('Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt.')
+        ->assertSeeHtml('aria-label="Hinweis zu Kurztext"');
+});
+
 it('edits partners from admin table modal state', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('partners/old-light.svg', 'svg');
@@ -252,6 +261,14 @@ it('renders sponsors in admin table and includes donation event assignment count
             expect($rows->firstWhere('id', $assignedSponsor->id)?->donation_events_count)->toBe(1);
             expect($rows->firstWhere('id', $unassignedSponsor->id)?->donation_events_count)->toBe(0);
         });
+});
+
+it('explains sponsor public content fields in German', function (): void {
+    Livewire::test(AdminSponsorTable::class)
+        ->assertSee('Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte.')
+        ->assertSee('Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt.')
+        ->assertSee('Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet.')
+        ->assertSeeHtml('aria-label="Hinweis zu Beschreibung"');
 });
 
 it('edits sponsors from admin table modal state', function (): void {
