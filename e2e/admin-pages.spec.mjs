@@ -3,8 +3,13 @@ import { expect, test } from "@playwright/test";
 
 const adminRoutes = [
     "/admin",
+    "/admin/anlaesse",
+    "/admin/partner",
+    "/admin/sponsoren",
+    "/admin/faqs",
     "/admin/externe-personen",
     "/admin/spenden",
+    "/admin/dateien",
     "/admin/tools",
     "/admin/einstellungen",
 ];

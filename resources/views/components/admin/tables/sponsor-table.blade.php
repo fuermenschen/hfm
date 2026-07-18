@@ -1,22 +1,25 @@
 <div>
     <x-datatable>
         <x-slot:toolbar>
-            <x-datatable.partials.toolbar-grid>
+            <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
                     <flux:input wire:model.live.debounce.300ms="search" placeholder="Sponsor:innen suchen..." icon="magnifying-glass" />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
-                    <x-datatable.partials.selection-toolbar :selected-count="$this->selectedCount()" />
+                    <x-datatable.selection-toolbar :selected-count="$this->selectedCount()" />
                 </x-slot:topRight>
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        <x-datatable.partials.export-dropdown />
-                        <x-datatable.partials.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
+                        @if ($this->canCreateRows())
+                            <flux:button variant="ghost" size="sm" icon="plus" wire:click="openCreate">Neu</flux:button>
+                        @endif
+                        <x-datatable.export-dropdown />
+                        <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
-            </x-datatable.partials.toolbar-grid>
+            </x-datatable.toolbar-grid>
         </x-slot:toolbar>
 
         <flux:checkbox.group wire:model.live="checkboxValues">
@@ -33,12 +36,15 @@
                         @php($headerClass = trim(($columnDefinition['width'] ?? '').' '.$headerAlignClass))
                         <flux:table.column class="{{ $headerClass }}">
                             @if ($columnDefinition['sortable'])
-                                @include('components.datatable.partials.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
+                                @include('components.datatable.sortable-header', ['column' => $columnKey, 'label' => $columnDefinition['label']])
                             @else
                                 <span>{{ $columnDefinition['label'] }}</span>
                             @endif
                         </flux:table.column>
                     @endforeach
+                    @if ($this->canEditRows())
+                        <flux:table.column class="w-1 whitespace-nowrap text-right">Aktion</flux:table.column>
+                    @endif
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -71,6 +77,16 @@
                                     @endif
                                 </flux:table.cell>
                             @endforeach
+                            @if ($this->canEditRows())
+                                <flux:table.cell class="w-1 whitespace-nowrap">
+                                    <div class="flex justify-end gap-1">
+                                        <flux:button size="xs" variant="ghost" icon="pencil-square" square tooltip="Bearbeiten" wire:click="openEdit({{ $row->id }})" />
+                                        @if ($this->canDeleteRows())
+                                            <flux:button size="xs" variant="danger" icon="trash" square tooltip="Löschen" wire:click="confirmDeleteRow({{ $row->id }})" />
+                                        @endif
+                                    </div>
+                                </flux:table.cell>
+                            @endif
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
@@ -92,9 +108,98 @@
         </flux:checkbox.group>
 
         <x-slot:footer>
-            <x-datatable.partials.per-page-select />
+            <x-datatable.per-page-select />
 
             <flux:pagination :paginator="$sponsors" />
         </x-slot:footer>
     </x-datatable>
+
+    <flux:modal name="{{ $this->createModalName() }}" wire:model.self="createModalOpen" class="md:w-xl" wire:close="cancelCreate">
+        <form wire:submit="saveCreate" class="space-y-6">
+            <div>
+                <flux:heading size="lg">Sponsor:in erstellen</flux:heading>
+                <flux:text class="mt-2">Neuen Sponsor:innen-Eintrag speichern.</flux:text>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field class="sm:col-span-2">
+                    <flux:input label="Name" wire:model="createForm.name" />
+                    <flux:error name="createForm.name" />
+                </flux:field>
+
+                <flux:field class="sm:col-span-2">
+                    <flux:textarea label="Beschreibung" wire:model="createForm.description" />
+                    <flux:error name="createForm.description" />
+                </flux:field>
+
+                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" wire:model="createForm.logo_filename" :selected="$createForm['logo_filename'] ?? null" />
+
+                <flux:field>
+                    <flux:input label="URL" wire:model="createForm.url" />
+                    <flux:error name="createForm.url" />
+                </flux:field>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelCreate">Abbrechen</flux:button>
+                <flux:button type="submit" variant="primary" wire:target="saveCreate" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="saveCreate">Speichern</span>
+                    <span wire:loading wire:target="saveCreate">Speichert...</span>
+                </flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    <flux:modal name="{{ $this->editModalName() }}" wire:model.self="editModalOpen" class="md:w-xl" wire:close="cancelEdit">
+        <form wire:submit="saveEdit" class="space-y-6">
+            <div>
+                <flux:heading size="lg">Sponsor:in bearbeiten</flux:heading>
+                <flux:text class="mt-2">Änderungen am Sponsor:innen-Eintrag speichern.</flux:text>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field class="sm:col-span-2">
+                    <flux:input label="Name" wire:model="editForm.name" />
+                    <flux:error name="editForm.name" />
+                </flux:field>
+
+                <flux:field class="sm:col-span-2">
+                    <flux:textarea label="Beschreibung" wire:model="editForm.description" />
+                    <flux:error name="editForm.description" />
+                </flux:field>
+
+                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" wire:model="editForm.logo_filename" :selected="$editForm['logo_filename'] ?? null" />
+
+                <flux:field>
+                    <flux:input label="URL" wire:model="editForm.url" />
+                    <flux:error name="editForm.url" />
+                </flux:field>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelEdit">Abbrechen</flux:button>
+                <flux:button type="submit" variant="primary" wire:target="saveEdit" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="saveEdit">Speichern</span>
+                    <span wire:loading wire:target="saveEdit">Speichert...</span>
+                </flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    <flux:modal name="{{ $this->deleteModalName() }}" class="min-w-[22rem]" wire:close="cancelDeleteRow">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Sponsor:in löschen?</flux:heading>
+                <flux:text class="mt-2">{{ $deletingLabel }} wird gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</flux:text>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelDeleteRow">Abbrechen</flux:button>
+                <flux:button type="button" variant="danger" wire:click="deleteRow" wire:target="deleteRow" wire:loading.attr="disabled">Löschen</flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </div>

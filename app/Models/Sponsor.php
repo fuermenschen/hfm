@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\AdminFiles\AdminFileStorage;
 use Database\Factories\SponsorFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -40,6 +41,17 @@ class Sponsor extends Model
             return null;
         }
 
-        return Storage::disk('public')->url('sponsors/'.$this->logo_filename);
+        $path = $this->logoPath($this->logo_filename);
+
+        return $path === null ? null : Storage::disk('public')->url($path);
+    }
+
+    protected function logoPath(string $path): ?string
+    {
+        try {
+            return resolve(AdminFileStorage::class)->normalizePath('sponsors/'.ltrim($path, '/'));
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
     }
 }

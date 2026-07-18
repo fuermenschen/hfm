@@ -40,7 +40,7 @@ it('generates datatable class, view, and test files', function (): void {
     expect($files->get($componentPath))->toContain("public string \$sortField = 'id';");
     expect($files->get($componentPath))->toContain("'name' => ['label' => 'Name', 'sortable' => true");
     expect($files->get($componentPath))->toContain('public function exportAll(string $format): ?HttpResponse');
-    expect($files->get($viewPath))->toContain('<x-datatable.partials.export-dropdown />');
+    expect($files->get($viewPath))->toContain('<x-datatable.export-dropdown />');
 
     $files->delete($componentPath);
     $files->delete($viewPath);
@@ -94,7 +94,7 @@ it('can generate without exports and tests', function (): void {
     expect($files->exists($viewPath))->toBeTrue();
     expect($files->exists($testPath))->toBeFalse();
     expect($files->get($componentPath))->not->toContain('exportAll');
-    expect($files->get($viewPath))->not->toContain('<x-datatable.partials.export-dropdown />');
+    expect($files->get($viewPath))->not->toContain('<x-datatable.export-dropdown />');
 
     $files->delete($componentPath);
     $files->delete($viewPath);

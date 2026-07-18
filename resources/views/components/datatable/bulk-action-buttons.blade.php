@@ -1,6 +1,6 @@
 @props(['actions' => []])
 
-<x-datatable.partials.bulk-actions>
+<x-datatable.bulk-actions>
     @foreach ($actions as $action)
         @if (($action['type'] ?? null) !== 'wire')
             @continue
@@ -11,4 +11,4 @@
             <span wire:loading wire:target="{{ $action['click'] }}">{{ $action['loading_label'] ?? $action['label'] }}</span>
         </flux:button>
     @endforeach
-</x-datatable.partials.bulk-actions>
+</x-datatable.bulk-actions>

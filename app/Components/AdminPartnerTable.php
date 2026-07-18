@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Actions\DeletePartnerAction;
 use App\Models\Partner;
+use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminPartnerTable extends AbstractDatatableComponent
@@ -88,6 +92,185 @@ class AdminPartnerTable extends AbstractDatatableComponent
             'donation_events_count',
             'created_at',
         ];
+    }
+
+    public function canEditRows(): bool
+    {
+        return true;
+    }
+
+    public function canCreateRows(): bool
+    {
+        return true;
+    }
+
+    public function canDeleteRows(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function defaultCreateForm(): array
+    {
+        return [
+            'name' => '',
+            'logo_light_filename' => null,
+            'logo_dark_filename' => null,
+            'beneficiary_blurb' => null,
+            'url' => null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function createRules(): array
+    {
+        $logoPaths = $this->partnerLogoPaths();
+
+        return [
+            'createForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')],
+            'createForm.logo_light_filename' => ['nullable', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.logo_dark_filename' => ['nullable', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.beneficiary_blurb' => ['nullable', 'string'],
+            'createForm.url' => ['nullable', 'url', 'max:255'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function createValidationAttributes(): array
+    {
+        return [
+            'createForm.name' => 'Name',
+            'createForm.logo_light_filename' => 'Logo hell',
+            'createForm.logo_dark_filename' => 'Logo dunkel',
+            'createForm.beneficiary_blurb' => 'Kurztext',
+            'createForm.url' => 'URL',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function createRecord(array $data): Model
+    {
+        return Partner::query()->create([
+            'name' => $data['name'],
+            'logo_light_filename' => $this->nullableString($data['logo_light_filename'] ?? null),
+            'logo_dark_filename' => $this->nullableString($data['logo_dark_filename'] ?? null),
+            'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
+            'url' => $this->nullableString($data['url'] ?? null),
+        ]);
+    }
+
+    protected function editableRecord(int $id): Model
+    {
+        return Partner::query()->findOrFail($id);
+    }
+
+    protected function fillEditForm(Model $record): void
+    {
+        throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
+
+        $this->editForm = [
+            'name' => $record->name,
+            'logo_light_filename' => $record->logo_light_filename,
+            'logo_dark_filename' => $record->logo_dark_filename,
+            'beneficiary_blurb' => $record->beneficiary_blurb,
+            'url' => $record->url,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function editRules(): array
+    {
+        $logoPaths = $this->partnerLogoPaths();
+
+        return [
+            'editForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')->ignore($this->editingId)],
+            'editForm.logo_light_filename' => ['nullable', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_light_filename'))],
+            'editForm.logo_dark_filename' => ['nullable', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_dark_filename'))],
+            'editForm.beneficiary_blurb' => ['nullable', 'string'],
+            'editForm.url' => ['nullable', 'url', 'max:255'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function editValidationAttributes(): array
+    {
+        return [
+            'editForm.name' => 'Name',
+            'editForm.logo_light_filename' => 'Logo hell',
+            'editForm.logo_dark_filename' => 'Logo dunkel',
+            'editForm.beneficiary_blurb' => 'Kurztext',
+            'editForm.url' => 'URL',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function saveEditedRecord(Model $record, array $data): void
+    {
+        throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
+
+        $record->fill([
+            'name' => $data['name'],
+            'logo_light_filename' => $this->nullableString($data['logo_light_filename'] ?? null),
+            'logo_dark_filename' => $this->nullableString($data['logo_dark_filename'] ?? null),
+            'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
+            'url' => $this->nullableString($data['url'] ?? null),
+        ])->save();
+    }
+
+    protected function deleteRecord(Model $record): void
+    {
+        throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
+
+        resolve(DeletePartnerAction::class)->handle($record);
+    }
+
+    protected function nullableString(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function partnerLogoPaths(): array
+    {
+        return collect(resolve(AdminFileStorage::class)->files('partners', recursive: true, extensions: ['svg', 'png', 'jpg', 'jpeg', 'webp']))
+            ->pluck('path')
+            ->map(fn (string $path): string => str($path)->after('partners/')->toString())
+            ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $logoPaths
+     * @return array<int, string>
+     */
+    protected function allowedPartnerLogoPaths(array $logoPaths, string $field): array
+    {
+        $currentPath = $this->editingId === null
+            ? null
+            : $this->nullableString(Partner::query()->whereKey($this->editingId)->value($field));
+
+        return array_values(array_unique(array_filter([...$logoPaths, $currentPath])));
     }
 
     public function displayValue(mixed $row, string $column): string
