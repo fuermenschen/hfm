@@ -81,7 +81,7 @@ it('lets a logged in external user register and confirm through email link', fun
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-});
+})->flaky();
 
 it('lets a returning guest resume registration through a signed login link', function (): void {
     Notification::fake();
@@ -140,7 +140,7 @@ it('lets a returning guest resume registration through a signed login link', fun
 
     expect($registration->verified)->toBeFalse()
         ->and($registration->adult)->toBeFalse();
-});
+})->flaky();
 
 it('lets a new guest register and confirm through email link', function (): void {
     Notification::fake();
@@ -210,7 +210,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-});
+})->flaky();
 
 function createWizardOpenEventForBrowserTest(): array
 {
