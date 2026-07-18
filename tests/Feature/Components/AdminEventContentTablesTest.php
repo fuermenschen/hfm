@@ -61,6 +61,7 @@ it('edits partners from admin table modal state', function (): void {
     Storage::disk('public')->put('partners/old-dark.svg', 'svg');
     Storage::disk('public')->put('partners/nested/old-dark.svg', 'svg');
     Storage::disk('public')->put('partners/new-light.svg', 'svg');
+    Storage::disk('public')->put('partners/new-dark.svg', 'svg');
 
     $partner = Partner::factory()->create([
         'name' => 'Old Partner',
@@ -79,6 +80,8 @@ it('edits partners from admin table modal state', function (): void {
         ->assertSet('editForm.logo_dark_filename', 'nested/old-dark.svg')
         ->set('editForm.name', 'New Partner')
         ->set('editForm.logo_light_filename', 'new-light.svg')
+        ->set('editForm.logo_dark_filename', 'new-dark.svg')
+        ->set('editForm.beneficiary_blurb', 'New text')
         ->set('editForm.url', 'https://new.example.test')
         ->call('saveEdit')
         ->assertSet('editingId', null)
@@ -88,6 +91,8 @@ it('edits partners from admin table modal state', function (): void {
 
     expect($partner->name)->toBe('New Partner')
         ->and($partner->logo_light_filename)->toBe('new-light.svg')
+        ->and($partner->logo_dark_filename)->toBe('new-dark.svg')
+        ->and($partner->beneficiary_blurb)->toBe('New text')
         ->and($partner->url)->toBe('https://new.example.test');
 });
 
@@ -109,6 +114,11 @@ it('creates and deletes partners from admin table modal state', function (): voi
         ->assertHasNoErrors();
 
     $partner = Partner::query()->where('name', 'Created Partner')->firstOrFail();
+
+    expect($partner->logo_light_filename)->toBe('light.svg')
+        ->and($partner->logo_dark_filename)->toBe('dark.svg')
+        ->and($partner->beneficiary_blurb)->toBe('Created text')
+        ->and($partner->url)->toBe('https://created.example.test');
 
     Livewire::test(AdminPartnerTable::class)
         ->call('confirmDeleteRow', $partner->id)
@@ -321,6 +331,10 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
         ->assertHasNoErrors();
 
     $sponsor = Sponsor::query()->where('name', 'Created Sponsor')->firstOrFail();
+
+    expect($sponsor->description)->toBe('Created description')
+        ->and($sponsor->logo_filename)->toBe('logo.svg')
+        ->and($sponsor->url)->toBe('https://created-sponsor.example.test');
 
     Livewire::test(AdminSponsorTable::class)
         ->call('confirmDeleteRow', $sponsor->id)
