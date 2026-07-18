@@ -25,6 +25,7 @@
                             :logoUrl="$logoUrl"
                             :title="$sponsor->name"
                             :description="$sponsor->description"
+                            :contributionText="$sponsor->contribution_text"
                             :url="$sponsor->url"
                         />
                     @endif

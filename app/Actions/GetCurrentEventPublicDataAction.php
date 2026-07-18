@@ -64,8 +64,10 @@ class GetCurrentEventPublicDataAction
                 continue;
             }
 
-            if (array_key_exists('size', $row)) {
-                $sponsor->setAttribute('size', $row['size']);
+            foreach (['size', 'contribution_text'] as $attribute) {
+                if (array_key_exists($attribute, $row)) {
+                    $sponsor->setAttribute($attribute, $row[$attribute]);
+                }
             }
         }
 
@@ -131,7 +133,9 @@ class GetCurrentEventPublicDataAction
             ->get();
 
         $sponsors->each(function (Sponsor $sponsor): void {
-            $sponsor->setAttribute('size', $sponsor->pivot->getAttribute('size'));
+            foreach (['size', 'contribution_text'] as $attribute) {
+                $sponsor->setAttribute($attribute, $sponsor->pivot->getAttribute($attribute));
+            }
         });
 
         return $sponsors;

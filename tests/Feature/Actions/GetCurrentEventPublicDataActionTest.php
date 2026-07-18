@@ -33,7 +33,7 @@ it('returns published partners sorted by pivot order and name', function (): voi
     expect($result['sponsors'])->toBeEmpty();
 });
 
-it('returns published sponsors with size attribute', function (): void {
+it('returns published sponsors with event attributes', function (): void {
     $event = DonationEvent::factory()->create();
     $sponsor = Sponsor::factory()->create();
 
@@ -48,7 +48,30 @@ it('returns published sponsors with size attribute', function (): void {
     $result = $action($event);
 
     expect($result['sponsors'])->toHaveCount(1);
-    expect($result['sponsors']->first()->size)->toBe('large');
+    expect($result['sponsors']->first()->size)->toBe('large')
+        ->and($result['sponsors']->first()->contribution_text)->toBe('Event contribution');
+});
+
+it('returns each event contribution for a shared sponsor', function (): void {
+    $eventA = DonationEvent::factory()->create();
+    $eventB = DonationEvent::factory()->create();
+    $sponsor = Sponsor::factory()->create();
+
+    $eventA->sponsors()->attach($sponsor, [
+        'contribution_text' => 'Contribution A',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
+    $eventB->sponsors()->attach($sponsor, [
+        'contribution_text' => 'Contribution B',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
+
+    $action = new GetCurrentEventPublicDataAction;
+
+    expect($action($eventA)['sponsors']->first()->contribution_text)->toBe('Contribution A')
+        ->and($action($eventB)['sponsors']->first()->contribution_text)->toBe('Contribution B');
 });
 
 it('returns event faqs and global faqs merged and sorted', function (): void {

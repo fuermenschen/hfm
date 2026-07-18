@@ -22,10 +22,13 @@ it('renders home page with partners and sponsors for active event', function ():
     $partner = Partner::factory()->create(['name' => 'Test Partner']);
     $event->partners()->attach($partner->id, ['sort_order' => 1, 'is_published' => true]);
 
-    $sponsor = Sponsor::factory()->create(['name' => 'Test Sponsor']);
+    $sponsor = Sponsor::factory()->create([
+        'name' => 'Test Sponsor',
+        'description' => 'Generic sponsor description',
+    ]);
     $event->sponsors()->attach($sponsor->id, [
         'size' => 'large',
-        'contribution_text' => 'Event contribution',
+        'contribution_text' => 'Specific event contribution',
         'sort_order' => 1,
         'is_published' => true,
     ]);
@@ -35,6 +38,9 @@ it('renders home page with partners and sponsors for active event', function ():
     $response->assertOk();
     $response->assertSee('Test Partner');
     $response->assertSee('Test Sponsor');
+    $response->assertSee('Generic sponsor description');
+    $response->assertSee('Beitrag an diesem Anlass');
+    $response->assertSee('Specific event contribution');
 });
 
 it('does not show unpublished partners or sponsors on home', function (): void {

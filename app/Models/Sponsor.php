@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * @property string $size
+ * @property string $contribution_text
  * @property Pivot $pivot
  */
 #[Fillable([

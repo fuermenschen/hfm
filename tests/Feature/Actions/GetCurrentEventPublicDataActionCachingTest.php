@@ -3,6 +3,7 @@
 use App\Actions\GetCurrentEventPublicDataAction;
 use App\Models\DonationEvent;
 use App\Models\Partner;
+use App\Models\Sponsor;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -13,6 +14,12 @@ it('populates cache on first call and serves subsequent calls from cache', funct
     $event = DonationEvent::factory()->create();
     $partner = Partner::factory()->create();
     $event->partners()->attach($partner->id, ['sort_order' => 1, 'is_published' => true]);
+    $sponsor = Sponsor::factory()->create();
+    $event->sponsors()->attach($sponsor, [
+        'contribution_text' => 'Cached contribution',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
 
     $cacheKey = 'event_public_data_'.$event->id;
 
@@ -33,6 +40,7 @@ it('populates cache on first call and serves subsequent calls from cache', funct
     expect($cached)->toHaveKeys(['partners', 'sponsors', 'faqs']);
     expect($cached['partners'])->toBeArray();
     expect($cached['partners'][0])->toBeArray();
+    expect($cached['sponsors'][0]['contribution_text'])->toBe('Cached contribution');
 
     DB::flushQueryLog();
 
@@ -43,6 +51,7 @@ it('populates cache on first call and serves subsequent calls from cache', funct
     expect(DB::getQueryLog())->toBeEmpty();
     expect($result['partners'])->toHaveCount(1);
     expect($result['partners']->first()->id)->toBe($partner->id);
+    expect($result['sponsors']->first()->contribution_text)->toBe('Cached contribution');
 
     DB::disableQueryLog();
 });
