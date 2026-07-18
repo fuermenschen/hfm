@@ -1,9 +1,10 @@
 <?php
 
 use App\Models\DonationEvent;
+use App\Models\Partner;
+use App\Models\Sponsor;
 use App\Settings\EventSettings;
 use Database\Seeders\DonationEventSeeder;
-use Database\Seeders\EventContentBackfillSeeder;
 
 use function Pest\Laravel\get;
 use function Pest\Laravel\seed;
@@ -40,12 +41,27 @@ it('shows full home content when current event is published', function (): void 
 
 it('shows only 2026 partner set and no sponsors on home', function (): void {
     seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
 
-    $event = DonationEvent::query()->where('slug', '2026')->firstOrFail();
+    $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
+    $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
+    $bruehlgut = Partner::factory()->create([
+        'name' => 'Brühlgut Stiftung',
+        'beneficiary_blurb' => 'Die Brühlgut Stiftung begleitet und fördert Menschen mit Beeinträchtigung.',
+    ]);
+    $institute = Partner::factory()->create(['name' => 'Institut Kinderseele Schweiz']);
+    $helpline = Partner::factory()->create(['name' => 'Tel. 143 - Die Dargebotene Hand']);
+
+    $event2026->partners()->attach($bruehlgut, ['sort_order' => 1, 'is_published' => true]);
+    $event2025->partners()->attach($institute, ['sort_order' => 1, 'is_published' => true]);
+    $event2025->partners()->attach($helpline, ['sort_order' => 2, 'is_published' => true]);
+    $event2025->sponsors()->attach(Sponsor::factory()->create(), [
+        'size' => 'medium',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
 
     $settings = app(EventSettings::class);
-    $settings->current_event_id = $event->id;
+    $settings->current_event_id = $event2026->id;
     $settings->save();
 
     $response = get(route('home'));
@@ -61,9 +77,28 @@ it('shows only 2026 partner set and no sponsors on home', function (): void {
 
 it('shows 2025 partners and sponsors on home', function (): void {
     seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
 
     $event = DonationEvent::query()->where('slug', '2025')->firstOrFail();
+    $partners = collect([
+        ['name' => 'Brühlgut Stiftung'],
+        [
+            'name' => 'Institut Kinderseele Schweiz',
+            'beneficiary_blurb' => 'Das Institut Kinderseele Schweiz unterstützt Kinder psychisch erkrankter Eltern.',
+        ],
+        ['name' => 'Tel. 143 - Die Dargebotene Hand'],
+    ])->map(fn (array $attributes): Partner => Partner::factory()->create($attributes));
+
+    foreach ($partners as $index => $partner) {
+        $event->partners()->attach($partner, ['sort_order' => $index + 1, 'is_published' => true]);
+    }
+
+    foreach (['Rohner Spiller', 'TM Kommunikation', 'Veloplus', 'Intersport Egli'] as $index => $name) {
+        $event->sponsors()->attach(Sponsor::factory()->create(['name' => $name]), [
+            'size' => 'medium',
+            'sort_order' => $index + 1,
+            'is_published' => true,
+        ]);
+    }
 
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
