@@ -158,7 +158,7 @@
             </div>
 
             <flux:modal.trigger name="donation-event-markdown-help">
-                <flux:button type="button" variant="ghost" size="sm" icon="information-circle">Markdown-Hilfe</flux:button>
+                <flux:button type="button" variant="ghost" size="sm" icon="information-circle" icon:variant="outline">Markdown-Hilfe</flux:button>
             </flux:modal.trigger>
         </div>
 
