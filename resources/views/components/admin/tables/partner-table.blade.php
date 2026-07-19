@@ -127,17 +127,25 @@
                     <flux:error name="createForm.name" />
                 </flux:field>
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" wire:model="createForm.logo_light_filename" :selected="$createForm['logo_light_filename'] ?? null" />
+                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" help="Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="createForm.logo_light_filename" :selected="$createForm['logo_light_filename'] ?? null" />
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" wire:model="createForm.logo_dark_filename" :selected="$createForm['logo_dark_filename'] ?? null" />
+                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" help="Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="createForm.logo_dark_filename" :selected="$createForm['logo_dark_filename'] ?? null" />
 
                 <flux:field class="sm:col-span-2">
-                    <flux:textarea label="Kurztext" wire:model="createForm.beneficiary_blurb" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>Kurztext</flux:label>
+                        <x-admin.field-info label="Kurztext" text="Dieser allgemeine Kurztext beschreibt die begünstigte Organisation. Er erscheint auf der öffentlichen Startseite und gilt unabhängig vom Anlass." />
+                    </div>
+                    <flux:textarea wire:model="createForm.beneficiary_blurb" />
                     <flux:error name="createForm.beneficiary_blurb" />
                 </flux:field>
 
                 <flux:field class="sm:col-span-2">
-                    <flux:input label="URL" wire:model="createForm.url" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>URL</flux:label>
+                        <x-admin.field-info label="URL" text="Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt." />
+                    </div>
+                    <flux:input wire:model="createForm.url" />
                     <flux:error name="createForm.url" />
                 </flux:field>
             </div>
@@ -166,17 +174,25 @@
                     <flux:error name="editForm.name" />
                 </flux:field>
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" wire:model="editForm.logo_light_filename" :selected="$editForm['logo_light_filename'] ?? null" />
+                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" help="Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="editForm.logo_light_filename" :selected="$editForm['logo_light_filename'] ?? null" />
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" wire:model="editForm.logo_dark_filename" :selected="$editForm['logo_dark_filename'] ?? null" />
+                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" help="Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="editForm.logo_dark_filename" :selected="$editForm['logo_dark_filename'] ?? null" />
 
                 <flux:field class="sm:col-span-2">
-                    <flux:textarea label="Kurztext" wire:model="editForm.beneficiary_blurb" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>Kurztext</flux:label>
+                        <x-admin.field-info label="Kurztext" text="Dieser allgemeine Kurztext beschreibt die begünstigte Organisation. Er erscheint auf der öffentlichen Startseite und gilt unabhängig vom Anlass." />
+                    </div>
+                    <flux:textarea wire:model="editForm.beneficiary_blurb" />
                     <flux:error name="editForm.beneficiary_blurb" />
                 </flux:field>
 
                 <flux:field class="sm:col-span-2">
-                    <flux:input label="URL" wire:model="editForm.url" />
+                    <div class="flex items-center gap-1">
+                        <flux:label>URL</flux:label>
+                        <x-admin.field-info label="URL" text="Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt." />
+                    </div>
+                    <flux:input wire:model="editForm.url" />
                     <flux:error name="editForm.url" />
                 </flux:field>
             </div>

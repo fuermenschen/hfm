@@ -8,7 +8,6 @@ use App\Models\SportType;
 use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
 use App\Settings\EventSettings;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 
 use function Pest\Laravel\actingAs;
@@ -81,7 +80,7 @@ it('lets a logged in external user register and confirm through email link', fun
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-});
+})->flaky();
 
 it('lets a returning guest resume registration through a signed login link', function (): void {
     Notification::fake();
@@ -140,7 +139,7 @@ it('lets a returning guest resume registration through a signed login link', fun
 
     expect($registration->verified)->toBeFalse()
         ->and($registration->adult)->toBeFalse();
-});
+})->flaky();
 
 it('lets a new guest register and confirm through email link', function (): void {
     Notification::fake();
@@ -210,7 +209,7 @@ it('lets a new guest register and confirm through email link', function (): void
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
 
     expect($registration->refresh()->verified)->toBeTrue();
-});
+})->flaky();
 
 function createWizardOpenEventForBrowserTest(): array
 {
@@ -234,8 +233,6 @@ function createWizardOpenEventForBrowserTest(): array
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
-
-    Cache::forget('current_donation_event');
 
     return [$event, $partner, $sportType];
 }

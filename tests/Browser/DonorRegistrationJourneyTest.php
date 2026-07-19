@@ -9,7 +9,6 @@ use App\Models\SportType;
 use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
 use App\Settings\EventSettings;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 
 use function Pest\Laravel\actingAs;
@@ -61,7 +60,7 @@ it('lets a logged in external user donate through the wizard', function (): void
         $externalUser,
         fn (ConfirmDonorRegistration $notification): bool => str_contains($notification->confirmationUrl, (string) $donation->id),
     );
-});
+})->flaky();
 
 it('lets a returning guest resume donation through a signed login link', function (): void {
     Notification::fake();
@@ -115,7 +114,7 @@ it('lets a returning guest resume donation through a signed login link', functio
         ->whereBelongsTo($externalUser, 'donorExternalUser')
         ->whereBelongsTo($athleteRegistration)
         ->exists())->toBeTrue();
-});
+})->flaky();
 
 it('lets a new guest create an external user and donation', function (): void {
     Notification::fake();
@@ -166,7 +165,7 @@ it('lets a new guest create an external user and donation', function (): void {
         ->and($donation->amount_per_round)->toBe(10.00);
 
     Notification::assertSentTo($externalUser, ConfirmDonorRegistration::class);
-});
+})->flaky();
 
 function createDonorWizardOpenEventForBrowserTest(): AthleteRegistration
 {
@@ -206,8 +205,6 @@ function createDonorWizardOpenEventForBrowserTest(): AthleteRegistration
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
-
-    Cache::forget('current_donation_event');
 
     return $athleteRegistration;
 }

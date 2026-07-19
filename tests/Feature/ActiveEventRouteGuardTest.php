@@ -4,7 +4,6 @@ use App\Models\DonationEvent;
 use App\Models\Faq;
 use App\Settings\EventSettings;
 use Database\Seeders\DonationEventSeeder;
-use Database\Seeders\EventContentBackfillSeeder;
 use Illuminate\Support\Facades\DB;
 
 use function Pest\Laravel\get;
@@ -71,9 +70,18 @@ it('shows faq warning when no active event exists', function (): void {
 
 it('renders event timing faq content from faq model', function (): void {
     seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
 
     $event = DonationEvent::query()->where('slug', '2026')->firstOrFail();
+    $faq = Faq::query()->create([
+        'title' => 'Wann und wo findet der Anlass statt?',
+        'content_md' => 'Der Anlass dauert von **13 Uhr bis 16 Uhr**.',
+    ]);
+    $event->faqs()->attach($faq, [
+        'group' => 'general',
+        'sort_order' => 10,
+        'is_published' => true,
+    ]);
+
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
@@ -86,7 +94,6 @@ it('renders event timing faq content from faq model', function (): void {
 
 it('does not leak event-specific faqs from other events', function (): void {
     seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
 
     $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
     $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
@@ -118,7 +125,6 @@ it('does not leak event-specific faqs from other events', function (): void {
 
 it('shows globally unassigned faqs as fallback', function (): void {
     seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
 
     $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
 

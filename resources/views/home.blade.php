@@ -21,10 +21,11 @@
                     @php($logoUrl = $sponsor->logoUrl())
                     @if (filled($logoUrl))
                         <x-sponsor
-                            :variant="$sponsor->size"
+                            :variant="$sponsor->pivot->getAttribute('size')"
                             :logoUrl="$logoUrl"
                             :title="$sponsor->name"
                             :description="$sponsor->description"
+                            :contributionText="$sponsor->pivot->getAttribute('contribution_text')"
                             :url="$sponsor->url"
                         />
                     @endif

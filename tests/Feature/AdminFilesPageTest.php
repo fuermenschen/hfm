@@ -188,7 +188,7 @@ it('limits uploads to 100 MB', function (): void {
 });
 
 it('blocks deleting referenced files', function (): void {
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Referenced Partner',
         'logo_light_filename' => 'logo.svg',
     ]);
@@ -205,7 +205,7 @@ it('blocks deleting referenced files', function (): void {
 });
 
 it('blocks renaming referenced files', function (): void {
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Referenced Partner',
         'logo_light_filename' => 'logo.svg',
     ]);

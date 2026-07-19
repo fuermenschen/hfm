@@ -1,15 +1,8 @@
 <?php
 
-use App\Models\DonationEvent;
 use App\Models\Faq;
-use App\Models\Partner;
 use App\Models\Sponsor;
-use Database\Seeders\DonationEventSeeder;
-use Database\Seeders\EventContentBackfillSeeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-
-use function Pest\Laravel\seed;
 
 it('stores sponsors and faqs as global catalog entities', function (): void {
     Sponsor::factory()->create();
@@ -19,23 +12,6 @@ it('stores sponsors and faqs as global catalog entities', function (): void {
         ->and(Schema::hasColumn('faqs', 'donation_event_id'))->toBeFalse()
         ->and(Sponsor::query()->count())->toBe(1)
         ->and(Faq::query()->count())->toBe(1);
-});
-
-it('supports partner logo rendering based on available logo paths', function (): void {
-    $withoutLogo = Partner::query()->create([
-        'name' => 'Partner Ohne Logo',
-        'logo_light_filename' => null,
-        'logo_dark_filename' => null,
-    ]);
-
-    $regular = Partner::query()->create([
-        'name' => 'Bruehlgut Stiftung',
-        'logo_light_filename' => 'bruehlgut_light.svg',
-        'logo_dark_filename' => 'bruehlgut_dark.svg',
-    ]);
-
-    expect($withoutLogo->shouldDisplayLogo())->toBeFalse()
-        ->and($regular->shouldDisplayLogo())->toBeTrue();
 });
 
 it('adds expected columns for partner, sponsor, and faq models', function (): void {
@@ -84,60 +60,16 @@ it('adds expected columns for partner, sponsor, and faq models', function (): vo
         ]))->toBeTrue();
 });
 
-it('seeds canonical partners and sponsors for 2025 and 2026 through backfill seeder', function (): void {
-    seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
+it('requires partner and sponsor public content', function (): void {
+    $partnerColumns = collect(Schema::getColumns('partners'))->keyBy('name');
+    $sponsorColumns = collect(Schema::getColumns('sponsors'))->keyBy('name');
+    $sponsorPivotColumns = collect(Schema::getColumns('donation_event_sponsor'))->keyBy('name');
 
-    $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
-    $event2026 = DonationEvent::query()->where('slug', '2026')->firstOrFail();
-
-    expect($event2025->has_equal_split_option)->toBeTrue()
-        ->and($event2026->has_equal_split_option)->toBeTrue()
-        ->and(DB::table('donation_event_partner')->where('donation_event_id', $event2025->id)->where('is_published', true)->count())->toBe(3)
-        ->and(DB::table('donation_event_partner')->where('donation_event_id', $event2026->id)->where('is_published', true)->count())->toBe(1)
-        ->and(DB::table('donation_event_sponsor')->where('donation_event_id', $event2025->id)->where('is_published', true)->count())->toBe(4)
-        ->and(DB::table('donation_event_sponsor')->where('donation_event_id', $event2026->id)->where('is_published', true)->count())->toBe(0)
-        ->and(DB::table('donation_event_faq')->where('donation_event_id', $event2025->id)->count())->toBeGreaterThan(10)
-        ->and(DB::table('donation_event_faq')->where('donation_event_id', $event2026->id)->count())->toBeGreaterThan(10)
-        ->and(DB::table('faqs')->where('content_md', 'like', '%<iframe%')->count())->toBe(0);
-});
-
-it('keeps faq backfill idempotent when existing faq content changes', function (): void {
-    seed(DonationEventSeeder::class);
-    seed(EventContentBackfillSeeder::class);
-
-    $event2025 = DonationEvent::query()->where('slug', '2025')->firstOrFail();
-
-    $timingFaqId = DB::table('donation_event_faq')
-        ->where('donation_event_id', $event2025->id)
-        ->where('group', 'general')
-        ->where('sort_order', 10)
-        ->value('faq_id');
-
-    expect($timingFaqId)->not->toBeNull();
-
-    DB::table('faqs')
-        ->where('id', $timingFaqId)
-        ->update([
-            'title' => 'Mutated title',
-            'content_md' => 'Mutated content',
-            'updated_at' => now(),
-        ]);
-
-    $faqCountBefore = (int) DB::table('faqs')->count();
-    $pivotCountBefore = (int) DB::table('donation_event_faq')->count();
-
-    seed(EventContentBackfillSeeder::class);
-
-    expect((int) DB::table('faqs')->count())->toBe($faqCountBefore)
-        ->and((int) DB::table('donation_event_faq')->count())->toBe($pivotCountBefore);
-
-    $timingFaqContent2025 = DB::table('faqs')
-        ->join('donation_event_faq', 'donation_event_faq.faq_id', '=', 'faqs.id')
-        ->where('donation_event_faq.donation_event_id', $event2025->id)
-        ->where('donation_event_faq.group', 'general')
-        ->where('donation_event_faq.sort_order', 10)
-        ->value('faqs.content_md');
-
-    expect((string) $timingFaqContent2025)->toContain('13 Uhr bis 18 Uhr');
+    expect($partnerColumns['logo_light_filename']['nullable'])->toBeFalse()
+        ->and($partnerColumns['logo_dark_filename']['nullable'])->toBeFalse()
+        ->and($partnerColumns['beneficiary_blurb']['nullable'])->toBeFalse()
+        ->and($partnerColumns['url']['nullable'])->toBeFalse()
+        ->and($sponsorColumns['description']['nullable'])->toBeFalse()
+        ->and($sponsorColumns['url']['nullable'])->toBeFalse()
+        ->and($sponsorPivotColumns['contribution_text']['nullable'])->toBeFalse();
 });

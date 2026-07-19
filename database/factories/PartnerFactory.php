@@ -24,7 +24,7 @@ class PartnerFactory extends Factory
             'logo_light_filename' => fake()->slug().'_light.svg',
             'logo_dark_filename' => fake()->slug().'_dark.svg',
             'beneficiary_blurb' => fake()->sentence(12),
-            'url' => fake()->optional()->url(),
+            'url' => fake()->url(),
         ];
     }
 }

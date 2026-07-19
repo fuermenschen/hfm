@@ -1,4 +1,4 @@
-@props(['variant' => 'medium', 'logoUrl' => null, 'title', 'description', 'url'])
+@props(['variant' => 'medium', 'logoUrl' => null, 'title', 'description', 'contributionText', 'url'])
 
 @php
     use Illuminate\Support\Str;
@@ -31,6 +31,11 @@
             <flux:text>
                 <p>{{ $description }}</p>
             </flux:text>
+
+            <div class="space-y-1 rounded-lg bg-zinc-100 p-4 dark:bg-white/10">
+                <flux:text class="font-semibold text-zinc-900 dark:text-white">Beitrag an diesem Anlass</flux:text>
+                <flux:text>{{ $contributionText }}</flux:text>
+            </div>
 
             <div class="flex justify-between items-center">
                 <flux:button as="a" href="{{ $url }}" target="_blank" rel="noopener noreferrer">

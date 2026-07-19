@@ -9,7 +9,7 @@ use App\Models\SportType;
 
 it('resolves new donation relationships', function () {
     $donationEvent = DonationEvent::factory()->create();
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
+    $partner = Partner::factory()->create(['name' => 'Test Partner']);
     $sportType = SportType::query()->create(['name' => 'Run']);
     $athleteIdentity = ExternalUser::factory()->create();
     $externalUser = ExternalUser::factory()->create();
@@ -40,7 +40,7 @@ it('resolves new donation relationships', function () {
 
 it('derives donation event from athlete registration', function () {
     $donationEvent = DonationEvent::factory()->create();
-    $partner = Partner::query()->create(['name' => 'Test Partner']);
+    $partner = Partner::factory()->create(['name' => 'Test Partner']);
     $sportType = SportType::query()->create(['name' => 'Run']);
     $athleteIdentity = ExternalUser::factory()->create();
     $externalUser = ExternalUser::factory()->create();

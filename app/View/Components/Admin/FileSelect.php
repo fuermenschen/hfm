@@ -22,6 +22,7 @@ class FileSelect extends Component
         string|array $extensions = [],
         public bool $recursive = false,
         public ?string $label = null,
+        public ?string $help = null,
         public ?string $placeholder = 'Datei auswählen',
         public ?string $selected = null,
         public bool $preview = true,

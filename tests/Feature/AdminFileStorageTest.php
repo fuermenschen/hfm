@@ -221,13 +221,13 @@ it('throws when public file cannot be opened for trashing', function (): void {
 });
 
 it('blocks deleting referenced partner and sponsor files', function (): void {
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Referenced Partner',
         'logo_light_filename' => 'logo-light.svg',
         'logo_dark_filename' => 'logo-dark.svg',
     ]);
 
-    $sponsor = Sponsor::query()->create([
+    $sponsor = Sponsor::factory()->create([
         'name' => 'Referenced Sponsor',
         'description' => 'Main sponsor',
         'logo_filename' => 'logo.svg',
@@ -259,7 +259,7 @@ it('blocks deleting referenced partner and sponsor files', function (): void {
 });
 
 it('does not treat legacy root filenames as nested file references', function (): void {
-    Partner::query()->create([
+    Partner::factory()->create([
         'name' => 'Root Logo Partner',
         'logo_light_filename' => 'logo.svg',
     ]);
@@ -272,12 +272,12 @@ it('does not treat legacy root filenames as nested file references', function ()
 });
 
 it('blocks deleting nested files referenced by legacy relative paths', function (): void {
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Nested Logo Partner',
         'logo_light_filename' => 'nested/logo.svg',
     ]);
 
-    $sponsor = Sponsor::query()->create([
+    $sponsor = Sponsor::factory()->create([
         'name' => 'Nested Logo Sponsor',
         'description' => 'Nested sponsor',
         'logo_filename' => 'nested/logo.svg',

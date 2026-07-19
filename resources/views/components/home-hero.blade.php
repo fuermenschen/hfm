@@ -24,8 +24,6 @@
     'current_event_unpublished' => 'Der aktuell konfigurierte Anlass ist noch nicht veröffentlicht. Informationen folgen in Kürze.',
     default => 'Aktuell sind keine Anlassinformationen verfügbar. Bitte versuche es später erneut.',
   };
-
-  $heroPartners = $currentEventPartners->filter(fn ($partner) => $partner->shouldDisplayLogo());
 @endphp
 
 <x-hero :img="$img">
@@ -64,11 +62,11 @@
   </x-slot:ctas>
 
   <x-slot:partners>
-    @if ($currentDonationEvent !== null && $heroPartners->isNotEmpty())
+    @if ($currentDonationEvent !== null && $currentEventPartners->isNotEmpty())
       <div class="grid grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4 w-full mx-auto">
         <h3 class="col-span-3 text-xs sm:text-sm opacity-90">Unsere Benefizpartner:innen</h3>
 
-        @foreach ($heroPartners as $partner)
+        @foreach ($currentEventPartners as $partner)
           <x-home-hero-partner class="partner-logo"
                                :assetUrl="$partner->logoLightUrl()"
                                :assetUrlDark="$partner->logoDarkUrl()"
@@ -79,5 +77,4 @@
     @endif
   </x-slot:partners>
 </x-hero>
-
 

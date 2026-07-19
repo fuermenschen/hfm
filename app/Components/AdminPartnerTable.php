@@ -116,10 +116,10 @@ class AdminPartnerTable extends AbstractDatatableComponent
     {
         return [
             'name' => '',
-            'logo_light_filename' => null,
-            'logo_dark_filename' => null,
-            'beneficiary_blurb' => null,
-            'url' => null,
+            'logo_light_filename' => '',
+            'logo_dark_filename' => '',
+            'beneficiary_blurb' => '',
+            'url' => '',
         ];
     }
 
@@ -132,10 +132,10 @@ class AdminPartnerTable extends AbstractDatatableComponent
 
         return [
             'createForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')],
-            'createForm.logo_light_filename' => ['nullable', 'string', 'max:255', Rule::in($logoPaths)],
-            'createForm.logo_dark_filename' => ['nullable', 'string', 'max:255', Rule::in($logoPaths)],
-            'createForm.beneficiary_blurb' => ['nullable', 'string'],
-            'createForm.url' => ['nullable', 'url', 'max:255'],
+            'createForm.logo_light_filename' => ['required', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.logo_dark_filename' => ['required', 'string', 'max:255', Rule::in($logoPaths)],
+            'createForm.beneficiary_blurb' => ['required', 'string'],
+            'createForm.url' => ['required', 'url', 'max:255'],
         ];
     }
 
@@ -160,10 +160,10 @@ class AdminPartnerTable extends AbstractDatatableComponent
     {
         return Partner::query()->create([
             'name' => $data['name'],
-            'logo_light_filename' => $this->nullableString($data['logo_light_filename'] ?? null),
-            'logo_dark_filename' => $this->nullableString($data['logo_dark_filename'] ?? null),
-            'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
-            'url' => $this->nullableString($data['url'] ?? null),
+            'logo_light_filename' => trim((string) $data['logo_light_filename']),
+            'logo_dark_filename' => trim((string) $data['logo_dark_filename']),
+            'beneficiary_blurb' => trim((string) $data['beneficiary_blurb']),
+            'url' => trim((string) $data['url']),
         ]);
     }
 
@@ -194,10 +194,10 @@ class AdminPartnerTable extends AbstractDatatableComponent
 
         return [
             'editForm.name' => ['required', 'string', 'max:255', Rule::unique('partners', 'name')->ignore($this->editingId)],
-            'editForm.logo_light_filename' => ['nullable', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_light_filename'))],
-            'editForm.logo_dark_filename' => ['nullable', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_dark_filename'))],
-            'editForm.beneficiary_blurb' => ['nullable', 'string'],
-            'editForm.url' => ['nullable', 'url', 'max:255'],
+            'editForm.logo_light_filename' => ['required', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_light_filename'))],
+            'editForm.logo_dark_filename' => ['required', 'string', 'max:255', Rule::in($this->allowedPartnerLogoPaths($logoPaths, 'logo_dark_filename'))],
+            'editForm.beneficiary_blurb' => ['required', 'string'],
+            'editForm.url' => ['required', 'url', 'max:255'],
         ];
     }
 
@@ -224,10 +224,10 @@ class AdminPartnerTable extends AbstractDatatableComponent
 
         $record->fill([
             'name' => $data['name'],
-            'logo_light_filename' => $this->nullableString($data['logo_light_filename'] ?? null),
-            'logo_dark_filename' => $this->nullableString($data['logo_dark_filename'] ?? null),
-            'beneficiary_blurb' => $this->nullableString($data['beneficiary_blurb'] ?? null),
-            'url' => $this->nullableString($data['url'] ?? null),
+            'logo_light_filename' => trim((string) $data['logo_light_filename']),
+            'logo_dark_filename' => trim((string) $data['logo_dark_filename']),
+            'beneficiary_blurb' => trim((string) $data['beneficiary_blurb']),
+            'url' => trim((string) $data['url']),
         ])->save();
     }
 
@@ -236,17 +236,6 @@ class AdminPartnerTable extends AbstractDatatableComponent
         throw_unless($record instanceof Partner, \LogicException::class, 'Expected partner record.');
 
         resolve(DeletePartnerAction::class)->handle($record);
-    }
-
-    protected function nullableString(mixed $value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-
-        $value = trim($value);
-
-        return $value === '' ? null : $value;
     }
 
     /**
@@ -268,9 +257,9 @@ class AdminPartnerTable extends AbstractDatatableComponent
     {
         $currentPath = $this->editingId === null
             ? null
-            : $this->nullableString(Partner::query()->whereKey($this->editingId)->value($field));
+            : Partner::query()->whereKey($this->editingId)->value($field);
 
-        return array_values(array_unique(array_filter([...$logoPaths, $currentPath])));
+        return array_values(array_unique(is_string($currentPath) ? [...$logoPaths, $currentPath] : $logoPaths));
     }
 
     public function displayValue(mixed $row, string $column): string

@@ -23,13 +23,13 @@ beforeEach(function (): void {
 it('renders partners in admin table and includes donation event assignment count', function (): void {
     $events = DonationEvent::factory()->count(2)->create();
 
-    $assignedPartner = Partner::query()->create([
+    $assignedPartner = Partner::factory()->create([
         'name' => 'Bruehlgut Stiftung',
         'logo_light_filename' => 'bruehlgut_light.svg',
         'logo_dark_filename' => 'bruehlgut_dark.svg',
     ]);
 
-    $unassignedPartner = Partner::query()->create([
+    $unassignedPartner = Partner::factory()->create([
         'name' => 'Unassigned Partner',
     ]);
 
@@ -46,14 +46,24 @@ it('renders partners in admin table and includes donation event assignment count
         });
 });
 
+it('explains partner public content fields in German', function (): void {
+    Livewire::test(AdminPartnerTable::class)
+        ->assertSee('Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet.')
+        ->assertSee('Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet.')
+        ->assertSee('Dieser allgemeine Kurztext beschreibt die begünstigte Organisation.')
+        ->assertSee('Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt.')
+        ->assertSeeHtml('aria-label="Hinweis zu Kurztext"');
+});
+
 it('edits partners from admin table modal state', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('partners/old-light.svg', 'svg');
     Storage::disk('public')->put('partners/old-dark.svg', 'svg');
     Storage::disk('public')->put('partners/nested/old-dark.svg', 'svg');
     Storage::disk('public')->put('partners/new-light.svg', 'svg');
+    Storage::disk('public')->put('partners/new-dark.svg', 'svg');
 
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Old Partner',
         'logo_light_filename' => 'old-light.svg',
         'logo_dark_filename' => 'nested/old-dark.svg',
@@ -70,6 +80,8 @@ it('edits partners from admin table modal state', function (): void {
         ->assertSet('editForm.logo_dark_filename', 'nested/old-dark.svg')
         ->set('editForm.name', 'New Partner')
         ->set('editForm.logo_light_filename', 'new-light.svg')
+        ->set('editForm.logo_dark_filename', 'new-dark.svg')
+        ->set('editForm.beneficiary_blurb', 'New text')
         ->set('editForm.url', 'https://new.example.test')
         ->call('saveEdit')
         ->assertSet('editingId', null)
@@ -79,6 +91,8 @@ it('edits partners from admin table modal state', function (): void {
 
     expect($partner->name)->toBe('New Partner')
         ->and($partner->logo_light_filename)->toBe('new-light.svg')
+        ->and($partner->logo_dark_filename)->toBe('new-dark.svg')
+        ->and($partner->beneficiary_blurb)->toBe('New text')
         ->and($partner->url)->toBe('https://new.example.test');
 });
 
@@ -101,6 +115,11 @@ it('creates and deletes partners from admin table modal state', function (): voi
 
     $partner = Partner::query()->where('name', 'Created Partner')->firstOrFail();
 
+    expect($partner->logo_light_filename)->toBe('light.svg')
+        ->and($partner->logo_dark_filename)->toBe('dark.svg')
+        ->and($partner->beneficiary_blurb)->toBe('Created text')
+        ->and($partner->url)->toBe('https://created.example.test');
+
     Livewire::test(AdminPartnerTable::class)
         ->call('confirmDeleteRow', $partner->id)
         ->assertSet('deletingId', $partner->id)
@@ -110,6 +129,50 @@ it('creates and deletes partners from admin table modal state', function (): voi
 
     expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse();
 });
+
+it('requires partner public content when creating', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openCreate')
+        ->set('createForm.name', 'Required Partner')
+        ->set('createForm.logo_light_filename', 'light.svg')
+        ->set('createForm.logo_dark_filename', 'dark.svg')
+        ->set('createForm.beneficiary_blurb', 'Required text')
+        ->set('createForm.url', 'https://required.example.test')
+        ->set('createForm.'.$field, '')
+        ->call('saveCreate')
+        ->assertHasErrors(['createForm.'.$field => 'required']);
+})->with([
+    'light logo' => 'logo_light_filename',
+    'dark logo' => 'logo_dark_filename',
+    'short text' => 'beneficiary_blurb',
+    'URL' => 'url',
+]);
+
+it('requires partner public content when editing', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+
+    $partner = Partner::factory()->create([
+        'logo_light_filename' => 'light.svg',
+        'logo_dark_filename' => 'dark.svg',
+    ]);
+
+    Livewire::test(AdminPartnerTable::class)
+        ->call('openEdit', $partner->id)
+        ->set('editForm.'.$field, '')
+        ->call('saveEdit')
+        ->assertHasErrors(['editForm.'.$field => 'required']);
+})->with([
+    'light logo' => 'logo_light_filename',
+    'dark logo' => 'logo_dark_filename',
+    'short text' => 'beneficiary_blurb',
+    'URL' => 'url',
+]);
 
 it('rejects non-image partner logos', function (): void {
     Storage::fake('public');
@@ -130,7 +193,7 @@ it('does not delete partners assigned to events', function (): void {
     Storage::disk('public')->put('partners/light.svg', 'svg');
     Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Event Partner',
         'logo_light_filename' => 'light.svg',
         'logo_dark_filename' => 'dark.svg',
@@ -153,7 +216,7 @@ it('does not delete partners selected by athlete registrations', function (): vo
     Storage::disk('public')->put('partners/light.svg', 'svg');
     Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    $partner = Partner::query()->create([
+    $partner = Partner::factory()->create([
         'name' => 'Registration Partner',
         'logo_light_filename' => 'light.svg',
         'logo_dark_filename' => 'dark.svg',
@@ -181,20 +244,24 @@ it('rejects unauthenticated table mutations', function (): void {
 it('renders sponsors in admin table and includes donation event assignment count', function (): void {
     $event = DonationEvent::factory()->create();
 
-    $assignedSponsor = Sponsor::query()->create([
+    $assignedSponsor = Sponsor::factory()->create([
         'name' => 'Rohner Spiller',
         'description' => 'Druckpartner',
         'logo_filename' => 'rohner_spiller.svg',
         'url' => 'https://example.test/rohner',
     ]);
 
-    $unassignedSponsor = Sponsor::query()->create([
+    $unassignedSponsor = Sponsor::factory()->create([
         'name' => 'Unassigned Sponsor',
         'description' => 'Noch ohne Anlass',
         'logo_filename' => 'unassigned.svg',
     ]);
 
-    $assignedSponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+    $assignedSponsor->donationEvents()->attach($event->id, [
+        'contribution_text' => 'Event contribution',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
 
     Livewire::test(AdminSponsorTable::class)
         ->assertSee('Rohner Spiller')
@@ -206,12 +273,20 @@ it('renders sponsors in admin table and includes donation event assignment count
         });
 });
 
+it('explains sponsor public content fields in German', function (): void {
+    Livewire::test(AdminSponsorTable::class)
+        ->assertSee('Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte.')
+        ->assertSee('Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt.')
+        ->assertSee('Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet.')
+        ->assertSeeHtml('aria-label="Hinweis zu Beschreibung"');
+});
+
 it('edits sponsors from admin table modal state', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('sponsors/old-logo.svg', 'svg');
     Storage::disk('public')->put('sponsors/nested/new-logo.svg', 'svg');
 
-    $sponsor = Sponsor::query()->create([
+    $sponsor = Sponsor::factory()->create([
         'name' => 'Old Sponsor',
         'description' => 'Old description',
         'logo_filename' => 'old-logo.svg',
@@ -257,6 +332,10 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
 
     $sponsor = Sponsor::query()->where('name', 'Created Sponsor')->firstOrFail();
 
+    expect($sponsor->description)->toBe('Created description')
+        ->and($sponsor->logo_filename)->toBe('logo.svg')
+        ->and($sponsor->url)->toBe('https://created-sponsor.example.test');
+
     Livewire::test(AdminSponsorTable::class)
         ->call('confirmDeleteRow', $sponsor->id)
         ->assertSet('deletingId', $sponsor->id)
@@ -266,6 +345,42 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
 
     expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse();
 });
+
+it('requires sponsor public content when creating', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openCreate')
+        ->set('createForm.name', 'Required Sponsor')
+        ->set('createForm.description', 'Required description')
+        ->set('createForm.logo_filename', 'logo.svg')
+        ->set('createForm.url', 'https://required.example.test')
+        ->set('createForm.'.$field, '')
+        ->call('saveCreate')
+        ->assertHasErrors(['createForm.'.$field => 'required']);
+})->with([
+    'description' => 'description',
+    'logo' => 'logo_filename',
+    'URL' => 'url',
+]);
+
+it('requires sponsor public content when editing', function (string $field): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+
+    $sponsor = Sponsor::factory()->create(['logo_filename' => 'logo.svg']);
+
+    Livewire::test(AdminSponsorTable::class)
+        ->call('openEdit', $sponsor->id)
+        ->set('editForm.'.$field, '')
+        ->call('saveEdit')
+        ->assertHasErrors(['editForm.'.$field => 'required']);
+})->with([
+    'description' => 'description',
+    'logo' => 'logo_filename',
+    'URL' => 'url',
+]);
 
 it('rejects non-image sponsor logos', function (): void {
     Storage::fake('public');
@@ -285,13 +400,17 @@ it('does not delete sponsors assigned to events', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('sponsors/logo.svg', 'svg');
 
-    $sponsor = Sponsor::query()->create([
+    $sponsor = Sponsor::factory()->create([
         'name' => 'Event Sponsor',
         'description' => 'Assigned sponsor',
         'logo_filename' => 'logo.svg',
     ]);
     $event = DonationEvent::factory()->create();
-    $sponsor->donationEvents()->attach($event->id, ['sort_order' => 1, 'is_published' => true]);
+    $sponsor->donationEvents()->attach($event->id, [
+        'contribution_text' => 'Event contribution',
+        'sort_order' => 1,
+        'is_published' => true,
+    ]);
 
     Livewire::test(AdminSponsorTable::class)
         ->call('confirmDeleteRow', $sponsor->id)
@@ -342,12 +461,12 @@ it('applies configured truncation for tooltip columns in event content tables', 
     $longSponsorUrl = 'https://example.test/'.str_repeat('sponsor-segment/', 8);
     $longFaqContent = str_repeat('Ausfuehrlicher FAQ Inhalt ', 8);
 
-    Partner::query()->create([
+    Partner::factory()->create([
         'name' => 'Long Partner',
         'url' => $longPartnerUrl,
     ]);
 
-    Sponsor::query()->create([
+    Sponsor::factory()->create([
         'name' => 'Long Sponsor',
         'description' => 'Beschreibung',
         'logo_filename' => 'long.svg',

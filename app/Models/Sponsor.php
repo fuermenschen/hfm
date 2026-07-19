@@ -13,10 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Facades\Storage;
 
-/**
- * @property string $size
- * @property Pivot $pivot
- */
+/** @property-read Pivot|null $pivot */
 #[Fillable([
     'name',
     'description',
@@ -37,10 +34,6 @@ class Sponsor extends Model
 
     public function logoUrl(): ?string
     {
-        if ($this->logo_filename === '') {
-            return null;
-        }
-
         $path = $this->logoPath($this->logo_filename);
 
         return $path === null ? null : Storage::disk('public')->url($path);

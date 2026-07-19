@@ -78,7 +78,7 @@ describe('calculateEstimatedTotal', function () {
         $service = app(DonationService::class);
         $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
-        $partner = Partner::create(['name' => 'P1']);
+        $partner = Partner::factory()->create(['name' => 'P1']);
         $donor1 = ExternalUser::factory()->create(['email' => 'd1@example.com']);
         $donor2 = ExternalUser::factory()->create(['email' => 'd2@example.com']);
         $donor3 = ExternalUser::factory()->create(['email' => 'd3@example.com']);
@@ -126,7 +126,7 @@ describe('calculateActualTotal', function () {
         $service = app(DonationService::class);
         $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
-        $partner = Partner::create(['name' => 'P1']);
+        $partner = Partner::factory()->create(['name' => 'P1']);
         $d1 = ExternalUser::factory()->create(['email' => 'da1@example.com']);
         $d2 = ExternalUser::factory()->create(['email' => 'da2@example.com']);
 
@@ -163,8 +163,8 @@ describe('calculateEstimatedTotalPerPartner', function () {
         $service = app(DonationService::class);
         $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
-        $p1 = Partner::create(['name' => 'Partner 1']);
-        $p2 = Partner::create(['name' => 'Partner 2']);
+        $p1 = Partner::factory()->create(['name' => 'Partner 1']);
+        $p2 = Partner::factory()->create(['name' => 'Partner 2']);
         $d1 = ExternalUser::factory()->create(['email' => 'p1d1@example.com']);
         $d2 = ExternalUser::factory()->create(['email' => 'p1d2@example.com']);
         $d3 = ExternalUser::factory()->create(['email' => 'p2d1@example.com']);
@@ -196,8 +196,8 @@ describe('calculateActualTotalPerPartner', function () {
         $service = app(DonationService::class);
         $event = DonationEvent::factory()->create();
         $sport = SportType::create(['name' => 'Run']);
-        $p1 = Partner::create(['name' => 'Partner 1']);
-        $p2 = Partner::create(['name' => 'Partner 2']);
+        $p1 = Partner::factory()->create(['name' => 'Partner 1']);
+        $p2 = Partner::factory()->create(['name' => 'Partner 2']);
         $d1 = ExternalUser::factory()->create(['email' => 'ap1d1@example.com']);
         $d2 = ExternalUser::factory()->create(['email' => 'ap1d2@example.com']);
         $d3 = ExternalUser::factory()->create(['email' => 'ap2d1@example.com']);

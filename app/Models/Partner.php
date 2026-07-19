@@ -29,32 +29,19 @@ class Partner extends Model
             ->withTimestamps();
     }
 
-    public function shouldDisplayLogo(): bool
-    {
-        return is_string($this->logo_light_filename)
-            && $this->logo_light_filename !== ''
-            && is_string($this->logo_dark_filename)
-            && $this->logo_dark_filename !== '';
-    }
-
     public function logoLightUrl(): ?string
     {
-        if (! is_string($this->logo_light_filename) || $this->logo_light_filename === '') {
-            return null;
-        }
-
-        $path = $this->logoPath($this->logo_light_filename);
-
-        return $path === null ? null : Storage::disk('public')->url($path);
+        return $this->logoUrl($this->logo_light_filename);
     }
 
     public function logoDarkUrl(): ?string
     {
-        if (! is_string($this->logo_dark_filename) || $this->logo_dark_filename === '') {
-            return null;
-        }
+        return $this->logoUrl($this->logo_dark_filename);
+    }
 
-        $path = $this->logoPath($this->logo_dark_filename);
+    protected function logoUrl(string $filename): ?string
+    {
+        $path = $this->logoPath($filename);
 
         return $path === null ? null : Storage::disk('public')->url($path);
     }

@@ -11,7 +11,7 @@ use App\Models\SportType;
 it('builds dashboard data with expected aggregates', function (): void {
     $sportType = SportType::query()->create(['name' => 'Run']);
     $donationEvent = DonationEvent::factory()->create();
-    $partner = Partner::query()->create(['name' => 'Partner One']);
+    $partner = Partner::factory()->create(['name' => 'Partner One']);
 
     $athleteOne = ExternalUser::factory()->create();
     $athleteOneRegistration = AthleteRegistration::factory()->create([
