@@ -12,6 +12,9 @@
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
+                        <flux:button as="a" href="{{ route('admin.donation-events.create') }}" variant="ghost" size="sm" icon="plus" wire:navigate.hover>
+                            Neu
+                        </flux:button>
                         <x-datatable.export-dropdown />
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
@@ -39,6 +42,7 @@
                             @endif
                         </flux:table.column>
                     @endforeach
+                    <flux:table.column class="w-1 whitespace-nowrap text-right">Aktion</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -122,6 +126,20 @@
                                     @endswitch
                                 </flux:table.cell>
                             @endforeach
+                            <flux:table.cell class="w-1 whitespace-nowrap">
+                                <div class="flex justify-end">
+                                    <flux:button
+                                        as="a"
+                                        href="{{ route('admin.donation-events.edit', $donationEvent) }}"
+                                        size="xs"
+                                        variant="ghost"
+                                        icon="pencil-square"
+                                        square
+                                        tooltip="Bearbeiten"
+                                        wire:navigate.hover
+                                    />
+                                </div>
+                            </flux:table.cell>
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">

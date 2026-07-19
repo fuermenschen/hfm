@@ -13,8 +13,11 @@ it('renders home page with athlete and donation counts', function (): void {
     $response->assertOk();
 });
 
-it('renders home page with partners and sponsors for active event', function (): void {
-    $event = DonationEvent::factory()->create(['is_published' => true]);
+it('renders home page with event title, partners, and sponsors for active event', function (): void {
+    $event = DonationEvent::factory()->create([
+        'title' => 'Test Anlass aus der Datenbank',
+        'is_published' => true,
+    ]);
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();
@@ -36,6 +39,7 @@ it('renders home page with partners and sponsors for active event', function ():
     $response = get(route('home'));
 
     $response->assertOk();
+    $response->assertSee('Test Anlass aus der Datenbank');
     $response->assertSee('Test Partner');
     $response->assertSee('Test Sponsor');
     $response->assertSee('Generic sponsor description');

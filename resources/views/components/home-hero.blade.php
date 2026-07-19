@@ -36,7 +36,7 @@
   </x-slot:kicker>
 
   <x-slot:title>
-    Höhenmeter für&nbsp;Menschen
+    {{ $currentDonationEvent?->title ?? 'Höhenmeter für Menschen' }}
   </x-slot:title>
 
   <x-slot:copy>
@@ -77,4 +77,3 @@
     @endif
   </x-slot:partners>
 </x-hero>
-

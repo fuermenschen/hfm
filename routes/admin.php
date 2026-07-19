@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DonationEventSettingsController;
 use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
 use App\Http\Controllers\AdminSessionController;
 use Illuminate\Support\Facades\Route;
@@ -7,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:web')->group(function (): void {
     Route::view('admin', 'pages.admin.dashboard')->name('admin.dashboard');
     Route::view('admin/anlaesse', 'pages.admin.donation-events')->name('admin.donation-events.index');
+    Route::get('admin/anlaesse/neu', [DonationEventSettingsController::class, 'create'])->name('admin.donation-events.create');
+    Route::get('admin/anlaesse/{donationEvent}/bearbeiten', [DonationEventSettingsController::class, 'edit'])->name('admin.donation-events.edit');
     Route::view('admin/partner', 'pages.admin.partners')->name('admin.partners.index');
     Route::view('admin/sponsoren', 'pages.admin.sponsors')->name('admin.sponsors.index');
     Route::view('admin/faqs', 'pages.admin.faqs')->name('admin.faqs.index');
