@@ -18,7 +18,24 @@
                 </flux:button>
             </div>
 
-            @livewire('admin-donation-event-form', ['donationEvent' => $donationEvent])
+            @if ($donationEvent === null)
+                @livewire('admin-donation-event-form')
+            @else
+                <flux:tab.group>
+                    <flux:tabs scrollable scrollable:fade>
+                        <flux:tab name="event">Anlass</flux:tab>
+                        <flux:tab name="partners">Partner:innen</flux:tab>
+                    </flux:tabs>
+
+                    <flux:tab.panel name="event" class="pt-6">
+                        @livewire('admin-donation-event-form', ['donationEvent' => $donationEvent])
+                    </flux:tab.panel>
+
+                    <flux:tab.panel name="partners" class="pt-6">
+                        @livewire('admin-donation-event-partners-form', ['donationEvent' => $donationEvent])
+                    </flux:tab.panel>
+                </flux:tab.group>
+            @endif
         </div>
     @endsection
 @endcomponent
