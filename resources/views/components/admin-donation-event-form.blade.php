@@ -1,9 +1,4 @@
-<form
-    wire:submit="save"
-    class="space-y-6"
-    data-admin-unsaved-form
-    x-bind:data-unsaved="($wire.$dirty() || $wire.hasUnsavedChanges) ? 'true' : 'false'"
->
+<form wire:submit="save" class="space-y-6">
     @if ($errors->any())
         <flux:callout
             variant="danger"

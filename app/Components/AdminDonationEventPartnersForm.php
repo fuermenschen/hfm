@@ -72,6 +72,15 @@ class AdminDonationEventPartnersForm extends Component
         $this->hasUnsavedChanges = true;
     }
 
+    public function detachPartner(int $index): void
+    {
+        abort_unless(Auth::check(), 403);
+        abort_unless(isset($this->partnerRows[$index]), 404);
+
+        $this->partnerRows[$index]['attached'] = false;
+        $this->hasUnsavedChanges = true;
+    }
+
     /**
      * @return array<string, mixed>
      */

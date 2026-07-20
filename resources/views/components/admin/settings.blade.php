@@ -1,4 +1,4 @@
-<div class="space-y-8" data-admin-settings-root>
+<div class="space-y-8">
     <flux:tab.group>
         <flux:tabs wire:model="activeTab" scrollable scrollable:fade>
             <flux:tab name="overview" icon="home">Übersicht</flux:tab>
@@ -136,7 +136,6 @@
                                 wire:click="saveClass('{{ $classParam }}')"
                                 wire:key="save-class-{{ md5($fqcn) }}"
                                 wire:target="{{ $classTargets }}"
-                                data-admin-settings-save-class-button
                                 wire:dirty.remove.attr="disabled"
                                 disabled
                             >

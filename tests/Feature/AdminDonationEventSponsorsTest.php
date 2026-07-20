@@ -46,6 +46,7 @@ it('loads sponsor assignments with pivot values', function (): void {
         ->assertSet('sponsorRows.1.attached', false)
         ->assertSet('sponsorRows.1.size', 'medium')
         ->assertSet('sponsorRows.1.is_published', false)
+        ->assertSee('x-bind:disabled="!$wire.sponsorRows[0].attached"', escape: false)
         ->assertSee('Vom Anlass entfernen');
 });
 
@@ -84,6 +85,20 @@ it('attaches updates and detaches sponsors', function (): void {
         'sort_order' => 5,
         'is_published' => false,
     ]);
+});
+
+it('undoes a new sponsor assignment before saving', function (): void {
+    Sponsor::factory()->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminDonationEventSponsorsForm::class, ['donationEvent' => DonationEvent::factory()->create()])
+        ->call('attachSponsor', 0)
+        ->assertSet('sponsorRows.0.attached', true)
+        ->assertSee('Zuordnung rückgängig')
+        ->call('detachSponsor', 0)
+        ->assertSet('sponsorRows.0.attached', false)
+        ->assertDontSee('Zuordnung rückgängig');
 });
 
 it('requires valid pivot data for attached sponsors', function (): void {

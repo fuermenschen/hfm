@@ -140,8 +140,21 @@ class AdminDonationEventForm extends Component
             'form.registration_opens_at' => 'Anmeldestart',
             'form.athlete_registration_closes_at' => 'Anmeldeschluss Sportler:innen',
             'form.donor_registration_closes_at' => 'Anmeldeschluss Spender:innen',
+            'form.location_name' => 'Name des Veranstaltungsorts',
+            'form.location_street' => 'Strasse',
+            'form.location_postal_code' => 'PLZ',
             'form.location_city' => 'Stadt',
             'form.location_url' => 'Kartenlink',
+            'form.is_published' => 'Veröffentlichung',
+            'form.has_equal_split_option' => 'Spendenaufteilung',
+            'form.content.hero.copy_md' => 'Hero-Text',
+            'form.content.home.about_heading' => 'Homepage-Überschrift',
+            'form.content.home.about_intro_md' => 'Homepage-Einleitung',
+            'form.content.home.about_body_md' => 'Homepage-Haupttext',
+            'form.content.results.heading_md' => 'Resultate-Überschrift',
+            'form.content.seo.meta_description_md' => 'SEO-Beschreibung',
+            'form.content.seo.og_description_md' => 'OpenGraph-Beschreibung',
+            'form.content.invoice.additional_information' => 'Zusatzinformation Spendenrechnung',
         ];
     }
 

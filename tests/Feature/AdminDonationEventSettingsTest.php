@@ -191,6 +191,18 @@ it('validates event identity, URLs, and date order', function (): void {
         ]);
 });
 
+it('uses readable validation attribute names', function (): void {
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminDonationEventForm::class)
+        ->set('form', validDonationEventSettingsForm([
+            'location_name' => ['invalid'],
+        ]))
+        ->call('save')
+        ->assertHasErrors(['form.location_name' => 'string'])
+        ->assertSee('Name des Veranstaltungsorts');
+});
+
 it('rejects unauthenticated event mutations', function (): void {
     Livewire::test(AdminDonationEventForm::class)
         ->set('form', validDonationEventSettingsForm())

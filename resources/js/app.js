@@ -24,19 +24,6 @@ function sanitizeImageSrc(rawValue) {
     return url.toString();
 }
 
-function hasUnsavedAdminSettingsChanges() {
-    if (!window.location.pathname.startsWith("/admin/einstellungen")) {
-        return false;
-    }
-
-    const root = document.querySelector("[data-admin-settings-root]");
-    if (!root) {
-        return false;
-    }
-
-    return root.querySelector("[data-admin-settings-save-class-button]:not([disabled])") !== null;
-}
-
 function initHeroLqip(scope = document) {
     const heroes = scope.querySelectorAll(".hfm-hero");
     heroes.forEach((hero) => {
@@ -94,25 +81,5 @@ document.addEventListener("livewire:navigated", () => {
                 element.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
             }, 100);
         }
-    }
-});
-
-window.addEventListener("beforeunload", (event) => {
-    if (!hasUnsavedAdminSettingsChanges()) {
-        return;
-    }
-
-    event.preventDefault();
-    event.returnValue = "";
-});
-
-document.addEventListener("livewire:navigate", (event) => {
-    if (!hasUnsavedAdminSettingsChanges()) {
-        return;
-    }
-
-    const shouldLeave = window.confirm("Du hast ungespeicherte Änderungen. Seite trotzdem verlassen?");
-    if (!shouldLeave) {
-        event.preventDefault();
     }
 });

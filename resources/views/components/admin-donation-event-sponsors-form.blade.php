@@ -1,9 +1,4 @@
-<form
-    wire:submit="save"
-    class="space-y-6"
-    data-admin-unsaved-form
-    x-bind:data-unsaved="($wire.$dirty() || $wire.hasUnsavedChanges) ? 'true' : 'false'"
->
+<form wire:submit="save" class="space-y-6">
     @if ($errors->any())
         <flux:callout
             variant="danger"
@@ -56,17 +51,28 @@
                             Beim Speichern gehen Grösse, Anlassbeitrag, Reihenfolge und Veröffentlichungsstatus verloren.
                         </flux:callout>
                     @endif
+
+                    @if (! $sponsorRow['was_attached'])
+                        <flux:button type="button" size="sm" variant="ghost" wire:click="detachSponsor({{ $index }})">
+                            Zuordnung rückgängig
+                        </flux:button>
+                    @endif
                 </div>
 
                 <div class="grid items-start gap-4 sm:grid-cols-2">
-                    <flux:switch wire:model="sponsorRows.{{ $index }}.is_published" label="Veröffentlicht" description="Zeigt die Sponsor:in auf der Startseite." />
+                    <flux:switch
+                        wire:model="sponsorRows.{{ $index }}.is_published"
+                        x-bind:disabled="!$wire.sponsorRows[{{ $index }}].attached"
+                        label="Veröffentlicht"
+                        description="Zeigt die Sponsor:in auf der Startseite."
+                    />
 
                     <flux:field>
                         <div class="flex items-center gap-1">
                             <flux:label badge="Pflichtfeld">Grösse</flux:label>
                             <x-admin.field-info label="Grösse" text="Steuert die Breite des Sponsor:innen-Logos auf der Startseite." />
                         </div>
-                        <flux:select wire:model="sponsorRows.{{ $index }}.size" required>
+                        <flux:select wire:model="sponsorRows.{{ $index }}.size" x-bind:disabled="!$wire.sponsorRows[{{ $index }}].attached" required>
                             <flux:select.option value="small">Klein</flux:select.option>
                             <flux:select.option value="medium">Mittel</flux:select.option>
                             <flux:select.option value="large">Gross</flux:select.option>
@@ -79,7 +85,14 @@
                             <flux:label badge="Pflichtfeld">Reihenfolge</flux:label>
                             <x-admin.field-info label="Reihenfolge" text="Kleinere Zahlen erscheinen zuerst. Bei gleicher Zahl wird nach Name sortiert." />
                         </div>
-                        <flux:input type="number" min="0" step="1" wire:model="sponsorRows.{{ $index }}.sort_order" required />
+                        <flux:input
+                            type="number"
+                            min="0"
+                            step="1"
+                            wire:model="sponsorRows.{{ $index }}.sort_order"
+                            x-bind:disabled="!$wire.sponsorRows[{{ $index }}].attached"
+                            required
+                        />
                         <flux:error name="sponsorRows.{{ $index }}.sort_order" />
                     </flux:field>
 
@@ -88,7 +101,13 @@
                             <flux:label badge="Pflichtfeld bei Zuordnung">Beitrag an diesem Anlass</flux:label>
                             <x-admin.field-info label="Beitrag an diesem Anlass" text="Erscheint im Detailfenster der Sponsor:innen-Karte auf der Startseite." />
                         </div>
-                        <flux:textarea rows="3" wire:model="sponsorRows.{{ $index }}.contribution_text" placeholder="Unterstützt die Verpflegung der Teilnehmenden." required />
+                        <flux:textarea
+                            rows="3"
+                            wire:model="sponsorRows.{{ $index }}.contribution_text"
+                            x-bind:disabled="!$wire.sponsorRows[{{ $index }}].attached"
+                            placeholder="Unterstützt die Verpflegung der Teilnehmenden."
+                            required
+                        />
                         <flux:error name="sponsorRows.{{ $index }}.contribution_text" />
                     </flux:field>
                 </div>

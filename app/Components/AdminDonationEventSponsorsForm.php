@@ -71,6 +71,15 @@ class AdminDonationEventSponsorsForm extends Component
         $this->hasUnsavedChanges = true;
     }
 
+    public function detachSponsor(int $index): void
+    {
+        abort_unless(Auth::check(), 403);
+        abort_unless(isset($this->sponsorRows[$index]), 404);
+
+        $this->sponsorRows[$index]['attached'] = false;
+        $this->hasUnsavedChanges = true;
+    }
+
     /**
      * @return array<string, mixed>
      */

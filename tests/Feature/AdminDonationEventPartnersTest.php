@@ -51,6 +51,7 @@ it('loads assignments and locks partners referenced by registrations', function 
         ->assertSet('partnerRows.1.attached', true)
         ->assertSet('partnerRows.1.is_locked', true)
         ->assertSet('partnerRows.1.registration_count', 1)
+        ->assertSee('x-bind:disabled="!$wire.partnerRows[0].attached"', escape: false)
         ->assertSee('Vom Anlass entfernen');
 });
 
@@ -84,6 +85,20 @@ it('attaches updates and detaches unreferenced partners', function (): void {
         'sort_order' => 5,
         'is_published' => false,
     ]);
+});
+
+it('undoes a new partner assignment before saving', function (): void {
+    Partner::factory()->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminDonationEventPartnersForm::class, ['donationEvent' => DonationEvent::factory()->create()])
+        ->call('attachPartner', 0)
+        ->assertSet('partnerRows.0.attached', true)
+        ->assertSee('Zuordnung rückgängig')
+        ->call('detachPartner', 0)
+        ->assertSet('partnerRows.0.attached', false)
+        ->assertDontSee('Zuordnung rückgängig');
 });
 
 it('keeps referenced partners attached when submitted as detached', function (): void {

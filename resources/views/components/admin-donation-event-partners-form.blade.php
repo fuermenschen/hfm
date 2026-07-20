@@ -1,9 +1,4 @@
-<form
-    wire:submit="save"
-    class="space-y-6"
-    data-admin-unsaved-form
-    x-bind:data-unsaved="($wire.$dirty() || $wire.hasUnsavedChanges) ? 'true' : 'false'"
->
+<form wire:submit="save" class="space-y-6">
     @if ($errors->any())
         <flux:callout
             variant="danger"
@@ -55,6 +50,12 @@
                         />
                     @endif
 
+                    @if (! $partnerRow['was_attached'])
+                        <flux:button type="button" size="sm" variant="ghost" wire:click="detachPartner({{ $index }})">
+                            Zuordnung rückgängig
+                        </flux:button>
+                    @endif
+
                     @if ($partnerRow['was_attached'] && ! $partnerRow['is_locked'])
                         <flux:callout
                             x-cloak
@@ -71,6 +72,7 @@
                 <div class="grid items-start gap-4 sm:grid-cols-2">
                     <flux:switch
                         wire:model="partnerRows.{{ $index }}.is_published"
+                        x-bind:disabled="!$wire.partnerRows[{{ $index }}].attached"
                         label="Veröffentlicht"
                         description="Sichtbar auf Startseite und in Anmeldung."
                     />
@@ -80,7 +82,14 @@
                             <flux:label badge="Pflichtfeld">Reihenfolge</flux:label>
                             <x-admin.field-info label="Reihenfolge" text="Kleinere Zahlen erscheinen zuerst. Bei gleicher Zahl wird nach Name sortiert." />
                         </div>
-                        <flux:input type="number" min="0" step="1" wire:model="partnerRows.{{ $index }}.sort_order" required />
+                        <flux:input
+                            type="number"
+                            min="0"
+                            step="1"
+                            wire:model="partnerRows.{{ $index }}.sort_order"
+                            x-bind:disabled="!$wire.partnerRows[{{ $index }}].attached"
+                            required
+                        />
                         <flux:error name="partnerRows.{{ $index }}.sort_order" />
                     </flux:field>
                 </div>
