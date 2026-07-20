@@ -115,7 +115,7 @@ class AdminDonationEventTable extends AbstractDatatableComponent
     protected function columnDefinitions(): array
     {
         return [
-            'slug' => ['label' => 'Jahr', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-24', 'export_key' => 'Jahr'],
+            'slug' => ['label' => 'Slug', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-24', 'export_key' => 'Slug'],
             'title' => ['label' => 'Titel', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'export_key' => 'Titel'],
             'starts_at' => ['label' => 'Start', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Start', 'formatter' => 'datetime_or_dash'],
             'ends_at' => ['label' => 'Ende', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Ende', 'formatter' => 'datetime_or_dash'],
@@ -154,7 +154,7 @@ class AdminDonationEventTable extends AbstractDatatableComponent
     protected function exportRow(DonationEvent $donationEvent): array
     {
         return [
-            'Jahr' => $donationEvent->slug,
+            'Slug' => $donationEvent->slug,
             'Titel' => $donationEvent->title,
             'Start' => $this->formatDateTimeOrNull($donationEvent->starts_at),
             'Ende' => $this->formatDateTimeOrNull($donationEvent->ends_at),

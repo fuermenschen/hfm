@@ -22,7 +22,9 @@ it('shows event and partner tabs on the edit page', function (): void {
         ->assertSuccessful()
         ->assertSee('Anlass')
         ->assertSee('Partner:innen')
-        ->assertSee('Partner:innen zuordnen');
+        ->assertSee('Zugeordnete Partner:innen')
+        ->assertSee('Verfügbare Partner:innen')
+        ->assertSee('Zuordnungen');
 });
 
 it('loads assignments and locks partners referenced by registrations', function (): void {
@@ -48,7 +50,8 @@ it('loads assignments and locks partners referenced by registrations', function 
         ->assertSet('partnerRows.1.name', 'Beta Partner')
         ->assertSet('partnerRows.1.attached', true)
         ->assertSet('partnerRows.1.is_locked', true)
-        ->assertSet('partnerRows.1.registration_count', 1);
+        ->assertSet('partnerRows.1.registration_count', 1)
+        ->assertSee('Vom Anlass entfernen');
 });
 
 it('attaches updates and detaches unreferenced partners', function (): void {
@@ -58,7 +61,7 @@ it('attaches updates and detaches unreferenced partners', function (): void {
 
     $donationEvent->partners()->attach($detachedPartner, [
         'sort_order' => 10,
-        'is_published' => true,
+        'is_published' => false,
     ]);
 
     actingAs(User::factory()->create());
@@ -88,7 +91,7 @@ it('keeps referenced partners attached when submitted as detached', function ():
     $partner = Partner::factory()->create();
     $donationEvent->partners()->attach($partner, [
         'sort_order' => 10,
-        'is_published' => true,
+        'is_published' => false,
     ]);
     AthleteRegistration::factory()
         ->forEvent($donationEvent)
@@ -133,7 +136,7 @@ it('attaches partners referenced by legacy registrations without a pivot', funct
     assertDatabaseHas('donation_event_partner', [
         'donation_event_id' => $donationEvent->id,
         'partner_id' => $partner->id,
-        'is_published' => true,
+        'is_published' => false,
     ]);
 });
 
@@ -169,12 +172,41 @@ it('validates partner rows', function (): void {
 
     $component
         ->set('partnerRows.1.id', $partnerRows[0]['id'])
+        ->set('partnerRows.0.attached', true)
         ->set('partnerRows.0.sort_order', -1)
         ->call('save')
         ->assertHasErrors([
             'partnerRows.0.sort_order' => 'min',
             'partnerRows.1.id' => 'distinct',
         ]);
+});
+
+it('ignores invalid pivot data for detached partners', function (): void {
+    Partner::factory()->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminDonationEventPartnersForm::class, ['donationEvent' => DonationEvent::factory()->create()])
+        ->set('partnerRows.0.sort_order', -1)
+        ->call('save')
+        ->assertHasNoErrors();
+});
+
+it('loads assigned partners in public order and available partners alphabetically', function (): void {
+    $donationEvent = DonationEvent::factory()->create();
+    $laterByName = Partner::factory()->create(['name' => 'Zulu Assigned']);
+    $firstByName = Partner::factory()->create(['name' => 'Alpha Assigned']);
+    Partner::factory()->create(['name' => 'Beta Available']);
+    Partner::factory()->create(['name' => 'Alpha Available']);
+
+    $donationEvent->partners()->attach($laterByName, ['sort_order' => 10, 'is_published' => true]);
+    $donationEvent->partners()->attach($firstByName, ['sort_order' => 20, 'is_published' => true]);
+
+    Livewire::test(AdminDonationEventPartnersForm::class, ['donationEvent' => $donationEvent])
+        ->assertSet('partnerRows.0.name', 'Zulu Assigned')
+        ->assertSet('partnerRows.1.name', 'Alpha Assigned')
+        ->assertSet('partnerRows.2.name', 'Alpha Available')
+        ->assertSet('partnerRows.3.name', 'Beta Available');
 });
 
 it('rejects unauthenticated partner mutations', function (): void {

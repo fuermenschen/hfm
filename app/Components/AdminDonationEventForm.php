@@ -6,11 +6,13 @@ namespace App\Components;
 
 use App\Actions\SaveDonationEventAction;
 use App\Models\DonationEvent;
+use App\Settings\EventSettings;
 use Flux;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class AdminDonationEventForm extends Component
@@ -20,9 +22,14 @@ class AdminDonationEventForm extends Component
     /** @var array<string, mixed> */
     public array $form = [];
 
-    public function mount(?DonationEvent $donationEvent = null): void
+    public bool $isCurrentEvent = false;
+
+    public bool $hasUnsavedChanges = false;
+
+    public function mount(?DonationEvent $donationEvent = null, bool $isCurrentEvent = false): void
     {
         $this->donationEvent = $donationEvent;
+        $this->isCurrentEvent = $isCurrentEvent;
         $this->form = $this->formValues($donationEvent);
     }
 
@@ -35,11 +42,50 @@ class AdminDonationEventForm extends Component
     {
         abort_unless(Auth::check(), 403);
 
-        $isCreating = ! $this->donationEvent instanceof DonationEvent;
-        $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        try {
+            $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        } catch (ValidationException $validationException) {
+            $this->hasUnsavedChanges = true;
 
-        $this->donationEvent = $saveDonationEvent($this->donationEvent, $validated['form']);
+            throw $validationException;
+        }
+
+        if ($this->requiresUnpublishedConfirmation()) {
+            $this->hasUnsavedChanges = true;
+            Flux::modal('confirm-current-event-unpublish')->show();
+
+            return;
+        }
+
+        $this->persist($saveDonationEvent, $validated['form']);
+    }
+
+    public function confirmUnpublished(SaveDonationEventAction $saveDonationEvent): void
+    {
+        abort_unless(Auth::check(), 403);
+
+        $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        $this->persist($saveDonationEvent, $validated['form']);
+    }
+
+    protected function requiresUnpublishedConfirmation(): bool
+    {
+        return $this->donationEvent instanceof DonationEvent
+            && $this->donationEvent->is_published
+            && ! (bool) $this->form['is_published']
+            && resolve(EventSettings::class)->current_event_id === $this->donationEvent->id;
+    }
+
+    /**
+     * @param  array<string, mixed>  $form
+     */
+    protected function persist(SaveDonationEventAction $saveDonationEvent, array $form): void
+    {
+        $isCreating = ! $this->donationEvent instanceof DonationEvent;
+
+        $this->donationEvent = $saveDonationEvent($this->donationEvent, $form);
         $this->form = $this->formValues($this->donationEvent);
+        $this->hasUnsavedChanges = false;
 
         Flux::toast(
             heading: 'Gespeichert',
@@ -47,9 +93,7 @@ class AdminDonationEventForm extends Component
             variant: 'success',
         );
 
-        if ($isCreating) {
-            $this->redirect(route('admin.donation-events.edit', $this->donationEvent), navigate: true);
-        }
+        $this->redirect(route('admin.donation-events.edit', $this->donationEvent), navigate: true);
     }
 
     /**
@@ -90,7 +134,7 @@ class AdminDonationEventForm extends Component
     {
         return [
             'form.title' => 'Titel',
-            'form.slug' => 'Kürzel',
+            'form.slug' => 'Slug',
             'form.starts_at' => 'Start',
             'form.ends_at' => 'Ende',
             'form.registration_opens_at' => 'Anmeldestart',
@@ -139,8 +183,8 @@ class AdminDonationEventForm extends Component
             'location_postal_code' => $donationEvent->location_postal_code ?? '',
             'location_city' => $donationEvent->location_city,
             'location_url' => $donationEvent->location_url ?? '',
-            'is_published' => $donationEvent->is_published,
-            'has_equal_split_option' => $donationEvent->has_equal_split_option,
+            'is_published' => (bool) $donationEvent->is_published,
+            'has_equal_split_option' => (bool) $donationEvent->has_equal_split_option,
             'content' => $this->contentValues($donationEvent),
         ];
     }

@@ -70,3 +70,23 @@ it('does not show unpublished partners or sponsors on home', function (): void {
     $response->assertDontSee('Hidden Partner');
     $response->assertDontSee('Hidden Sponsor');
 });
+
+it('uses default metadata when event SEO content is blank', function (): void {
+    $event = DonationEvent::factory()->create([
+        'is_published' => true,
+        'content' => [
+            'seo' => [
+                'meta_description_md' => '   ',
+                'og_description_md' => '',
+            ],
+        ],
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+
+    get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('content="Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', escape: false)
+        ->assertSee('content="Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', escape: false);
+});

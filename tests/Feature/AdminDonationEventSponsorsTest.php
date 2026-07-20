@@ -19,7 +19,9 @@ it('shows sponsor tab on the event edit page', function (): void {
     get(route('admin.donation-events.edit', $donationEvent))
         ->assertSuccessful()
         ->assertSee('Sponsor:innen')
-        ->assertSee('Sponsor:innen zuordnen');
+        ->assertSee('Zugeordnete Sponsor:innen')
+        ->assertSee('Verfügbare Sponsor:innen')
+        ->assertSee('Zuordnungen');
 });
 
 it('loads sponsor assignments with pivot values', function (): void {
@@ -43,7 +45,8 @@ it('loads sponsor assignments with pivot values', function (): void {
         ->assertSet('sponsorRows.1.name', 'Beta Sponsor')
         ->assertSet('sponsorRows.1.attached', false)
         ->assertSet('sponsorRows.1.size', 'medium')
-        ->assertSet('sponsorRows.1.is_published', true);
+        ->assertSet('sponsorRows.1.is_published', false)
+        ->assertSee('Vom Anlass entfernen');
 });
 
 it('attaches updates and detaches sponsors', function (): void {
@@ -96,9 +99,39 @@ it('requires valid pivot data for attached sponsors', function (): void {
         ->call('save')
         ->assertHasErrors([
             'sponsorRows.0.size' => 'in',
-            'sponsorRows.0.contribution_text' => 'required_if',
+            'sponsorRows.0.contribution_text' => 'required',
             'sponsorRows.0.sort_order' => 'min',
         ]);
+});
+
+it('ignores invalid pivot data for detached sponsors', function (): void {
+    Sponsor::factory()->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminDonationEventSponsorsForm::class, ['donationEvent' => DonationEvent::factory()->create()])
+        ->set('sponsorRows.0.size', 'extra-large')
+        ->set('sponsorRows.0.sort_order', -1)
+        ->call('save')
+        ->assertHasNoErrors();
+});
+
+it('loads assigned sponsors in public order and available sponsors alphabetically', function (): void {
+    $donationEvent = DonationEvent::factory()->create();
+    $laterByName = Sponsor::factory()->create(['name' => 'Zulu Assigned']);
+    $firstByName = Sponsor::factory()->create(['name' => 'Alpha Assigned']);
+    Sponsor::factory()->create(['name' => 'Beta Available']);
+    Sponsor::factory()->create(['name' => 'Alpha Available']);
+
+    $pivot = ['size' => 'medium', 'contribution_text' => 'Beitrag', 'is_published' => true];
+    $donationEvent->sponsors()->attach($laterByName, [...$pivot, 'sort_order' => 10]);
+    $donationEvent->sponsors()->attach($firstByName, [...$pivot, 'sort_order' => 20]);
+
+    Livewire::test(AdminDonationEventSponsorsForm::class, ['donationEvent' => $donationEvent])
+        ->assertSet('sponsorRows.0.name', 'Zulu Assigned')
+        ->assertSet('sponsorRows.1.name', 'Alpha Assigned')
+        ->assertSet('sponsorRows.2.name', 'Alpha Available')
+        ->assertSet('sponsorRows.3.name', 'Beta Available');
 });
 
 it('allows detached sponsors without contribution text', function (): void {

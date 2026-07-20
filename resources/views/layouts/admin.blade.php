@@ -213,7 +213,7 @@
                 </button>
             </div>
 
-            <main class="min-w-0 overflow-x-hidden py-10">
+            <main class="min-w-0 overflow-x-clip py-10">
                 <div class="min-w-0 px-4 sm:px-6 lg:px-8">
                     <x-admin.page-title>{{ $title }}</x-admin.page-title>
 

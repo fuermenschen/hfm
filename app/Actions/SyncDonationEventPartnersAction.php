@@ -42,7 +42,11 @@ class SyncDonationEventPartnersAction
         foreach ($referencedPartnerIds as $referencedPartnerId) {
             $partnerId = (int) $referencedPartnerId;
 
-            if (isset($rowsByPartnerId[$partnerId])) {
+            if (
+                isset($rowsByPartnerId[$partnerId])
+                && array_key_exists('sort_order', $rowsByPartnerId[$partnerId])
+                && array_key_exists('is_published', $rowsByPartnerId[$partnerId])
+            ) {
                 $syncData[$partnerId] = $this->pivotData($rowsByPartnerId[$partnerId]);
 
                 continue;
@@ -52,7 +56,7 @@ class SyncDonationEventPartnersAction
             $pivot = $existingPartner instanceof Partner ? $existingPartner->getRelation('pivot') : null;
             $syncData[$partnerId] = [
                 'sort_order' => (int) ($pivot instanceof Pivot ? $pivot->getAttribute('sort_order') : 0),
-                'is_published' => (bool) ($pivot instanceof Pivot ? $pivot->getAttribute('is_published') : true),
+                'is_published' => (bool) ($pivot instanceof Pivot ? $pivot->getAttribute('is_published') : false),
             ];
         }
 

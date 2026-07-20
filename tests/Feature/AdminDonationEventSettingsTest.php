@@ -5,6 +5,7 @@ use App\Components\AdminDonationEventTable;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\User;
+use App\Settings\EventSettings;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -32,7 +33,13 @@ it('renders create and edit settings pages for admins', function (): void {
         ->assertSee('Anlass erstellen')
         ->assertSee('Öffentliche Inhalte')
         ->assertSee('Erscheint als Haupttitel im Hero der Startseite')
-        ->assertSeeInOrder(['Titel', 'Kürzel'])
+        ->assertSeeInOrder(['Titel', 'Slug'])
+        ->assertSeeInOrder(['Startseite', 'Resultate', 'SEO / Teilen', 'Rechnung'])
+        ->assertSee('Leere Anmeldedaten halten die entsprechende Anmeldung geschlossen')
+        ->assertSee('inputmode="numeric"', escape: false)
+        ->assertSee('type="url"', escape: false)
+        ->assertSee('overflow-x-clip', escape: false)
+        ->assertSee('Formularangaben')
         ->assertSee('Markdown-Syntax')
         ->assertDontSee('form.timezone', escape: false);
 
@@ -42,6 +49,43 @@ it('renders create and edit settings pages for admins', function (): void {
         ->assertSee('Änderungen speichern');
 
     get(route('admin.donation-events.edit', 999999))->assertNotFound();
+});
+
+it('shows current and publication status in the page header', function (): void {
+    $donationEvent = DonationEvent::factory()->create(['is_published' => true]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $donationEvent->id;
+    $settings->save();
+
+    actingAs(User::factory()->create());
+
+    get(route('admin.donation-events.edit', $donationEvent))
+        ->assertSuccessful()
+        ->assertSee('Aktueller Anlass')
+        ->assertSee('Veröffentlicht');
+});
+
+it('requires confirmation before unpublishing the current event', function (): void {
+    $donationEvent = DonationEvent::factory()->create(['is_published' => true]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $donationEvent->id;
+    $settings->save();
+
+    actingAs(User::factory()->create());
+
+    $component = Livewire::test(AdminDonationEventForm::class, [
+        'donationEvent' => $donationEvent,
+        'isCurrentEvent' => true,
+    ])
+        ->set('form.is_published', false)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($donationEvent->refresh()->is_published)->toBeTrue();
+
+    $component->call('confirmUnpublished')->assertHasNoErrors();
+
+    expect($donationEvent->refresh()->is_published)->toBeFalse();
 });
 
 it('links to event creation and editing from the table', function (): void {
