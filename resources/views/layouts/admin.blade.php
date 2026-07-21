@@ -18,7 +18,7 @@
                 'label' => 'Anlässe',
                 'route' => 'admin.donation-events.index',
                 'svg' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V8.25A2.25 2.25 0 0 1 5.25 6h13.5A2.25 2.25 0 0 1 21 8.25v10.5M3 18.75A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75M3 18.75v-6.75A2.25 2.25 0 0 1 5.25 9.75h13.5A2.25 2.25 0 0 1 21 12v6.75" /></svg>',
-                'current' => $thisRoute === 'admin.donation-events.index',
+                'current' => str_starts_with((string) $thisRoute, 'admin.donation-events.'),
             ],
             [
                 'label' => 'Partner:innen',
@@ -213,7 +213,7 @@
                 </button>
             </div>
 
-            <main class="min-w-0 overflow-x-hidden py-10">
+            <main class="min-w-0 overflow-x-clip py-10">
                 <div class="min-w-0 px-4 sm:px-6 lg:px-8">
                     <x-admin.page-title>{{ $title }}</x-admin.page-title>
 

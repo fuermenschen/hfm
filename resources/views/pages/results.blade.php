@@ -2,7 +2,7 @@
 
 @section('content')
     @component('components.page-title')
-        {{ $currentDonationEvent?->contentPlainText('results.heading_md', 'Resultate') ?? 'Resultate' }}
+        {{ $currentDonationEvent?->contentPlainText('results.heading_md', 'Resultate') ?: 'Resultate' }}
     @endcomponent
 
     <div class="w-full max-w-2xl mx-auto text-left sm:text-center my-12">

@@ -7,7 +7,24 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
+use App\Settings\EventSettings;
 use Livewire\Livewire;
+
+use function Pest\Laravel\get;
+
+it('falls back to the default results heading when event content is empty', function (): void {
+    $donationEvent = DonationEvent::factory()->create([
+        'is_published' => true,
+        'content' => ['results' => ['heading_md' => '']],
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $donationEvent->id;
+    $settings->save();
+
+    get(route('results'))
+        ->assertSuccessful()
+        ->assertSeeText('Resultate');
+});
 
 it('renders successfully and shows per-partner section', function () {
     Livewire::test(Results::class)
