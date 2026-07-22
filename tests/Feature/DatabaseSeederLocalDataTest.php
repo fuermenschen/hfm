@@ -6,23 +6,32 @@ use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\Faq;
 use App\Models\Partner;
+use App\Models\Sponsor;
 use App\Models\SportType;
 use App\Services\CurrentDonationEventService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 use function Pest\Laravel\seed;
 
 it('seeds local development graph with external users and two events', function (): void {
     config()->set('app.env', 'local');
+    Storage::fake('public');
 
     seed(DatabaseSeeder::class);
 
     expect(DonationEvent::query()->whereIn('slug', ['2025', '2026'])->count())->toBe(2)
-        ->and(Partner::query()->count())->toBe(6)
+        ->and(Partner::query()->count())->toBe(3)
+        ->and(Sponsor::query()->count())->toBe(4)
+        ->and(Faq::query()->count())->toBe(4)
         ->and(SportType::query()->count())->toBe(5)
         ->and(DonationEvent::query()->orderBy('slug')->withCount('sportTypes')->pluck('sport_types_count')->all())->toBe([5, 5])
+        ->and(DonationEvent::query()->orderBy('slug')->withCount('partners')->pluck('partners_count')->all())->toBe([3, 3])
+        ->and(DonationEvent::query()->orderBy('slug')->withCount('sponsors')->pluck('sponsors_count')->all())->toBe([4, 4])
+        ->and(DonationEvent::query()->orderBy('slug')->withCount('faqs')->pluck('faqs_count')->all())->toBe([4, 4])
         ->and(ExternalUser::query()->count())->toBe(100)
         ->and(AthleteRegistration::query()->count())->toBe(33)
         ->and(Donation::query()->count())->toBe(220)
@@ -38,5 +47,16 @@ it('seeds local development graph with external users and two events', function 
     $currentEvent = resolve(CurrentDonationEventService::class)->current();
 
     expect($currentEvent)->not->toBeNull()
-        ->and($currentEvent?->slug)->toBe('2026');
+        ->and($currentEvent?->slug)->toBe('2026')
+        ->and($currentEvent?->contentValue('home.about_heading'))->toBe('Um was geht es?')
+        ->and($currentEvent?->partners()->wherePivot('is_published', true)->count())->toBe(3)
+        ->and($currentEvent?->sponsors()->wherePivot('is_published', true)->count())->toBe(4)
+        ->and($currentEvent?->faqs()->wherePivot('is_published', true)->count())->toBe(4)
+        ->and($currentEvent?->sportTypes()->wherePivot('is_enabled', true)->count())->toBe(5)
+        ->and($currentEvent?->partners->every(fn (Partner $partner): bool => Storage::disk('public')->exists('partners/'.$partner->logo_light_filename)
+            && Storage::disk('public')->exists('partners/'.$partner->logo_dark_filename)))->toBeTrue()
+        ->and($currentEvent?->sponsors->every(fn (Sponsor $sponsor): bool => Storage::disk('public')->exists('sponsors/'.$sponsor->logo_filename)))->toBeTrue()
+        ->and(AthleteRegistration::query()->with('donationEvent.partners')->get()->every(
+            fn (AthleteRegistration $registration): bool => $registration->donationEvent->partners->contains('id', $registration->partner_id),
+        ))->toBeTrue();
 });

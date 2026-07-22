@@ -8,12 +8,16 @@ use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\Faq;
 use App\Models\Partner;
+use App\Models\Sponsor;
 use App\Models\SportType;
 use App\Models\User;
 use App\Settings\EventSettings;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,11 +25,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->seedAdminUsers();
         $this->seedSportTypes();
+        $this->call(DonationEventSeeder::class);
 
-        $pastEvent = DonationEvent::factory()->defaults()->withSportTypes()->year(2025)->create();
-        $futureEvent = DonationEvent::factory()->defaults()->withSportTypes()->year(2026)->create();
-
-        Partner::factory()->count(6)->create();
+        $pastEvent = DonationEvent::query()->where('slug', '2025')->firstOrFail();
+        $futureEvent = DonationEvent::query()->where('slug', '2026')->firstOrFail();
+        $this->seedEventAssets();
+        $this->seedEventContent(collect([$pastEvent, $futureEvent]));
 
         $eventSettings = resolve(EventSettings::class);
         $eventSettings->current_event_id = $futureEvent->id;
@@ -51,6 +56,104 @@ class DatabaseSeeder extends Seeder
         }
     }
 
+    protected function seedEventAssets(): void
+    {
+        $disk = Storage::disk('public');
+
+        foreach ([
+            'partners/bruehlgut_light.svg' => 'images/bruehlgut_light.svg',
+            'partners/bruehlgut_dark.svg' => 'images/bruehlgut_dark.svg',
+            'partners/iks_light.svg' => 'images/iks_light.svg',
+            'partners/iks_dark.svg' => 'images/iks_dark.svg',
+            'partners/143_light.svg' => 'images/143_light.svg',
+            'partners/143_dark.svg' => 'images/143_dark.svg',
+            'sponsors/rohner_spiller.svg' => 'images/sponsor_logos/rohner_spiller.svg',
+            'sponsors/tm_kommunikation.svg' => 'images/sponsor_logos/tm_kommunikation.svg',
+            'sponsors/veloplus.svg' => 'images/sponsor_logos/veloplus.svg',
+            'sponsors/intersport_egli.svg' => 'images/sponsor_logos/intersport_egli.svg',
+        ] as $target => $source) {
+            throw_unless(
+                $disk->put($target, File::get(resource_path($source))),
+                \RuntimeException::class,
+                sprintf('Failed to seed event asset [%s].', $target),
+            );
+        }
+    }
+
+    /** @param Collection<int, DonationEvent> $events */
+    protected function seedEventContent(Collection $events): void
+    {
+        $partners = collect([
+            [
+                'name' => 'Brühlgut Stiftung',
+                'logo_light_filename' => 'bruehlgut_light.svg',
+                'logo_dark_filename' => 'bruehlgut_dark.svg',
+                'beneficiary_blurb' => 'Die Brühlgut Stiftung begleitet und fördert Menschen mit Beeinträchtigung.',
+                'url' => 'https://www.bruehlgut.ch/',
+            ],
+            [
+                'name' => 'Institut Kinderseele Schweiz',
+                'logo_light_filename' => 'iks_light.svg',
+                'logo_dark_filename' => 'iks_dark.svg',
+                'beneficiary_blurb' => 'Das Institut Kinderseele Schweiz unterstützt Kinder psychisch erkrankter Eltern.',
+                'url' => 'https://www.kinderseele.ch/',
+            ],
+            [
+                'name' => 'Tel. 143 - Die Dargebotene Hand',
+                'logo_light_filename' => '143_light.svg',
+                'logo_dark_filename' => '143_dark.svg',
+                'beneficiary_blurb' => 'Die Dargebotene Hand bietet Menschen in schwierigen Lebenslagen Unterstützung.',
+                'url' => 'https://www.143.ch/',
+            ],
+        ])->map(fn (array $attributes): Partner => Partner::query()->updateOrCreate(
+            ['name' => $attributes['name']],
+            $attributes,
+        ));
+
+        $sponsors = collect([
+            ['name' => 'Rohner Spiller', 'description' => 'Unterstützt den Anlass mit Kommunikation und Gestaltung.', 'logo_filename' => 'rohner_spiller.svg', 'url' => 'https://rohnerspiller.ch/'],
+            ['name' => 'TM Kommunikation', 'description' => 'Unterstützt den Anlass in der Kommunikation.', 'logo_filename' => 'tm_kommunikation.svg', 'url' => 'https://tmkommunikation.ch/'],
+            ['name' => 'Veloplus', 'description' => 'Unterstützt den Anlass rund ums Velo.', 'logo_filename' => 'veloplus.svg', 'url' => 'https://www.veloplus.ch/'],
+            ['name' => 'Intersport Egli', 'description' => 'Unterstützt den Anlass rund um Sport und Bewegung.', 'logo_filename' => 'intersport_egli.svg', 'url' => 'https://www.intersport.ch/'],
+        ])->map(fn (array $attributes): Sponsor => Sponsor::query()->updateOrCreate(
+            ['name' => $attributes['name']],
+            $attributes,
+        ));
+
+        $faqPivots = collect([
+            'general' => ['title' => 'Wann und wo findet der Anlass statt?', 'content_md' => 'Der Anlass findet bei der Brühlgut Stiftung in Winterthur statt. Die genauen Zeiten stehen auf der Startseite.'],
+            'athletes' => ['title' => 'Wie kann ich als Sportler:in teilnehmen?', 'content_md' => 'Melde dich über das Anmeldeformular an und wähle deine Sportart sowie eine:n Benefizpartner:in.'],
+            'donors' => ['title' => 'Wie kann ich spenden?', 'content_md' => 'Wähle eine:n Sportler:in und lege deinen Spendenbetrag pro Runde fest.'],
+            'background' => ['title' => 'Wohin gehen die Spenden?', 'content_md' => 'Die Spenden gehen vollständig an die ausgewählten Benefizpartner:innen.'],
+        ])->mapWithKeys(function (array $attributes, string $group): array {
+            $faq = Faq::query()->updateOrCreate(['title' => $attributes['title']], $attributes);
+
+            return [$faq->id => ['group' => $group, 'sort_order' => 10, 'is_published' => true]];
+        });
+
+        $sportTypePivots = SportType::query()->orderBy('id')->get()->mapWithKeys(
+            fn (SportType $sportType, int $index): array => [$sportType->id => ['sort_order' => ($index + 1) * 10, 'is_enabled' => true]],
+        );
+        $partnerPivots = $partners->values()->mapWithKeys(
+            fn (Partner $partner, int $index): array => [$partner->id => ['sort_order' => ($index + 1) * 10, 'is_published' => true]],
+        );
+        $sponsorPivots = $sponsors->values()->mapWithKeys(
+            fn (Sponsor $sponsor, int $index): array => [$sponsor->id => [
+                'size' => $index === 0 ? 'large' : 'medium',
+                'contribution_text' => 'Unterstützt Höhenmeter für Menschen.',
+                'sort_order' => ($index + 1) * 10,
+                'is_published' => true,
+            ]],
+        );
+
+        $events->each(function (DonationEvent $event) use ($sportTypePivots, $partnerPivots, $sponsorPivots, $faqPivots): void {
+            $event->sportTypes()->sync($sportTypePivots->all());
+            $event->partners()->sync($partnerPivots->all());
+            $event->sponsors()->sync($sponsorPivots->all());
+            $event->faqs()->sync($faqPivots->all());
+        });
+    }
+
     protected function seedLocalScenario(DonationEvent $pastEvent, DonationEvent $futureEvent): void
     {
         $donorOnlyUsers = ExternalUser::factory()->count(70)->create();
@@ -71,8 +174,13 @@ class DatabaseSeeder extends Seeder
 
     protected function createEventRegistrations(Collection $externalUsers, DonationEvent $event): Collection
     {
+        $partnerIds = $event->partners()->pluck('partners.id');
+
         return $externalUsers->map(fn (ExternalUser $externalUser): AthleteRegistration => AthleteRegistration::factory()
-            ->forVerifiedEventUser($event, $externalUser)
+            ->forEvent($event)
+            ->forExternalUser($externalUser)
+            ->withPartner($partnerIds->random())
+            ->verified()
             ->create());
     }
 
