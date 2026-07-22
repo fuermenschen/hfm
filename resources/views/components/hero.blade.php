@@ -2,7 +2,7 @@
 
 @props([
     // Base filename (without extension) for the landing image, e.g. "01", "07"
-    'img' => '01',
+    'img' => '02',
 ])
 
 @php
@@ -10,10 +10,10 @@
     // Examples: "07.png" -> "7", "01" -> "1", "5" -> "5"
     $imgBase = preg_replace('/\.(png|webp|avif)$/i', '', (string) $img);
     $imgNum = ltrim($imgBase, '0');
-    if ($imgNum === '') { $imgNum = '1'; }
-    if (!preg_match('/^\d+$/', $imgNum)) { $imgNum = '1'; }
+    if ($imgNum === '') { $imgNum = '2'; }
+    if (!preg_match('/^\d+$/', $imgNum)) { $imgNum = '2'; }
     $n = (int) $imgNum;
-    if ($n < 1 || $n > 14) { $imgNum = '1'; }
+    if ($n < 2 || $n > 14) { $imgNum = '2'; }
 @endphp
 
 @push('head')
@@ -35,12 +35,12 @@
             <img
                 class="hfm-hero__img hfm-hero__img--full block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none"
                 data-src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}"
-                width="1920" height="1080"
+                width="1536" height="1024"
                 sizes="100vw"
                 decoding="async" fetchpriority="high" alt="" aria-hidden="true" role="presentation"
             />
             <noscript>
-                <img class="hfm-hero__img block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none" src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}" width="1920" height="1080" sizes="100vw" alt="" />
+                <img class="hfm-hero__img block w-full h-full object-cover object-[center_55%] portrait:h-full portrait:max-h-none" src="{{ Vite::asset("resources/images/landing_page/{$imgNum}.png") }}" width="1536" height="1024" sizes="100vw" alt="" />
             </noscript>
         </picture>
         <!-- Global scrim to ensure text contrast on any image -->
@@ -64,7 +64,7 @@
                     <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
                         <div class="hfm-hero__titleRadial"></div>
                     </div>
-                    <h1 class="hfm-hero__title text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-tight tracking-tight">{{ $title }}</h1>
+                    <h1 class="hfm-hero__title text-balance wrap-break-word text-[clamp(2rem,6vw,3.5rem)] font-extrabold leading-tight tracking-tight">{{ $title }}</h1>
                 </div>
             @endif
 

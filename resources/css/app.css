@@ -249,12 +249,6 @@ select:invalid {
         }
     }
 
-    .partner-logo {
-        max-height: clamp(28px, 5vh, 48px);
-        width: auto;
-        object-fit: contain;
-    }
-
     /* Blur-up image loading for hero */
     .hfm-hero__visual {
         position: relative;

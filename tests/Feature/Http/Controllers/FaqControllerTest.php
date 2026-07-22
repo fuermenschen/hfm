@@ -23,6 +23,9 @@ it('renders questions and answers page with event faqs', function (): void {
 
     $response->assertOk();
     $response->assertSee('Event Specific FAQ');
+    $response->assertSee('prose prose-sm', false);
+    $response->assertSee('<div class="text-sm leading-7">', false);
+    $response->assertDontSee('<p class="leading-7 text-sm flex flex-col space-y-3">', false);
 });
 
 it('renders questions and answers page with global faqs when no event', function (): void {

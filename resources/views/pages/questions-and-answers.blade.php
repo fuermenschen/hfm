@@ -60,7 +60,7 @@
             @forelse (($faqsByGroup[$section['group']] ?? collect())->sortBy('group_sort_order') as $faq)
                 <x-faq-question-answer>
                     <x-slot:question>{{ $faq->title }}</x-slot:question>
-                    <div class="max-w-none prose prose-p:my-0 dark:prose-invert">
+                    <div class="max-w-none prose prose-sm dark:prose-invert">
                         {!! Str::markdown((string) $faq->content_md, [
                             'html_input' => 'strip',
                             'allow_unsafe_links' => false,
