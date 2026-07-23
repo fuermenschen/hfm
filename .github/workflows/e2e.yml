@@ -71,6 +71,9 @@ jobs:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
 
+      - name: Link public storage
+        run: php artisan storage:link
+
       - name: Start Laravel and Run E2E Tests
         uses: nick-fields/retry@v4
         with:

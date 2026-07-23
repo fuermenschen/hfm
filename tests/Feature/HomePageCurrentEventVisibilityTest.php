@@ -118,3 +118,30 @@ it('shows 2025 partners and sponsors on home', function (): void {
     $response->assertSee('Intersport Egli Logo');
     $response->assertSee('Das Institut Kinderseele Schweiz unterstützt Kinder psychisch erkrankter Eltern.');
 });
+
+it('balances hero partner logos for :dataset', function (int $partnerCount, string $layoutClass): void {
+    $event = DonationEvent::factory()->create(['is_published' => true]);
+    $partners = Partner::factory()->count($partnerCount)->create();
+
+    foreach ($partners as $index => $partner) {
+        $event->partners()->attach($partner, ['sort_order' => $index + 1, 'is_published' => true]);
+    }
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+
+    $html = get(route('home'))->assertSuccessful()->getContent();
+
+    expect($html)
+        ->toContain($layoutClass)
+        ->and(substr_count($html, 'aspect-3/1'))->toBe($partnerCount)
+        ->and(substr_count($html, 'object-contain'))->toBe($partnerCount * 2);
+})->with([
+    'one partner' => [1, 'max-w-20 sm:max-w-28'],
+    'two partners' => [2, 'max-w-[11.5rem] sm:max-w-[19rem]'],
+    'three partners' => [3, 'max-w-72 sm:max-w-[31rem]'],
+    'four partners' => [4, 'max-w-[11.5rem] sm:max-w-[19rem]'],
+    'five partners' => [5, 'max-w-72 sm:max-w-[31rem]'],
+    'six partners' => [6, 'max-w-72 sm:max-w-[31rem]'],
+]);

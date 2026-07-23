@@ -8,10 +8,16 @@
   // If you prefer strict separation, you can move this selection into the controller/route
   // and pass `$img` down; in that case remove this block to avoid double-randomizing.
   if ($img === null || $img === '') {
-    $img = (string) random_int(1, 14);
+    $img = (string) random_int(2, 14);
   }
 
   $currentEventPartners ??= collect();
+
+  $partnerLayoutClass = match ($currentEventPartners->count()) {
+    1 => 'max-w-20 sm:max-w-28',
+    2, 4 => 'max-w-[11.5rem] sm:max-w-[19rem]',
+    default => 'max-w-72 sm:max-w-[31rem]',
+  };
 
   $eventDate = $currentDonationEvent?->starts_at;
   $eventDateTime = $eventDate?->format('Y-m-d');
@@ -63,16 +69,17 @@
 
   <x-slot:partners>
     @if ($currentDonationEvent !== null && $currentEventPartners->isNotEmpty())
-      <div class="grid grid-cols-3 gap-x-4 sm:gap-x-8 gap-y-4 w-full mx-auto">
-        <h3 class="col-span-3 text-xs sm:text-sm opacity-90">Unsere Benefizpartner:innen</h3>
+      <div class="mx-auto w-full">
+        <h3 class="text-xs opacity-90 sm:text-sm">Unsere Benefizpartner:innen</h3>
 
-        @foreach ($currentEventPartners as $partner)
-          <x-home-hero-partner class="partner-logo"
-                               :assetUrl="$partner->logoLightUrl()"
-                               :assetUrlDark="$partner->logoDarkUrl()"
-                               :imgAlt="'Logo '.$partner->name"
-                               :beneficiaryUrl="$partner->url" />
-        @endforeach
+        <div class="mx-auto mt-4 flex flex-wrap justify-center gap-x-6 gap-y-4 sm:gap-x-20 {{ $partnerLayoutClass }}">
+          @foreach ($currentEventPartners as $partner)
+            <x-home-hero-partner :assetUrl="$partner->logoLightUrl()"
+                                 :assetUrlDark="$partner->logoDarkUrl()"
+                                 :imgAlt="'Logo '.$partner->name"
+                                 :beneficiaryUrl="$partner->url" />
+          @endforeach
+        </div>
       </div>
     @endif
   </x-slot:partners>

@@ -26,11 +26,11 @@
                 <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
                     {{ $currentDonationEvent?->contentValue('home.about_heading', '') }}
                 </h1>
-                <div class="mt-6 max-w-none text-xl leading-8 prose prose-p:my-0 dark:prose-invert">
+                <div class="mt-6 max-w-none prose prose-xl dark:prose-invert">
                     {!! $currentDonationEvent?->contentMarkdown('home.about_intro_md') !!}
                 </div>
                 <div class="mt-10 max-w-xl text-base leading-7 lg:max-w-none">
-                    <div class="max-w-none prose prose-p:my-0 dark:prose-invert">
+                    <div class="max-w-none prose dark:prose-invert">
                         {!! $currentDonationEvent?->contentMarkdown('home.about_body_md') !!}
                     </div>
                     <ul role="list" class="mt-8 space-y-8">

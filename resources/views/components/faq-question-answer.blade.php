@@ -33,8 +33,8 @@
         </button>
     </dt>
     <dd class="mt-2 pr-12" x-show="open" x-transition>
-        <p class="leading-7 text-sm flex flex-col space-y-3">
+        <div class="text-sm leading-7">
             {{ $slot }}
-        </p>
+        </div>
     </dd>
 </div>
