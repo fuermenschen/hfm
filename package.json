@@ -12,7 +12,7 @@
         "e2e:ai": "npx playwright test --reporter=junit"
     },
     "devDependencies": {
-        "@playwright/test": "^1.61.1",
+        "@playwright/test": "^1.62.0",
         "@prettier/plugin-php": "^0.25.0",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/typography": "^0.5.20",
@@ -20,7 +20,7 @@
         "dotenv": "^17.3.1",
         "laravel-vite-plugin": "^3.1.3",
         "playwright": "^1.59.1",
-        "prettier": "^3.9.5",
+        "prettier": "^3.9.6",
         "prettier-plugin-tailwindcss": "^0.8.1",
         "sharp": "^0.35.3",
         "svgo": "^4.0.2",
