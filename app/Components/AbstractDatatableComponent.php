@@ -53,7 +53,7 @@ abstract class AbstractDatatableComponent extends Component
         $search = $this->normalizedSearchTerm($this->search);
 
         if (! $ignoreSearch && $search !== '') {
-            $this->applySearch($query, $this->toEscapedLikePattern($search));
+            $this->applySearch($query, '%'.$search.'%');
         }
 
         return $query->orderBy($this->resolvedSortColumn(), $this->sortDirection);
@@ -72,31 +72,15 @@ abstract class AbstractDatatableComponent extends Component
         $query->where(function (Builder $builder) use ($search, $searchableColumns): void {
             $isFirstCondition = true;
 
-            foreach ($searchableColumns as $key => $column) {
-                if (is_int($key)) {
-                    if ($column === '') {
-                        continue;
-                    }
-
-                    $this->applySearchColumnCondition(
-                        builder: $builder,
-                        column: $column,
-                        search: $search,
-                        boolean: $isFirstCondition ? 'and' : 'or',
-                    );
-
-                    $isFirstCondition = false;
-
-                    continue;
-                }
-
+            foreach ($searchableColumns as $column) {
                 if ($column === '') {
                     continue;
                 }
 
-                $builder->whereRaw(
-                    sql: $column." like ? escape '\\'",
-                    bindings: [$search],
+                $this->applySearchColumnCondition(
+                    builder: $builder,
+                    column: $column,
+                    search: $search,
                     boolean: $isFirstCondition ? 'and' : 'or',
                 );
 
@@ -130,17 +114,6 @@ abstract class AbstractDatatableComponent extends Component
         return mb_substr($sanitizedSearch, 0, 120);
     }
 
-    protected function toEscapedLikePattern(string $search): string
-    {
-        $escapedSearch = str_replace(
-            ['\\', '%', '_'],
-            ['\\\\', '\\%', '\\_'],
-            $search,
-        );
-
-        return '%'.$escapedSearch.'%';
-    }
-
     protected function applySearchColumnCondition(Builder $builder, string $column, string $search, string $boolean): void
     {
         if (str_contains($column, '.')) {
@@ -171,13 +144,7 @@ abstract class AbstractDatatableComponent extends Component
 
         throw_unless(preg_match('/^[A-Za-z_]\w*$/', $column), \LogicException::class, static::class.sprintf(' has an invalid searchable column [%s].', $column));
 
-        $wrappedColumn = $builder->getQuery()->getGrammar()->wrap($column);
-
-        $builder->whereRaw(
-            sql: $wrappedColumn." like ? escape '\\'",
-            bindings: [$search],
-            boolean: $boolean,
-        );
+        $builder->whereLike($column, $search, boolean: $boolean);
     }
 
     protected function resolvedSortColumn(): string

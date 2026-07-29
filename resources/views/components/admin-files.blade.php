@@ -22,6 +22,13 @@
             </div>
         </div>
 
+        <flux:callout icon="information-circle" heading="Alle Dateien sind öffentlich">
+            <flux:callout.text>
+                <p>Jede Datei in dieser Ablage ist über ihre URL ohne Anmeldung erreichbar. Lege hier keine vertraulichen oder personenbezogenen Inhalte ab.</p>
+                <code class="mt-2 block text-xs">{{ rtrim((string) config('app.url'), '/') }}/storage/&lt;dateiname&gt;</code>
+            </flux:callout.text>
+        </flux:callout>
+
         <div class="space-y-2">
             <flux:table>
                 <flux:table.columns>
@@ -198,6 +205,14 @@
             <div>
                 <flux:heading size="lg">Datei löschen?</flux:heading>
                 <flux:text class="mt-2">{{ $pendingDeletePath }}</flux:text>
+            </div>
+
+            <div role="alert" class="flex gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200">
+                <flux:icon.exclamation-triangle class="mt-0.5 size-5 shrink-0" />
+                <div>
+                    <div class="font-medium">Öffentliche Datei wird entfernt</div>
+                    <p class="mt-1">Nach dem Löschen ist <strong>{{ $pendingDeletePath }}</strong> über ihre öffentliche URL nicht mehr verfügbar. Prüfe vorher, ob sie noch eingebunden, verlinkt oder von anderen Personen verwendet wird.</p>
+                </div>
             </div>
 
             @if ($pendingDeleteReferences !== [])
