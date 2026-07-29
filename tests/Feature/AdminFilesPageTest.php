@@ -22,6 +22,9 @@ it('renders the admin files page', function (): void {
         ->assertSuccessful()
         ->assertSee('Dateien')
         ->assertSee('Noch keine Dateien vorhanden.')
+        ->assertSee('Alle Dateien sind öffentlich')
+        ->assertSee('Jede Datei in dieser Ablage ist über ihre URL ohne Anmeldung erreichbar.')
+        ->assertSee(rtrim((string) config('app.url'), '/').'/storage/<dateiname>')
         ->assertSee('Hochgeladene Dateien sind sofort über eine öffentliche URL abrufbar.');
 });
 
@@ -154,6 +157,9 @@ it('deletes unreferenced files', function (): void {
     Livewire::test(AdminFiles::class)
         ->call('confirmDelete', 'documents/free.pdf')
         ->assertSet('pendingDeletePath', 'documents/free.pdf')
+        ->assertSee('Öffentliche Datei wird entfernt')
+        ->assertSee('<strong>documents/free.pdf</strong>', false)
+        ->assertSee('Prüfe vorher, ob sie noch eingebunden, verlinkt oder von anderen Personen verwendet wird.')
         ->call('deleteFile')
         ->assertSet('pendingDeletePath', null)
         ->assertHasNoErrors();
