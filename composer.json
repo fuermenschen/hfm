@@ -85,21 +85,21 @@
             "@php artisan migrate --graceful --ansi"
         ],
         "precommit": [
-            "vendor/bin/rector process --clear-cache",
+            "vendor/bin/rector process",
             "vendor/bin/pint --dirty",
             "vendor/bin/peck",
             "npm run build",
-            "vendor/bin/phpstan clear-result-cache && vendor/bin/phpstan analyze",
+            "vendor/bin/phpstan analyze",
             "php artisan test --parallel",
             "npm run e2e"
         ],
         "lint:ai": [
-            "vendor/bin/rector process --dry-run --clear-cache --no-diffs --ansi",
+            "vendor/bin/rector process --dry-run --no-diffs --ansi",
             "vendor/bin/pint --dirty -q",
             "vendor/bin/peck -q"
         ],
         "test:sca:ai": [
-            "vendor/bin/phpstan clear-result-cache && vendor/bin/phpstan --error-format=json"
+            "vendor/bin/phpstan --error-format=json"
         ],
         "test:pest:ai": [
             "php artisan test --parallel --compact --colors=never"

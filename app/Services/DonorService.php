@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DonorService
 {
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(private DonationEventIdParser $donationEventIdParser) {}
 
     public function all(): Builder

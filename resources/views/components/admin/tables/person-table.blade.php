@@ -3,7 +3,7 @@
         <x-slot:toolbar>
             <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
-                    <flux:input wire:model.live.debounce.300ms="search" placeholder="Eintrag suchen..." icon="magnifying-glass" />
+                    <flux:input wire:model.live.debounce.300ms="search" :placeholder="$this->roleLabel().' suchen...'" icon="magnifying-glass" />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
@@ -16,6 +16,13 @@
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
+
+                <x-slot:bottomRight>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <flux:text class="text-sm text-zinc-500">{{ $external_users->total() }} {{ $this->roleLabel() }}</flux:text>
+                        <x-datatable.event-filter :events="$events" />
+                    </div>
+                </x-slot:bottomRight>
             </x-datatable.toolbar-grid>
         </x-slot:toolbar>
 
@@ -42,9 +49,17 @@
                 </flux:table.columns>
 
                 <flux:table.rows>
+                    <flux:table.row wire:loading.delay.short wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.cell colspan="99" class="text-center">
+                            <div class="flex items-center justify-center gap-2 py-4 text-sm">
+                                <flux:icon.arrow-path class="size-4 animate-spin" />
+                                Tabelle wird aktualisiert...
+                            </div>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @forelse ($external_users as $row)
                         @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                        <flux:table.row wire:key="row-{{ $row->id }}" class="{{ $rowClass }}">
+                        <flux:table.row wire:key="row-{{ $row->id }}" class="{{ $rowClass }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
                             <flux:table.cell>
                                 <flux:field variant="inline">
                                     <flux:checkbox value="{{ $row->id }}" />
@@ -54,16 +69,31 @@
                                 @php($cellAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
                                 @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
                                 <flux:table.cell class="{{ $cellClass }}">
-                                    {{ $this->displayValue($row, $columnKey) }}
+                                    @if ($columnKey === 'events')
+                                        <div class="flex flex-wrap gap-1">
+                                            @foreach ($this->linkedEvents($row) as $event)
+                                                <flux:badge size="sm" color="zinc">{{ $event->slug }}</flux:badge>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        {{ $this->displayValue($row, $columnKey) }}
+                                    @endif
                                 </flux:table.cell>
                             @endforeach
                         </flux:table.row>
                     @empty
-                        <flux:table.row>
+                        <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
                             <flux:table.cell colspan="99" class="text-center text-zinc-500">
                                 <div class="mx-auto flex max-w-lg flex-col items-center gap-2 py-6">
                                     <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
-                                    <flux:text>Keine Einträge vorhanden.</flux:text>
+                                    @if (trim($search) !== '')
+                                        <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
+                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                    @elseif ($eventId !== null && $eventId !== '')
+                                        <flux:text>Keine {{ $this->roleLabel() }} für diesen Anlass vorhanden.</flux:text>
+                                    @else
+                                        <flux:text>Keine {{ $this->roleLabel() }} vorhanden.</flux:text>
+                                    @endif
                                 </div>
                             </flux:table.cell>
                         </flux:table.row>

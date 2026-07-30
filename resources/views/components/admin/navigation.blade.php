@@ -11,7 +11,7 @@
             <x-admin.menu-item
                 :route="$nav['route']"
                 :current="$nav['current']"
-                :svg="$nav['svg']"
+                :icon="$nav['icon']"
                 :label="$nav['label']"
                 :target="$nav['target'] ?? null"
             />
@@ -22,7 +22,7 @@
             <x-admin.menu-item
                 :route="$nav['route']"
                 :current="$nav['current']"
-                :svg="$nav['svg']"
+                :icon="$nav['icon']"
                 :label="$nav['label']"
                 :target="$nav['target'] ?? null"
             />

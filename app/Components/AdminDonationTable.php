@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Components;
 
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Livewire\Attributes\Url;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminDonationTable extends AbstractDatatableComponent
 {
     public string $sortField = 'created_at';
+
+    #[Url(as: 'anlass', except: '')]
+    public ?string $eventId = '';
 
     protected DonationService $donationService;
 
@@ -57,7 +63,7 @@ class AdminDonationTable extends AbstractDatatableComponent
 
         $rows = [];
 
-        foreach ($this->baseQuery()->whereKey($selectedIds)->orderBy('id')->get() as $donation) {
+        foreach ($this->queryForTable(ignoreSearch: true)->whereKey($selectedIds)->orderBy('id')->get() as $donation) {
             if (! $donation instanceof Donation) {
                 continue;
             }
@@ -94,7 +100,29 @@ class AdminDonationTable extends AbstractDatatableComponent
 
     protected function baseQuery(): Builder
     {
-        return Donation::query()->with(['athleteRegistration.externalUser', 'donorExternalUser']);
+        return Donation::query()->with(['athleteRegistration.donationEvent', 'athleteRegistration.externalUser', 'donorExternalUser']);
+    }
+
+    protected function applyFilters(Builder $query): void
+    {
+        if ($this->eventId === null || $this->eventId === '') {
+            return;
+        }
+
+        $eventId = ctype_digit($this->eventId) ? (int) $this->eventId : 0;
+
+        if ($eventId < 1) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->whereHas('athleteRegistration', fn (Builder $registration): Builder => $registration->where('donation_event_id', $eventId));
+    }
+
+    protected function tableFilterProperties(): array
+    {
+        return ['eventId'];
     }
 
     protected function defaultSortColumn(): string
@@ -124,6 +152,7 @@ class AdminDonationTable extends AbstractDatatableComponent
         return [
             'donor' => ['label' => 'Spender:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Spender:in'],
             'athlete' => ['label' => 'Sportler:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Sportler:in'],
+            'event' => ['label' => 'Anlass', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-28', 'export_key' => 'Anlass'],
             'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
             'amount_per_round' => ['label' => 'Betrag pro Runde', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Betrag pro Runde', 'formatter' => 'money'],
             'estimated' => ['label' => 'Geschätzter Betrag', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-44', 'export_key' => 'Geschätzter Betrag', 'formatter' => 'money'],
@@ -143,11 +172,19 @@ class AdminDonationTable extends AbstractDatatableComponent
         return [
             'donor',
             'athlete',
+            'event',
             'verified',
             'amount_per_round',
             'estimated',
             'actual',
             'created_at',
+        ];
+    }
+
+    protected function tableViewData(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'events' => DonationEvent::query()->latest('starts_at')->get(['id', 'title', 'slug', 'is_published']),
         ];
     }
 
@@ -159,6 +196,7 @@ class AdminDonationTable extends AbstractDatatableComponent
         return [
             'Spender:in' => $this->donationService->donorPrivacyName($donation),
             'Sportler:in' => $this->donationService->athletePrivacyName($donation),
+            'Anlass' => $donation->athleteRegistration?->donationEvent?->slug,
             'Bestätigt' => $donation->verified ? 'Ja' : 'Nein',
             'Betrag pro Runde' => $donation->amount_per_round,
             'Geschätzter Betrag' => $this->estimatedAmount($donation),

@@ -8,6 +8,7 @@ use App\Actions\GetDashboardDataAction;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Notifications\Events\NotificationFailed;
@@ -41,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
         if (app()->isLocal()) {
             Model::preventLazyLoading();
         }
+
+        // define dev commands
+        DevCommands::register('mailpit', 'mailpit')->pink();
 
         Gate::define('viewPulse', fn (User $user): true => true);
         Gate::define('viewLogViewer', fn (User $user): true => true);

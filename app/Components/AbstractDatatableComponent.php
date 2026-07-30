@@ -50,6 +50,7 @@ abstract class AbstractDatatableComponent extends Component
         $this->normalizeSorting();
 
         $query = $this->baseQuery();
+        $this->applyFilters($query);
         $search = $this->normalizedSearchTerm($this->search);
 
         if (! $ignoreSearch && $search !== '') {
@@ -60,6 +61,16 @@ abstract class AbstractDatatableComponent extends Component
     }
 
     abstract protected function baseQuery(): Builder;
+
+    protected function applyFilters(Builder $query): void {}
+
+    /**
+     * @return array<int, string>
+     */
+    protected function tableFilterProperties(): array
+    {
+        return [];
+    }
 
     protected function applySearch(Builder $query, string $search): void
     {

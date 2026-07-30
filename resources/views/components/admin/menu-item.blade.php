@@ -1,7 +1,7 @@
 @props([
     'route',
     'current' => false,
-    'svg' => '',
+    'icon',
     'label' => '',
     'target' => null,
 ])
@@ -16,9 +16,7 @@
             ])>
             @csrf
             <button type="submit" class="flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 cursor-pointer">
-                <span class="h6 w-6 shrink-0">
-                    {!! html_entity_decode($svg) !!}
-                </span>
+                <flux:icon :name="$icon" class="size-6 shrink-0" />
                 {{$label}}
             </button>
         </form>
@@ -34,9 +32,7 @@
               "text-base-300 hover:text-base-50" => !$current,
               "bg-accent text-accent-foreground" => $current,
             ])>
-        <span class="h6 w-6 shrink-0">
-         {!! html_entity_decode($svg) !!}
-        </span>
+            <flux:icon :name="$icon" class="size-6 shrink-0" />
             {{$label}}
         </a>
     @endif

@@ -16,6 +16,13 @@
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
+
+                <x-slot:bottomRight>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <flux:text class="text-sm text-zinc-500">{{ $donations->total() }} Spenden</flux:text>
+                        <x-datatable.event-filter :events="$events" />
+                    </div>
+                </x-slot:bottomRight>
             </x-datatable.toolbar-grid>
         </x-slot:toolbar>
 
@@ -70,6 +77,10 @@
                                         {{ $this->donationService->athletePrivacyName($donation) }}
                                         @break
 
+                                    @case('event')
+                                        <flux:badge size="sm" color="zinc">{{ $donation->athleteRegistration?->donationEvent?->slug ?? '-' }}</flux:badge>
+                                        @break
+
                                     @case('verified')
                                         {{ $donation->verified ? 'Ja' : 'Nein' }}
                                         @break
@@ -115,6 +126,8 @@
                                 @if (trim($search) !== '')
                                     <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
                                     <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                @elseif ($eventId !== null && $eventId !== '')
+                                    <flux:text>Keine Spenden für diesen Anlass vorhanden.</flux:text>
                                 @else
                                     <flux:text>Keine Spenden vorhanden.</flux:text>
                                 @endif

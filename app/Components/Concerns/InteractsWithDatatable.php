@@ -67,6 +67,16 @@ trait InteractsWithDatatable
         $this->resetPage();
     }
 
+    public function updated(string $property): void
+    {
+        if (! in_array($property, $this->tableFilterProperties(), true)) {
+            return;
+        }
+
+        $this->resetPage();
+        $this->clearSelection();
+    }
+
     /**
      * @param  array<int, int>  $pageIds
      */
@@ -109,7 +119,17 @@ trait InteractsWithDatatable
 
     public function tableLoadingTargets(): string
     {
-        return 'search,sortField,sortDirection,perPage,nextPage,previousPage,gotoPage,setPage,toggleColumn';
+        return implode(',', array_merge([
+            'search',
+            'sortField',
+            'sortDirection',
+            'perPage',
+            'nextPage',
+            'previousPage',
+            'gotoPage',
+            'setPage',
+            'toggleColumn',
+        ], $this->tableFilterProperties()));
     }
 
     /**

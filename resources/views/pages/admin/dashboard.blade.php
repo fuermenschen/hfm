@@ -7,22 +7,22 @@
             <x-admin.stat-card
                 title="Registriert"
                 :value="$athleteCount"
-                route="admin.external-users.index"
+                route="admin.athletes.index"
             />
             <x-admin.stat-card
                 title="Verifiziert"
                 :value="$verifiedAthleteCount"
-                route="admin.external-users.index"
+                route="admin.athletes.index"
             />
             <x-admin.stat-card
                 title="Durchschn. Runden"
                 :value="round($meanNumberOfRounds, 0)"
-                route="admin.external-users.index"
+                route="admin.athletes.index"
             />
             <x-admin.stat-card
                 title="Durchschn. Spenden"
                 :value="round($meanNumberOfDonations, 0)"
-                route="admin.external-users.index"
+                route="admin.athletes.index"
             />
         </x-stats>
 
@@ -82,12 +82,12 @@
             <x-admin.stat-card
                 title="Registriert"
                 :value="$donorCount"
-                route="admin.external-users.index"
+                route="admin.donors.index"
             />
             <x-admin.stat-card
                 title="Durchschn. Spenden"
                 :value="round($meanNumberOfDonationsDonor, 1)"
-                route="admin.external-users.index"
+                route="admin.donors.index"
             />
         </x-stats>
 
