@@ -4,17 +4,49 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Services\AthleteService;
+use App\Services\DonorService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
-class AdminExternalUserTable extends AbstractDatatableComponent
+class AdminPersonTable extends AbstractDatatableComponent
 {
     public string $sortField = 'first_name';
 
+    #[Locked]
+    public string $role = '';
+
+    #[Url(as: 'anlass', except: '')]
+    public ?string $eventId = '';
+
+    protected AthleteService $athleteService;
+
+    protected DonorService $donorService;
+
+    public function boot(AthleteService $athleteService, DonorService $donorService): void
+    {
+        $this->athleteService = $athleteService;
+        $this->donorService = $donorService;
+    }
+
+    public function mount(string $role = ''): void
+    {
+        throw_unless(in_array($role, ['athlete', 'donor'], true), \InvalidArgumentException::class, 'Invalid person role.');
+
+        $this->role = $role;
+
+        parent::mount();
+    }
+
     protected function tableView(): string
     {
-        return 'components.admin.tables.external-users-table';
+        return 'components.admin.tables.person-table';
     }
 
     protected function tableDataKey(): string
@@ -39,7 +71,39 @@ class AdminExternalUserTable extends AbstractDatatableComponent
 
     protected function baseQuery(): Builder
     {
-        return ExternalUser::query();
+        if ($this->role === 'athlete') {
+            return $this->athleteService->all()->with('athleteRegistrations.donationEvent');
+        }
+
+        return $this->donorService->all()->with('donationsAsDonor.athleteRegistration.donationEvent');
+    }
+
+    protected function applyFilters(Builder $query): void
+    {
+        if ($this->eventId === null || $this->eventId === '') {
+            return;
+        }
+
+        $eventId = ctype_digit($this->eventId) ? (int) $this->eventId : 0;
+
+        if ($eventId < 1) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        if ($this->role === 'athlete') {
+            $query->whereHas('athleteRegistrations', fn (Builder $registrations): Builder => $registrations->where('donation_event_id', $eventId));
+
+            return;
+        }
+
+        $query->whereHas('donationsAsDonor.athleteRegistration', fn (Builder $registration): Builder => $registration->where('donation_event_id', $eventId));
+    }
+
+    protected function tableFilterProperties(): array
+    {
+        return ['eventId'];
     }
 
     protected function defaultSortColumn(): string
@@ -56,7 +120,6 @@ class AdminExternalUserTable extends AbstractDatatableComponent
             'first_name' => 'external_users.first_name',
             'last_name' => 'external_users.last_name',
             'email' => 'external_users.email',
-            'created_at' => 'external_users.created_at',
         ];
     }
 
@@ -72,7 +135,7 @@ class AdminExternalUserTable extends AbstractDatatableComponent
             'phone_number' => ['label' => 'Telefon', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Telefon'],
             'city' => ['label' => 'Ort', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Ort'],
             'country_of_residence' => ['label' => 'Wohnsitzland', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Wohnsitzland'],
-            'created_at' => ['label' => 'Erstellt am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Erstellt am', 'formatter' => 'date_time'],
+            'events' => ['label' => 'Anlässe', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Anlässe'],
         ];
     }
 
@@ -87,7 +150,35 @@ class AdminExternalUserTable extends AbstractDatatableComponent
             'email',
             'phone_number',
             'city',
-            'created_at',
+            'events',
+        ];
+    }
+
+    /**
+     * @return Collection<int, DonationEvent>
+     */
+    public function linkedEvents(ExternalUser $person): Collection
+    {
+        $events = $this->role === 'athlete'
+            ? $person->athleteRegistrations->pluck('donationEvent')
+            : $person->donationsAsDonor->pluck('athleteRegistration.donationEvent');
+
+        return $events
+            ->filter(fn (mixed $event): bool => $event instanceof DonationEvent)
+            ->unique('id')
+            ->sortByDesc('starts_at')
+            ->values();
+    }
+
+    public function roleLabel(): string
+    {
+        return $this->role === 'athlete' ? 'Sportler:innen' : 'Spender:innen';
+    }
+
+    protected function tableViewData(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'events' => DonationEvent::query()->latest('starts_at')->get(['id', 'title', 'slug', 'is_published']),
         ];
     }
 
@@ -123,7 +214,7 @@ class AdminExternalUserTable extends AbstractDatatableComponent
             $rows[] = $this->exportRow($row);
         }
 
-        return $this->exportRowsToDownload($rows, 'external_users_gesamt', $format);
+        return $this->exportRowsToDownload($rows, $this->exportPrefix().'_gesamt', $format);
     }
 
     public function exportSelected(string $format): ?HttpResponse
@@ -138,11 +229,11 @@ class AdminExternalUserTable extends AbstractDatatableComponent
 
         $rows = [];
 
-        foreach ($this->baseQuery()->whereKey($selectedIds)->orderBy('id')->get() as $row) {
+        foreach ($this->queryForTable(ignoreSearch: true)->whereKey($selectedIds)->orderBy('id')->get() as $row) {
             $rows[] = $this->exportRow($row);
         }
 
-        return $this->exportRowsToDownload($rows, 'external_users_auswahl', $format);
+        return $this->exportRowsToDownload($rows, $this->exportPrefix().'_auswahl', $format);
     }
 
     /**
@@ -157,7 +248,12 @@ class AdminExternalUserTable extends AbstractDatatableComponent
             'Telefon' => data_get($row, 'phone_number'),
             'Ort' => data_get($row, 'city'),
             'Wohnsitzland' => data_get($row, 'country_of_residence'),
-            'Erstellt am' => $this->formatDateTimeOrNull(data_get($row, 'created_at')),
+            'Anlässe' => $row instanceof ExternalUser ? $this->linkedEvents($row)->pluck('slug')->implode(', ') : '',
         ];
+    }
+
+    protected function exportPrefix(): string
+    {
+        return $this->role === 'athlete' ? 'sportler-innen' : 'spender-innen';
     }
 }

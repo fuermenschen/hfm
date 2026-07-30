@@ -1,8 +1,8 @@
 <?php
 
-use App\Components\AdminExternalUserTable;
 use App\Components\AdminFaqTable;
 use App\Components\AdminPartnerTable;
+use App\Components\AdminPersonTable;
 use App\Components\AdminSponsorTable;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
@@ -425,7 +425,7 @@ it('does not delete sponsors assigned to events', function (): void {
 it('rejects unauthenticated exports', function (): void {
     auth()->logout();
 
-    Livewire::test(AdminExternalUserTable::class)
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
         ->call('exportAll', 'csv')
         ->assertForbidden();
 });
