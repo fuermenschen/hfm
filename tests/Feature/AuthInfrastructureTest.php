@@ -153,22 +153,32 @@ it('allows reusing valid external signed login link within ttl', function () {
     assertAuthenticatedAs($externalUser, 'external');
 });
 
-it('rejects expired external signed login links', function () {
+it('shows a recovery page for expired external signed login links', function () {
     $externalUser = ExternalUser::factory()->create();
 
-    $url = URL::temporarySignedRoute('portal.login.uuid', now()->subMinute(), ['uuid' => $externalUser->uuid]);
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->subMinute(), [
+        'uuid' => $externalUser->uuid,
+        'redirect' => 'become-athlete',
+    ]);
 
-    get($url)->assertForbidden();
+    get($url)
+        ->assertForbidden()
+        ->assertSeeText('Link ist abgelaufen oder ungültig')
+        ->assertSee('href="'.route('login', ['redirect' => 'become-athlete']).'"', false)
+        ->assertSeeText('Nach dem Login gelangst du zur Sportler:innen-Anmeldung.');
     assertGuest('external');
 });
 
-it('rejects external login links with invalid signature', function () {
+it('shows a recovery page for invalid external login links', function () {
     $externalUser = ExternalUser::factory()->create();
 
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid]);
     $invalidUrl = str_replace($externalUser->uuid, (string) str()->uuid(), $url);
 
-    get($invalidUrl)->assertForbidden();
+    get($invalidUrl)
+        ->assertForbidden()
+        ->assertSeeText('Link ist abgelaufen oder ungültig')
+        ->assertSee('href="'.route('login').'"', false);
     assertGuest('external');
 });
 
