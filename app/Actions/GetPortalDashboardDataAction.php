@@ -23,8 +23,8 @@ class GetPortalDashboardDataAction
      *     hasCompletedRounds: bool,
      *     ownDonationCount: int,
      *     pendingOwnDonationCount: int,
-     *     pendingParticipations: array<int, array{id: int, event: string, sport: string, partner: string, roundsEstimated: int}>,
-     *     pendingDonations: array<int, array{id: int, event: string, athlete: string, estimatedAmount: float, amountMax: ?float}>
+     *     pendingParticipations: array<int, array{id: int, event: string, eventDate: ?string, sport: string, partner: string, roundsEstimated: int}>,
+     *     pendingDonations: array<int, array{id: int, event: string, eventDate: ?string, athlete: string, estimatedAmount: float, amountMax: ?float}>
      * }
      */
     public function __invoke(ExternalUser $externalUser, ?DonationEvent $selectedEvent): array
@@ -52,7 +52,7 @@ class GetPortalDashboardDataAction
             ->where('verified', false)
             ->whereHas('donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
             ->with([
-                'donationEvent:id,title',
+                'donationEvent:id,title,timezone,starts_at',
                 'sportType:id,name',
                 'partner:id,name',
             ])
@@ -61,6 +61,7 @@ class GetPortalDashboardDataAction
             ->map(fn ($registration): array => [
                 'id' => (int) $registration->id,
                 'event' => $registration->donationEvent->title,
+                'eventDate' => $registration->donationEvent->starts_at?->translatedFormat('j. F Y'),
                 'sport' => $registration->sportType->name,
                 'partner' => $registration->partner->name ?? 'Alle Partnerorganisationen',
                 'roundsEstimated' => (int) $registration->rounds_estimated,
@@ -72,7 +73,7 @@ class GetPortalDashboardDataAction
             ->whereHas('athleteRegistration.donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
             ->with([
                 'athleteRegistration:id,donation_event_id,external_user_id,rounds_estimated',
-                'athleteRegistration.donationEvent:id,title',
+                'athleteRegistration.donationEvent:id,title,timezone,starts_at',
                 'athleteRegistration.externalUser' => fn ($query) => $query->withTrashed()->select(['id', 'first_name', 'last_name', 'public_id']),
             ])
             ->latest()
@@ -80,6 +81,7 @@ class GetPortalDashboardDataAction
             ->map(fn (Donation $donation): array => [
                 'id' => (int) $donation->id,
                 'event' => $donation->athleteRegistration->donationEvent->title,
+                'eventDate' => $donation->athleteRegistration->donationEvent->starts_at?->translatedFormat('j. F Y'),
                 'athlete' => sprintf(
                     '%s (%s)',
                     $donation->athleteRegistration->externalUser->privacy_name,

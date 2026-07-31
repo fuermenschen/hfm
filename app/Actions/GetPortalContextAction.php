@@ -50,18 +50,36 @@ class GetPortalContextAction
             }
         }
 
+        $eventParameters = $selectedEvent !== null
+            ? ['anlass' => $selectedEvent->slug]
+            : ($request->query->has('anlass') ? ['anlass' => ''] : []);
+
+        $hasAthleteRegistrations = $externalUser->athleteRegistrations()
+            ->whereHas('donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
+            ->exists();
+
+        $hasOwnDonations = $externalUser->donationsAsDonor()
+            ->whereHas('athleteRegistration.donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
+            ->exists();
+
+        $hour = now()->hour;
+
         return [$externalUser, $selectedEvent, [
             'firstName' => $externalUser->first_name,
             'greeting' => match (true) {
-                (int) date('H') >= 17 => 'Guten Abend ',
-                (int) date('H') >= 12 => 'Grüezi ',
-                (int) date('H') >= 4 => 'Guten Morgen ',
-                default => 'Hallo ',
+                $hour >= 17 => 'Guete Abig ',
+                $hour >= 12 => 'Hoi ',
+                $hour >= 4 => 'Guete Morge ',
+                default => 'Hoi ',
             },
             'events' => $events,
             'selectedEvent' => $selectedEvent,
             'selectedEventSlug' => $selectedEvent?->slug,
-            'hasAthleteRegistrations' => $externalUser->athleteRegistrations()->exists(),
+            'eventParameters' => $eventParameters,
+            'hasAthleteRegistrations' => $hasAthleteRegistrations,
+            'hasOwnDonations' => $hasOwnDonations,
+            'athleteRegistrationOpen' => $currentEvent?->athleteRegistrationIsOpen() ?? false,
+            'donorRegistrationOpen' => $currentEvent?->donorRegistrationIsOpen() ?? false,
         ]];
     }
 }

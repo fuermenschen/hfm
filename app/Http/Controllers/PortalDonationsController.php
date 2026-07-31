@@ -53,6 +53,7 @@ class PortalDonationsController extends Controller
                 'amountMax' => $donation->amount_max !== null ? (float) $donation->amount_max : null,
                 'estimatedAmount' => $donationService->calculateEstimatedAmount($donation),
                 'currentAmount' => $donationService->calculateActualAmount($donation),
+                'hasCompletedRounds' => (int) $donation->athleteRegistration->rounds_done > 0,
                 'comment' => $donation->comment,
                 'verified' => (bool) $donation->verified,
             ]);

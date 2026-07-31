@@ -71,12 +71,12 @@ it('logs out external sessions when admin users log in', function () {
 it('shows guest login links when no guard is authenticated', function () {
     get(route('home'))
         ->assertSuccessful()
-        ->assertSeeText('Login')
+        ->assertSeeText('Anmelden')
         ->assertSee('href="'.route('login').'"', false)
         ->assertSeeText('Vereinsmitglied werden')
         ->assertDontSeeText('Dashboard')
         ->assertDontSeeText('Portal')
-        ->assertDontSeeText('Logout');
+        ->assertDontSeeText('Abmelden');
 });
 
 it('shows admin dashboard and logout links for admin users', function () {
@@ -88,10 +88,10 @@ it('shows admin dashboard and logout links for admin users', function () {
         ->assertSuccessful()
         ->assertSeeText('Dashboard')
         ->assertSee('href="'.route('admin.dashboard').'"', false)
-        ->assertSeeText('Logout')
+        ->assertSeeText('Abmelden')
         ->assertSee('action="'.route('admin.logout').'"', false)
         ->assertDontSeeText('Portal')
-        ->assertDontSeeText('Login')
+        ->assertDontSeeText('Anmelden')
         ->assertDontSeeText('Vereinsmitglied werden');
 });
 
@@ -104,10 +104,10 @@ it('shows portal and portal logout links for external users', function () {
         ->assertSuccessful()
         ->assertSeeText('Portal')
         ->assertSee('href="'.route('portal.dashboard').'"', false)
-        ->assertSeeText('Logout')
+        ->assertSeeText('Abmelden')
         ->assertSee('action="'.route('portal.logout').'"', false)
         ->assertDontSeeText('Dashboard')
-        ->assertDontSeeText('Login')
+        ->assertDontSeeText('Anmelden')
         ->assertDontSeeText('Vereinsmitglied werden');
 });
 
@@ -293,23 +293,30 @@ it('renders portal page for authenticated external users without registrations o
     actingAs($externalUser, 'external');
 
     $expectedGreeting = match (true) {
-        (int) date('H') >= 17 => 'Guten Abend ',
-        (int) date('H') >= 12 => 'Grüezi ',
-        (int) date('H') >= 4 => 'Guten Morgen ',
-        default => 'Hallo ',
+        now()->hour >= 17 => 'Guete Abig ',
+        now()->hour >= 12 => 'Hoi ',
+        now()->hour >= 4 => 'Guete Morge ',
+        default => 'Hoi ',
     };
 
     get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText($expectedGreeting.'Alex')
-        ->assertSeeText('Home')
+        ->assertSeeText('Danke für dis Engagement.')
+        ->assertSeeText('Übersicht')
         ->assertSee('wire:navigate', false)
         ->assertDontSee('wire:navigate.hover', false)
         ->assertDontSeeText('HFM Portal')
         ->assertDontSee(route('portal.participations'))
         ->assertSeeText('Spenden')
-        ->assertSeeText('Eingegangene Spenden')
-        ->assertSeeText('Eigene Spenden')
+        ->assertSeeText('Hier beginnt dein Engagement')
+        ->assertDontSeeText('Eingegangene Spenden')
+        ->assertDontSeeText('Eigene Spenden')
+        ->assertSeeText('Hilfe & Kontakt')
+        ->assertSee('href="'.route('contact').'"', false)
+        ->assertSeeText('Zur Website')
+        ->assertSee('href="'.route('home').'"', false)
+        ->assertSee('aria-label="Portal-Navigation"', false)
         ->assertDontSeeText('Aktueller Spendenbetrag')
         ->assertDontSeeText('Effektiver Spendenbetrag');
 });

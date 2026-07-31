@@ -65,12 +65,14 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertViewHas('hasCompletedRounds', true)
         ->assertViewHas('ownDonationCount', 1)
         ->assertSeeText('Effektiver Spendenbetrag')
+        ->assertSeeText('Offene Bestätigungen aus allen Anlässen.')
         ->assertSeeText('Anmeldung bestätigen')
         ->assertSeeText('Previous Event')
         ->assertSeeText('Velofahren · 12 geschätzte Runden · Stiftung Test')
         ->assertSee('wire:click="confirm"', false)
-        ->assertSeeText('Erwarteter Betrag Fr. 30.00 · Maximalbetrag Fr. 30.00')
+        ->assertSeeText('Erwartet: Fr. 30.00 · Maximal Fr. 30.00')
         ->assertSee('onchange="Livewire.navigate(', false)
+        ->assertSeeText('Current Event · 2036')
         ->assertDontSeeText('Anzeigen')
         ->assertSeeText('Current Event')
         ->assertDontSeeText('Unrelated Event');
@@ -148,6 +150,51 @@ it('filters participations and never exposes donor private identity', function (
         ->assertDontSeeText('PERSON-7Z');
 });
 
+it('shows donor-only users only their relevant dashboard summary', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    setPortalCurrentEvent($event);
+
+    $externalUser = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forEvent($event)->verified()->create();
+    Donation::factory()->forPair($externalUser, $registration)->create(['verified' => true]);
+
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
+        ->assertSuccessful()
+        ->assertSeeText('Eigene Spenden')
+        ->assertDontSeeText('Eingegangene Spenden')
+        ->assertDontSeeText('Erwarteter Spendenbetrag')
+        ->assertDontSee(route('portal.participations'));
+});
+
+it('offers current event registration links in empty states', function (): void {
+    $event = DonationEvent::factory()->create([
+        'starts_at' => now()->addWeek(),
+        'registration_opens_at' => now()->subDay(),
+        'athlete_registration_closes_at' => now()->addDay(),
+        'donor_registration_closes_at' => now()->addDay(),
+    ]);
+    setPortalCurrentEvent($event);
+
+    actingAs(ExternalUser::factory()->create(), 'external');
+
+    get(route('portal.dashboard'))
+        ->assertSuccessful()
+        ->assertSee(route('become-athlete'))
+        ->assertSee(route('become-donor'));
+
+    get(route('portal.participations'))
+        ->assertSuccessful()
+        ->assertSeeText('Noch keine Teilnahme')
+        ->assertSee(route('become-athlete'));
+
+    get(route('portal.donations'))
+        ->assertSuccessful()
+        ->assertSeeText('Noch keine Spende')
+        ->assertSee(route('become-donor'));
+});
+
 it('filters donations and only exposes athlete privacy name with public id', function (): void {
     $currentEvent = DonationEvent::factory()->year(2036)->create(['title' => 'Current Event']);
     $previousEvent = DonationEvent::factory()->year(2035)->create(['title' => 'Previous Event']);
@@ -162,7 +209,9 @@ it('filters donations and only exposes athlete privacy name with public id', fun
         'address' => 'ATHLETE-SECRET-STREET',
         'public_id' => 'XYZ678',
     ]);
-    $currentRegistration = AthleteRegistration::factory()->forVerifiedEventUser($currentEvent, $athlete)->create();
+    $currentRegistration = AthleteRegistration::factory()->forVerifiedEventUser($currentEvent, $athlete)->create([
+        'rounds_done' => 0,
+    ]);
     $previousRegistration = AthleteRegistration::factory()->forEvent($previousEvent)->verified()->create();
 
     Donation::factory()->forPair($externalUser, $currentRegistration)->create([
@@ -184,6 +233,7 @@ it('filters donations and only exposes athlete privacy name with public id', fun
         ->assertSeeText('Sam P. (XYZ-678)')
         ->assertSeeText('CURRENT-DONATION-COMMENT')
         ->assertSeeText('Bestätigung ausstehend')
+        ->assertSeeText('Noch nicht final')
         ->assertDontSeeText('PREVIOUS-DONATION-COMMENT')
         ->assertDontSeeText('PRIVATE-ATHLETE-4Q')
         ->assertDontSee('athlete-secret@example.test')

@@ -4,19 +4,17 @@
 
 @section('content')
     <div class="space-y-8">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-                <flux:heading size="xl" level="1">Spenden</flux:heading>
-                <flux:text class="mt-2 text-base">Deine Spenden an Sportler:innen.</flux:text>
-            </div>
-
-            <x-portal.event-filter :events="$events" :selected-event-slug="$selectedEventSlug" />
-        </div>
+        <x-portal.page-header
+            title="Spenden"
+            subtitle="Deine Spenden an Sportler:innen."
+            :events="$events"
+            :selected-event-slug="$selectedEventSlug"
+        />
 
         <x-portal.success-message />
 
         @forelse ($donations as $donation)
-            <flux:card class="space-y-6">
+            <flux:card class="space-y-6 rounded-2xl border-amber-100 bg-white/90 shadow-sm dark:border-slate-700 dark:bg-slate-900/90">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <flux:heading size="lg" level="2">{{ $donation['athlete'] }}</flux:heading>
@@ -29,21 +27,34 @@
                 </div>
 
                 @unless ($donation['verified'])
-                    <flux:callout icon="exclamation-triangle" variant="warning">
-                        <flux:callout.heading>Spende noch nicht bestätigt</flux:callout.heading>
+                    <flux:callout icon="clock" variant="warning" class="rounded-2xl">
+                        <flux:callout.heading>Noch 1 Schritt: Spende bestätigen</flux:callout.heading>
                         <x-slot name="actions">
                             <livewire:portal-confirmation-button type="donation" :record-id="$donation['id']" :wire:key="'registration-donation-'.$donation['id']" />
                         </x-slot>
                     </flux:callout>
                 @endunless
 
+                <dl class="grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/40">
+                        <dt class="text-sm text-amber-700 dark:text-amber-300">Erwarteter Betrag</dt>
+                        <dd class="mt-1 text-2xl font-semibold tabular-nums"><span class="text-base font-medium">Fr.</span> {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}</dd>
+                    </div>
+                    <div class="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
+                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">Effektiver Betrag</dt>
+                        @if ($donation['hasCompletedRounds'])
+                            <dd class="mt-1 text-2xl font-semibold tabular-nums"><span class="text-base font-medium">Fr.</span> {{ number_format($donation['currentAmount'], 2, '.', "'") }}</dd>
+                        @else
+                            <dd class="mt-2 font-medium text-zinc-500 dark:text-zinc-400">Noch nicht final</dd>
+                        @endif
+                    </div>
+                </dl>
+
                 <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Sportart</dt><dd class="mt-1 font-medium">{{ $donation['sport'] }}</dd></div>
                     <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Begünstigte</dt><dd class="mt-1 font-medium">{{ $donation['partner'] }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Pro Runde</dt><dd class="mt-1 font-medium">Fr. {{ number_format($donation['amountPerRound'], 2, '.', "'") }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Minimum / Maximum</dt><dd class="mt-1 font-medium">{{ $donation['amountMin'] !== null ? 'Fr. '.number_format($donation['amountMin'], 2, '.', "'") : '–' }} / {{ $donation['amountMax'] !== null ? 'Fr. '.number_format($donation['amountMax'], 2, '.', "'") : '–' }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Erwarteter Betrag</dt><dd class="mt-1 font-medium">Fr. {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Aktueller Betrag</dt><dd class="mt-1 font-medium">Fr. {{ number_format($donation['currentAmount'], 2, '.', "'") }}</dd></div>
+                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Pro Runde</dt><dd class="mt-1 font-medium tabular-nums">Fr. {{ number_format($donation['amountPerRound'], 2, '.', "'") }}</dd></div>
+                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Minimum / Maximum</dt><dd class="mt-1 font-medium tabular-nums">{{ $donation['amountMin'] !== null ? 'Fr. '.number_format($donation['amountMin'], 2, '.', "'") : '–' }} / {{ $donation['amountMax'] !== null ? 'Fr. '.number_format($donation['amountMax'], 2, '.', "'") : '–' }}</dd></div>
                 </dl>
 
                 @if ($donation['comment'])
@@ -54,10 +65,14 @@
                 @endif
             </flux:card>
         @empty
-            <flux:callout icon="information-circle">
-                <flux:callout.heading>Keine Spenden gefunden</flux:callout.heading>
-                <flux:callout.text>Für den gewählten Anlass sind keine Spenden vorhanden.</flux:callout.text>
-            </flux:callout>
+            <flux:card class="rounded-2xl border-amber-200 bg-gradient-to-br from-amber-50 to-white text-center shadow-sm dark:border-amber-900/70 dark:from-amber-950/30 dark:to-slate-900">
+                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200"><flux:icon.heart class="size-6" /></div>
+                <flux:heading size="lg" level="2" class="mt-4">Noch keine Spende</flux:heading>
+                <flux:text class="mt-2">Für den gewählten Anlass ist keine Spende vorhanden.</flux:text>
+                @if ($donorRegistrationOpen)
+                    <flux:button href="{{ route('become-donor') }}" wire:navigate icon="heart" variant="primary" class="mt-5">Beim aktuellen Anlass spenden</flux:button>
+                @endif
+            </flux:card>
         @endforelse
     </div>
 @endsection
