@@ -16,7 +16,6 @@ Route::middleware('auth:web')->group(function (): void {
     Route::view('admin/faqs', 'pages.admin.faqs')->name('admin.faqs.index');
     Route::view('admin/sportlerinnen', 'pages.admin.people', ['title' => 'Sportler:innen', 'role' => 'athlete'])->name('admin.athletes.index');
     Route::view('admin/spenderinnen', 'pages.admin.people', ['title' => 'Spender:innen', 'role' => 'donor'])->name('admin.donors.index');
-    Route::view('admin/externe-personen', 'pages.admin.people', ['title' => 'Sportler:innen', 'role' => 'athlete']);
     Route::view('admin/spenden', 'pages.admin.donations')->name('admin.donations.index');
     Route::view('admin/dateien', 'pages.admin.files')->name('admin.files.index');
     Route::view('admin/tools', 'pages.admin.tools')->name('admin.tools');
