@@ -1,6 +1,21 @@
 @component('layouts.admin', ['title' => $greeting . Auth::user()->name])
 
     @section('content')
+        @php($routeParameters = ['anlass' => $selectedEventSlug ?? ''])
+
+        <form method="GET" action="{{ route('admin.dashboard') }}" class="flex justify-end">
+            <flux:field class="w-full sm:w-80">
+                <flux:label>Anlass</flux:label>
+                <flux:select name="anlass" onchange="this.form.submit()">
+                    <option value="" @selected($selectedEventSlug === null)>Alle Anlässe</option>
+                    @foreach ($events as $event)
+                        <option value="{{ $event->slug }}" @selected($selectedEventSlug === $event->slug)>
+                            {{ $event->title }} ({{ $event->slug }}){{ $event->is_published ? '' : ' - NICHT VERÖFFENTLICHT' }}
+                        </option>
+                    @endforeach
+                </flux:select>
+            </flux:field>
+        </form>
 
         <!-- Athlete -->
         <x-stats title="Sportler:innen">
@@ -8,21 +23,25 @@
                 title="Registriert"
                 :value="$athleteCount"
                 route="admin.athletes.index"
+                :route-parameters="$routeParameters"
             />
             <x-admin.stat-card
                 title="Verifiziert"
                 :value="$verifiedAthleteCount"
                 route="admin.athletes.index"
+                :route-parameters="$routeParameters"
             />
             <x-admin.stat-card
                 title="Durchschn. Runden"
                 :value="round($meanNumberOfRounds, 0)"
                 route="admin.athletes.index"
+                :route-parameters="$routeParameters"
             />
             <x-admin.stat-card
                 title="Durchschn. Spenden"
                 :value="round($meanNumberOfDonations, 0)"
                 route="admin.athletes.index"
+                :route-parameters="$routeParameters"
             />
         </x-stats>
 
@@ -32,16 +51,19 @@
                 title="Registriert"
                 :value="$donationCount"
                 route="admin.donations.index"
+                :route-parameters="$routeParameters"
             />
             <x-admin.stat-card
                 title="Verifiziert"
                 :value="$verifiedDonationCount"
                 route="admin.donations.index"
+                :route-parameters="$routeParameters"
             />
             <x-admin.stat-card
                 title="Durchschn. Betrag pro Runde"
                 :value="'Fr. '.round($meanDonationAmount, 2)"
                 route="admin.donations.index"
+                :route-parameters="$routeParameters"
             />
         </x-stats>
 
@@ -51,12 +73,14 @@
                 title="Erwartete Spenden"
                 :value="'Fr. '.round($expectedDonationAmount, 2)"
                 route="admin.donations.index"
+                :route-parameters="$routeParameters"
             />
             @foreach ($partners as $partner)
                 <x-admin.stat-card
                     title="{{ $partner->name }}"
                     :value="'Fr. '.round($estimatedAmounts[$partner->id] ?? 0, 2)"
                     route="admin.donations.index"
+                    :route-parameters="$routeParameters"
                 />
             @endforeach
         </x-stats>
@@ -67,12 +91,14 @@
                 title="Tatsächliche Spenden"
                 :value="'Fr. '.round($actualTotalAmount, 2)"
                 route="admin.donations.index"
+                :route-parameters="$routeParameters"
             />
             @foreach ($partners as $partner)
                 <x-admin.stat-card
                     title="{{ $partner->name }}"
                     :value="'Fr. '.round($actualAmounts[$partner->id] ?? 0, 2)"
                     route="admin.donations.index"
+                    :route-parameters="$routeParameters"
                 />
             @endforeach
         </x-stats>
@@ -83,11 +109,13 @@
                 title="Registriert"
                 :value="$donorCount"
                 route="admin.donors.index"
+                :route-parameters="$routeParameters"
             />
             <x-admin.stat-card
                 title="Durchschn. Spenden"
                 :value="round($meanNumberOfDonationsDonor, 1)"
                 route="admin.donors.index"
+                :route-parameters="$routeParameters"
             />
         </x-stats>
 

@@ -3,6 +3,7 @@
 use App\Components\AdminPersonTable;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Settings\EventSettings;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -67,7 +68,7 @@ it('filters unique athletes by event and shows their linked events', function ()
         ->assertSee($bothEvents->first_name)
         ->assertSee('2025')
         ->assertSee('2026')
-        ->set('eventId', (string) $event2026->id)
+        ->set('eventSlug', $event2026->slug)
         ->assertSee($bothEvents->first_name)
         ->assertDontSee($only2025->first_name);
 });
@@ -79,7 +80,7 @@ it('filters donors through the athlete registration event', function (): void {
     $donor2026 = ExternalUser::factory()->asDonor($event2026)->create(['first_name' => 'Donor 2026']);
 
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
-        ->set('eventId', (string) $event2026->id)
+        ->set('eventSlug', $event2026->slug)
         ->assertSee($donor2026->first_name)
         ->assertDontSee($donor2025->first_name);
 });
@@ -90,7 +91,7 @@ it('clears stale selection when an event filter changes', function (): void {
 
     Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
         ->set('checkboxValues', [$athlete->id])
-        ->set('eventId', (string) $event->id)
+        ->set('eventSlug', $event->slug)
         ->assertSet('checkboxValues', []);
 });
 
@@ -98,7 +99,7 @@ it('returns no people for an invalid event filter', function (): void {
     $athlete = ExternalUser::factory()->asAthlete()->create(['first_name' => 'Visible Athlete']);
 
     Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
-        ->set('eventId', 'invalid')
+        ->set('eventSlug', 'invalid')
         ->assertDontSee($athlete->first_name)
         ->assertSee('Keine Sportler:innen für diesen Anlass vorhanden.');
 });
@@ -108,7 +109,55 @@ it('shows all people again when the event filter is cleared', function (): void 
     $athlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Visible Athlete']);
 
     Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
-        ->set('eventId', (string) $event->id)
-        ->set('eventId', null)
+        ->set('eventSlug', $event->slug)
+        ->set('eventSlug', null)
         ->assertSee($athlete->first_name);
+});
+
+it('defaults athlete and donor tables to the current event', function (string $role): void {
+    $currentEvent = DonationEvent::factory()->year(2026)->create(['is_published' => true]);
+    $otherEvent = DonationEvent::factory()->year(2025)->create(['is_published' => true]);
+
+    $currentPerson = ExternalUser::factory()
+        ->{$role === 'athlete' ? 'asAthlete' : 'asDonor'}($currentEvent)
+        ->create(['first_name' => 'Current Person']);
+    $otherPerson = ExternalUser::factory()
+        ->{$role === 'athlete' ? 'asAthlete' : 'asDonor'}($otherEvent)
+        ->create(['first_name' => 'Other Person']);
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $currentEvent->id;
+    $settings->save();
+
+    Livewire::test(AdminPersonTable::class, ['role' => $role])
+        ->assertSet('eventSlug', $currentEvent->slug)
+        ->assertSee($currentPerson->first_name)
+        ->assertDontSee($otherPerson->first_name);
+})->with(['athlete', 'donor']);
+
+it('keeps an explicit event filter instead of the current event', function (): void {
+    $currentEvent = DonationEvent::factory()->year(2026)->create(['is_published' => true]);
+    $otherEvent = DonationEvent::factory()->year(2025)->create(['is_published' => true]);
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $currentEvent->id;
+    $settings->save();
+
+    Livewire::withQueryParams(['anlass' => $otherEvent->slug])
+        ->test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->assertSet('eventSlug', $otherEvent->slug);
+});
+
+it('shows all people when the event filter is explicitly empty', function (): void {
+    $currentEvent = DonationEvent::factory()->year(2026)->create(['is_published' => true]);
+    ExternalUser::factory()->asAthlete($currentEvent)->create(['first_name' => 'Visible Athlete']);
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $currentEvent->id;
+    $settings->save();
+
+    Livewire::withQueryParams(['anlass' => ''])
+        ->test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->assertSet('eventSlug', '')
+        ->assertSee('Visible Athlete');
 });

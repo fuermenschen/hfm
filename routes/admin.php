@@ -1,12 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DonationEventSettingsController;
 use App\Http\Controllers\Admin\WeblingInterfaceTestPdfController;
 use App\Http\Controllers\AdminSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:web')->group(function (): void {
-    Route::view('admin', 'pages.admin.dashboard')->name('admin.dashboard');
+    Route::get('admin', DashboardController::class)->name('admin.dashboard');
     Route::view('admin/anlaesse', 'pages.admin.donation-events')->name('admin.donation-events.index');
     Route::get('admin/anlaesse/neu', [DonationEventSettingsController::class, 'create'])->name('admin.donation-events.create');
     Route::get('admin/anlaesse/{donationEvent}/bearbeiten', [DonationEventSettingsController::class, 'edit'])->name('admin.donation-events.edit');

@@ -7,6 +7,7 @@ namespace App\Components;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Services\AthleteService;
+use App\Services\CurrentDonationEventService;
 use App\Services\DonorService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -23,16 +24,22 @@ class AdminPersonTable extends AbstractDatatableComponent
     public string $role = '';
 
     #[Url(as: 'anlass', except: '')]
-    public ?string $eventId = '';
+    public ?string $eventSlug = '';
 
     protected AthleteService $athleteService;
 
     protected DonorService $donorService;
 
-    public function boot(AthleteService $athleteService, DonorService $donorService): void
-    {
+    protected CurrentDonationEventService $currentDonationEventService;
+
+    public function boot(
+        AthleteService $athleteService,
+        DonorService $donorService,
+        CurrentDonationEventService $currentDonationEventService,
+    ): void {
         $this->athleteService = $athleteService;
         $this->donorService = $donorService;
+        $this->currentDonationEventService = $currentDonationEventService;
     }
 
     public function mount(string $role = ''): void
@@ -40,6 +47,11 @@ class AdminPersonTable extends AbstractDatatableComponent
         throw_unless(in_array($role, ['athlete', 'donor'], true), \InvalidArgumentException::class, 'Invalid person role.');
 
         $this->role = $role;
+
+        if (! request()->query->has('anlass') && ($this->eventSlug === null || $this->eventSlug === '')) {
+            $currentEvent = $this->currentDonationEventService->current();
+            $this->eventSlug = $currentEvent instanceof DonationEvent ? $currentEvent->slug : '';
+        }
 
         parent::mount();
     }
@@ -80,30 +92,22 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     protected function applyFilters(Builder $query): void
     {
-        if ($this->eventId === null || $this->eventId === '') {
-            return;
-        }
-
-        $eventId = ctype_digit($this->eventId) ? (int) $this->eventId : 0;
-
-        if ($eventId < 1) {
-            $query->whereRaw('1 = 0');
-
+        if ($this->eventSlug === null || $this->eventSlug === '') {
             return;
         }
 
         if ($this->role === 'athlete') {
-            $query->whereHas('athleteRegistrations', fn (Builder $registrations): Builder => $registrations->where('donation_event_id', $eventId));
+            $query->whereHas('athleteRegistrations.donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
 
             return;
         }
 
-        $query->whereHas('donationsAsDonor.athleteRegistration', fn (Builder $registration): Builder => $registration->where('donation_event_id', $eventId));
+        $query->whereHas('donationsAsDonor.athleteRegistration.donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
     }
 
     protected function tableFilterProperties(): array
     {
-        return ['eventId'];
+        return ['eventSlug'];
     }
 
     protected function defaultSortColumn(): string

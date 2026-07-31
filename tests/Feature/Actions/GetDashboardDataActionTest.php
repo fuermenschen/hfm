@@ -95,3 +95,62 @@ it('builds dashboard data with expected aggregates', function (): void {
         ->and($data['greeting'] !== '')->toBeTrue();
 
 });
+
+it('scopes dashboard data and activities to an event', function (): void {
+    $selectedEvent = DonationEvent::factory()->year(2026)->create();
+    $otherEvent = DonationEvent::factory()->year(2025)->create();
+    $selectedPartner = Partner::factory()->create(['name' => 'Selected Partner']);
+    $otherPartner = Partner::factory()->create(['name' => 'Other Partner']);
+    $selectedEvent->partners()->attach($selectedPartner);
+    $otherEvent->partners()->attach($otherPartner);
+
+    $selectedAthlete = ExternalUser::factory()->create(['first_name' => 'Selected Athlete']);
+    $selectedRegistration = AthleteRegistration::factory()
+        ->forEvent($selectedEvent)
+        ->forExternalUser($selectedAthlete)
+        ->withPartner($selectedPartner)
+        ->verified()
+        ->create(['rounds_estimated' => 10, 'rounds_done' => 12]);
+    $selectedDonor = ExternalUser::factory()->create(['first_name' => 'Selected Donor']);
+    Donation::factory()
+        ->forPair($selectedDonor, $selectedRegistration)
+        ->create([
+            'amount_per_round' => 2,
+            'amount_min' => null,
+            'amount_max' => 30,
+            'verified' => true,
+        ]);
+
+    $otherAthlete = ExternalUser::factory()->create(['first_name' => 'Other Athlete']);
+    $otherRegistration = AthleteRegistration::factory()
+        ->forEvent($otherEvent)
+        ->forExternalUser($otherAthlete)
+        ->withPartner($otherPartner)
+        ->create(['rounds_estimated' => 100, 'rounds_done' => 100]);
+    $otherDonor = ExternalUser::factory()->create(['first_name' => 'Other Donor']);
+    Donation::factory()
+        ->forPair($otherDonor, $otherRegistration)
+        ->create(['amount_per_round' => 100, 'verified' => false]);
+
+    $data = app(GetDashboardDataAction::class)($selectedEvent);
+
+    expect($data['selectedEventSlug'])->toBe($selectedEvent->slug)
+        ->and($data['partners']->pluck('id')->all())->toBe([$selectedPartner->id])
+        ->and($data['athleteCount'])->toBe(1)
+        ->and($data['verifiedAthleteCount'])->toBe(1)
+        ->and($data['donorCount'])->toBe(1)
+        ->and($data['donationCount'])->toBe(1)
+        ->and($data['verifiedDonationCount'])->toBe(1)
+        ->and($data['meanNumberOfDonations'])->toBe(1.0)
+        ->and($data['meanNumberOfRounds'])->toBe(10.0)
+        ->and($data['meanNumberOfDonationsDonor'])->toBe(1.0)
+        ->and($data['meanDonationAmount'])->toBe(2.0)
+        ->and($data['expectedDonationAmount'])->toBe(20.0)
+        ->and($data['actualTotalAmount'])->toBe(24.0)
+        ->and($data['estimatedAmounts'])->toBe([$selectedPartner->id => 20.0])
+        ->and($data['actualAmounts'])->toBe([$selectedPartner->id => 24.0])
+        ->and(collect($data['mostRecentActivities'])->pluck('type')->unique()->sort()->values()->all())
+        ->toBe(['athlete_registration', 'donation', 'external_user'])
+        ->and(collect($data['mostRecentActivities'])->pluck('name')->implode(' '))
+        ->not->toContain('Other');
+});

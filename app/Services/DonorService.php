@@ -18,8 +18,6 @@ class DonorService
         return $this->baseQuery();
     }
 
-    // TODO(refactor-external-user): Wire forEvent into production consumers after donor model migration lands.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function forEvent(DonationEvent|int $event): Builder
     {
         $eventId = $event instanceof DonationEvent ? $event->id : $event;

@@ -126,7 +126,7 @@
                                 @if (trim($search) !== '')
                                     <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
                                     <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
-                                @elseif ($eventId !== null && $eventId !== '')
+                                @elseif ($eventSlug !== null && $eventSlug !== '')
                                     <flux:text>Keine Spenden für diesen Anlass vorhanden.</flux:text>
                                 @else
                                     <flux:text>Keine Spenden vorhanden.</flux:text>

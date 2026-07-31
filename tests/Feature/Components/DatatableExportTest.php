@@ -70,7 +70,7 @@ it('exports selected donations as csv', function (): void {
     ]);
 
     Livewire::test(AdminDonationTable::class)
-        ->set('eventId', (string) $donationEvent->id)
+        ->set('eventSlug', $donationEvent->slug)
         ->set('checkboxValues', [$donation->id])
         ->call('exportSelected', 'csv')
         ->assertFileDownloaded();

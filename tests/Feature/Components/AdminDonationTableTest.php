@@ -29,7 +29,7 @@ it('filters donations by event and shows the event column', function (): void {
         ->assertSee('Anlass')
         ->assertSee($athlete2025->first_name)
         ->assertSee($athlete2026->first_name)
-        ->set('eventId', (string) $event2026->id)
+        ->set('eventSlug', $event2026->slug)
         ->assertDontSee($athlete2025->first_name)
         ->assertSee($athlete2026->first_name);
 });
@@ -43,7 +43,7 @@ it('clears donation selection when the event changes', function (): void {
 
     Livewire::test(AdminDonationTable::class)
         ->set('checkboxValues', [$donation->id])
-        ->set('eventId', (string) $event->id)
+        ->set('eventSlug', $event->slug)
         ->assertSet('checkboxValues', []);
 });
 
@@ -57,9 +57,9 @@ it('shows all donations again when the event filter is cleared', function (): vo
         ->create();
 
     Livewire::test(AdminDonationTable::class)
-        ->set('eventId', 'invalid')
+        ->set('eventSlug', 'invalid')
         ->assertDontSee($athlete->first_name)
         ->assertSee('Keine Spenden für diesen Anlass vorhanden.')
-        ->set('eventId', null)
+        ->set('eventSlug', null)
         ->assertSee($athlete->first_name);
 });
