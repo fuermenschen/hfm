@@ -267,13 +267,19 @@ it('returns not found for valid signed external login URL with unknown uuid', fu
 it('registers split route files with expected guard middleware', function () {
     $adminRoute = Route::getRoutes()->getByName('admin.dashboard');
     $portalRoute = Route::getRoutes()->getByName('portal.dashboard');
+    $participationsRoute = Route::getRoutes()->getByName('portal.participations');
+    $donationsRoute = Route::getRoutes()->getByName('portal.donations');
     $homeRoute = Route::getRoutes()->getByName('home');
 
     expect($adminRoute)->not->toBeNull()
         ->and($portalRoute)->not->toBeNull()
+        ->and($participationsRoute)->not->toBeNull()
+        ->and($donationsRoute)->not->toBeNull()
         ->and($homeRoute)->not->toBeNull()
         ->and($adminRoute->middleware())->toContain('auth:web')
         ->and($portalRoute->middleware())->toContain('auth:external')
+        ->and($participationsRoute->middleware())->toContain('auth:external')
+        ->and($donationsRoute->middleware())->toContain('auth:external')
         ->and($homeRoute->middleware())->not->toContain('auth:web')
         ->and($homeRoute->middleware())->not->toContain('auth:external');
 
@@ -286,11 +292,24 @@ it('renders portal page for authenticated external users without registrations o
 
     actingAs($externalUser, 'external');
 
+    $expectedGreeting = match (true) {
+        (int) date('H') >= 17 => 'Guten Abend ',
+        (int) date('H') >= 12 => 'Grüezi ',
+        (int) date('H') >= 4 => 'Guten Morgen ',
+        default => 'Hallo ',
+    };
+
     get(route('portal.dashboard'))
         ->assertSuccessful()
-        ->assertSeeText('Hallo Alex')
-        ->assertSeeText('Ich bin Sportler:in')
-        ->assertSeeText('Ich spende')
-        ->assertSeeText('Du hast aktuell keine Sportler:innen-Anmeldungen im Portal.')
-        ->assertSeeText('Du hast aktuell keine Spenden im Portal.');
+        ->assertSeeText($expectedGreeting.'Alex')
+        ->assertSeeText('Home')
+        ->assertSee('wire:navigate', false)
+        ->assertDontSee('wire:navigate.hover', false)
+        ->assertDontSeeText('HFM Portal')
+        ->assertDontSee(route('portal.participations'))
+        ->assertSeeText('Spenden')
+        ->assertSeeText('Eingegangene Spenden')
+        ->assertSeeText('Eigene Spenden')
+        ->assertDontSeeText('Aktueller Spendenbetrag')
+        ->assertDontSeeText('Effektiver Spendenbetrag');
 });

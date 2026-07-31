@@ -1,16 +1,17 @@
 <?php
 
+use App\Components\PortalConfirmationButton;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\ExternalUser;
 use App\Models\User;
 use Illuminate\Support\Facades\URL;
+use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertAuthenticatedAs;
 use function Pest\Laravel\assertGuest;
 use function Pest\Laravel\get;
-use function Pest\Laravel\post;
 
 it('logs in external user from signed confirmation link without confirming donation', function (): void {
     $externalUser = ExternalUser::factory()->create();
@@ -40,22 +41,23 @@ it('confirms owned donation from authenticated portal action', function (): void
     $externalUser = ExternalUser::factory()->create();
     $donation = Donation::factory()->forDonorExternalUser($externalUser)->create(['verified' => false]);
 
-    actingAs($externalUser, 'external');
+    Livewire::actingAs($externalUser, 'external')
+        ->test(PortalConfirmationButton::class, ['type' => 'donation', 'recordId' => $donation->id])
+        ->call('confirm')
+        ->assertRedirect(route('portal.donations', ['anlass' => $donation->athleteRegistration->donationEvent->slug]));
 
-    post(route('portal.donation.confirm.perform', $donation))
-        ->assertRedirect(route('portal.donation.confirmed'));
-
-    expect($donation->refresh()->verified)->toBeTrue();
+    expect($donation->refresh()->verified)->toBeTrue()
+        ->and(session('success'))->toBe('Deine Spende ist bestätigt.');
 });
 
 it('keeps confirmation idempotent', function (): void {
     $externalUser = ExternalUser::factory()->create();
     $donation = Donation::factory()->forDonorExternalUser($externalUser)->create(['verified' => true]);
 
-    actingAs($externalUser, 'external');
-
-    post(route('portal.donation.confirm.perform', $donation))
-        ->assertRedirect(route('portal.donation.confirmed'));
+    Livewire::actingAs($externalUser, 'external')
+        ->test(PortalConfirmationButton::class, ['type' => 'donation', 'recordId' => $donation->id])
+        ->call('confirm')
+        ->assertRedirect(route('portal.donations', ['anlass' => $donation->athleteRegistration->donationEvent->slug]));
 
     expect($donation->refresh()->verified)->toBeTrue();
 });
@@ -88,9 +90,10 @@ it('rejects portal confirmation for another external users donation', function (
     $otherExternalUser = ExternalUser::factory()->create();
     $donation = Donation::factory()->forDonorExternalUser($otherExternalUser)->create(['verified' => false]);
 
-    actingAs($externalUser, 'external');
-
-    post(route('portal.donation.confirm.perform', $donation))->assertForbidden();
+    Livewire::actingAs($externalUser, 'external')
+        ->test(PortalConfirmationButton::class, ['type' => 'donation', 'recordId' => $donation->id])
+        ->call('confirm')
+        ->assertForbidden();
 
     expect($donation->refresh()->verified)->toBeFalse();
 });
@@ -107,7 +110,7 @@ it('shows confirmation button for unverified donor donations in portal', functio
         ->assertSuccessful()
         ->assertSee('Claudia M.')
         ->assertSee('Spende bestätigen')
-        ->assertSee(route('portal.donation.confirm.perform', $donation));
+        ->assertSee('wire:click="confirm"', false);
 });
 
 function donorConfirmationUrlForTest(ExternalUser $externalUser, Donation $donation): string

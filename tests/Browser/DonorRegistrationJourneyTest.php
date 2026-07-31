@@ -60,13 +60,17 @@ it('lets a logged in external user donate and confirm through the email link', f
 
     expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
 
-    visit($confirmationUrl)
-        ->assertPathIs('/portal')
-        ->pressAndWaitFor('Spende bestätigen', 0.2)
+    $page = visit($confirmationUrl)->assertPathIs('/portal');
+    $page->script('window.portalSpaMarker = true');
+
+    $page->click('@confirm-donation')
         ->assertSee('Deine Spende ist bestätigt.')
+        ->assertSee('Bestätigt')
+        ->assertDontSee('Bestätigung ausstehend')
         ->assertNoJavaScriptErrors();
 
-    expect($donation->refresh()->verified)->toBeTrue();
+    expect($page->script('window.portalSpaMarker'))->toBeTrue()
+        ->and($donation->refresh()->verified)->toBeTrue();
 })->flaky();
 
 it('lets a returning guest resume donation through a signed login link', function (): void {
@@ -135,7 +139,7 @@ it('lets a returning guest resume donation through a signed login link', functio
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->pressAndWaitFor('Spende bestätigen', 0.2)
+        ->click('@confirm-donation')
         ->assertSee('Deine Spende ist bestätigt.')
         ->assertNoJavaScriptErrors();
 
@@ -197,7 +201,7 @@ it('lets a new guest donate and confirm through the email link', function (): vo
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->pressAndWaitFor('Spende bestätigen', 0.2)
+        ->click('@confirm-donation')
         ->assertSee('Deine Spende ist bestätigt.')
         ->assertNoJavaScriptErrors();
 

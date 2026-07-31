@@ -62,11 +62,13 @@ class ExternalUser extends Authenticatable
         });
     }
 
+    /** @return HasMany<AthleteRegistration, $this> */
     public function athleteRegistrations(): HasMany
     {
         return $this->hasMany(AthleteRegistration::class);
     }
 
+    /** @return HasMany<Donation, $this> */
     public function donationsAsDonor(): HasMany
     {
         return $this->hasMany(Donation::class, 'donor_external_user_id');

@@ -37,6 +37,7 @@ env-production-secret.txt
 /junie/
 /opencode.json
 /.ai/*
+!/.ai/guidelines/
 !/.ai/skills/
 /.upgrade-lab/
 /storage/upgrade-lab/

@@ -27,12 +27,13 @@ it('lets a logged in external user register and confirm through email link', fun
     $page = visit(route('become-athlete'));
 
     $page->assertNoJavaScriptErrors()
-        ->click($sportType->name)
+        ->keys('[wire\\:key="sport-type-'.$sportType->id.'"]', 'Space')
+        ->wait(0.2)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '12')
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
         ->wait(0.2)
-        ->click($partner->name)
-        ->click('Ja')
+        ->keys('[wire\\:key="partner-'.$partner->id.'"]', 'Enter')
+        ->keys('[wire\\:model\\.live="adult"] ui-radio[value="1"]', 'Enter')
         ->wait(0.2)
         ->type('[wire\\:model\\.live\\.blur="comment"]', 'Ich freue mich auf den Lauf.')
         ->keys('[wire\\:model\\.live\\.blur="comment"]', 'Tab')
@@ -62,13 +63,17 @@ it('lets a logged in external user register and confirm through email link', fun
 
     expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
 
-    $page->navigate($confirmationUrl)
-        ->assertPathIs('/portal')
-        ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
+    $page->navigate($confirmationUrl)->assertPathIs('/portal');
+    $page->script('window.portalSpaMarker = true');
+
+    $page->pressAndWaitFor('Anmeldung bestätigen', 0.2)
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
+        ->assertSee('Bestätigt')
+        ->assertDontSee('Bestätigung ausstehend')
         ->assertNoJavaScriptErrors();
 
-    expect($registration->refresh()->verified)->toBeTrue();
+    expect($page->script('window.portalSpaMarker'))->toBeTrue()
+        ->and($registration->refresh()->verified)->toBeTrue();
 })->flaky();
 
 it('lets a returning guest resume registration through a signed login link', function (): void {
@@ -105,12 +110,13 @@ it('lets a returning guest resume registration through a signed login link', fun
 
     $page->navigate($loginUrl)
         ->assertPathIs('/sportlerin-werden')
-        ->click($sportType->name)
+        ->keys('[wire\\:key="sport-type-'.$sportType->id.'"]', 'Space')
+        ->wait(0.2)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '12')
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
         ->wait(0.2)
-        ->click($partner->name)
-        ->click('Nein')
+        ->keys('[wire\\:key="partner-'.$partner->id.'"]', 'Enter')
+        ->keys('[wire\\:model\\.live="adult"] ui-radio[value="0"]', 'Enter')
         ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
@@ -168,12 +174,13 @@ it('lets a new guest register and confirm through email link', function (): void
         ->keys('[wire\\:model\\.live\\.blur="phone_number"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Weiter', 0.2)
-        ->click($sportType->name)
+        ->keys('[wire\\:key="sport-type-'.$sportType->id.'"]', 'Space')
+        ->wait(0.2)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '10')
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
         ->wait(0.2)
-        ->click($partner->name)
-        ->click('Ja')
+        ->keys('[wire\\:key="partner-'.$partner->id.'"]', 'Enter')
+        ->keys('[wire\\:model\\.live="adult"] ui-radio[value="1"]', 'Enter')
         ->wait(0.2)
         ->click('[wire\\:model\\.live="privacy_accepted"]')
         ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')

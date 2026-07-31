@@ -51,6 +51,12 @@
     }
 }
 
+@layer base {
+    button:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
 /**
  * Remove the default box-shadow for invalid elements to prevent
  * inputs in Livewire components showing with a
