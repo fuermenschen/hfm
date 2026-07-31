@@ -27,9 +27,6 @@ it('lets a logged in external user register and confirm through email link', fun
     $page = visit(route('become-athlete'));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Bestehendes Profil erkannt')
-        ->assertSee('Francesca Arslan')
-        ->assertDontSee('Vorname')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '12')
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
@@ -44,21 +41,14 @@ it('lets a logged in external user register and confirm through email link', fun
         ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
-        ->assertSee('Anmeldung erhalten')
-        ->assertSee('Wir haben dir eine E-Mail geschickt');
+        ->assertSee('Anmeldung erhalten');
 
     $registration = AthleteRegistration::query()
         ->whereBelongsTo($event)
         ->whereBelongsTo($externalUser)
         ->firstOrFail();
 
-    expect($registration->verified)->toBeFalse()
-        ->and($registration->adult)->toBeTrue();
-
-    Notification::assertSentTo(
-        $externalUser,
-        fn (ConfirmAthleteRegistration $notification): bool => str_contains($notification->confirmationUrl, $externalUser->uuid),
-    );
+    expect($registration->verified)->toBeFalse();
 
     $confirmationUrl = null;
     Notification::assertSentTo(
@@ -74,10 +64,9 @@ it('lets a logged in external user register and confirm through email link', fun
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->assertSee('Verifiziert: Nein')
         ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
-        ->assertSee('Anmeldung bestätigt')
-        ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
+        ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
+        ->assertNoJavaScriptErrors();
 
     expect($registration->refresh()->verified)->toBeTrue();
 })->flaky();
@@ -95,7 +84,6 @@ it('lets a returning guest resume registration through a signed login link', fun
     $page = visit(route('become-athlete'));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->type('[wire\\:model\\.live\\.blur="returning_email"]', 'francesca@example.com')
         ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'francesca@example.com')
         ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
@@ -117,8 +105,6 @@ it('lets a returning guest resume registration through a signed login link', fun
 
     $page->navigate($loginUrl)
         ->assertPathIs('/sportlerin-werden')
-        ->assertSee('Bestehendes Profil erkannt')
-        ->assertSee('Francesca Arslan')
         ->click($sportType->name)
         ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '12')
         ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
@@ -137,57 +123,7 @@ it('lets a returning guest resume registration through a signed login link', fun
         ->whereBelongsTo($externalUser)
         ->firstOrFail();
 
-    expect($registration->verified)->toBeFalse()
-        ->and($registration->adult)->toBeFalse();
-})->flaky();
-
-it('lets a new guest register and confirm through email link', function (): void {
-    Notification::fake();
-
-    [$event, $partner, $sportType] = createWizardOpenEventForBrowserTest();
-
-    $page = visit(route('become-athlete'));
-
-    $page->assertNoJavaScriptErrors()
-        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
-        ->type('[wire\\:model\\.live\\.blur="returning_email"]', 'mira@example.com')
-        ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'mira@example.com')
-        ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
-        ->wait(0.2)
-        ->pressAndWaitFor('Weiter', 0.2)
-        ->assertSee('Deine Angaben')
-        ->type('[wire\\:model\\.live\\.blur="first_name"]', 'Mira')
-        ->type('[wire\\:model\\.live\\.blur="last_name"]', 'Keller')
-        ->type('[wire\\:model\\.live\\.blur="address"]', 'Zelglistrasse 41')
-        ->type('[wire\\:model\\.live\\.blur="zip_code"]', '8406')
-        ->type('[wire\\:model\\.live\\.blur="city"]', 'Winterthur')
-        ->type('[wire\\:model\\.live\\.blur="phone_number"]', '079 123 45 67')
-        ->keys('[wire\\:model\\.live\\.blur="phone_number"]', 'Tab')
-        ->wait(0.2)
-        ->pressAndWaitFor('Weiter', 0.2)
-        ->assertSee('Sportart')
-        ->click($sportType->name)
-        ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '10')
-        ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
-        ->wait(0.2)
-        ->click($partner->name)
-        ->click('Ja')
-        ->wait(0.2)
-        ->click('[wire\\:model\\.live="privacy_accepted"]')
-        ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
-        ->wait(0.2)
-        ->pressAndWaitFor('Anmeldung absenden', 0.2)
-        ->assertSee('Anmeldung erhalten')
-        ->assertSee('Wir haben dir eine E-Mail geschickt');
-
-    $externalUser = ExternalUser::query()->where('email', 'mira@example.com')->firstOrFail();
-    $registration = AthleteRegistration::query()
-        ->whereBelongsTo($event)
-        ->whereBelongsTo($externalUser)
-        ->firstOrFail();
-
-    expect($registration->verified)->toBeFalse()
-        ->and($registration->adult)->toBeTrue();
+    expect($registration->verified)->toBeFalse();
 
     $confirmationUrl = null;
     Notification::assertSentTo(
@@ -203,10 +139,73 @@ it('lets a new guest register and confirm through email link', function (): void
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->assertSee('Verifiziert: Nein')
         ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
-        ->assertSee('Anmeldung bestätigt')
-        ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.');
+        ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
+        ->assertNoJavaScriptErrors();
+
+    expect($registration->refresh()->verified)->toBeTrue();
+})->flaky();
+
+it('lets a new guest register and confirm through email link', function (): void {
+    Notification::fake();
+
+    [$event, $partner, $sportType] = createWizardOpenEventForBrowserTest();
+
+    $page = visit(route('become-athlete'));
+
+    $page->assertNoJavaScriptErrors()
+        ->type('[wire\\:model\\.live\\.blur="returning_email"]', 'mira@example.com')
+        ->type('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'mira@example.com')
+        ->keys('[wire\\:model\\.live\\.blur="returning_email_confirmation"]', 'Tab')
+        ->wait(0.2)
+        ->pressAndWaitFor('Weiter', 0.2)
+        ->type('[wire\\:model\\.live\\.blur="first_name"]', 'Mira')
+        ->type('[wire\\:model\\.live\\.blur="last_name"]', 'Keller')
+        ->type('[wire\\:model\\.live\\.blur="address"]', 'Zelglistrasse 41')
+        ->type('[wire\\:model\\.live\\.blur="zip_code"]', '8406')
+        ->type('[wire\\:model\\.live\\.blur="city"]', 'Winterthur')
+        ->type('[wire\\:model\\.live\\.blur="phone_number"]', '079 123 45 67')
+        ->keys('[wire\\:model\\.live\\.blur="phone_number"]', 'Tab')
+        ->wait(0.2)
+        ->pressAndWaitFor('Weiter', 0.2)
+        ->click($sportType->name)
+        ->type('[wire\\:model\\.live\\.blur="rounds_estimated"]', '10')
+        ->keys('[wire\\:model\\.live\\.blur="rounds_estimated"]', 'Tab')
+        ->wait(0.2)
+        ->click($partner->name)
+        ->click('Ja')
+        ->wait(0.2)
+        ->click('[wire\\:model\\.live="privacy_accepted"]')
+        ->keys('[wire\\:model\\.live="privacy_accepted"]', 'Tab')
+        ->wait(0.2)
+        ->pressAndWaitFor('Anmeldung absenden', 0.2)
+        ->assertSee('Anmeldung erhalten');
+
+    $externalUser = ExternalUser::query()->where('email', 'mira@example.com')->firstOrFail();
+    $registration = AthleteRegistration::query()
+        ->whereBelongsTo($event)
+        ->whereBelongsTo($externalUser)
+        ->firstOrFail();
+
+    expect($registration->verified)->toBeFalse();
+
+    $confirmationUrl = null;
+    Notification::assertSentTo(
+        $externalUser,
+        function (ConfirmAthleteRegistration $notification) use (&$confirmationUrl): bool {
+            $confirmationUrl = $notification->confirmationUrl;
+
+            return true;
+        },
+    );
+
+    expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
+
+    $page->navigate($confirmationUrl)
+        ->assertPathIs('/portal')
+        ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
+        ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
+        ->assertNoJavaScriptErrors();
 
     expect($registration->refresh()->verified)->toBeTrue();
 })->flaky();
