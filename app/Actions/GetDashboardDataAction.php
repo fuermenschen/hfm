@@ -6,11 +6,13 @@ namespace App\Actions;
 
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Services\AthleteService;
 use App\Services\DonationService;
 use App\Services\DonorService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class GetDashboardDataAction
@@ -24,6 +26,8 @@ class GetDashboardDataAction
     /**
      * @return array{
      *     greeting: string,
+     *     events: Collection<int, DonationEvent>,
+     *     selectedEventSlug: ?string,
      *     partners: Collection<int, Partner>,
      *     athleteCount: int,
      *     donorCount: int,
@@ -41,28 +45,42 @@ class GetDashboardDataAction
      *     mostRecentActivities: array<int, array<string, mixed>>,
      * }
      */
-    public function __invoke(): array
+    public function __invoke(?DonationEvent $event = null): array
     {
         $greeting = $this->greeting();
+        $events = DonationEvent::query()
+            ->latest('starts_at')
+            ->get(['id', 'title', 'slug', 'is_published']);
+        $selectedEventSlug = $event?->slug;
 
-        $partners = Partner::query()
-            ->select(['id', 'name'])
-            ->orderBy('name')
-            ->get();
+        $partners = $event instanceof DonationEvent
+            ? $event->partners()->select(['partners.id', 'partners.name'])->orderBy('name')->get()
+            : Partner::query()->select(['id', 'name'])->orderBy('name')->get();
 
-        $athleteCount = $this->athleteService->count();
-        $donorCount = $this->donorService->count();
-        $donationCount = (int) Donation::query()->count();
+        $athleteCount = $event instanceof DonationEvent
+            ? (int) $this->athleteService->forEvent($event)->count()
+            : $this->athleteService->count();
+        $donorCount = $event instanceof DonationEvent
+            ? (int) $this->donorService->forEvent($event)->count()
+            : $this->donorService->count();
+        $donationCount = (int) $this->donationsQuery($event)->count();
 
-        $verifiedAthleteCount = $this->athleteService->verifiedCount();
-        $verifiedDonationCount = (int) Donation::query()->where('verified', true)->count();
+        $verifiedAthleteCount = $event instanceof DonationEvent
+            ? (int) $this->registrationsQuery($event)
+                ->where('verified', true)
+                ->distinct()
+                ->count('external_user_id')
+            : $this->athleteService->verifiedCount();
+        $verifiedDonationCount = (int) $this->donationsQuery($event)->where('verified', true)->count();
 
         $meanNumberOfDonations = $athleteCount > 0 ? (float) ($donationCount / $athleteCount) : 0.0;
-        $meanNumberOfRounds = $this->meanNumberOfRounds();
+        $meanNumberOfRounds = $this->meanNumberOfRounds($event);
         $meanNumberOfDonationsDonor = $donorCount > 0 ? (float) ($donationCount / $donorCount) : 0.0;
-        $meanDonationAmount = (float) (Donation::query()->avg('amount_per_round') ?? 0.0);
+        $meanDonationAmount = (float) ($this->donationsQuery($event)->avg('amount_per_round') ?? 0.0);
 
-        $donations = Donation::query()->with(['athleteRegistration.partner', 'athleteRegistration.externalUser'])->get();
+        $donations = $this->donationsQuery($event)
+            ->with(['athleteRegistration.partner', 'athleteRegistration.externalUser'])
+            ->get();
 
         $expectedDonationAmount = $this->donationService->calculateEstimatedTotal($donations);
         $actualTotalAmount = $this->donationService->calculateActualTotal($donations);
@@ -70,10 +88,12 @@ class GetDashboardDataAction
         $estimatedAmounts = $this->donationService->calculateEstimatedTotalPerPartner($donations);
         $actualAmounts = $this->donationService->calculateActualTotalPerPartner($donations);
 
-        $mostRecentActivities = $this->buildRecentActivities();
+        $mostRecentActivities = $this->buildRecentActivities($event);
 
         return compact(
             'greeting',
+            'events',
+            'selectedEventSlug',
             'partners',
             'athleteCount',
             'donorCount',
@@ -111,23 +131,31 @@ class GetDashboardDataAction
     /**
      * @return array<int, array<string, mixed>>
      */
-    protected function buildRecentActivities(): array
+    protected function buildRecentActivities(?DonationEvent $event): array
     {
         $sevenDaysAgo = now()->subDays(7);
 
-        $recentAthletes = $this->athleteService->all()
+        $recentExternalUsers = ExternalUser::query()
             ->where('created_at', '>=', $sevenDaysAgo)
+            ->when($event instanceof DonationEvent, function (Builder $query) use ($event): void {
+                $query->where(function (Builder $participants) use ($event): void {
+                    $participants
+                        ->whereHas('athleteRegistrations', fn (Builder $registrations): Builder => $registrations->where('donation_event_id', $event->id))
+                        ->orWhereHas('donationsAsDonor.athleteRegistration', fn (Builder $registration): Builder => $registration->where('donation_event_id', $event->id));
+                });
+            })
             ->latest()
             ->limit(30)
             ->get(['id', 'first_name', 'last_name', 'created_at']);
 
-        $recentDonors = $this->donorService->all()
+        $recentAthleteRegistrations = $this->registrationsQuery($event)
             ->where('created_at', '>=', $sevenDaysAgo)
+            ->with('externalUser:id,first_name,last_name')
             ->latest()
             ->limit(30)
-            ->get(['id', 'first_name', 'last_name', 'created_at']);
+            ->get(['id', 'external_user_id', 'created_at']);
 
-        $recentDonations = Donation::query()
+        $recentDonations = $this->donationsQuery($event)
             ->where('created_at', '>=', $sevenDaysAgo)
             ->with([
                 'donorExternalUser:id,first_name,last_name',
@@ -139,24 +167,19 @@ class GetDashboardDataAction
 
         $activities = [];
 
-        foreach ($recentAthletes as $athlete) {
-            if (! $athlete instanceof ExternalUser) {
-                continue;
-            }
-
+        foreach ($recentExternalUsers as $externalUser) {
             $activities[] = [
-                'type' => 'athlete',
-                'name' => $athlete->privacyName(),
-                'created_at' => $athlete->created_at,
+                'type' => 'external_user',
+                'name' => $externalUser->privacyName(),
+                'created_at' => $externalUser->created_at,
             ];
         }
 
-        foreach ($recentDonors as $donor) {
-            /** @var ExternalUser $donor */
+        foreach ($recentAthleteRegistrations as $registration) {
             $activities[] = [
-                'type' => 'donor',
-                'name' => $donor->privacyName(),
-                'created_at' => $donor->created_at,
+                'type' => 'athlete_registration',
+                'name' => $registration->externalUser->privacyName(),
+                'created_at' => $registration->created_at,
             ];
         }
 
@@ -179,10 +202,26 @@ class GetDashboardDataAction
         return array_reverse($activities);
     }
 
-    protected function meanNumberOfRounds(): float
+    protected function meanNumberOfRounds(?DonationEvent $event): float
     {
-        $mean = AthleteRegistration::query()->avg('rounds_estimated');
+        $mean = $this->registrationsQuery($event)->avg('rounds_estimated');
 
         return (float) ($mean ?? 0.0);
+    }
+
+    /** @return Builder<AthleteRegistration> */
+    protected function registrationsQuery(?DonationEvent $event): Builder
+    {
+        return AthleteRegistration::query()
+            ->when($event instanceof DonationEvent, fn (Builder $query): Builder => $query->where('donation_event_id', $event->id));
+    }
+
+    /** @return Builder<Donation> */
+    protected function donationsQuery(?DonationEvent $event): Builder
+    {
+        return Donation::query()
+            ->when($event instanceof DonationEvent, function (Builder $query) use ($event): void {
+                $query->whereHas('athleteRegistration', fn (Builder $registration): Builder => $registration->where('donation_event_id', $event->id));
+            });
     }
 }

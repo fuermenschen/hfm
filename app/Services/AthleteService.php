@@ -18,7 +18,6 @@ class AthleteService
         return $this->baseQuery();
     }
 
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function forEvent(DonationEvent|int $event): Builder
     {
         $eventId = $event instanceof DonationEvent ? $event->id : $event;

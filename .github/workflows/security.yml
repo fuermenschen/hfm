@@ -30,17 +30,38 @@ jobs:
       - name: Validate lockfile consistency
         run: |
           set -euo pipefail
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.sha }}"
-          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          BASE_SHA="$(git merge-base "${{ github.event.pull_request.base.sha }}" "$HEAD_SHA")"
 
-          if echo "$CHANGED_FILES" | grep -qx "package.json" && ! echo "$CHANGED_FILES" | grep -qx "package-lock.json"; then
-            echo "package.json changed without package-lock.json. Please update and commit package-lock.json."
+          dependencies_changed() {
+            local manifest="$1"
+            local filter="$2"
+
+            ! diff --brief \
+              <(git show "$BASE_SHA:$manifest" | jq --sort-keys "$filter") \
+              <(git show "$HEAD_SHA:$manifest" | jq --sort-keys "$filter") \
+              >/dev/null
+          }
+
+          lockfile_unchanged() {
+            git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- "$1"
+          }
+
+          if dependencies_changed package.json '{
+            dependencies: (.dependencies // {}),
+            devDependencies: (.devDependencies // {}),
+            optionalDependencies: (.optionalDependencies // {}),
+            peerDependencies: (.peerDependencies // {})
+          }' && lockfile_unchanged package-lock.json; then
+            echo "package.json dependencies changed without package-lock.json. Please update and commit package-lock.json."
             exit 1
           fi
 
-          if echo "$CHANGED_FILES" | grep -qx "composer.json" && ! echo "$CHANGED_FILES" | grep -qx "composer.lock"; then
-            echo "composer.json changed without composer.lock. Please update and commit composer.lock."
+          if dependencies_changed composer.json '{
+            require: (.require // {}),
+            "require-dev": (."require-dev" // {})
+          }' && lockfile_unchanged composer.lock; then
+            echo "composer.json dependencies changed without composer.lock. Please update and commit composer.lock."
             exit 1
           fi
 

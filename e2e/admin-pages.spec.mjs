@@ -7,7 +7,8 @@ const adminRoutes = [
     "/admin/partner",
     "/admin/sponsoren",
     "/admin/faqs",
-    "/admin/externe-personen",
+    "/admin/sportlerinnen",
+    "/admin/spenderinnen",
     "/admin/spenden",
     "/admin/dateien",
     "/admin/tools",
@@ -22,7 +23,10 @@ function runArtisan(args) {
 }
 
 function ensureSeededDatabase() {
-    const userCount = Number.parseInt(runArtisan(["tinker", "--execute=echo App\\Models\\User::query()->count();"]), 10);
+    const userCount = Number.parseInt(
+        runArtisan(["tinker", "--execute=echo App\\Models\\User::query()->count();"]),
+        10,
+    );
 
     if (Number.isNaN(userCount) || userCount === 0) {
         runArtisan(["db:seed", "--no-interaction"]);
@@ -38,7 +42,11 @@ function signedAdminLoginUrl() {
 
 async function waitForImagesAndIdle(page) {
     await page.waitForLoadState("networkidle");
-    await page.waitForFunction(() => Array.from(document.images).filter((img) => img.hasAttribute("src") && !img.src.startsWith("data:")).every((img) => img.complete && img.naturalWidth > 0));
+    await page.waitForFunction(() =>
+        Array.from(document.images)
+            .filter((img) => img.hasAttribute("src") && !img.src.startsWith("data:"))
+            .every((img) => img.complete && img.naturalWidth > 0),
+    );
 }
 
 async function slowScroll(page) {

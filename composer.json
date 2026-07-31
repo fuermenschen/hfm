@@ -94,7 +94,7 @@
             "npm run e2e"
         ],
         "lint:ai": [
-            "vendor/bin/rector process --dry-run --no-diffs --ansi",
+            "vendor/bin/rector process --ansi",
             "vendor/bin/pint --dirty -q",
             "vendor/bin/peck -q"
         ],

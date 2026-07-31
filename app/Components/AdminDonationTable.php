@@ -17,7 +17,7 @@ class AdminDonationTable extends AbstractDatatableComponent
     public string $sortField = 'created_at';
 
     #[Url(as: 'anlass', except: '')]
-    public ?string $eventId = '';
+    public ?string $eventSlug = '';
 
     protected DonationService $donationService;
 
@@ -105,24 +105,16 @@ class AdminDonationTable extends AbstractDatatableComponent
 
     protected function applyFilters(Builder $query): void
     {
-        if ($this->eventId === null || $this->eventId === '') {
+        if ($this->eventSlug === null || $this->eventSlug === '') {
             return;
         }
 
-        $eventId = ctype_digit($this->eventId) ? (int) $this->eventId : 0;
-
-        if ($eventId < 1) {
-            $query->whereRaw('1 = 0');
-
-            return;
-        }
-
-        $query->whereHas('athleteRegistration', fn (Builder $registration): Builder => $registration->where('donation_event_id', $eventId));
+        $query->whereHas('athleteRegistration.donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
     }
 
     protected function tableFilterProperties(): array
     {
-        return ['eventId'];
+        return ['eventSlug'];
     }
 
     protected function defaultSortColumn(): string

@@ -1,11 +1,15 @@
 @props(['title', 'activities'])
 
 <div class="mt-9 max-w-xl">
-    <h2 class="text-xl font-semibold leading-6">{{ $title }}</h2>
+    <flux:heading size="xl">{{ $title }}</flux:heading>
 
-    <ul role="list" class="mt-9">
-        @foreach ($activities as $activity)
+    @if ($activities === [])
+        <flux:text class="mt-5">Keine Aktivitäten in den letzten sieben Tagen.</flux:text>
+    @else
+        <flux:timeline align="start" class="mt-7">
+            @foreach ($activities as $activity)
             <x-admin.activity-list-entry :activity="$activity" />
-        @endforeach
-    </ul>
+            @endforeach
+        </flux:timeline>
+    @endif
 </div>

@@ -56,12 +56,13 @@ class ServiceConstructorInjectionUsageProvider implements MemberUsageProvider
 
                 $parameterClassName = $type->getName();
 
-                if (! str_starts_with($parameterClassName, 'App\\Services\\')) {
+                if (! str_starts_with($parameterClassName, 'App\\Services\\')
+                    && ! str_starts_with($parameterClassName, 'App\\Actions\\')) {
                     continue;
                 }
 
                 $usages[] = new ClassMethodUsage(
-                    UsageOrigin::createVirtual($this, VirtualUsageData::withNote('Service constructor resolved by Laravel container via typed method injection')),
+                    UsageOrigin::createVirtual($this, VirtualUsageData::withNote('Dependency constructor resolved by Laravel container via typed method injection')),
                     new ClassMethodRef($parameterClassName, '__construct', possibleDescendant: false),
                 );
             }

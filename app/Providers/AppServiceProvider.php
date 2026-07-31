@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Actions\GetDashboardDataAction;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
@@ -48,11 +47,6 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewPulse', fn (User $user): true => true);
         Gate::define('viewLogViewer', fn (User $user): true => true);
-
-        // Inject computed dashboard data via a view composer
-        View::composer('pages.admin.dashboard', function ($view): void {
-            $view->with(resolve(GetDashboardDataAction::class)());
-        });
 
         View::composer('*', function ($view): void {
             $eventService = resolve(CurrentDonationEventService::class);
