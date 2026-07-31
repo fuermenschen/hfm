@@ -44,6 +44,29 @@ const smokeProjects = [
     },
 ];
 
+const portalProjects = [
+    {
+        name: "Portal Desktop Light",
+        use: { viewport: { width: 1280, height: 800 }, colorScheme: "light" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+    {
+        name: "Portal Desktop Dark",
+        use: { viewport: { width: 1280, height: 800 }, colorScheme: "dark" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+    {
+        name: "Portal Mobile Light",
+        use: { viewport: { width: 390, height: 844 }, isMobile: true, colorScheme: "light" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+    {
+        name: "Portal Mobile Dark",
+        use: { viewport: { width: 390, height: 844 }, isMobile: true, colorScheme: "dark" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+];
+
 export default defineConfig({
     testDir: "e2e",
     timeout: 30_000,
@@ -76,5 +99,5 @@ export default defineConfig({
               },
           }
         : undefined,
-    projects: [...genericProjects, ...smokeProjects],
+    projects: [...genericProjects, ...smokeProjects, ...portalProjects],
 });
