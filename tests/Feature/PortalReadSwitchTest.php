@@ -39,8 +39,18 @@ it('defaults home to current event and shows owned summary with global confirmat
     ]);
     Donation::factory()->forPair(ExternalUser::factory()->create(), $currentRegistration)->create(['verified' => false]);
 
-    $otherCurrentRegistration = AthleteRegistration::factory()->forEvent($currentEvent)->verified()->create();
-    Donation::factory()->forPair($externalUser, $otherCurrentRegistration)->create(['verified' => true]);
+    $otherCurrentRegistration = AthleteRegistration::factory()->forEvent($currentEvent)->verified()->create([
+        'rounds_estimated' => 10,
+        'rounds_done' => 2,
+    ]);
+    Donation::factory()->forPair($externalUser, $otherCurrentRegistration)->create([
+        'amount_per_round' => 3,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
+    $pendingDonationRegistration = AthleteRegistration::factory()->forEvent($currentEvent)->verified()->create();
+    Donation::factory()->forPair($externalUser, $pendingDonationRegistration)->create(['verified' => false]);
     $previousDonationRegistration = AthleteRegistration::factory()->forEvent($previousEvent)->verified()->create([
         'rounds_estimated' => 10,
     ]);
@@ -64,7 +74,14 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertViewHas('currentReceivedAmount', 20.0)
         ->assertViewHas('hasCompletedRounds', true)
         ->assertViewHas('ownDonationCount', 1)
-        ->assertSeeText('Effektiver Spendenbetrag')
+        ->assertViewHas('estimatedOwnAmount', 30.0)
+        ->assertViewHas('currentOwnAmount', 6.0)
+        ->assertViewHas('hasOwnCompletedRounds', true)
+        ->assertSeeText('Deine Teilnahme')
+        ->assertSeeText('Deine Unterstützung')
+        ->assertSeeText('Voraussichtlich gesammelt')
+        ->assertSeeText('Voraussichtlicher eigener Beitrag')
+        ->assertSeeText('Aktuell gesammelt')
         ->assertSeeText('Offene Bestätigungen aus allen Anlässen.')
         ->assertSeeText('Anmeldung bestätigen')
         ->assertSeeText('Previous Event')
@@ -162,9 +179,11 @@ it('shows donor-only users only their relevant dashboard summary', function (): 
 
     get(route('portal.dashboard'))
         ->assertSuccessful()
-        ->assertSeeText('Eigene Spenden')
+        ->assertSeeText('Deine Unterstützung')
+        ->assertSeeText('Voraussichtlicher eigener Beitrag')
         ->assertDontSeeText('Eingegangene Spenden')
-        ->assertDontSeeText('Erwarteter Spendenbetrag')
+        ->assertDontSeeText('Deine Teilnahme')
+        ->assertDontSeeText('Voraussichtlich gesammelt')
         ->assertDontSee(route('portal.participations'));
 });
 

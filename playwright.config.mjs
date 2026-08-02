@@ -20,13 +20,13 @@ const genericProjects = [
         name: "Desktop",
         use: { viewport: { width: 1280, height: 800 } },
         testMatch: /.*\.spec\.mjs/,
-        testIgnore: /smoke\.spec\.mjs/,
+        testIgnore: /(?:smoke|portal)\.spec\.mjs/,
     },
     {
         name: "Mobile Portrait",
         use: { viewport: { width: 390, height: 844 }, isMobile: true },
         testMatch: /.*\.spec\.mjs/,
-        testIgnore: /smoke\.spec\.mjs/,
+        testIgnore: /(?:smoke|portal)\.spec\.mjs/,
     },
 ];
 

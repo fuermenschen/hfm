@@ -14,7 +14,7 @@
         <x-portal.success-message />
 
         @forelse ($donations as $donation)
-            <flux:card class="space-y-6 rounded-2xl border-amber-100 bg-white/90 shadow-sm dark:border-slate-700 dark:bg-slate-900/90">
+            <flux:card class="space-y-6 rounded-xl border-hfm-light/40 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <flux:heading size="lg" level="2">{{ $donation['athlete'] }}</flux:heading>
@@ -36,12 +36,12 @@
                 @endunless
 
                 <dl class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl bg-amber-50 p-4 dark:bg-amber-950/40">
-                        <dt class="text-sm text-amber-700 dark:text-amber-300">Erwarteter Betrag</dt>
+                    <div class="rounded-xl bg-hfm-light/15 p-4 dark:bg-slate-800">
+                        <dt class="text-sm text-hfm-dark dark:text-hfm-light">Voraussichtlicher eigener Beitrag</dt>
                         <dd class="mt-1 text-2xl font-semibold tabular-nums"><span class="text-base font-medium">Fr.</span> {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}</dd>
                     </div>
-                    <div class="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
-                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">Effektiver Betrag</dt>
+                    <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
+                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">Aktueller eigener Beitrag</dt>
                         @if ($donation['hasCompletedRounds'])
                             <dd class="mt-1 text-2xl font-semibold tabular-nums"><span class="text-base font-medium">Fr.</span> {{ number_format($donation['currentAmount'], 2, '.', "'") }}</dd>
                         @else
@@ -65,8 +65,8 @@
                 @endif
             </flux:card>
         @empty
-            <flux:card class="rounded-2xl border-amber-200 bg-gradient-to-br from-amber-50 to-white text-center shadow-sm dark:border-amber-900/70 dark:from-amber-950/30 dark:to-slate-900">
-                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200"><flux:icon.heart class="size-6" /></div>
+            <flux:card class="rounded-xl border-hfm-light/40 bg-white text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-hfm-light/25 text-hfm-dark dark:bg-slate-800 dark:text-hfm-light"><flux:icon.heart class="size-6" /></div>
                 <flux:heading size="lg" level="2" class="mt-4">Noch keine Spende</flux:heading>
                 <flux:text class="mt-2">Für den gewählten Anlass ist keine Spende vorhanden.</flux:text>
                 @if ($donorRegistrationOpen)

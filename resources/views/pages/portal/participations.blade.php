@@ -14,7 +14,7 @@
         <x-portal.success-message />
 
         @forelse ($registrations as $registration)
-            <flux:card class="space-y-6 rounded-2xl border-sky-100 bg-white/90 shadow-sm dark:border-slate-700 dark:bg-slate-900/90">
+            <flux:card class="space-y-6 rounded-xl border-hfm-light/40 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <flux:heading size="lg" level="2">{{ $registration['event'] }}</flux:heading>
@@ -38,11 +38,11 @@
                 @endunless
 
                 <dl class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-2xl bg-sky-50 p-4 dark:bg-sky-950/40">
-                        <dt class="text-sm text-sky-700 dark:text-sky-300">Geschätzte Runden</dt>
+                    <div class="rounded-xl bg-hfm-light/15 p-4 dark:bg-slate-800">
+                        <dt class="text-sm text-hfm-dark dark:text-hfm-light">Geschätzte Runden</dt>
                         <dd class="mt-1 text-2xl font-semibold tabular-nums">{{ $registration['roundsEstimated'] }}</dd>
                     </div>
-                    <div class="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
+                    <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
                         <dt class="text-sm text-emerald-700 dark:text-emerald-300">Absolvierte Runden</dt>
                         <dd class="mt-1 text-2xl font-semibold tabular-nums">{{ $registration['roundsDone'] }}</dd>
                     </div>
@@ -72,7 +72,7 @@
                     <flux:heading level="3">Spender:innen</flux:heading>
 
                     @forelse ($registration['donations'] as $donation)
-                        <flux:card class="space-y-4 rounded-2xl border-sky-100 bg-sky-50/60 shadow-none dark:border-slate-700 dark:bg-slate-800/70">
+                        <flux:card class="space-y-4 rounded-xl border-hfm-light/40 bg-hfm-light/10 shadow-none dark:border-slate-700 dark:bg-slate-800">
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                 <flux:heading level="4">{{ $donation['donor'] }}</flux:heading>
                                 <flux:badge :color="$donation['verified'] ? 'green' : 'amber'">
@@ -107,8 +107,8 @@
                 </div>
             </flux:card>
         @empty
-            <flux:card class="rounded-2xl border-sky-200 bg-gradient-to-br from-sky-50 to-white text-center shadow-sm dark:border-sky-900/70 dark:from-sky-950/30 dark:to-slate-900">
-                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-200"><flux:icon.trophy class="size-6" /></div>
+            <flux:card class="rounded-xl border-hfm-light/40 bg-white text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-hfm-light/25 text-hfm-dark dark:bg-slate-800 dark:text-hfm-light"><flux:icon.trophy class="size-6" /></div>
                 <flux:heading size="lg" level="2" class="mt-4">Noch keine Teilnahme</flux:heading>
                 <flux:text class="mt-2">Für den gewählten Anlass ist keine Teilnahme vorhanden.</flux:text>
                 @if ($athleteRegistrationOpen)

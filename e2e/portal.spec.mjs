@@ -21,13 +21,15 @@ async function screenshotViewport(page, testInfo, name) {
     await testInfo.attach(name, { body: screenshot, contentType: "image/png" });
 }
 
-async function navigateToPortalPage(page, heading) {
+async function navigateToPortalPage(page, portalPage) {
+    const { heading, path } = portalPage;
     const sidebarLink = page.locator("[data-flux-sidebar]").getByRole("link", { name: heading, exact: true });
     const mobileLink = page.getByLabel("Portal-Navigation").getByRole("link", { name: heading, exact: true });
     const link = page.viewportSize().width < 640 ? mobileLink : sidebarLink;
 
     await link.click();
-    await page.waitForLoadState("networkidle");
+    await page.waitForURL(path);
+    await expect(page.getByRole("heading", { name: heading, exact: true }).first()).toBeVisible();
 }
 
 async function assertHealthy(page) {
@@ -52,14 +54,18 @@ test("smoke: external user portal navigation", async ({ page }, testInfo) => {
     await page.waitForURL(/\/portal/);
 
     const pages = [
-        { name: "portal-overview", heading: "Übersicht" },
-        { name: "portal-participations", heading: "Teilnahmen" },
-        { name: "portal-donations", heading: "Spenden" },
+        { name: "portal-overview", heading: "Übersicht", path: /\/portal(?:\?.*)?$/ },
+        {
+            name: "portal-participations",
+            heading: "Teilnahmen",
+            path: /\/portal\/teilnahmen(?:\?.*)?$/,
+        },
+        { name: "portal-donations", heading: "Spenden", path: /\/portal\/spenden(?:\?.*)?$/ },
     ];
 
     for (const [index, portalPage] of pages.entries()) {
         if (index > 0) {
-            await navigateToPortalPage(page, portalPage.heading);
+            await navigateToPortalPage(page, portalPage);
         }
 
         await assertHealthy(page);

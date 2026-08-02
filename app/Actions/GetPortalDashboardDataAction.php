@@ -23,6 +23,9 @@ class GetPortalDashboardDataAction
      *     hasCompletedRounds: bool,
      *     ownDonationCount: int,
      *     pendingOwnDonationCount: int,
+     *     estimatedOwnAmount: float,
+     *     currentOwnAmount: float,
+     *     hasOwnCompletedRounds: bool,
      *     pendingParticipations: array<int, array{id: int, event: string, eventDate: ?string, sport: string, partner: string, roundsEstimated: int}>,
      *     pendingDonations: array<int, array{id: int, event: string, eventDate: ?string, athlete: string, estimatedAmount: float, amountMax: ?float}>
      * }
@@ -47,6 +50,11 @@ class GetPortalDashboardDataAction
             ->when($selectedEvent instanceof DonationEvent, function ($query) use ($selectedEvent): void {
                 $query->whereHas('athleteRegistration', fn (Builder $query): Builder => $query->where('donation_event_id', $selectedEvent->id));
             });
+
+        $ownDonations = (clone $ownDonationsQuery)
+            ->where('verified', true)
+            ->with('athleteRegistration:id,rounds_estimated,rounds_done')
+            ->get(['id', 'athlete_registration_id', 'amount_per_round', 'amount_min', 'amount_max']);
 
         $pendingParticipations = $externalUser->athleteRegistrations()
             ->where('verified', false)
@@ -100,8 +108,13 @@ class GetPortalDashboardDataAction
             'hasCompletedRounds' => $receivedDonations->contains(
                 fn (Donation $donation): bool => (int) $donation->athleteRegistration->rounds_done > 0,
             ),
-            'ownDonationCount' => (clone $ownDonationsQuery)->where('verified', true)->count(),
+            'ownDonationCount' => $ownDonations->count(),
             'pendingOwnDonationCount' => (clone $ownDonationsQuery)->where('verified', false)->count(),
+            'estimatedOwnAmount' => $this->donationService->calculateEstimatedTotal($ownDonations),
+            'currentOwnAmount' => $this->donationService->calculateActualTotal($ownDonations),
+            'hasOwnCompletedRounds' => $ownDonations->contains(
+                fn (Donation $donation): bool => (int) $donation->athleteRegistration->rounds_done > 0,
+            ),
             'pendingParticipations' => $pendingParticipations,
             'pendingDonations' => $pendingDonations,
         ];

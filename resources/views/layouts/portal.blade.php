@@ -1,7 +1,7 @@
 @extends('layouts.base')
 
 @section('body')
-    <flux:sidebar sticky collapsible="mobile" class="border-r border-sky-100 bg-white/90 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+    <flux:sidebar sticky collapsible="mobile" class="border-r border-hfm-light/40 bg-hfm-white dark:border-slate-700 dark:bg-slate-900">
         <flux:sidebar.header>
             <flux:sidebar.brand href="{{ route('portal.dashboard', $eventParameters) }}" alt="Höhenmeter für Menschen" wire:navigate>
                 <x-slot:logo class="rounded-none! overflow-visible!">
@@ -44,8 +44,8 @@
         <livewire:portal-logout-button />
     </flux:sidebar>
 
-    <flux:main class="min-h-screen bg-gradient-to-br from-sky-50/90 via-white to-red-50/70 pb-24 dark:from-slate-950 dark:via-slate-900 dark:to-red-950/30 lg:pb-8">
-        <div class="mx-auto w-full max-w-7xl">
+    <flux:main class="min-h-screen bg-gradient-to-br from-hfm-light/15 via-hfm-white to-white pb-24 dark:from-slate-950 dark:via-slate-900 dark:to-hfm-dark lg:pb-8">
+        <div class="mx-auto w-full max-w-6xl">
         <div class="mb-6 flex items-center justify-between lg:hidden">
             <flux:sidebar.toggle icon="bars-2" inset="left" />
         </div>
@@ -56,19 +56,19 @@
         </div>
     </flux:main>
 
-    <nav aria-label="Portal-Navigation" class="fixed inset-x-3 bottom-3 z-10 rounded-2xl border border-sky-100 bg-white/95 p-2 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95 lg:hidden">
+    <nav aria-label="Portal-Navigation" class="fixed inset-x-3 bottom-3 z-10 rounded-xl border border-hfm-light/40 bg-hfm-white p-2 shadow-lg shadow-hfm-dark/10 dark:border-slate-700 dark:bg-slate-900 lg:hidden">
         <div class="grid {{ $hasAthleteRegistrations ? 'grid-cols-3' : 'grid-cols-2' }} gap-1">
-            <a href="{{ route('portal.dashboard', $eventParameters) }}" wire:navigate aria-current="{{ request()->routeIs('portal.dashboard') ? 'page' : 'false' }}" @class(['flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition-colors motion-reduce:transition-none', 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-300' => request()->routeIs('portal.dashboard'), 'text-slate-500 hover:bg-sky-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' => ! request()->routeIs('portal.dashboard')])>
+            <a href="{{ route('portal.dashboard', $eventParameters) }}" wire:navigate aria-current="{{ request()->routeIs('portal.dashboard') ? 'page' : 'false' }}" @class(['flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors motion-reduce:transition-none', 'bg-hfm-red text-hfm-white' => request()->routeIs('portal.dashboard'), 'text-slate-500 hover:bg-hfm-light/20 hover:text-hfm-dark dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' => ! request()->routeIs('portal.dashboard')])>
                 <flux:icon.home class="size-5" />
                 Übersicht
             </a>
             @if ($hasAthleteRegistrations)
-                <a href="{{ route('portal.participations', $eventParameters) }}" wire:navigate aria-current="{{ request()->routeIs('portal.participations') ? 'page' : 'false' }}" @class(['flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition-colors motion-reduce:transition-none', 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300' => request()->routeIs('portal.participations'), 'text-slate-500 hover:bg-sky-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' => ! request()->routeIs('portal.participations')])>
+                <a href="{{ route('portal.participations', $eventParameters) }}" wire:navigate aria-current="{{ request()->routeIs('portal.participations') ? 'page' : 'false' }}" @class(['flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors motion-reduce:transition-none', 'bg-hfm-red text-hfm-white' => request()->routeIs('portal.participations'), 'text-slate-500 hover:bg-hfm-light/20 hover:text-hfm-dark dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' => ! request()->routeIs('portal.participations')])>
                     <flux:icon.trophy class="size-5" />
                     Teilnahmen
                 </a>
             @endif
-            <a href="{{ route('portal.donations', $eventParameters) }}" wire:navigate aria-current="{{ request()->routeIs('portal.donations') ? 'page' : 'false' }}" @class(['flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-xs font-medium transition-colors motion-reduce:transition-none', 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' => request()->routeIs('portal.donations'), 'text-slate-500 hover:bg-sky-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' => ! request()->routeIs('portal.donations')])>
+            <a href="{{ route('portal.donations', $eventParameters) }}" wire:navigate aria-current="{{ request()->routeIs('portal.donations') ? 'page' : 'false' }}" @class(['flex min-h-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors motion-reduce:transition-none', 'bg-hfm-red text-hfm-white' => request()->routeIs('portal.donations'), 'text-slate-500 hover:bg-hfm-light/20 hover:text-hfm-dark dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' => ! request()->routeIs('portal.donations')])>
                 <flux:icon.heart class="size-5" />
                 Spenden
             </a>
