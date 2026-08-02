@@ -25,8 +25,8 @@ export default async function globalSetup() {
         : `${envContent.trimEnd()}\nDEBUGBAR_ENABLED=false\n`;
     writeFileSync(envPath, updated, "utf8");
 
-    // Disable debugbar for the current process and clear cached config + app cache
+    // Reset shared local database once so every worker uses same browser fixtures.
     process.env.DEBUGBAR_ENABLED = "false";
-    run("php artisan config:clear");
-    run("php artisan cache:clear");
+    run("php artisan migrate:fresh --seed --no-interaction");
+    run("php artisan optimize:clear");
 }

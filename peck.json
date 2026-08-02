@@ -67,7 +67,8 @@
             "hardcoded",
             "preflight",
             "entrypoint",
-            "deletable"
+            "deletable",
+            "participations"
         ],
         "paths": []
     }

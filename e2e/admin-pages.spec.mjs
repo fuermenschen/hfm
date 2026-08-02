@@ -22,17 +22,6 @@ function runArtisan(args) {
     }).trim();
 }
 
-function ensureSeededDatabase() {
-    const userCount = Number.parseInt(
-        runArtisan(["tinker", "--execute=echo App\\Models\\User::query()->count();"]),
-        10,
-    );
-
-    if (Number.isNaN(userCount) || userCount === 0) {
-        runArtisan(["db:seed", "--no-interaction"]);
-    }
-}
-
 function signedAdminLoginUrl() {
     return runArtisan([
         "tinker",
@@ -82,8 +71,6 @@ async function slowScroll(page) {
 
 test("smoke: admin pages", async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-
-    ensureSeededDatabase();
 
     const loginUrl = signedAdminLoginUrl();
     const loginResponse = await page.goto(loginUrl, { waitUntil: "domcontentloaded" });

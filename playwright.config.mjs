@@ -20,13 +20,13 @@ const genericProjects = [
         name: "Desktop",
         use: { viewport: { width: 1280, height: 800 } },
         testMatch: /.*\.spec\.mjs/,
-        testIgnore: /smoke\.spec\.mjs/,
+        testIgnore: /(?:smoke|portal)\.spec\.mjs/,
     },
     {
         name: "Mobile Portrait",
         use: { viewport: { width: 390, height: 844 }, isMobile: true },
         testMatch: /.*\.spec\.mjs/,
-        testIgnore: /smoke\.spec\.mjs/,
+        testIgnore: /(?:smoke|portal)\.spec\.mjs/,
     },
 ];
 
@@ -41,6 +41,29 @@ const smokeProjects = [
         name: "Smoke iPhone SE Dark",
         testMatch: /smoke\.spec\.mjs/,
         use: { viewport: { width: 320, height: 568 }, isMobile: true, colorScheme: "dark" },
+    },
+];
+
+const portalProjects = [
+    {
+        name: "Portal Desktop Light",
+        use: { viewport: { width: 1280, height: 800 }, colorScheme: "light" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+    {
+        name: "Portal Desktop Dark",
+        use: { viewport: { width: 1280, height: 800 }, colorScheme: "dark" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+    {
+        name: "Portal Mobile Light",
+        use: { viewport: { width: 390, height: 844 }, isMobile: true, colorScheme: "light" },
+        testMatch: /portal\.spec\.mjs/,
+    },
+    {
+        name: "Portal Mobile Dark",
+        use: { viewport: { width: 390, height: 844 }, isMobile: true, colorScheme: "dark" },
+        testMatch: /portal\.spec\.mjs/,
     },
 ];
 
@@ -76,5 +99,5 @@ export default defineConfig({
               },
           }
         : undefined,
-    projects: [...genericProjects, ...smokeProjects],
+    projects: [...genericProjects, ...smokeProjects, ...portalProjects],
 });

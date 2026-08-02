@@ -24,19 +24,4 @@ class DonorRegistrationConfirmationController extends Controller
 
         return to_route('portal.dashboard');
     }
-
-    public function store(Donation $donation): RedirectResponse
-    {
-        $externalUser = auth()->guard('external')->user();
-
-        throw_if(! $externalUser instanceof ExternalUser, AuthorizationException::class);
-        throw_if($donation->donor_external_user_id !== $externalUser->id, AuthorizationException::class, 'Diese Spende gehört nicht zu deinem Profil.');
-
-        Donation::query()
-            ->whereKey($donation->id)
-            ->where('verified', false)
-            ->update(['verified' => true]);
-
-        return to_route('portal.donation.confirmed');
-    }
 }

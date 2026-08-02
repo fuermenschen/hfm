@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         $eventSettings->current_event_id = $futureEvent->id;
         $eventSettings->save();
 
-        if (config('app.env') === 'local') {
+        if (in_array(config('app.env'), ['local', 'testing'], true)) {
             $this->seedLocalScenario($pastEvent, $futureEvent);
         }
     }
@@ -170,6 +170,32 @@ class DatabaseSeeder extends Seeder
 
         $this->createDonationsForEvent($registrations2025, $donorPool, 70);
         $this->createDonationsForEvent($registrations2026, $donorPool, 150);
+
+        $this->seedPortalSmokeScenario($dualRoleUsers, $registrations2026, $futureEvent);
+    }
+
+    /**
+     * Reuse local graph records so browser fixtures do not change seeded counts.
+     *
+     * @param  Collection<int, ExternalUser>  $dualRoleUsers
+     * @param  Collection<int, AthleteRegistration>  $registrations
+     */
+    protected function seedPortalSmokeScenario(Collection $dualRoleUsers, Collection $registrations, DonationEvent $event): void
+    {
+        $portalUser = $dualRoleUsers->firstOrFail();
+        $portalUser->update(['email' => 'portal-smoke@example.test', 'first_name' => 'Cédric', 'last_name' => 'Smoke']);
+
+        $pendingDonation = Donation::query()
+            ->whereRelation('athleteRegistration', 'donation_event_id', $event->id)
+            ->whereRelation('athleteRegistration', 'external_user_id', '!=', $portalUser->id)
+            ->firstOrFail();
+        $pendingDonation->update([
+            'donor_external_user_id' => $portalUser->id,
+            'amount_per_round' => 5,
+            'amount_min' => 20,
+            'amount_max' => 50,
+            'verified' => false,
+        ]);
     }
 
     protected function createEventRegistrations(Collection $externalUsers, DonationEvent $event): Collection

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\LocalizedDateTime;
+use Carbon\Carbon;
 use Database\Factories\DonationEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
+/**
+ * @property Carbon|null $starts_at
+ */
 #[Fillable([
     'slug',
     'title',

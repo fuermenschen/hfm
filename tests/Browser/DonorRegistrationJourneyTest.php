@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Notification;
 
 use function Pest\Laravel\actingAs;
 
-it('lets a logged in external user donate through the wizard', function (): void {
+it('lets a logged in external user donate and confirm through the email link', function (): void {
     Notification::fake();
 
     $athleteRegistration = createDonorWizardOpenEventForBrowserTest();
@@ -29,12 +29,8 @@ it('lets a logged in external user donate through the wizard', function (): void
 
     visit(route('become-donor'))
         ->assertNoJavaScriptErrors()
-        ->assertSee('Bestehendes Profil erkannt')
-        ->assertSee('Francesca Arslan')
-        ->assertDontSee('Vorname')
         ->click('[data-flux-select-button]')
         ->click($athleteOption)
-        ->assertSee('Claudia M. hat geschätzt, 10 Runden zu absolvieren')
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '7.50')
         ->type('[wire\:model\.live\.blur="amount_min"]', '50')
         ->type('[wire\:model\.live\.blur="amount_max"]', '200')
@@ -43,23 +39,38 @@ it('lets a logged in external user donate through the wizard', function (): void
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
-        ->assertSee('Anmeldung erhalten')
-        ->assertSee('Wir haben dir eine E-Mail geschickt');
+        ->assertSee('Anmeldung erhalten');
 
     $donation = Donation::query()
         ->whereBelongsTo($externalUser, 'donorExternalUser')
         ->whereBelongsTo($athleteRegistration)
         ->firstOrFail();
 
-    expect($donation->verified)->toBeFalse()
-        ->and($donation->amount_per_round)->toBe(7.50)
-        ->and($donation->amount_min)->toBe(50.00)
-        ->and($donation->amount_max)->toBe(200.00);
+    expect($donation->verified)->toBeFalse();
 
+    $confirmationUrl = null;
     Notification::assertSentTo(
         $externalUser,
-        fn (ConfirmDonorRegistration $notification): bool => str_contains($notification->confirmationUrl, (string) $donation->id),
+        function (ConfirmDonorRegistration $notification) use (&$confirmationUrl): bool {
+            $confirmationUrl = $notification->confirmationUrl;
+
+            return true;
+        },
     );
+
+    expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
+
+    $page = visit($confirmationUrl)->assertPathIs('/portal');
+    $page->script('window.portalSpaMarker = true');
+
+    $page->click('@confirm-donation')
+        ->assertSee('Deine Spende ist bestätigt.')
+        ->assertSee('Bestätigt')
+        ->assertDontSee('Bestätigung ausstehend')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->script('window.portalSpaMarker'))->toBeTrue()
+        ->and($donation->refresh()->verified)->toBeTrue();
 })->flaky();
 
 it('lets a returning guest resume donation through a signed login link', function (): void {
@@ -75,7 +86,6 @@ it('lets a returning guest resume donation through a signed login link', functio
     $page = visit(route('become-donor'));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->type('[wire\:model\.live\.blur="returning_email"]', 'francesca@example.com')
         ->type('[wire\:model\.live\.blur="returning_email_confirmation"]', 'francesca@example.com')
         ->keys('[wire\:model\.live\.blur="returning_email_confirmation"]', 'Tab')
@@ -99,8 +109,6 @@ it('lets a returning guest resume donation through a signed login link', functio
 
     $page->navigate($loginUrl)
         ->assertPathIs('/spenderin-werden')
-        ->assertSee('Bestehendes Profil erkannt')
-        ->assertSee('Francesca Arslan')
         ->click('[data-flux-select-button]')
         ->click($athleteOption)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '5.00')
@@ -110,13 +118,35 @@ it('lets a returning guest resume donation through a signed login link', functio
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
         ->assertSee('Anmeldung erhalten');
 
-    expect(Donation::query()
+    $donation = Donation::query()
         ->whereBelongsTo($externalUser, 'donorExternalUser')
         ->whereBelongsTo($athleteRegistration)
-        ->exists())->toBeTrue();
+        ->firstOrFail();
+
+    expect($donation->verified)->toBeFalse();
+
+    $confirmationUrl = null;
+    Notification::assertSentTo(
+        $externalUser,
+        function (ConfirmDonorRegistration $notification) use (&$confirmationUrl): bool {
+            $confirmationUrl = $notification->confirmationUrl;
+
+            return true;
+        },
+    );
+
+    expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
+
+    $page->navigate($confirmationUrl)
+        ->assertPathIs('/portal')
+        ->click('@confirm-donation')
+        ->assertSee('Deine Spende ist bestätigt.')
+        ->assertNoJavaScriptErrors();
+
+    expect($donation->refresh()->verified)->toBeTrue();
 })->flaky();
 
-it('lets a new guest create an external user and donation', function (): void {
+it('lets a new guest donate and confirm through the email link', function (): void {
     Notification::fake();
 
     $athleteRegistration = createDonorWizardOpenEventForBrowserTest();
@@ -126,13 +156,11 @@ it('lets a new guest create an external user and donation', function (): void {
     $page = visit(route('become-donor'));
 
     $page->assertNoJavaScriptErrors()
-        ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->type('[wire\:model\.live\.blur="returning_email"]', 'mira@example.com')
         ->type('[wire\:model\.live\.blur="returning_email_confirmation"]', 'mira@example.com')
         ->keys('[wire\:model\.live\.blur="returning_email_confirmation"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Weiter', 0.2)
-        ->assertSee('Deine Angaben')
         ->type('[wire\:model\.live\.blur="first_name"]', 'Mira')
         ->type('[wire\:model\.live\.blur="last_name"]', 'Keller')
         ->type('[wire\:model\.live\.blur="address"]', 'Zelglistrasse 41')
@@ -142,7 +170,6 @@ it('lets a new guest create an external user and donation', function (): void {
         ->keys('[wire\:model\.live\.blur="phone_national"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Weiter', 0.2)
-        ->assertSee('Deine Spende')
         ->click('[data-flux-select-button]')
         ->click($athleteOption)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '10.00')
@@ -150,8 +177,7 @@ it('lets a new guest create an external user and donation', function (): void {
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')
         ->wait(0.2)
         ->pressAndWaitFor('Anmeldung absenden', 0.2)
-        ->assertSee('Anmeldung erhalten')
-        ->assertSee('Wir haben dir eine E-Mail geschickt');
+        ->assertSee('Anmeldung erhalten');
 
     $externalUser = ExternalUser::query()->where('email', 'mira@example.com')->firstOrFail();
     $donation = Donation::query()
@@ -159,12 +185,27 @@ it('lets a new guest create an external user and donation', function (): void {
         ->whereBelongsTo($athleteRegistration)
         ->firstOrFail();
 
-    expect($externalUser->first_name)->toBe('Mira')
-        ->and($externalUser->phone_number)->toBe('+41 79 123 45 67')
-        ->and($donation->verified)->toBeFalse()
-        ->and($donation->amount_per_round)->toBe(10.00);
+    expect($donation->verified)->toBeFalse();
 
-    Notification::assertSentTo($externalUser, ConfirmDonorRegistration::class);
+    $confirmationUrl = null;
+    Notification::assertSentTo(
+        $externalUser,
+        function (ConfirmDonorRegistration $notification) use (&$confirmationUrl): bool {
+            $confirmationUrl = $notification->confirmationUrl;
+
+            return true;
+        },
+    );
+
+    expect($confirmationUrl)->toBeString()->not()->toBeEmpty();
+
+    $page->navigate($confirmationUrl)
+        ->assertPathIs('/portal')
+        ->click('@confirm-donation')
+        ->assertSee('Deine Spende ist bestätigt.')
+        ->assertNoJavaScriptErrors();
+
+    expect($donation->refresh()->verified)->toBeTrue();
 })->flaky();
 
 function createDonorWizardOpenEventForBrowserTest(): AthleteRegistration

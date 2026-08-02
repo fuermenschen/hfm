@@ -71,12 +71,12 @@ it('logs out external sessions when admin users log in', function () {
 it('shows guest login links when no guard is authenticated', function () {
     get(route('home'))
         ->assertSuccessful()
-        ->assertSeeText('Login')
+        ->assertSeeText('Anmelden')
         ->assertSee('href="'.route('login').'"', false)
         ->assertSeeText('Vereinsmitglied werden')
         ->assertDontSeeText('Dashboard')
         ->assertDontSeeText('Portal')
-        ->assertDontSeeText('Logout');
+        ->assertDontSeeText('Abmelden');
 });
 
 it('shows admin dashboard and logout links for admin users', function () {
@@ -88,10 +88,10 @@ it('shows admin dashboard and logout links for admin users', function () {
         ->assertSuccessful()
         ->assertSeeText('Dashboard')
         ->assertSee('href="'.route('admin.dashboard').'"', false)
-        ->assertSeeText('Logout')
+        ->assertSeeText('Abmelden')
         ->assertSee('action="'.route('admin.logout').'"', false)
         ->assertDontSeeText('Portal')
-        ->assertDontSeeText('Login')
+        ->assertDontSeeText('Anmelden')
         ->assertDontSeeText('Vereinsmitglied werden');
 });
 
@@ -104,10 +104,10 @@ it('shows portal and portal logout links for external users', function () {
         ->assertSuccessful()
         ->assertSeeText('Portal')
         ->assertSee('href="'.route('portal.dashboard').'"', false)
-        ->assertSeeText('Logout')
+        ->assertSeeText('Abmelden')
         ->assertSee('action="'.route('portal.logout').'"', false)
         ->assertDontSeeText('Dashboard')
-        ->assertDontSeeText('Login')
+        ->assertDontSeeText('Anmelden')
         ->assertDontSeeText('Vereinsmitglied werden');
 });
 
@@ -153,22 +153,32 @@ it('allows reusing valid external signed login link within ttl', function () {
     assertAuthenticatedAs($externalUser, 'external');
 });
 
-it('rejects expired external signed login links', function () {
+it('shows a recovery page for expired external signed login links', function () {
     $externalUser = ExternalUser::factory()->create();
 
-    $url = URL::temporarySignedRoute('portal.login.uuid', now()->subMinute(), ['uuid' => $externalUser->uuid]);
+    $url = URL::temporarySignedRoute('portal.login.uuid', now()->subMinute(), [
+        'uuid' => $externalUser->uuid,
+        'redirect' => 'become-athlete',
+    ]);
 
-    get($url)->assertForbidden();
+    get($url)
+        ->assertForbidden()
+        ->assertSeeText('Link ist abgelaufen oder ungültig')
+        ->assertSee('href="'.route('login', ['redirect' => 'become-athlete']).'"', false)
+        ->assertSeeText('Nach dem Login gelangst du zur Sportler:innen-Anmeldung.');
     assertGuest('external');
 });
 
-it('rejects external login links with invalid signature', function () {
+it('shows a recovery page for invalid external login links', function () {
     $externalUser = ExternalUser::factory()->create();
 
     $url = URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), ['uuid' => $externalUser->uuid]);
     $invalidUrl = str_replace($externalUser->uuid, (string) str()->uuid(), $url);
 
-    get($invalidUrl)->assertForbidden();
+    get($invalidUrl)
+        ->assertForbidden()
+        ->assertSeeText('Link ist abgelaufen oder ungültig')
+        ->assertSee('href="'.route('login').'"', false);
     assertGuest('external');
 });
 
@@ -267,13 +277,19 @@ it('returns not found for valid signed external login URL with unknown uuid', fu
 it('registers split route files with expected guard middleware', function () {
     $adminRoute = Route::getRoutes()->getByName('admin.dashboard');
     $portalRoute = Route::getRoutes()->getByName('portal.dashboard');
+    $participationsRoute = Route::getRoutes()->getByName('portal.participations');
+    $donationsRoute = Route::getRoutes()->getByName('portal.donations');
     $homeRoute = Route::getRoutes()->getByName('home');
 
     expect($adminRoute)->not->toBeNull()
         ->and($portalRoute)->not->toBeNull()
+        ->and($participationsRoute)->not->toBeNull()
+        ->and($donationsRoute)->not->toBeNull()
         ->and($homeRoute)->not->toBeNull()
         ->and($adminRoute->middleware())->toContain('auth:web')
         ->and($portalRoute->middleware())->toContain('auth:external')
+        ->and($participationsRoute->middleware())->toContain('auth:external')
+        ->and($donationsRoute->middleware())->toContain('auth:external')
         ->and($homeRoute->middleware())->not->toContain('auth:web')
         ->and($homeRoute->middleware())->not->toContain('auth:external');
 
@@ -286,11 +302,31 @@ it('renders portal page for authenticated external users without registrations o
 
     actingAs($externalUser, 'external');
 
+    $expectedGreeting = match (true) {
+        now()->hour >= 17 => 'Guete Abig ',
+        now()->hour >= 12 => 'Hoi ',
+        now()->hour >= 4 => 'Guete Morge ',
+        default => 'Hoi ',
+    };
+
     get(route('portal.dashboard'))
         ->assertSuccessful()
-        ->assertSeeText('Hallo Alex')
-        ->assertSeeText('Ich bin Sportler:in')
-        ->assertSeeText('Ich spende')
-        ->assertSeeText('Du hast aktuell keine Sportler:innen-Anmeldungen im Portal.')
-        ->assertSeeText('Du hast aktuell keine Spenden im Portal.');
+        ->assertSeeText($expectedGreeting.'Alex')
+        ->assertSeeText('Danke für dis Engagement.')
+        ->assertSeeText('Übersicht')
+        ->assertSee('wire:navigate', false)
+        ->assertDontSee('wire:navigate.hover', false)
+        ->assertDontSeeText('HFM Portal')
+        ->assertDontSee(route('portal.participations'))
+        ->assertSeeText('Spenden')
+        ->assertSeeText('Hier beginnt dein Engagement')
+        ->assertDontSeeText('Eingegangene Spenden')
+        ->assertDontSeeText('Eigene Spenden')
+        ->assertSeeText('Hilfe & Kontakt')
+        ->assertSee('href="'.route('contact').'"', false)
+        ->assertSeeText('Zur Website')
+        ->assertSee('href="'.route('home').'"', false)
+        ->assertSee('aria-label="Portal-Navigation"', false)
+        ->assertDontSeeText('Aktueller Spendenbetrag')
+        ->assertDontSeeText('Effektiver Spendenbetrag');
 });
