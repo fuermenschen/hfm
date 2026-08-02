@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
         $eventSettings->current_event_id = $futureEvent->id;
         $eventSettings->save();
 
-        if (config('app.env') === 'local') {
+        if (in_array(config('app.env'), ['local', 'testing'], true)) {
             $this->seedLocalScenario($pastEvent, $futureEvent);
         }
     }
