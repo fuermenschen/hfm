@@ -138,10 +138,10 @@ it('balances hero partner logos for :dataset', function (int $partnerCount, stri
         ->and(substr_count($html, 'aspect-3/1'))->toBe($partnerCount)
         ->and(substr_count($html, 'object-contain'))->toBe($partnerCount * 2);
 })->with([
-    'one partner' => [1, 'max-w-20 sm:max-w-28'],
-    'two partners' => [2, 'max-w-[11.5rem] sm:max-w-[19rem]'],
-    'three partners' => [3, 'max-w-72 sm:max-w-[31rem]'],
-    'four partners' => [4, 'max-w-[11.5rem] sm:max-w-[19rem]'],
-    'five partners' => [5, 'max-w-72 sm:max-w-[31rem]'],
-    'six partners' => [6, 'max-w-72 sm:max-w-[31rem]'],
+    'one partner' => [1, 'max-w-24 sm:max-w-36'],
+    'two partners' => [2, 'max-w-[13.5rem] sm:max-w-[23rem]'],
+    'three partners' => [3, 'max-w-84 sm:max-w-[37rem]'],
+    'four partners' => [4, 'max-w-[13.5rem] sm:max-w-[23rem]'],
+    'five partners' => [5, 'max-w-84 sm:max-w-[37rem]'],
+    'six partners' => [6, 'max-w-84 sm:max-w-[37rem]'],
 ]);

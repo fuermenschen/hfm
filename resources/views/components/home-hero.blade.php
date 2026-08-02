@@ -14,9 +14,9 @@
   $currentEventPartners ??= collect();
 
   $partnerLayoutClass = match ($currentEventPartners->count()) {
-    1 => 'max-w-20 sm:max-w-28',
-    2, 4 => 'max-w-[11.5rem] sm:max-w-[19rem]',
-    default => 'max-w-72 sm:max-w-[31rem]',
+    1 => 'max-w-24 sm:max-w-36',
+    2, 4 => 'max-w-[13.5rem] sm:max-w-[23rem]',
+    default => 'max-w-84 sm:max-w-[37rem]',
   };
 
   $eventDate = $currentDonationEvent?->starts_at;
