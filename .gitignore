@@ -39,6 +39,8 @@ env-production-secret.txt
 /.ai/*
 !/.ai/guidelines/
 !/.ai/skills/
+!/.ai/rules/
+!/.ai/rules/**
 /.upgrade-lab/
 /storage/upgrade-lab/
 *.sql
