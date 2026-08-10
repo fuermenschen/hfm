@@ -18,8 +18,10 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Sleep;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Url as LivewireUrl;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Spatie\Honeypot\Http\Livewire\Concerns\HoneypotData;
@@ -34,6 +36,9 @@ class DonorRegistrationWizard extends Component
     public string $currentStep = 'start';
 
     public ?string $participation = null;
+
+    #[LivewireUrl(as: 'sportlerin')]
+    public ?string $athletePublicId = null;
 
     #[Validate('required', message: 'Bitte gib deine E-Mail-Adresse ein.')]
     #[Validate('email', message: 'Bitte gib eine gültige E-Mail-Adresse ein.')]
@@ -167,6 +172,11 @@ class DonorRegistrationWizard extends Component
             ->sortBy('display_name', SORT_NATURAL | SORT_FLAG_CASE)
             ->values()
             ->all();
+
+        $this->athlete_registration_id = collect($this->athleteRegistrations)
+            ->first(fn (array $registration): bool => Str::replace('-', '', $registration['public_id_string']) === Str::upper(Str::replace('-', '', $this->athletePublicId ?? '')))['id'] ?? null;
+
+        $this->updatedAthleteRegistrationId($this->athlete_registration_id);
     }
 
     public function next(): void

@@ -165,6 +165,59 @@ function initStoryShare(scope = document) {
     });
 }
 
+function copyShareText(textarea) {
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    if (navigator.clipboard?.writeText) {
+        return navigator.clipboard.writeText(textarea.value);
+    }
+
+    try {
+        return document.execCommand("copy") ? Promise.resolve() : Promise.reject(new Error("Copy failed"));
+    } catch (error) {
+        return Promise.reject(error);
+    }
+}
+
+function initShareTexts(scope = document) {
+    scope.querySelectorAll("[data-share-text-template]").forEach((template) => {
+        if (template.dataset.shareTextInitialized === "1") {
+            return;
+        }
+
+        template.dataset.shareTextInitialized = "1";
+        const textarea = template.querySelector("[data-share-text-content]");
+        const status = template.querySelector("[data-share-text-status]");
+        if (!(textarea instanceof HTMLTextAreaElement) || !status) {
+            return;
+        }
+
+        template.querySelector("[data-share-text]")?.addEventListener("click", () => {
+            if (typeof navigator.share !== "function") {
+                status.textContent = "Teilen wird von diesem Browser nicht unterstützt. Nutze Text kopieren.";
+                return;
+            }
+
+            navigator.share({ text: textarea.value })
+                .catch((error) => {
+                    if (error?.name !== "AbortError") {
+                        status.textContent = "Teilen nicht verfügbar. Nutze Text kopieren.";
+                    }
+                });
+        });
+        template.querySelector("[data-copy-text]")?.addEventListener("click", () => {
+            copyShareText(textarea)
+                .then(() => {
+                    status.textContent = "Text kopiert.";
+                })
+                .catch(() => {
+                    status.textContent = "Text konnte nicht kopiert werden. Bitte markiere ihn manuell.";
+                });
+        });
+    });
+}
+
 function initExpandableComments(scope = document) {
     scope.querySelectorAll("[data-expandable-comment]").forEach((comment) => {
         const button = comment.parentElement?.querySelector("[data-expand-comment]");
@@ -191,6 +244,7 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
         initHeroLqip();
         initStoryShare();
+        initShareTexts();
         initExpandableComments();
     });
 } else {
@@ -216,11 +270,13 @@ document.addEventListener("click", (event) => {
 });
 
 initStoryShare();
+initShareTexts();
 initExpandableComments();
 
 document.addEventListener("livewire:navigated", () => {
     initHeroLqip();
     initStoryShare();
+    initShareTexts();
     initExpandableComments();
     const hash = window.location.hash;
     if (hash) {

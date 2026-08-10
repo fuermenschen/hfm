@@ -64,6 +64,16 @@ it('shows wizard when donor registration is open', function (): void {
         ->assertSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 });
 
+it('preselects an athlete from the shared public link', function (): void {
+    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    $registration = AthleteRegistration::query()->whereBelongsTo($event)->firstOrFail();
+
+    Livewire::withQueryParams(['sportlerin' => $registration->externalUser->public_id_string])
+        ->test(DonorRegistrationWizard::class)
+        ->assertSet('athlete_registration_id', $registration->id)
+        ->assertSet('currentAthleteName', $registration->externalUser->privacy_name);
+});
+
 it('mounts with empty athlete list when no current event is configured', function (): void {
     $settings = app(EventSettings::class);
     $settings->current_event_id = null;

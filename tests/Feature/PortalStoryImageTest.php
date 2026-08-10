@@ -86,11 +86,28 @@ it('shows personalized story sharing on athlete participation pages', function (
         ->assertSuccessful()
         ->assertSeeText('Deine Spendenaktion teilen')
         ->assertSeeText('Story teilen')
+        ->assertSeeText('Kurz & direkt')
+        ->assertSeeText('Etwas ausführlicher')
+        ->assertSeeText('Für eine gute Sache')
+        ->assertSeeText('Text kopieren')
         ->assertSeeText('Story-Bild herunterladen')
+        ->assertSee(route('become-donor', ['sportlerin' => $athlete->public_id_string]), false)
         ->assertSee(route('portal.story-image.download', [$registration, 'light']), false)
         ->assertSee(route('portal.story-image.download', [$registration, 'dark']), false)
         ->assertSee(route('portal.story-image.preview', [$registration, 'light']), false)
         ->assertSee(route('portal.story-image.preview', [$registration, 'dark']), false);
+});
+
+it('renders share text for equal split participations', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create(['partner_id' => null]);
+
+    actingAs($athlete, 'external');
+
+    get(route('portal.participations'))
+        ->assertSuccessful()
+        ->assertSeeText('100 % deiner Spende geht an die Benefizpartner des Anlasses.');
 });
 
 it('hides story sharing for unconfirmed participations', function (): void {
