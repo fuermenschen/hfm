@@ -173,8 +173,10 @@ class DonorRegistrationWizard extends Component
             ->values()
             ->all();
 
-        $this->athlete_registration_id = collect($this->athleteRegistrations)
-            ->first(fn (array $registration): bool => Str::replace('-', '', $registration['public_id_string']) === Str::upper(Str::replace('-', '', $this->athletePublicId ?? '')))['id'] ?? null;
+        $preselectedAthlete = collect($this->athleteRegistrations)
+            ->first(fn (array $registration): bool => Str::replace('-', '', $registration['public_id_string']) === Str::upper(Str::replace('-', '', $this->athletePublicId ?? '')));
+
+        $this->athlete_registration_id = $preselectedAthlete['id'] ?? null;
 
         $this->updatedAthleteRegistrationId($this->athlete_registration_id);
     }

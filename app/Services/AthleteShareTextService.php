@@ -14,7 +14,7 @@ class AthleteShareTextService
     public function templates(AthleteRegistration $registration): array
     {
         $event = $registration->donationEvent;
-        $organization = $registration->partner?->name;
+        $organization = $registration->partner->name ?? null;
         $donationLink = route('become-donor', ['sportlerin' => $registration->externalUser->public_id_string]);
         $base = $organization === null
             ? '100 % deiner Spende geht an die Benefizpartner des Anlasses.'

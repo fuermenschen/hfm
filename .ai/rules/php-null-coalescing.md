@@ -1,6 +1,7 @@
 ---
 paths:
-  - "**/*.php"
+  - '**/*.php'
+  - '**/*'
 ---
 
 # PHP Null Coalescing

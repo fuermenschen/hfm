@@ -44,7 +44,7 @@ class AthleteStoryImageService
         $image->insert($logo, 265, 115);
 
         $this->drawText($image, $this->formatEventDate($event->starts_at, $event->location_city), $variant->textColor(), $font.'light.otf', 42, self::CENTER_X, 520);
-        // ponytail: font size scales with line count so long titles shrink instead of overlapping the text below; >4 lines still overflows
+        // Scale long titles to keep them clear of following copy.
         $titleLines = explode("\n", $this->wrap($event->title, 13));
         $titleFontSize = count($titleLines) > 1 ? intdiv(115, count($titleLines) - 1) : 115;
         $titleLineHeight = (int) ($titleFontSize * 1.2);
