@@ -70,6 +70,7 @@ jobs:
         with:
           php-version: 8.4
           tools: composer:v2
+          extensions: imagick
           coverage: none # No need for code coverage in deployment
 
       - name: Add Flux Credentials Loaded From ENV
@@ -118,6 +119,8 @@ jobs:
             COMPOSER_BIN="/opt/php8.4/bin/composer"
 
             cd /home/clients/6b0cacc0e2a85b554b958d48123932d8/sites/fuer-menschen.ch
+
+            $PHP_BIN -r 'if (! extension_loaded("imagick")) { fwrite(STDERR, "Imagick PHP extension is required.\n"); exit(1); }'
 
             if $PHP_BIN artisan down; then
               echo "Application in maintenance mode."
