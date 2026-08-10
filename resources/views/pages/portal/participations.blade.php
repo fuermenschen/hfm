@@ -66,6 +66,29 @@
                     </div>
                 @endif
 
+                <section class="space-y-3" aria-labelledby="story-images-{{ $registration['id'] }}">
+                    <div>
+                        <flux:heading id="story-images-{{ $registration['id'] }}" size="sm" level="3">Bilder für Social Media</flux:heading>
+                        <flux:text class="mt-1">Personalisiertes Bild für Instagram- oder WhatsApp-Story herunterladen.</flux:text>
+                    </div>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <flux:button
+                            href="{{ route('portal.story-image.download', ['athleteRegistration' => $registration['id'], 'variant' => 'light']) }}"
+                            icon="arrow-down-tray"
+                            variant="outline"
+                        >
+                            Helles Bild
+                        </flux:button>
+                        <flux:button
+                            href="{{ route('portal.story-image.download', ['athleteRegistration' => $registration['id'], 'variant' => 'dark']) }}"
+                            icon="arrow-down-tray"
+                            variant="outline"
+                        >
+                            Dunkles Bild
+                        </flux:button>
+                    </div>
+                </section>
+
                 <flux:separator variant="subtle" />
 
                 <div class="space-y-4">

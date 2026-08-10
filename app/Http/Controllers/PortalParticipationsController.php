@@ -26,7 +26,7 @@ class PortalParticipationsController extends Controller
             ->whereHas('donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
             ->when($selectedEvent instanceof DonationEvent, fn (Builder $query): Builder => $query->whereBelongsTo($selectedEvent))
             ->with([
-                'donationEvent:id,title,timezone,starts_at',
+                'donationEvent:id,title,timezone,starts_at,location_city',
                 'sportType:id,name',
                 'partner:id,name',
                 'donations' => fn ($query) => $query
