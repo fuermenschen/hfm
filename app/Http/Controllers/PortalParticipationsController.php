@@ -38,17 +38,8 @@ class PortalParticipationsController extends Controller
             ->get(['id', 'donation_event_id', 'sport_type_id', 'partner_id', 'rounds_estimated', 'rounds_done', 'comment', 'verified'])
             ->sortByDesc('donationEvent.starts_at')
             ->values()
-            ->map(fn ($registration): array => [
-                'id' => (int) $registration->id,
-                'event' => $registration->donationEvent->title,
-                'date' => $registration->donationEvent->starts_at?->format('d.m.Y'),
-                'sport' => $registration->sportType->name,
-                'partner' => $registration->partner->name ?? 'Alle Partnerorganisationen',
-                'roundsEstimated' => (int) $registration->rounds_estimated,
-                'roundsDone' => (int) $registration->rounds_done,
-                'comment' => $registration->comment,
-                'verified' => (bool) $registration->verified,
-                'donations' => $registration->donations->map(fn (Donation $donation): array => [
+            ->map(function ($registration) use ($donationService): array {
+                $donations = $registration->donations->map(fn (Donation $donation): array => [
                     'donor' => sprintf('%s (%s)', $donation->donorExternalUser->privacy_name, $donation->donorExternalUser->public_id_string),
                     'amountPerRound' => (float) $donation->amount_per_round,
                     'amountMin' => $donation->amount_min !== null ? (float) $donation->amount_min : null,
@@ -57,8 +48,24 @@ class PortalParticipationsController extends Controller
                     'currentAmount' => $donationService->calculateActualAmount($donation),
                     'comment' => $donation->comment,
                     'verified' => (bool) $donation->verified,
-                ])->all(),
-            ]);
+                ]);
+
+                return [
+                    'id' => (int) $registration->id,
+                    'event' => $registration->donationEvent->title,
+                    'date' => $registration->donationEvent->starts_at?->format('d.m.Y'),
+                    'sport' => $registration->sportType->name,
+                    'partner' => $registration->partner->name ?? 'Alle Partnerorganisationen',
+                    'roundsEstimated' => (int) $registration->rounds_estimated,
+                    'roundsDone' => (int) $registration->rounds_done,
+                    'comment' => $registration->comment,
+                    'verified' => (bool) $registration->verified,
+                    'donations' => $donations->all(),
+                    'donationCount' => $donations->count(),
+                    'pendingDonationCount' => $donations->where('verified', false)->count(),
+                    'estimatedDonationAmount' => $donations->sum('estimatedAmount'),
+                ];
+            });
 
         return view('pages.portal.participations', [
             ...$viewData,

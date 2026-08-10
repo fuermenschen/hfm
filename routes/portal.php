@@ -7,6 +7,7 @@ use App\Http\Controllers\ExternalUserSessionController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\PortalDonationsController;
 use App\Http\Controllers\PortalParticipationsController;
+use App\Http\Controllers\PreviewAthleteStoryImageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('portal/login/{uuid}', [ExternalUserSessionController::class, 'store'])
@@ -31,6 +32,9 @@ Route::middleware('auth:external')->group(function (): void {
     Route::get('portal/teilnahmen/{athleteRegistration}/story/{variant}', DownloadAthleteStoryImageController::class)
         ->whereIn('variant', ['light', 'dark'])
         ->name('portal.story-image.download');
+    Route::get('portal/teilnahmen/{athleteRegistration}/story/{variant}/preview', PreviewAthleteStoryImageController::class)
+        ->whereIn('variant', ['light', 'dark'])
+        ->name('portal.story-image.preview');
 
     Route::post('portal/logout', [ExternalUserSessionController::class, 'destroy'])->name('portal.logout');
 });

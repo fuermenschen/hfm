@@ -39,11 +39,13 @@ it('generates event and athlete specific story images', function (): void {
         ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920]);
 });
 
-it('allows athletes to download only their own published event images', function (): void {
+it('allows athletes to retrieve only their own published event images', function (): void {
     $event = DonationEvent::factory()->year(2036)->create();
+    $unverifiedEvent = DonationEvent::factory()->year(2037)->create();
     $unpublishedEvent = DonationEvent::factory()->year(2035)->create(['is_published' => false]);
     $athlete = ExternalUser::factory()->create();
     $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+    $unverifiedRegistration = AthleteRegistration::factory()->forEvent($unverifiedEvent)->forExternalUser($athlete)->create(['verified' => false]);
     $unpublishedRegistration = AthleteRegistration::factory()->forVerifiedEventUser($unpublishedEvent, $athlete)->create();
     $stranger = ExternalUser::factory()->create();
     $strangerRegistration = AthleteRegistration::factory()->forVerifiedEventUser($event, $stranger)->create();
@@ -53,14 +55,27 @@ it('allows athletes to download only their own published event images', function
     get(route('portal.story-image.download', [$registration, StoryImageVariant::Dark->value]))
         ->assertDownload('story_single_dark_'.$athlete->public_id_string.'.jpg');
 
+    get(route('portal.story-image.preview', [$registration, StoryImageVariant::Dark->value]))
+        ->assertSuccessful()
+        ->assertHeader('Content-Type', 'image/jpeg');
+
+    get(route('portal.story-image.download', [$unverifiedRegistration, StoryImageVariant::Light->value]))
+        ->assertNotFound();
+
+    get(route('portal.story-image.preview', [$unverifiedRegistration, StoryImageVariant::Light->value]))
+        ->assertNotFound();
+
     get(route('portal.story-image.download', [$strangerRegistration, StoryImageVariant::Light->value]))
+        ->assertNotFound();
+
+    get(route('portal.story-image.preview', [$strangerRegistration, StoryImageVariant::Light->value]))
         ->assertNotFound();
 
     get(route('portal.story-image.download', [$unpublishedRegistration, StoryImageVariant::Light->value]))
         ->assertNotFound();
 });
 
-it('shows story image downloads on athlete participation pages', function (): void {
+it('shows personalized story sharing on athlete participation pages', function (): void {
     $event = DonationEvent::factory()->year(2036)->create();
     $athlete = ExternalUser::factory()->create();
     $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
@@ -69,7 +84,23 @@ it('shows story image downloads on athlete participation pages', function (): vo
 
     get(route('portal.participations'))
         ->assertSuccessful()
-        ->assertSeeText('Bilder für Social Media')
+        ->assertSeeText('Deine Spendenaktion teilen')
+        ->assertSeeText('Story teilen')
+        ->assertSeeText('Story-Bild herunterladen')
         ->assertSee(route('portal.story-image.download', [$registration, 'light']), false)
-        ->assertSee(route('portal.story-image.download', [$registration, 'dark']), false);
+        ->assertSee(route('portal.story-image.download', [$registration, 'dark']), false)
+        ->assertSee(route('portal.story-image.preview', [$registration, 'light']), false)
+        ->assertSee(route('portal.story-image.preview', [$registration, 'dark']), false);
+});
+
+it('hides story sharing for unconfirmed participations', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    AthleteRegistration::factory()->forEvent($event)->forExternalUser($athlete)->create(['verified' => false]);
+
+    actingAs($athlete, 'external');
+
+    get(route('portal.participations'))
+        ->assertSuccessful()
+        ->assertDontSeeText('Deine Spendenaktion teilen');
 });

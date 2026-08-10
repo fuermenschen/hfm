@@ -7,15 +7,15 @@ namespace App\Http\Controllers;
 use App\Enums\StoryImageVariant;
 use App\Models\AthleteRegistration;
 use App\Services\AthleteStoryImageService;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Http\Response;
 
-class DownloadAthleteStoryImageController extends Controller
+class PreviewAthleteStoryImageController extends Controller
 {
     public function __invoke(
         AthleteRegistration $athleteRegistration,
         StoryImageVariant $variant,
         AthleteStoryImageService $storyImage,
-    ): StreamedResponse {
+    ): Response {
         $athleteRegistration->loadMissing('donationEvent');
 
         abort_unless(
@@ -25,14 +25,8 @@ class DownloadAthleteStoryImageController extends Controller
             404,
         );
 
-        $image = $storyImage->build($athleteRegistration, $variant);
-
-        return response()->streamDownload(
-            static function () use ($image): void {
-                echo $image['contents'];
-            },
-            $image['filename'],
-            ['Content-Type' => 'image/jpeg'],
-        );
+        return response($storyImage->build($athleteRegistration, $variant)['contents'], 200, [
+            'Content-Type' => 'image/jpeg',
+        ]);
     }
 }

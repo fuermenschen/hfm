@@ -152,6 +152,8 @@ it('filters participations and never exposes donor private identity', function (
     get(route('portal.participations', ['anlass' => $currentEvent->slug]))
         ->assertSuccessful()
         ->assertSee('onchange="Livewire.navigate(', false)
+        ->assertSee('data-expandable-comment', false)
+        ->assertSee('data-expand-comment', false)
         ->assertDontSeeText('Anzeigen')
         ->assertSeeText('Teilnahmen')
         ->assertSeeText('CURRENT-PARTICIPATION-COMMENT')
@@ -212,6 +214,27 @@ it('offers current event registration links in empty states', function (): void 
         ->assertSuccessful()
         ->assertSeeText('Noch keine Spende')
         ->assertSee(route('become-donor'));
+});
+
+it('promotes material for a confirmed upcoming athlete participation', function (): void {
+    $event = DonationEvent::factory()->create([
+        'starts_at' => now()->addWeek(),
+    ]);
+    setPortalCurrentEvent($event);
+
+    $externalUser = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $externalUser)->create();
+
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
+        ->assertSuccessful()
+        ->assertSeeText('Deine Spendenaktion teilen')
+        ->assertSeeText('Nutze persönliche Story-Bilder und Vorlagen, um Spender:innen zu gewinnen.')
+        ->assertSee(
+            route('portal.participations', ['anlass' => $event->slug]).'#participation-'.$registration->id,
+            false,
+        );
 });
 
 it('filters donations and only exposes athlete privacy name with public id', function (): void {
