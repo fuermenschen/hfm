@@ -62,6 +62,26 @@
             </section>
         @endif
 
+        @if ($upcomingAthleteRegistration !== null)
+            <flux:callout icon="megaphone" color="green" class="rounded-2xl" inline>
+                <flux:callout.heading>Deine Spendenaktion teilen</flux:callout.heading>
+                <flux:callout.text>
+                    @if ($upcomingAthleteRegistration['eventDate'])
+                        {{ $upcomingAthleteRegistration['event'] }} · {{ $upcomingAthleteRegistration['eventDate'] }} ·
+                    @endif
+                    Nutze persönliche Story-Bilder und Vorlagen, um Spender:innen zu gewinnen.
+                </flux:callout.text>
+                <x-slot name="actions">
+                    <flux:button
+                        href="{{ route('portal.participations', ['anlass' => $upcomingAthleteRegistration['eventSlug']]) }}#participation-{{ $upcomingAthleteRegistration['id'] }}"
+                        variant="primary"
+                    >
+                        Spendenaktion teilen
+                    </flux:button>
+                </x-slot>
+            </flux:callout>
+        @endif
+
         <section class="space-y-6">
             <div>
                 <flux:heading size="lg" level="2">Dein Engagement</flux:heading>
@@ -76,7 +96,7 @@
                             <flux:text>Was du mit deinen Runden für deine Begünstigte sammelst.</flux:text>
                         </div>
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="user-group" label="Bestätigte Unterstützer:innen" :value="number_format($receivedDonationCount, 0, '.', chr(39))" :detail="$pendingReceivedDonationCount > 0 ? $pendingReceivedDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'" />
+                            <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="user-group" label="Bestätigte Spender:innen" :value="number_format($receivedDonationCount, 0, '.', chr(39))" :detail="$pendingReceivedDonationCount > 0 ? $pendingReceivedDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'" />
                             <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="calculator" label="Voraussichtlich gesammelt" :value="'Fr. '.number_format($estimatedReceivedAmount, 2, '.', chr(39))" detail="Mit deinen geschätzten Runden" />
                             @if ($hasCompletedRounds)
                                 <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="chart-bar" label="Aktuell gesammelt" :value="'Fr. '.number_format($currentReceivedAmount, 2, '.', chr(39))" detail="Mit deinen absolvierten Runden" />

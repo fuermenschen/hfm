@@ -1,3 +1,9 @@
+---
+paths:
+  - '**/*.php'
+  - '**/*'
+---
+
 # PHP Null Coalescing
 
 - Prefer `??` for undefined or `null` fallbacks.

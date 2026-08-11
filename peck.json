@@ -68,7 +68,8 @@
             "preflight",
             "entrypoint",
             "deletable",
-            "participations"
+            "participations",
+            "svg"
         ],
         "paths": []
     }

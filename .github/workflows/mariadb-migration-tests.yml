@@ -33,7 +33,7 @@ jobs:
         with:
           php-version: "8.4"
           tools: composer:v2
-          extensions: pdo_mysql
+          extensions: imagick,pdo_mysql
 
       - name: Cache Composer dependencies
         uses: actions/cache@v6

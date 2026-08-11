@@ -62,6 +62,16 @@ class GetPortalContextAction
             ->whereHas('athleteRegistration.donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
             ->exists();
 
+        $upcomingAthleteRegistration = $externalUser->athleteRegistrations()
+            ->where('verified', true)
+            ->whereHas('donationEvent', fn (Builder $query): Builder => $query
+                ->where('is_published', true)
+                ->where('starts_at', '>', now()))
+            ->with('donationEvent:id,slug,title,starts_at')
+            ->get(['id', 'donation_event_id'])
+            ->sortBy('donationEvent.starts_at')
+            ->first();
+
         $hour = now()->hour;
 
         return [$externalUser, $selectedEvent, [
@@ -78,6 +88,12 @@ class GetPortalContextAction
             'eventParameters' => $eventParameters,
             'hasAthleteRegistrations' => $hasAthleteRegistrations,
             'hasOwnDonations' => $hasOwnDonations,
+            'upcomingAthleteRegistration' => $upcomingAthleteRegistration === null ? null : [
+                'id' => (int) $upcomingAthleteRegistration->id,
+                'event' => $upcomingAthleteRegistration->donationEvent->title,
+                'eventDate' => $upcomingAthleteRegistration->donationEvent->starts_at?->translatedFormat('j. F Y'),
+                'eventSlug' => $upcomingAthleteRegistration->donationEvent->slug,
+            ],
             'athleteRegistrationOpen' => $currentEvent?->athleteRegistrationIsOpen() ?? false,
             'donorRegistrationOpen' => $currentEvent?->donorRegistrationIsOpen() ?? false,
         ]];
