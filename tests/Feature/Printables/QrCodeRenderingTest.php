@@ -38,7 +38,7 @@ it('renders athlete welcome letter with embedded png qr code', function (): void
         'athlete' => $athleteIdentity,
         'event' => $athlete->donationEvent,
         'associationName' => 'Verein für Menschen',
-        'associationUrl' => 'https://fuer-menschen.ch',
+        'associationDomain' => 'fuer-menschen.ch',
         'associationCity' => 'Winterthur',
         'officialAddress' => ['Verein für Menschen', 'c/o Kai Frehner', 'Rössligasse 6', '8400 Winterthur'],
         'mailFromAddress' => 'info@fuer-menschen.ch',
@@ -46,7 +46,7 @@ it('renders athlete welcome letter with embedded png qr code', function (): void
         'eventDate' => '12.09.2026',
         'eventStartTime' => '11:00',
         'eventEndTime' => '16:00',
-        'letterheadData' => base64_encode(file_get_contents(resource_path('images/letterhead_hfm.svg'))),
+        'logoData' => base64_encode(file_get_contents(resource_path('images/logo_light.svg'))),
         'qrCodeDataUri' => 'data:image/png;base64,'.base64_encode('png'),
     ])->render();
 

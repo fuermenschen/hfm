@@ -17,6 +17,7 @@ it('downloads a document only for the selected event registration', function ():
     AthleteRegistration::factory()->forEvent($otherEvent)->forExternalUser($athlete)->create();
 
     $pdf = Mockery::mock(PDF::class);
+    $pdf->shouldReceive('output')->once()->andReturn('%PDF-test');
     $documents = Mockery::mock(AthleteDocumentService::class);
     $documents->shouldReceive('render')
         ->once()

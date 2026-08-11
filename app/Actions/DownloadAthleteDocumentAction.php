@@ -23,9 +23,10 @@ class DownloadAthleteDocumentAction
             ->firstOrFail();
 
         $document = $this->documents->render($registration, $type);
+        $pdfContents = $document['pdf']->output();
 
-        return response()->streamDownload(function () use ($document): void {
-            echo $document['pdf']->output();
+        return response()->streamDownload(function () use ($pdfContents): void {
+            echo $pdfContents;
         }, $document['filename'], ['Content-Type' => 'application/pdf']);
     }
 }

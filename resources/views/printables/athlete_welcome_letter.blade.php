@@ -100,7 +100,7 @@
 
     <!-- Logo and Sender -->
     <div class="logo-and-sender">
-        <img src="data:image/svg+xml;base64,{{ $letterheadData }}" alt="Logo" />
+        <img src="data:image/svg+xml;base64,{{ $logoData }}" alt="Logo" />
 
         <div>
             <p>
@@ -114,7 +114,7 @@
 
     <!-- Recipient -->
     <div class="recipient">
-        <p class="sender">{{ $associationName }}, {{ $associationUrl }}</p>
+        <p class="sender">{{ $associationName }}, {{ $associationDomain }}</p>
         <p>
             @if ($registration->adult === false)
                 An die Eltern von

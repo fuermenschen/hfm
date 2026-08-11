@@ -35,17 +35,24 @@ class AthleteDocumentService
 
         if ($type === AthleteDocumentType::WelcomeLetter) {
             $invoiceSettings = resolve(InvoiceSettings::class);
-            $letterheadPath = resource_path('images/letterhead_hfm.svg');
+            $logoPath = resource_path('images/logo_light.svg');
 
-            throw_unless(is_file($letterheadPath), \RuntimeException::class, 'Letterhead asset file could not be resolved.');
+            throw_unless(is_file($logoPath), \RuntimeException::class, 'Logo asset file could not be resolved.');
 
-            $letterheadData = file_get_contents($letterheadPath);
+            $logoData = file_get_contents($logoPath);
 
-            throw_if($letterheadData === false, \RuntimeException::class, 'Letterhead asset file could not be read.');
+            throw_if($logoData === false, \RuntimeException::class, 'Logo asset file could not be read.');
 
             $associationName = trim($invoiceSettings->creditor_name) !== ''
                 ? $invoiceSettings->creditor_name
                 : (string) config('app.name');
+            $associationUrl = (string) config('app.url');
+            $associationDomain = parse_url($associationUrl, PHP_URL_HOST);
+
+            if (! is_string($associationDomain) || $associationDomain === '') {
+                $associationDomain = trim((string) preg_replace('#^https?://#i', '', $associationUrl), '/');
+            }
+
             $street = trim(implode(' ', array_filter([
                 $invoiceSettings->creditor_street,
                 $invoiceSettings->creditor_building_number,
@@ -57,7 +64,7 @@ class AthleteDocumentService
 
             $viewData += [
                 'associationName' => $associationName,
-                'associationUrl' => rtrim((string) config('app.url'), '/'),
+                'associationDomain' => $associationDomain,
                 'associationCity' => $invoiceSettings->creditor_city,
                 'officialAddress' => array_values(array_filter([
                     $associationName,
@@ -69,7 +76,7 @@ class AthleteDocumentService
                 'eventDate' => $event->starts_at?->format('d.m.Y') ?? '',
                 'eventStartTime' => $event->starts_at?->format('G:i') ?? '',
                 'eventEndTime' => $event->ends_at?->format('G:i') ?? '',
-                'letterheadData' => base64_encode($letterheadData),
+                'logoData' => base64_encode($logoData),
                 'qrCodeDataUri' => $this->qrCodeDataUri(),
             ];
         }

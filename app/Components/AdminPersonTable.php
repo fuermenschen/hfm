@@ -272,8 +272,12 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         try {
             return $this->withDocumentDownloadLock(fn (): HttpResponse => ($this->downloadAthleteDocumentAction)($event, $externalUserId, $documentType));
-        } catch (ModelNotFoundException|\InvalidArgumentException $exception) {
-            $this->toastDocumentError($exception->getMessage());
+        } catch (ModelNotFoundException) {
+            $this->toastDocumentError('Die Sportler:in wurde im ausgewählten Anlass nicht gefunden.');
+
+            return null;
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            $this->toastDocumentError($invalidArgumentException->getMessage());
 
             return null;
         }

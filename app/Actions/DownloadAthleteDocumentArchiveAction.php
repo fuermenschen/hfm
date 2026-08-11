@@ -37,9 +37,9 @@ class DownloadAthleteDocumentArchiveAction
 
         $registrationCount = $query->count();
 
-        throw_if($externalUserIds !== null && $registrationCount !== count($externalUserIds), \InvalidArgumentException::class, 'Selected athletes do not belong to the selected event.');
+        throw_if($externalUserIds !== null && $registrationCount !== count($externalUserIds), \InvalidArgumentException::class, 'Die ausgewählten Sportler:innen gehören nicht zum ausgewählten Anlass.');
 
-        throw_if($registrationCount === 0, \InvalidArgumentException::class, 'No athletes found for document download.');
+        throw_if($registrationCount === 0, \InvalidArgumentException::class, 'Für diesen Anlass wurden keine Sportler:innen gefunden.');
 
         $disk = Storage::disk('local');
         $disk->makeDirectory('tmp');

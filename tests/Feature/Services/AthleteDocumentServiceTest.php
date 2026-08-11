@@ -24,6 +24,7 @@ it('renders a welcome letter for an event registration', function (): void {
     $settings->creditor_postal_code = '8400';
     $settings->creditor_city = 'Winterthur';
     $settings->save();
+    config(['app.url' => 'https://example.com']);
 
     $pdf = Mockery::mock(PDF::class);
     $pdf->shouldReceive('loadView')
@@ -32,10 +33,10 @@ it('renders a welcome letter for an event registration', function (): void {
             return ($data['registration'] ?? null)?->is($registration) === true
                 && ($data['athlete'] ?? null)?->is($athlete) === true
                 && ($data['event'] ?? null)?->is($event) === true
-                && is_string($data['letterheadData'] ?? null)
+                && is_string($data['logoData'] ?? null)
                 && str_starts_with((string) ($data['qrCodeDataUri'] ?? ''), 'data:image/png;base64,')
                 && ($data['officialAddress'] ?? null) === ['Verein für Menschen', 'c/o Kai Frehner', 'Rössligasse 6', '8400 Winterthur']
-                && ($data['associationUrl'] ?? null) === (string) config('app.url')
+                && ($data['associationDomain'] ?? null) === 'example.com'
                 && ($data['mailFromAddress'] ?? null) === (string) config('mail.from.address');
         }))
         ->andReturnSelf();
