@@ -3,6 +3,7 @@
 use App\Components\AdminPersonTable;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\Partner;
 use App\Models\User;
 use App\Settings\EventSettings;
 use Illuminate\Database\Events\QueryExecuted;
@@ -75,6 +76,67 @@ it('filters unique athletes by event and shows their linked events', function ()
         ->set('eventSlug', $event2026->slug)
         ->assertSee($bothEvents->first_name)
         ->assertDontSee($only2025->first_name);
+});
+
+it('shows selected partner and public ID for athletes', function (): void {
+    $event = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'Test Partner']);
+    $athlete = ExternalUser::factory()->asAthlete($event, [
+        'partner_id' => $partner->id,
+    ])->create([
+        'public_id' => '4WUFNB',
+    ]);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee('Benefizpartner:in')
+        ->assertSee('Test Partner')
+        ->assertDontSee('4WU-FNB')
+        ->call('toggleColumn', 'public_id_string')
+        ->assertSee('4WU-FNB');
+});
+
+it('shows equal split for athletes without a selected partner', function (): void {
+    $event = DonationEvent::factory()->create();
+    $athlete = ExternalUser::factory()->asAthlete($event, [
+        'partner_id' => null,
+    ])->create();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee(__('app.equal_split_full'));
+});
+
+it('searches athletes by public ID and selected partner', function (): void {
+    $event = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'Search Partner']);
+    $matchingAthlete = ExternalUser::factory()->asAthlete($event, ['partner_id' => $partner->id])->create([
+        'first_name' => 'Matching Athlete',
+        'public_id' => '4WUFNB',
+    ]);
+    $otherAthlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Other Athlete']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->set('search', '4WUFNB')
+        ->assertSee($matchingAthlete->first_name)
+        ->assertDontSee($otherAthlete->first_name)
+        ->set('search', 'Search Partner')
+        ->assertSee($matchingAthlete->first_name)
+        ->assertDontSee($otherAthlete->first_name);
+});
+
+it('sorts athletes by selected partner', function (): void {
+    $event = DonationEvent::factory()->create();
+    $alphaPartner = Partner::factory()->create(['name' => 'Alpha Partner']);
+    $betaPartner = Partner::factory()->create(['name' => 'Beta Partner']);
+    ExternalUser::factory()->asAthlete($event, ['partner_id' => $betaPartner->id])->create(['first_name' => 'Beta Athlete']);
+    ExternalUser::factory()->asAthlete($event, ['partner_id' => $alphaPartner->id])->create(['first_name' => 'Alpha Athlete']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('sortBy', 'partner')
+        ->assertSeeInOrder(['Alpha Partner', 'Beta Partner']);
 });
 
 it('filters donors through the athlete registration event', function (): void {

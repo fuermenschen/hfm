@@ -221,12 +221,17 @@ class DatabaseSeeder extends Seeder
     {
         $partnerIds = $event->partners()->pluck('partners.id');
 
-        return $externalUsers->map(fn (ExternalUser $externalUser): AthleteRegistration => AthleteRegistration::factory()
-            ->forEvent($event)
-            ->forExternalUser($externalUser)
-            ->withPartner($partnerIds->random())
-            ->verified()
-            ->create());
+        return $externalUsers->map(function (ExternalUser $externalUser, int $index) use ($event, $partnerIds): AthleteRegistration {
+            $factory = AthleteRegistration::factory()
+                ->forEvent($event)
+                ->forExternalUser($externalUser);
+
+            if ($index % 3 === 0) {
+                return $factory->state(['partner_id' => null])->verified()->create();
+            }
+
+            return $factory->withPartner($partnerIds->random())->verified()->create();
+        });
     }
 
     /**

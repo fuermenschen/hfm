@@ -144,6 +144,8 @@
                                                 <flux:badge size="sm" color="zinc">{{ $event->slug }}</flux:badge>
                                             @endforeach
                                         </div>
+                                    @elseif ($columnKey === 'partner')
+                                        {{ $this->selectedAthletePartner($row) }}
                                     @else
                                         {{ $this->displayValue($row, $columnKey) }}
                                     @endif

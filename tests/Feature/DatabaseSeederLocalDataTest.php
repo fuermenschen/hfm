@@ -34,6 +34,7 @@ it('seeds local development graph with external users and two events', function 
         ->and(DonationEvent::query()->orderBy('slug')->withCount('faqs')->pluck('faqs_count')->all())->toBe([4, 4])
         ->and(ExternalUser::query()->count())->toBe(100)
         ->and(AthleteRegistration::query()->count())->toBe(33)
+        ->and(AthleteRegistration::query()->whereNull('partner_id')->count())->toBe(12)
         ->and(Donation::query()->count())->toBe(220)
         ->and(Donation::query()->whereNull('donor_external_user_id')->count())->toBe(0)
         ->and(Donation::query()->whereNull('athlete_registration_id')->count())->toBe(0)
@@ -57,6 +58,7 @@ it('seeds local development graph with external users and two events', function 
             && Storage::disk('public')->exists('partners/'.$partner->logo_dark_filename)))->toBeTrue()
         ->and($currentEvent?->sponsors->every(fn (Sponsor $sponsor): bool => Storage::disk('public')->exists('sponsors/'.$sponsor->logo_filename)))->toBeTrue()
         ->and(AthleteRegistration::query()->with('donationEvent.partners')->get()->every(
-            fn (AthleteRegistration $registration): bool => $registration->donationEvent->partners->contains('id', $registration->partner_id),
+            fn (AthleteRegistration $registration): bool => $registration->partner_id === null
+                || $registration->donationEvent->partners->contains('id', $registration->partner_id),
         ))->toBeTrue();
 });
