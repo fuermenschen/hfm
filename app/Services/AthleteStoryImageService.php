@@ -20,6 +20,8 @@ class AthleteStoryImageService
 {
     private const int CENTER_X = 540;
 
+    private const int TITLE_MAX_WIDTH = 920;
+
     public function __construct(private readonly AdminFileStorage $adminFileStorage) {}
 
     /**
@@ -40,13 +42,14 @@ class AthleteStoryImageService
         $image = $manager->createImage(1080, 1920)->fill($variant->backgroundColor());
         $font = resource_path('fonts/darkmode_on_');
 
-        $logo = $this->decodeSvg($manager, $variant->logoPath())->scaleDown(width: 550);
+        $logo = $this->decodeSvg($manager, $variant->logoPath())
+            ->fillTransparentAreas($variant->backgroundColor())
+            ->scaleDown(width: 550);
         $image->insert($logo, 265, 115);
 
         $this->drawText($image, $this->formatEventDate($event->starts_at, $event->location_city), $variant->textColor(), $font.'light.otf', 42, self::CENTER_X, 520);
         // Scale long titles to keep them clear of following copy.
-        $titleLines = explode("\n", $this->wrap($event->title, 13));
-        $titleFontSize = count($titleLines) > 1 ? intdiv(115, count($titleLines) - 1) : 115;
+        ['lines' => $titleLines, 'fontSize' => $titleFontSize] = $this->layoutTitle($event->title, $font.'xbold.otf');
         $titleLineHeight = (int) ($titleFontSize * 1.2);
         foreach ($titleLines as $line => $titleLine) {
             $this->drawText($image, $titleLine, $variant->textColor(), $font.'xbold.otf', $titleFontSize, self::CENTER_X, 650 + ($line * $titleLineHeight));
@@ -72,10 +75,9 @@ class AthleteStoryImageService
         );
 
         foreach ($this->partnerLogos($event, $variant) as $partnerLogo) {
-            $partnerLogoImage = $this->decodeSvg($manager, $partnerLogo['path'])->scale(
-                width: $partnerLogo['width'] - 16,
-                height: 160,
-            );
+            $partnerLogoImage = $this->decodeSvg($manager, $partnerLogo['path'])
+                ->fillTransparentAreas($variant->backgroundColor())
+                ->scale(width: $partnerLogo['width'] - 16, height: 160);
             $image->insert(
                 $partnerLogoImage,
                 $partnerLogo['x'] + intdiv($partnerLogo['width'] - $partnerLogoImage->width(), 2),
@@ -83,7 +85,9 @@ class AthleteStoryImageService
             );
         }
 
-        $contents = $image->encodeUsingFormat(Format::JPEG, quality: 90)->toString();
+        // 4:4:4 sampling keeps thin logo strokes crisp; 4:2:0 blurs them.
+        $image->core()->native()->setImageProperty('jpeg:sampling-factor', '1x1');
+        $contents = $image->encodeUsingFormat(Format::JPEG, quality: 95)->toString();
 
         return [
             'contents' => $contents,
@@ -109,9 +113,57 @@ class AthleteStoryImageService
         });
     }
 
-    protected function wrap(string $text, int $lineLength): string
+    /**
+     * Split title into one or two balanced lines (longest line as short as
+     * possible, like CSS text-wrap: balance), shrinking the font until it fits.
+     *
+     * @return array{lines: array<int, string>, fontSize: int}
+     */
+    protected function layoutTitle(string $title, string $fontPath): array
     {
-        return wordwrap(trim(preg_replace('/\s+/', ' ', $text) ?? ''), $lineLength, "\n", true);
+        $words = explode(' ', trim(preg_replace('/\s+/', ' ', $title) ?? ''));
+        $fontSize = 115;
+
+        while (true) {
+            $oneLine = implode(' ', $words);
+            if ($this->textWidth($oneLine, $fontPath, $fontSize) <= self::TITLE_MAX_WIDTH) {
+                return ['lines' => [$oneLine], 'fontSize' => $fontSize];
+            }
+
+            if (count($words) === 1) {
+                return ['lines' => [$oneLine], 'fontSize' => $fontSize];
+            }
+
+            $bestLines = null;
+            $bestWidth = PHP_FLOAT_MAX;
+            $counter = count($words);
+            for ($i = 1; $i < $counter; $i++) {
+                $lines = [implode(' ', array_slice($words, 0, $i)), implode(' ', array_slice($words, $i))];
+                $width = max(
+                    $this->textWidth($lines[0], $fontPath, $fontSize),
+                    $this->textWidth($lines[1], $fontPath, $fontSize),
+                );
+                if ($width < $bestWidth) {
+                    $bestWidth = $width;
+                    $bestLines = $lines;
+                }
+            }
+
+            if ($bestWidth <= self::TITLE_MAX_WIDTH || $fontSize <= 60) {
+                return ['lines' => $bestLines, 'fontSize' => $fontSize];
+            }
+
+            $fontSize -= 5;
+        }
+    }
+
+    protected function textWidth(string $text, string $fontPath, int $fontSize): float
+    {
+        $draw = new \ImagickDraw;
+        $draw->setFont($fontPath);
+        $draw->setFontSize($fontSize);
+
+        return (new \Imagick)->queryFontMetrics($draw, $text)['textWidth'];
     }
 
     protected function appHost(): string
