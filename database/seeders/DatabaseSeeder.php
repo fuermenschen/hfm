@@ -14,6 +14,7 @@ use App\Models\Sponsor;
 use App\Models\SportType;
 use App\Models\User;
 use App\Settings\EventSettings;
+use App\Settings\InvoiceSettings;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -35,6 +36,7 @@ class DatabaseSeeder extends Seeder
         $eventSettings = resolve(EventSettings::class);
         $eventSettings->current_event_id = $futureEvent->id;
         $eventSettings->save();
+        $this->seedOfficialAddressSettings();
 
         if (in_array(config('app.env'), ['local', 'testing'], true)) {
             $this->seedLocalScenario($pastEvent, $futureEvent);
@@ -54,6 +56,19 @@ class DatabaseSeeder extends Seeder
         foreach (['Rennen', 'Velofahren', 'Inlineskaten', 'Rollstuhl', 'Andere (bitte spezifizieren)'] as $name) {
             SportType::query()->firstOrCreate(['name' => $name]);
         }
+    }
+
+    protected function seedOfficialAddressSettings(): void
+    {
+        $settings = resolve(InvoiceSettings::class);
+
+        $settings->creditor_name = $settings->creditor_name !== '' ? $settings->creditor_name : 'Verein für Menschen';
+        $settings->creditor_care_of = $settings->creditor_care_of !== '' ? $settings->creditor_care_of : 'Kai Frehner';
+        $settings->creditor_street = $settings->creditor_street !== '' ? $settings->creditor_street : 'Rössligasse';
+        $settings->creditor_building_number = $settings->creditor_building_number !== '' ? $settings->creditor_building_number : '6';
+        $settings->creditor_postal_code = $settings->creditor_postal_code !== '' ? $settings->creditor_postal_code : '8400';
+        $settings->creditor_city = $settings->creditor_city !== '' ? $settings->creditor_city : 'Winterthur';
+        $settings->save();
     }
 
     protected function seedEventAssets(): void
@@ -162,6 +177,7 @@ class DatabaseSeeder extends Seeder
 
         $athletes2025 = $athleteOnlyUsers->random(7)->merge($dualRoleUsers->random(3));
         $athletes2026 = $athleteOnlyUsers->diff($athletes2025)->values()->merge($dualRoleUsers);
+        $portalUser = $dualRoleUsers->firstOrFail();
 
         $registrations2025 = $this->createEventRegistrations($athletes2025, $pastEvent);
         $registrations2026 = $this->createEventRegistrations($athletes2026, $futureEvent);
@@ -171,23 +187,26 @@ class DatabaseSeeder extends Seeder
         $this->createDonationsForEvent($registrations2025, $donorPool, 70);
         $this->createDonationsForEvent($registrations2026, $donorPool, 150);
 
-        $this->seedPortalSmokeScenario($dualRoleUsers, $registrations2026, $futureEvent);
+        $this->seedPortalSmokeScenario($portalUser, $registrations2026, $futureEvent);
     }
 
     /**
      * Reuse local graph records so browser fixtures do not change seeded counts.
      *
-     * @param  Collection<int, ExternalUser>  $dualRoleUsers
      * @param  Collection<int, AthleteRegistration>  $registrations
      */
-    protected function seedPortalSmokeScenario(Collection $dualRoleUsers, Collection $registrations, DonationEvent $event): void
+    protected function seedPortalSmokeScenario(ExternalUser $portalUser, Collection $registrations, DonationEvent $event): void
     {
-        $portalUser = $dualRoleUsers->firstOrFail();
         $portalUser->update(['email' => 'portal-smoke@example.test', 'first_name' => 'Cédric', 'last_name' => 'Smoke']);
+
+        $portalRegistrationIds = Donation::query()
+            ->where('donor_external_user_id', $portalUser->id)
+            ->pluck('athlete_registration_id');
 
         $pendingDonation = Donation::query()
             ->whereRelation('athleteRegistration', 'donation_event_id', $event->id)
             ->whereRelation('athleteRegistration', 'external_user_id', '!=', $portalUser->id)
+            ->whereNotIn('athlete_registration_id', $portalRegistrationIds)
             ->firstOrFail();
         $pendingDonation->update([
             'donor_external_user_id' => $portalUser->id,

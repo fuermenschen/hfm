@@ -13,6 +13,72 @@
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
                         <x-datatable.export-dropdown />
+                        @if ($role === 'athlete')
+                            <flux:dropdown>
+                                <flux:button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon="document-text"
+                                    wire:loading.attr="disabled"
+                                    wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments"
+                                    :disabled="! $this->documentDownloadsEnabled()"
+                                >
+                                    <span wire:loading.remove wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments">Dokumente</span>
+                                    <span wire:loading wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments">Wird erstellt...</span>
+                                </flux:button>
+                                <flux:menu>
+                                    <flux:menu.group heading="Willkommensbrief">
+                                        <flux:menu.item
+                                            wire:click="downloadAllAthleteDocuments('welcome-letter')"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadAllAthleteDocuments"
+                                            icon="document-text"
+                                            :disabled="! $this->documentDownloadsEnabled()"
+                                        >
+                                            Alle Sportler:innen
+                                        </flux:menu.item>
+                                        <flux:menu.item
+                                            wire:click="downloadSelectedAthleteDocuments('welcome-letter')"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadSelectedAthleteDocuments"
+                                            icon="check-circle"
+                                            :disabled="! $this->documentDownloadsEnabled() || $this->selectedCount() === 0"
+                                        >
+                                            Ausgewählte Sportler:innen
+                                        </flux:menu.item>
+                                    </flux:menu.group>
+                                    <flux:menu.group heading="Personalisierter Flyer">
+                                        <flux:menu.item
+                                            wire:click="downloadAllAthleteDocuments('personalized-flyer')"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadAllAthleteDocuments"
+                                            icon="document-text"
+                                            :disabled="! $this->documentDownloadsEnabled()"
+                                        >
+                                            Alle Sportler:innen
+                                        </flux:menu.item>
+                                        <flux:menu.item
+                                            wire:click="downloadSelectedAthleteDocuments('personalized-flyer')"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadSelectedAthleteDocuments"
+                                            icon="check-circle"
+                                            :disabled="! $this->documentDownloadsEnabled() || $this->selectedCount() === 0"
+                                        >
+                                            Ausgewählte Sportler:innen
+                                        </flux:menu.item>
+                                    </flux:menu.group>
+                                </flux:menu>
+                            </flux:dropdown>
+                            @if (! $this->documentDownloadsEnabled())
+                                <flux:callout icon="information-circle" variant="secondary" class="py-1.5">
+                                    <flux:callout.text>Für Dokumente bitte genau einen Anlass auswählen.</flux:callout.text>
+                                </flux:callout>
+                            @endif
+                            <flux:text wire:loading.flex wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments" class="items-center gap-1 text-sm text-zinc-500">
+                                <flux:icon.arrow-path class="size-4 animate-spin" />
+                                Dokumente werden erstellt...
+                            </flux:text>
+                        @endif
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
@@ -46,6 +112,9 @@
                             @endif
                         </flux:table.column>
                     @endforeach
+                    @if ($role === 'athlete')
+                        <flux:table.column class="w-28 text-right">Dokumente</flux:table.column>
+                    @endif
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -80,6 +149,41 @@
                                     @endif
                                 </flux:table.cell>
                             @endforeach
+                            @if ($role === 'athlete')
+                                    <flux:table.cell class="w-28 text-right">
+                                    <flux:dropdown align="end">
+                                        <flux:button
+                                            variant="subtle"
+                                            size="xs"
+                                            icon="ellipsis-horizontal"
+                                            aria-label="Dokumente"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadAthleteDocument"
+                                            :disabled="! $this->documentDownloadsEnabled()"
+                                        />
+                                        <flux:menu>
+                                            <flux:menu.item
+                                                wire:click="downloadAthleteDocument({{ $row->id }}, 'welcome-letter')"
+                                                wire:loading.attr="disabled"
+                                                wire:target="downloadAthleteDocument"
+                                                icon="document-text"
+                                                :disabled="! $this->documentDownloadsEnabled()"
+                                            >
+                                                Willkommensbrief
+                                            </flux:menu.item>
+                                            <flux:menu.item
+                                                wire:click="downloadAthleteDocument({{ $row->id }}, 'personalized-flyer')"
+                                                wire:loading.attr="disabled"
+                                                wire:target="downloadAthleteDocument"
+                                                icon="document-text"
+                                                :disabled="! $this->documentDownloadsEnabled()"
+                                            >
+                                                Personalisierter Flyer
+                                            </flux:menu.item>
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </flux:table.cell>
+                            @endif
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">

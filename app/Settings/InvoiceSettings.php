@@ -24,6 +24,11 @@ class InvoiceSettings extends Settings
     public string $creditor_name = '';
 
     /**
+     * Optional c/o name for the official creditor address.
+     */
+    public string $creditor_care_of = '';
+
+    /**
      * Default creditor street for QR invoices.
      */
     public string $creditor_street = '';
@@ -56,7 +61,7 @@ class InvoiceSettings extends Settings
     public static function settingsDetails(): array
     {
         $title = 'Rechnungen';
-        $description = 'Einstellungen für Rechnungen und QR-Zahlungen.';
+        $description = 'Einstellungen für Rechnungen und QR-Zahlungen. Die hinterlegte Adresse ist die offizielle Vereinsadresse und wird auch in anderen offiziellen Dokumenten verwendet.';
 
         return [
             'title' => $title,
@@ -70,6 +75,7 @@ class InvoiceSettings extends Settings
             'qr_iban' => 'required|regex:/^CH\d{19}$/',
             'qr_show_amount' => 'required|boolean',
             'creditor_name' => 'nullable|string',
+            'creditor_care_of' => 'nullable|string',
             'creditor_street' => 'nullable|string',
             'creditor_building_number' => 'nullable|string',
             'creditor_postal_code' => 'nullable|string',
@@ -83,7 +89,8 @@ class InvoiceSettings extends Settings
         return [
             'qr_iban' => 'QR IBAN',
             'qr_show_amount' => 'Betrag im QR anzeigen',
-            'creditor_name' => 'Name der Empfängerin',
+            'creditor_name' => 'Name der Organisation',
+            'creditor_care_of' => 'c/o Name',
             'creditor_street' => 'Strasse der Empfängerin',
             'creditor_building_number' => 'Hausnummer der Empfängerin',
             'creditor_postal_code' => 'PLZ der Empfängerin',
@@ -97,7 +104,8 @@ class InvoiceSettings extends Settings
         return [
             'qr_iban' => 'Die IBAN, welche für Schweizer QR-Rechnungen verwendet werden soll.',
             'qr_show_amount' => 'Wenn aktiviert, wird der Rechnungsbetrag im QR-Code vorausgefüllt.',
-            'creditor_name' => 'Name des Empfängers auf einer QR-Rechnung.',
+            'creditor_name' => 'Name des Vereins oder der Organisation. Wird als Teil der offiziellen Adresse verwendet.',
+            'creditor_care_of' => 'Optionaler Name hinter «c/o» in der offiziellen Vereinsadresse.',
             'creditor_street' => 'Strasse des Empfängers für QR-Rechnungen.',
             'creditor_building_number' => 'Hausnummer des Empfängers für QR-Rechnungen.',
             'creditor_postal_code' => 'PLZ des Empfängers für QR-Rechnungen.',

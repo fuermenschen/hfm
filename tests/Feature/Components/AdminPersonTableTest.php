@@ -3,10 +3,14 @@
 use App\Components\AdminPersonTable;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\User;
 use App\Settings\EventSettings;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+
+use function Pest\Laravel\actingAs;
 
 it('renders athlete and donor tables with their role labels', function (string $role, string $label): void {
     Livewire::test(AdminPersonTable::class, ['role' => $role])
@@ -160,4 +164,104 @@ it('shows all people when the event filter is explicitly empty', function (): vo
         ->test(AdminPersonTable::class, ['role' => 'athlete'])
         ->assertSet('eventSlug', '')
         ->assertSee('Visible Athlete');
+});
+
+it('explains why athlete documents require one selected event', function (): void {
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', '')
+        ->assertSee('Für Dokumente bitte genau einen Anlass auswählen.')
+        ->assertSee('Willkommensbrief')
+        ->assertSee('Personalisierter Flyer')
+        ->assertSee('Alle Sportler:innen')
+        ->assertSee('Ausgewählte Sportler:innen')
+        ->assertSee('Dokumente werden erstellt...');
+});
+
+it('downloads a flyer for an athlete in the selected event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create([
+        'first_name' => 'Peter',
+        'last_name' => 'Muster',
+        'public_id' => '4WUFNB',
+    ]);
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('downloadAthleteDocument', $athlete->id, 'personalized-flyer')
+        ->assertFileDownloaded('2026_Peter_M_4WU-FNB_Personalisierter_Flyer.pdf');
+});
+
+it('downloads selected athlete flyers as an event-scoped archive', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$athlete->id])
+        ->call('downloadSelectedAthleteDocuments', 'personalized-flyer')
+        ->assertFileDownloaded('2026_Personalisierte_Flyer.zip');
+});
+
+it('downloads all athlete flyers for the selected event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('downloadAllAthleteDocuments', 'personalized-flyer')
+        ->assertFileDownloaded('2026_Personalisierte_Flyer.zip');
+});
+
+it('does not download athlete documents without a selected event', function (): void {
+    $athlete = ExternalUser::factory()->asAthlete()->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', '')
+        ->call('downloadAthleteDocument', $athlete->id, 'personalized-flyer')
+        ->assertNoFileDownloaded();
+});
+
+it('does not start a second athlete document archive while one is running', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+    $lock = Cache::lock('admin-athlete-document-download:'.auth()->id(), 600);
+    expect($lock->get())->toBeTrue();
+
+    try {
+        Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+            ->set('eventSlug', $event->slug)
+            ->set('checkboxValues', [$athlete->id])
+            ->call('downloadSelectedAthleteDocuments', 'personalized-flyer')
+            ->assertNoFileDownloaded();
+    } finally {
+        $lock->release();
+    }
+});
+
+it('does not start a single athlete document while another is running', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+    $lock = Cache::lock('admin-athlete-document-download:'.auth()->id(), 600);
+    expect($lock->get())->toBeTrue();
+
+    try {
+        Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+            ->set('eventSlug', $event->slug)
+            ->call('downloadAthleteDocument', $athlete->id, 'personalized-flyer')
+            ->assertNoFileDownloaded();
+    } finally {
+        $lock->release();
+    }
 });

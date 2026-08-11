@@ -19,6 +19,7 @@ use Illuminate\Support\Str;
 
 /**
  * @property Carbon|null $starts_at
+ * @property Carbon|null $ends_at
  */
 #[Fillable([
     'slug',

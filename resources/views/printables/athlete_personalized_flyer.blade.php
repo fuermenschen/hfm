@@ -2,25 +2,6 @@
 
 @props(['athlete'])
 
-@php
-    $partnerDisplayName = $athlete->partner?->name;
-    $partnerName = "";
-
-    if ($partnerDisplayName === null || str_contains($partnerDisplayName, "alle")) {
-        $partnerName = "allen drei Benefizpartner:innen zu gleichen Teilen";
-    } elseif (str_contains($partnerDisplayName, "Brühlgut")) {
-        $partnerName = "der Brühlgut Stiftung";
-    } elseif (str_contains($partnerDisplayName, "Kinderseele")) {
-        $partnerName = "dem Institut Kinderseele Schweiz";
-    } elseif (str_contains($partnerDisplayName, "143")) {
-        $partnerName = "der Dargebotenen Hand (Tel 143)";
-    } else {
-        $partnerName = 'den gewählten Benefizpartner:innen';
-    }
-
-
-@endphp
-
 @section('body')
     <style>
 
@@ -44,7 +25,7 @@
 
     </style>
 
-    <div class="name">{{ $athlete->privacy_name. " (" . $athlete->public_id_string . ")" }}</div>
+    <div class="name">{{ $athlete->privacy_name.' ('.$athlete->public_id_string.')' }}</div>
 
     <div class="partner">{{ $partnerName }}.</div>
 

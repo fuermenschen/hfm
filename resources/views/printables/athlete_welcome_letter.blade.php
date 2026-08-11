@@ -2,63 +2,6 @@
 
 @props(['athlete'])
 
-@php
-    use Endroid\QrCode\Color\Color;
-    use Endroid\QrCode\ErrorCorrectionLevel;
-    use Endroid\QrCode\QrCode;
-    use Endroid\QrCode\Writer\PngWriter;
-    use Illuminate\Support\Facades\Vite;
-
-    $qrCode = new QrCode(
-        data: route('login'),
-        errorCorrectionLevel: ErrorCorrectionLevel::Low,
-        size: 100,
-        margin: 0,
-        foregroundColor: new Color(27, 46, 71)
-    );
-    $writer = new PngWriter;
-    $qrCodeDataUri = $writer->write($qrCode)->getDataUri();
-
-    $partnerDisplayName = $athlete->partner?->name;
-    $partnerName = "";
-
-    if ($partnerDisplayName === null || str_contains($partnerDisplayName, "alle")) {
-        $partnerName = "alle drei Benefizpartner:innen zu gleichen Teilen";
-    } elseif (str_contains($partnerDisplayName, "Brühlgut")) {
-        $partnerName = "die Brühlgut Stiftung";
-    } elseif (str_contains($partnerDisplayName, "Kinderseele")) {
-        $partnerName = "das Institut Kinderseele Schweiz";
-    } elseif (str_contains($partnerDisplayName, "143")) {
-        $partnerName = "die Dargebotene Hand (Tel 143)";
-    } else {
-        $partnerName = 'den gewählten Benefizpartner:innen';
-    }
-
-    $letterheadAsset = Vite::asset("resources/images/letterhead_hfm.svg");
-    $letterheadCandidates = [$letterheadAsset];
-
-    $parsedPath = parse_url($letterheadAsset, PHP_URL_PATH);
-    if (is_string($parsedPath)) {
-        $trimmedPath = ltrim($parsedPath, '/');
-        $letterheadCandidates[] = public_path($trimmedPath);
-
-        if (str_starts_with($trimmedPath, 'resources/')) {
-            $letterheadCandidates[] = base_path($trimmedPath);
-        }
-    }
-
-    $letterheadPath = collect($letterheadCandidates)
-        ->first(fn ($candidate) => is_string($candidate) && file_exists($candidate));
-
-    if (! is_string($letterheadPath)) {
-        throw new Exception('Letterhead asset file could not be resolved.');
-    }
-
-    $letterheadData = base64_encode(file_get_contents($letterheadPath));
-
-
-@endphp
-
 @section('body')
     <style>
         {{-- logo and sender --}}
@@ -161,20 +104,19 @@
 
         <div>
             <p>
-                Verein für Menschen<br>
-                c/o Kai Frehner<br>
-                Nelkenstrasse 6<br>
-                8400 Winterthur
+                @foreach ($officialAddress as $line)
+                    {{ $line }}<br>
+                @endforeach
             </p>
-            <p>info@fuer-menschen.ch</p>
+            <p>{{ $mailFromAddress }}</p>
         </div>
     </div>
 
     <!-- Recipient -->
     <div class="recipient">
-        <p class="sender">Höhenmeter für Menschen, fuer-menschen.ch</p>
+        <p class="sender">{{ $associationName }}, {{ $associationUrl }}</p>
         <p>
-            @if ($athlete->adult == 0)
+            @if ($registration->adult === false)
                 An die Eltern von
             @endif
             <br>
@@ -186,12 +128,12 @@
 
     <!-- City and Date -->
     <div class="city-and-date">
-        <p>Winterthur, {{ date('d.m.Y') }}</p>
+        <p>{{ $associationCity }}, {{ date('d.m.Y') }}</p>
     </div>
 
     <!-- Subject -->
     <div class="subject">
-        <p>Willkommen bei Höhenmeter für Menschen</p>
+        <p><strong>{{ $event->title }}</strong>: Willkommen!</p>
     </div>
 
     <!-- Body -->
@@ -200,26 +142,25 @@
             Liebe:r {{ $athlete->first_name }}
         </p>
         <p>
-            Vielen Dank, dass du beim Anlass Höhenmeter für Menschen mitmachst!
+            Vielen Dank, dass du beim Anlass <strong>{{ $event->title }}</strong> mitmachst!
         </p>
         <p>
             Du hast bei deiner Anmeldung angegeben, dass du ungefähr
-            <strong>{{ $athlete->rounds_estimated }} Runden</strong>
-            zurücklegen möchtest ({{ $athlete->sportType->name }}). Die Spenden deiner Spender:innen gehen dann
-            an <strong>{{ $partnerName }}</strong>.
+            <strong>{{ $registration->rounds_estimated }} Runden</strong>
+            zurücklegen möchtest ({{ $registration->sportType->name }}). Die Spenden deiner Spender:innen gehen dann an
+            die Organisation <strong>{{ $partnerName }}</strong>.
         </p>
         <p>
             Wir möchten dir das Suchen von
             Spender:innen so einfach wie möglich machen.
-            Deshalb erhältst du anbei einige personalisierte Flyer.
-            Zudem findest du in deinem persönlichen Bereich auf der Webseite personalisierte Bilder, die du auf
-            Social Media teilen kannst.
+            Deshalb erhältst du anbei verschiedene personalisierte Materialien, die dich dabei unterstützen.
+            Zudem findest du in deinem persönlichen Bereich auf der Webseite weitere personalisierte Materialien.
         </p>
         <p>
-            Wenn du mehr Flyer benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
+            Wenn du weitere Materialien benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
         </p>
         <p>
-            Am Anlass selbst, am <strong>13. September 2025</strong> hast du dann von 13&nbsp;Uhr bis 18&nbsp;Uhr
+            Am Anlass selbst, am <strong>{{ $eventDate }}</strong> hast du dann von {{ $eventStartTime }}&nbsp;Uhr bis {{ $eventEndTime }}&nbsp;Uhr
             Zeit, um so viele Runden wie möglich
             zurückzulegen. Alles weitere, etwa das Eintreiben der Spenden, erledigen wir für dich.
         </p>
@@ -233,10 +174,10 @@
         </p>
         <p>
             Herzliche Grüsse<br>
-            Das Team von Höhenmeter für Menschen
+            Das Team von {{ $event->title }}
         </p>
         <p>
-        P.S.: Dieses Jahr dürfen sich die Sportler:innen, die am meisten Spendengelder sammeln, auf attraktive Preise freuen!
+        P.S.: Auch dieses Jahr dürfen sich die Sportler:innen, die am meisten Spendengelder sammeln, auf attraktive Preise freuen!
         </p>
 
 
