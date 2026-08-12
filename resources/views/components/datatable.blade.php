@@ -12,7 +12,7 @@
     </flux:card>
 
     @isset($footer)
-        <div class="flex min-w-0 flex-wrap items-center justify-start gap-3">
+        <div class="flex min-w-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between [&>[data-flux-pagination]]:w-full sm:[&>[data-flux-pagination]]:min-w-0 sm:[&>[data-flux-pagination]]:flex-1">
             {{ $footer }}
         </div>
     @endisset
