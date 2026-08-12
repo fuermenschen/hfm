@@ -69,7 +69,6 @@ it('creates external user registration and sends confirmation for new participan
         ->call('next')
         ->assertSet('currentStep', 'personal')
         ->assertSet('email', 'francesca@example.com')
-        ->assertSet('email_confirmation', 'francesca@example.com')
         ->assertSee('Schritt 1 von 3')
         ->assertDontSee('Deutschland')
         ->assertDontSee('Österreich')
@@ -82,7 +81,6 @@ it('creates external user registration and sends confirmation for new participan
         ->set('city', 'Winterthur')
         ->set('phone_number', '079 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'registration')
         ->assertSee('Schritt 2 von 3')
@@ -140,7 +138,6 @@ it('requires swiss residence and telephone format for new participants', functio
         ->set('country_of_residence', 'DE')
         ->set('phone_number', '0791234567')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertHasErrors([
             'country_of_residence' => ['in'],
@@ -184,7 +181,6 @@ it('blocks new participant submit when email already belongs to an external user
         ->set('city', 'Winterthur')
         ->set('phone_number', '079 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
@@ -500,7 +496,6 @@ it('treats soft deleted external user emails as known emails for new participant
         ->set('city', 'Winterthur')
         ->set('phone_number', '079 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->set('sport_type_id', $sportType->id)
         ->set('rounds_estimated', 12)
@@ -602,12 +597,68 @@ it('continues to personal details for unknown emails without sending notificatio
         ->call('next')
         ->assertSet('currentStep', 'personal')
         ->assertSet('email', 'unknown@example.com')
-        ->assertSet('email_confirmation', 'unknown@example.com')
         ->assertSee('Deine Angaben');
 
     Sleep::assertNeverSlept();
 
     Notification::assertNothingSent();
+});
+
+it('normalizes the confirmed email before creating a registration', function (): void {
+    Notification::fake();
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    Livewire::test(AthleteRegistrationWizard::class)
+        ->set('returning_email', '  MIRA@EXAMPLE.COM  ')
+        ->set('returning_email_confirmation', '  MIRA@EXAMPLE.COM  ')
+        ->call('next')
+        ->set('first_name', 'Mira')
+        ->set('last_name', 'Keller')
+        ->set('address', 'Zelglistrasse 41')
+        ->set('zip_code', '8406')
+        ->set('city', 'Winterthur')
+        ->set('phone_number', '079 123 45 67')
+        ->call('next')
+        ->set('sport_type_id', $sportType->id)
+        ->set('rounds_estimated', 10)
+        ->set('partner_id', 0)
+        ->set('adult', '1')
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertSet('currentStep', 'submitted');
+
+    expect(ExternalUser::query()->where('email', 'mira@example.com')->exists())->toBeTrue();
+});
+
+it('uses the email confirmed during lookup for new registrations', function (): void {
+    Notification::fake();
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    $event = createCurrentEventWithPartner(athleteRegistrationOpen: true);
+    ExternalUser::factory()->create(['email' => 'existing@example.com']);
+
+    Livewire::test(AthleteRegistrationWizard::class)
+        ->set('returning_email', 'new@example.com')
+        ->set('returning_email_confirmation', 'new@example.com')
+        ->call('next')
+        ->set('email', 'existing@example.com')
+        ->set('first_name', 'Mira')
+        ->set('last_name', 'Keller')
+        ->set('address', 'Zelglistrasse 41')
+        ->set('zip_code', '8406')
+        ->set('city', 'Winterthur')
+        ->set('phone_number', '079 123 45 67')
+        ->call('next')
+        ->set('sport_type_id', $sportType->id)
+        ->set('rounds_estimated', 10)
+        ->set('partner_id', 0)
+        ->set('adult', '1')
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertSet('currentStep', 'submitted');
+
+    expect(ExternalUser::query()->where('email', 'new@example.com')->exists())->toBeTrue()
+        ->and(AthleteRegistration::query()->whereBelongsTo($event)->count())->toBe(1);
 });
 
 it('delays email lookup in production', function (): void {

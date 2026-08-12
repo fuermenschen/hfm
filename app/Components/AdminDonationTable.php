@@ -6,6 +6,7 @@ namespace App\Components;
 
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Services\CurrentDonationEventService;
 use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -21,9 +22,22 @@ class AdminDonationTable extends AbstractDatatableComponent
 
     protected DonationService $donationService;
 
-    public function boot(DonationService $donationService): void
+    protected CurrentDonationEventService $currentDonationEventService;
+
+    public function boot(DonationService $donationService, CurrentDonationEventService $currentDonationEventService): void
     {
         $this->donationService = $donationService;
+        $this->currentDonationEventService = $currentDonationEventService;
+    }
+
+    public function mount(): void
+    {
+        if (! request()->query->has('anlass') && ($this->eventSlug === null || $this->eventSlug === '')) {
+            $currentEvent = $this->currentDonationEventService->current();
+            $this->eventSlug = $currentEvent instanceof DonationEvent ? $currentEvent->slug : '';
+        }
+
+        parent::mount();
     }
 
     protected function tableView(): string

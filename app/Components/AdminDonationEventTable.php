@@ -12,6 +12,8 @@ class AdminDonationEventTable extends AbstractDatatableComponent
 {
     public string $sortField = 'starts_at';
 
+    public string $sortDirection = 'desc';
+
     protected function tableView(): string
     {
         return 'components.admin.tables.donation-event-table';

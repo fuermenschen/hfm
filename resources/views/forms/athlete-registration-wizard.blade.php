@@ -163,8 +163,7 @@
 
                         <flux:input wire:model.live.blur="city" label="Ort" placeholder="Winterthur" icon-trailing="map-pin" autocomplete="address-level2" required />
                         <flux:input wire:model.live.blur="phone_number" label="Telefon" mask="999 999 99 99" placeholder="079 123 45 67" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
-                        <flux:input wire:model.live.blur="email" label="E-Mail" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="email" type="email" required />
-                        <flux:input wire:model.live.blur="email_confirmation" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="off" type="email" required />
+                        <flux:input wire:model="email" label="E-Mail" icon-trailing="envelope" autocomplete="email" type="email" readonly description:trailing="E-Mail-Adresse ändern? Anmeldung neu starten." />
                     </div>
                 @endif
             @elseif ($currentStep === 'registration')
