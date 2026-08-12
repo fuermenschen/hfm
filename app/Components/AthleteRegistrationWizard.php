@@ -85,10 +85,6 @@ class AthleteRegistrationWizard extends Component
     #[Validate('max:255')]
     public ?string $email = null;
 
-    #[Validate('required', message: 'Bitte bestätige deine E-Mail-Adresse.')]
-    #[Validate('same:email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
-    public ?string $email_confirmation = null;
-
     #[Validate('required', message: 'Bitte wähle eine Sportart.')]
     #[Validate('integer')]
     public ?int $sport_type_id = null;
@@ -185,7 +181,6 @@ class AthleteRegistrationWizard extends Component
             } else {
                 $this->participation = 'new';
                 $this->email = trim(mb_strtolower((string) $this->returning_email));
-                $this->email_confirmation = $this->email;
                 $this->currentStep = 'personal';
             }
 
@@ -230,7 +225,6 @@ class AthleteRegistrationWizard extends Component
                 'country_of_residence' => ['required', Rule::in(['CH'])],
                 'phone_number' => ['required', 'string', 'regex:/^0\d{2} \d{3} \d{2} \d{2}$/'],
                 'email' => ['required', 'email', 'max:255'],
-                'email_confirmation' => ['required', 'same:email'],
             ] : [],
             'registration' => [
                 'sport_type_id' => ['required', 'integer', Rule::in($this->validSportTypeIds())],
@@ -310,8 +304,6 @@ class AthleteRegistrationWizard extends Component
             'country_of_residence.in' => 'Die Anmeldung ist aktuell nur für Personen mit Wohnsitz in der Schweiz möglich.',
             'email.required' => 'Wir benötigen deine E-Mail-Adresse.',
             'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
-            'email_confirmation.required' => 'Bitte bestätige deine E-Mail-Adresse.',
-            'email_confirmation.same' => 'Die E-Mail-Adressen stimmen nicht überein.',
             'sport_type_id.required' => 'Bitte wähle eine Sportart.',
             'sport_type_id.in' => 'Die gewählte Sportart ist für den aktuellen Anlass nicht verfügbar.',
             'rounds_estimated.required' => 'Bitte gib deine geschätzten Runden an.',
@@ -484,7 +476,6 @@ class AthleteRegistrationWizard extends Component
             'country_of_residence',
             'phone_number',
             'email',
-            'email_confirmation',
             'sport_type_id',
             'rounds_estimated',
             'partner_id',
@@ -594,7 +585,7 @@ class AthleteRegistrationWizard extends Component
                 'city' => (string) $this->city,
                 'country_of_residence' => 'CH',
                 'phone_number' => (string) $this->phone_number,
-                'email' => (string) $this->email,
+                'email' => (string) $this->returning_email,
             ]);
         } catch (ValidationException $validationException) {
             $this->setErrorBag($validationException->validator->errors());

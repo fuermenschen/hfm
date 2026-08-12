@@ -152,8 +152,7 @@
                         <flux:error name="phone_national" />
                     </flux:field>
 
-                    <flux:input wire:model.live.blur="email" label="E-Mail" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="email" type="email" required />
-                    <flux:input wire:model.live.blur="email_confirmation" label="E-Mail bestätigen" placeholder="francesca.arslan@posteo.ch" icon-trailing="envelope" autocomplete="off" type="email" required />
+                    <flux:input wire:model="email" label="E-Mail" icon-trailing="envelope" autocomplete="email" type="email" readonly description:trailing="E-Mail-Adresse ändern? Anmeldung neu starten." />
                 </div>
             @elseif ($currentStep === 'donation')
                 <div class="space-y-7">

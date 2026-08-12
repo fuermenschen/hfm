@@ -106,7 +106,6 @@ it('creates external user and donation for new donors', function (): void {
         ->set('phone_country', 'CH')
         ->set('phone_national', '79 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->call('next')
         ->assertSet('currentStep', 'donation')
         ->assertSee('Schritt 2 von 3')
@@ -133,6 +132,36 @@ it('creates external user and donation for new donors', function (): void {
 
     Notification::assertSentTo($externalUser, ConfirmDonorRegistration::class);
     Notification::assertSentTo($athleteRegistration->externalUser, AthleteNewDonation::class);
+});
+
+it('uses the email confirmed during lookup for new donations', function (): void {
+    Notification::fake();
+    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    $athleteRegistration = AthleteRegistration::query()->whereBelongsTo($event)->firstOrFail();
+    ExternalUser::factory()->create(['email' => 'existing@example.com']);
+
+    Livewire::test(DonorRegistrationWizard::class)
+        ->set('returning_email', 'new@example.com')
+        ->set('returning_email_confirmation', 'new@example.com')
+        ->call('next')
+        ->set('email', 'existing@example.com')
+        ->set('first_name', 'Mira')
+        ->set('last_name', 'Keller')
+        ->set('address', 'Zelglistrasse 41')
+        ->set('zip_code', '8406')
+        ->set('city', 'Winterthur')
+        ->set('country_of_residence', 'CH')
+        ->set('phone_country', 'CH')
+        ->set('phone_national', '79 123 45 67')
+        ->call('next')
+        ->set('athlete_registration_id', $athleteRegistration->id)
+        ->set('amount_per_round', 5.00)
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertSet('currentStep', 'submitted');
+
+    expect(ExternalUser::query()->where('email', 'new@example.com')->exists())->toBeTrue()
+        ->and(Donation::query()->whereBelongsTo($athleteRegistration)->count())->toBe(1);
 });
 
 it('sends login link when returning email found', function (): void {
@@ -197,7 +226,6 @@ it('validates amount constraints', function (): void {
         ->set('phone_country', 'CH')
         ->set('phone_national', '79 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 10.00)
         ->set('amount_min', 5.00)
@@ -224,7 +252,6 @@ it('validates amount max >= amount min on submit', function (): void {
         ->set('phone_country', 'CH')
         ->set('phone_national', '79 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.00)
         ->set('amount_min', 200.00)
@@ -336,7 +363,6 @@ it('allows restart after submission for multiple donations', function (): void {
         ->set('phone_country', 'CH')
         ->set('phone_national', '79 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.00)
         ->set('privacy_accepted', true)
@@ -414,7 +440,6 @@ it('validates privacy acceptance on donation step', function (): void {
         ->set('phone_country', 'CH')
         ->set('phone_national', '79 123 45 67')
         ->set('email', 'francesca@example.com')
-        ->set('email_confirmation', 'francesca@example.com')
         ->set('athlete_registration_id', $athleteRegistration->id)
         ->set('amount_per_round', 5.00)
         ->set('privacy_accepted', false)

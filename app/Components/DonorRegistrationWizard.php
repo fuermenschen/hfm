@@ -89,10 +89,6 @@ class DonorRegistrationWizard extends Component
     #[Validate('max:255')]
     public ?string $email = null;
 
-    #[Validate('required', message: 'Bitte bestätige deine E-Mail-Adresse.')]
-    #[Validate('same:email', message: 'Die E-Mail-Adressen stimmen nicht überein.')]
-    public ?string $email_confirmation = null;
-
     #[Validate('required', message: 'Bitte wähle eine:n Sportler:in aus.')]
     #[Validate('integer')]
     public ?int $athlete_registration_id = null;
@@ -208,7 +204,6 @@ class DonorRegistrationWizard extends Component
             } else {
                 $this->participation = 'new';
                 $this->email = $this->returning_email;
-                $this->email_confirmation = $this->email;
                 $this->currentStep = 'personal';
             }
 
@@ -254,7 +249,6 @@ class DonorRegistrationWizard extends Component
                 'phone_country' => ['required', Rule::in(['CH', 'DE', 'AT'])],
                 'phone_national' => ['required', 'phone:phone_country'],
                 'email' => ['required', 'email', 'max:255'],
-                'email_confirmation' => ['required', 'same:email'],
             ],
             'donation' => [
                 'athlete_registration_id' => ['required', 'integer', Rule::in($this->validAthleteRegistrationIds())],
@@ -292,8 +286,6 @@ class DonorRegistrationWizard extends Component
             'country_of_residence.in' => 'Das Land ist ungültig.',
             'email.required' => 'Wir benötigen deine E-Mail-Adresse.',
             'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
-            'email_confirmation.required' => 'Bitte bestätige deine E-Mail-Adresse.',
-            'email_confirmation.same' => 'Die E-Mail-Adressen stimmen nicht überein.',
             'athlete_registration_id.required' => 'Bitte wähle eine:n Sportler:in aus.',
             'athlete_registration_id.in' => 'Die gewählte Sportler:in ist für den aktuellen Anlass nicht verfügbar.',
             'amount_per_round.required' => 'Bitte gib einen Betrag ein.',
@@ -466,7 +458,6 @@ class DonorRegistrationWizard extends Component
             'phone_country',
             'phone_national',
             'email',
-            'email_confirmation',
             'athlete_registration_id',
             'amount_per_round',
             'amount_min',
@@ -591,7 +582,7 @@ class DonorRegistrationWizard extends Component
                 'city' => (string) $this->city,
                 'country_of_residence' => $this->country_of_residence,
                 'phone_number' => $phoneNumber,
-                'email' => (string) $this->email,
+                'email' => (string) $this->returning_email,
             ]);
         } catch (ValidationException $validationException) {
             $this->setErrorBag($validationException->validator->errors());
