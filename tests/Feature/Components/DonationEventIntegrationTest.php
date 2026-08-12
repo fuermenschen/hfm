@@ -41,3 +41,21 @@ it('renders donation events in the admin donation event datatable', function ():
         ->assertSee('2028')
         ->assertSee('Höhenmeter für Menschen');
 });
+
+it('sorts donation events newest first by default', function (): void {
+    $olderEvent = DonationEvent::factory()->create([
+        'slug' => '2025',
+        'title' => 'Älterer Anlass',
+        'starts_at' => '2025-09-09 13:00:00',
+    ]);
+    $newerEvent = DonationEvent::factory()->create([
+        'slug' => '2026',
+        'title' => 'Neuerer Anlass',
+        'starts_at' => '2026-09-09 13:00:00',
+    ]);
+
+    Livewire::test(AdminDonationEventTable::class)
+        ->assertSet('sortField', 'starts_at')
+        ->assertSet('sortDirection', 'desc')
+        ->assertSeeInOrder([$newerEvent->slug, $olderEvent->slug]);
+});
