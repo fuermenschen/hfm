@@ -39,6 +39,26 @@ it('generates event and athlete specific story images', function (): void {
         ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920]);
 });
 
+it('wraps event titles into balanced lines', function (): void {
+    $service = app(AthleteStoryImageService::class);
+    $method = new ReflectionMethod(AthleteStoryImageService::class, 'layoutTitle');
+    $method->setAccessible(true);
+    $layout = fn (string $title): array => $method->invoke($service, $title, resource_path('fonts/darkmode_on_xbold.otf'));
+
+    $long = $layout->call($service, 'Höhenmeter für Menschen Winterlauf');
+    expect($long['lines'])->toBe(['Höhenmeter für', 'Menschen Winterlauf'])
+        ->and($long['fontSize'])->toBeGreaterThan(60)
+        ->and($long['fontSize'])->toBeLessThan(115);
+
+    $short = $layout->call($service, 'Winterlauf');
+    expect($short['lines'])->toBe(['Winterlauf'])
+        ->and($short['fontSize'])->toBe(115);
+
+    $huge = $layout->call($service, 'Ein extrem langer Anlasstitel der niemals aufhört zu wachsen und wachsen');
+    expect($huge['lines'])->toHaveCount(2)
+        ->and($huge['fontSize'])->toBe(60);
+});
+
 it('allows athletes to retrieve only their own published event images', function (): void {
     $event = DonationEvent::factory()->year(2036)->create();
     $unverifiedEvent = DonationEvent::factory()->year(2037)->create();
