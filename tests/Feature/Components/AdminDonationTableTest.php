@@ -5,7 +5,32 @@ use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Settings\EventSettings;
 use Livewire\Livewire;
+
+it('defaults to the current event', function (): void {
+    $currentEvent = DonationEvent::factory()->year(2026)->create(['is_published' => true]);
+    $otherEvent = DonationEvent::factory()->year(2025)->create(['is_published' => true]);
+
+    $currentAthlete = ExternalUser::factory()->create(['first_name' => 'Current Athlete']);
+    $otherAthlete = ExternalUser::factory()->create(['first_name' => 'Other Athlete']);
+    $donor = ExternalUser::factory()->create();
+
+    $currentRegistration = AthleteRegistration::factory()->forEvent($currentEvent)->forExternalUser($currentAthlete)->create();
+    $otherRegistration = AthleteRegistration::factory()->forEvent($otherEvent)->forExternalUser($otherAthlete)->create();
+
+    Donation::factory()->forDonorExternalUser($donor)->forAthleteRegistration($currentRegistration)->create();
+    Donation::factory()->forDonorExternalUser($donor)->forAthleteRegistration($otherRegistration)->create();
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $currentEvent->id;
+    $settings->save();
+
+    Livewire::test(AdminDonationTable::class)
+        ->assertSet('eventSlug', $currentEvent->slug)
+        ->assertSee($currentAthlete->first_name)
+        ->assertDontSee($otherAthlete->first_name);
+});
 
 it('filters donations by event and shows the event column', function (): void {
     $event2025 = DonationEvent::factory()->year(2025)->create();
