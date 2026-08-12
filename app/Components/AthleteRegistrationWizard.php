@@ -562,6 +562,7 @@ class AthleteRegistrationWizard extends Component
     protected function createNewExternalUserRegistration(): bool
     {
         $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
+        $email = trim(mb_strtolower((string) $this->returning_email));
 
         if ($currentDonationEvent === null) {
             $this->addError('registration', 'Die Anmeldung ist aktuell nicht verfügbar.');
@@ -585,7 +586,7 @@ class AthleteRegistrationWizard extends Component
                 'city' => (string) $this->city,
                 'country_of_residence' => 'CH',
                 'phone_number' => (string) $this->phone_number,
-                'email' => (string) $this->returning_email,
+                'email' => $email,
             ]);
         } catch (ValidationException $validationException) {
             $this->setErrorBag($validationException->validator->errors());

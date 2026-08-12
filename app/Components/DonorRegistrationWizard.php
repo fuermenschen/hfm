@@ -558,6 +558,7 @@ class DonorRegistrationWizard extends Component
     protected function createNewExternalUserDonation(): bool
     {
         $currentDonationEvent = resolve(CurrentDonationEventService::class)->current();
+        $email = trim(mb_strtolower((string) $this->returning_email));
 
         if ($currentDonationEvent === null) {
             $this->addError('donation', 'Die Anmeldung ist aktuell nicht verfügbar.');
@@ -582,7 +583,7 @@ class DonorRegistrationWizard extends Component
                 'city' => (string) $this->city,
                 'country_of_residence' => $this->country_of_residence,
                 'phone_number' => $phoneNumber,
-                'email' => (string) $this->returning_email,
+                'email' => $email,
             ]);
         } catch (ValidationException $validationException) {
             $this->setErrorBag($validationException->validator->errors());

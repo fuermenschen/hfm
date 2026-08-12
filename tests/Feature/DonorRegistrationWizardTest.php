@@ -134,6 +134,33 @@ it('creates external user and donation for new donors', function (): void {
     Notification::assertSentTo($athleteRegistration->externalUser, AthleteNewDonation::class);
 });
 
+it('normalizes the confirmed email before creating a donation', function (): void {
+    Notification::fake();
+    $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
+    $athleteRegistration = AthleteRegistration::query()->whereBelongsTo($event)->firstOrFail();
+
+    Livewire::test(DonorRegistrationWizard::class)
+        ->set('returning_email', '  MIRA@EXAMPLE.COM  ')
+        ->set('returning_email_confirmation', '  MIRA@EXAMPLE.COM  ')
+        ->call('next')
+        ->set('first_name', 'Mira')
+        ->set('last_name', 'Keller')
+        ->set('address', 'Zelglistrasse 41')
+        ->set('zip_code', '8406')
+        ->set('city', 'Winterthur')
+        ->set('country_of_residence', 'CH')
+        ->set('phone_country', 'CH')
+        ->set('phone_national', '79 123 45 67')
+        ->call('next')
+        ->set('athlete_registration_id', $athleteRegistration->id)
+        ->set('amount_per_round', 5.00)
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertSet('currentStep', 'submitted');
+
+    expect(ExternalUser::query()->where('email', 'mira@example.com')->exists())->toBeTrue();
+});
+
 it('uses the email confirmed during lookup for new donations', function (): void {
     Notification::fake();
     $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);

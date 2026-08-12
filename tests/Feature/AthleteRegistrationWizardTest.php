@@ -604,6 +604,33 @@ it('continues to personal details for unknown emails without sending notificatio
     Notification::assertNothingSent();
 });
 
+it('normalizes the confirmed email before creating a registration', function (): void {
+    Notification::fake();
+    $sportType = SportType::query()->create(['name' => 'Laufen']);
+    createCurrentEventWithPartner(athleteRegistrationOpen: true);
+
+    Livewire::test(AthleteRegistrationWizard::class)
+        ->set('returning_email', '  MIRA@EXAMPLE.COM  ')
+        ->set('returning_email_confirmation', '  MIRA@EXAMPLE.COM  ')
+        ->call('next')
+        ->set('first_name', 'Mira')
+        ->set('last_name', 'Keller')
+        ->set('address', 'Zelglistrasse 41')
+        ->set('zip_code', '8406')
+        ->set('city', 'Winterthur')
+        ->set('phone_number', '079 123 45 67')
+        ->call('next')
+        ->set('sport_type_id', $sportType->id)
+        ->set('rounds_estimated', 10)
+        ->set('partner_id', 0)
+        ->set('adult', '1')
+        ->set('privacy_accepted', true)
+        ->call('submit')
+        ->assertSet('currentStep', 'submitted');
+
+    expect(ExternalUser::query()->where('email', 'mira@example.com')->exists())->toBeTrue();
+});
+
 it('uses the email confirmed during lookup for new registrations', function (): void {
     Notification::fake();
     $sportType = SportType::query()->create(['name' => 'Laufen']);
