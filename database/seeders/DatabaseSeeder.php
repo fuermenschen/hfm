@@ -82,6 +82,10 @@ class DatabaseSeeder extends Seeder
             'partners/iks_dark.svg' => 'images/iks_dark.svg',
             'partners/143_light.svg' => 'images/143_light.svg',
             'partners/143_dark.svg' => 'images/143_dark.svg',
+            'partners/vbk_light.svg' => 'images/vbk_light.svg',
+            'partners/vbk_dark.svg' => 'images/vbk_dark.svg',
+            'partners/windlicht_light.svg' => 'images/windlicht_light.svg',
+            'partners/windlicht_dark.svg' => 'images/windlicht_dark.svg',
             'sponsors/rohner_spiller.svg' => 'images/sponsor_logos/rohner_spiller.svg',
             'sponsors/tm_kommunikation.svg' => 'images/sponsor_logos/tm_kommunikation.svg',
             'sponsors/veloplus.svg' => 'images/sponsor_logos/veloplus.svg',
@@ -120,6 +124,20 @@ class DatabaseSeeder extends Seeder
                 'beneficiary_blurb' => 'Die Dargebotene Hand bietet Menschen in schwierigen Lebenslagen Unterstützung.',
                 'url' => 'https://www.143.ch/',
             ],
+            [
+                'name' => 'Vereinigung Begleitung Kranker',
+                'logo_light_filename' => 'vbk_light.svg',
+                'logo_dark_filename' => 'vbk_dark.svg',
+                'beneficiary_blurb' => 'Die VBK schenkt kranken und sterbenden Menschen Zeit, Nähe und persönliche Begleitung durch geschulte Freiwillige und entlastet dabei ihre Angehörigen.',
+                'url' => 'https://begleitung-kranker.ch/',
+            ],
+            [
+                'name' => 'Stiftung Windlicht',
+                'logo_light_filename' => 'windlicht_light.svg',
+                'logo_dark_filename' => 'windlicht_dark.svg',
+                'beneficiary_blurb' => 'Die Stiftung Windlicht stärkt Kinder psychisch erkrankter Eltern, indem sie ihnen Halt, Gemeinschaft und eine Auszeit vom belastenden Familienalltag bietet.',
+                'url' => 'https://www.stiftung-windlicht.ch',
+            ],
         ])->map(fn (array $attributes): Partner => Partner::query()->updateOrCreate(
             ['name' => $attributes['name']],
             $attributes,
@@ -149,9 +167,6 @@ class DatabaseSeeder extends Seeder
         $sportTypePivots = SportType::query()->orderBy('id')->get()->mapWithKeys(
             fn (SportType $sportType, int $index): array => [$sportType->id => ['sort_order' => ($index + 1) * 10, 'is_enabled' => true]],
         );
-        $partnerPivots = $partners->values()->mapWithKeys(
-            fn (Partner $partner, int $index): array => [$partner->id => ['sort_order' => ($index + 1) * 10, 'is_published' => true]],
-        );
         $sponsorPivots = $sponsors->values()->mapWithKeys(
             fn (Sponsor $sponsor, int $index): array => [$sponsor->id => [
                 'size' => $index === 0 ? 'large' : 'medium',
@@ -161,7 +176,16 @@ class DatabaseSeeder extends Seeder
             ]],
         );
 
-        $events->each(function (DonationEvent $event) use ($sportTypePivots, $partnerPivots, $sponsorPivots, $faqPivots): void {
+        $events->each(function (DonationEvent $event) use ($sportTypePivots, $partners, $sponsorPivots, $faqPivots): void {
+            $partnerNames = $event->slug === '2026'
+                ? ['Brühlgut Stiftung', 'Vereinigung Begleitung Kranker', 'Stiftung Windlicht']
+                : ['Brühlgut Stiftung', 'Institut Kinderseele Schweiz', 'Tel. 143 - Die Dargebotene Hand'];
+            $partnerPivots = collect($partnerNames)
+                ->map(fn (string $partnerName): Partner => $partners->firstOrFail(fn (Partner $partner): bool => $partner->name === $partnerName))
+                ->mapWithKeys(
+                    fn (Partner $partner, int $index): array => [$partner->id => ['sort_order' => ($index + 1) * 10, 'is_published' => true]],
+                );
+
             $event->sportTypes()->sync($sportTypePivots->all());
             $event->partners()->sync($partnerPivots->all());
             $event->sponsors()->sync($sponsorPivots->all());

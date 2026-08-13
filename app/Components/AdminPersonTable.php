@@ -241,6 +241,19 @@ class AdminPersonTable extends AbstractDatatableComponent
         return $registration->partner->name ?? __('app.equal_split_full');
     }
 
+    public function selectedAthleteRegistration(ExternalUser $person): ?AthleteRegistration
+    {
+        if ($this->role !== 'athlete' || $this->eventSlug === null || $this->eventSlug === '') {
+            return null;
+        }
+
+        $registration = $person->athleteRegistrations->first(
+            fn (AthleteRegistration $registration): bool => $registration->donationEvent->slug === $this->eventSlug,
+        );
+
+        return $registration instanceof AthleteRegistration ? $registration : null;
+    }
+
     public function roleLabel(): string
     {
         return $this->role === 'athlete' ? 'Sportler:innen' : 'Spender:innen';

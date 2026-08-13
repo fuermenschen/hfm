@@ -63,6 +63,7 @@ class PortalParticipationsController extends Controller
                     'roundsDone' => (int) $registration->rounds_done,
                     'comment' => $registration->comment,
                     'verified' => (bool) $registration->verified,
+                    'welcomeLetterUrl' => route('portal.welcome-letter.download', $registration),
                     'shareTexts' => $registration->verified ? $athleteShareText->templates($registration) : [],
                     'donations' => $donations->all(),
                     'donationCount' => $donations->count(),

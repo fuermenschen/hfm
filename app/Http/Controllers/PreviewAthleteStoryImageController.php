@@ -16,14 +16,7 @@ class PreviewAthleteStoryImageController extends Controller
         StoryImageVariant $variant,
         AthleteStoryImageService $storyImage,
     ): Response {
-        $athleteRegistration->loadMissing('donationEvent');
-
-        abort_unless(
-            $athleteRegistration->external_user_id === auth('external')->id()
-                && $athleteRegistration->verified === true
-                && $athleteRegistration->donationEvent->is_published === true,
-            404,
-        );
+        $storyImage->authorizePortalAccess($athleteRegistration);
 
         return response($storyImage->build($athleteRegistration, $variant)['contents'], 200, [
             'Content-Type' => 'image/jpeg',

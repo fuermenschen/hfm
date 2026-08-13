@@ -28,7 +28,7 @@ class PortalDonationsController extends Controller
                 $query->whereHas('athleteRegistration', fn (Builder $query): Builder => $query->whereBelongsTo($selectedEvent));
             })
             ->with([
-                'athleteRegistration:id,donation_event_id,external_user_id,sport_type_id,partner_id,rounds_estimated,rounds_done',
+                'athleteRegistration:id,donation_event_id,external_user_id,sport_type_id,partner_id,rounds_estimated,rounds_done,verified',
                 'athleteRegistration.donationEvent:id,title,timezone,starts_at',
                 'athleteRegistration.externalUser' => fn ($query) => $query->withTrashed()->select(['id', 'first_name', 'last_name', 'public_id']),
                 'athleteRegistration.sportType:id,name',
@@ -46,6 +46,8 @@ class PortalDonationsController extends Controller
                     $donation->athleteRegistration->externalUser->privacy_name,
                     $donation->athleteRegistration->externalUser->public_id_string,
                 ),
+                'athleteRegistrationId' => (int) $donation->athleteRegistration->id,
+                'athleteVerified' => (bool) $donation->athleteRegistration->verified,
                 'sport' => $donation->athleteRegistration->sportType->name,
                 'partner' => $donation->athleteRegistration->partner->name ?? 'Alle Partnerorganisationen',
                 'amountPerRound' => (float) $donation->amount_per_round,

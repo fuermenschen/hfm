@@ -163,8 +163,18 @@
                                             wire:target="downloadAthleteDocument"
                                             :disabled="! $this->documentDownloadsEnabled()"
                                         />
-                                        <flux:menu>
-                                            <flux:menu.item
+                                         <flux:menu>
+                                             @if ($registration = $this->selectedAthleteRegistration($row))
+                                                 <flux:menu.group heading="Story-Bilder">
+                                                     <flux:menu.item href="{{ route('admin.story-image.download', [$registration, 'light']) }}" icon="arrow-down-tray">
+                                                         Hell herunterladen
+                                                     </flux:menu.item>
+                                                     <flux:menu.item href="{{ route('admin.story-image.download', [$registration, 'dark']) }}" icon="arrow-down-tray">
+                                                         Dunkel herunterladen
+                                                     </flux:menu.item>
+                                                 </flux:menu.group>
+                                             @endif
+                                             <flux:menu.item
                                                 wire:click="downloadAthleteDocument({{ $row->id }}, 'welcome-letter')"
                                                 wire:loading.attr="disabled"
                                                 wire:target="downloadAthleteDocument"
