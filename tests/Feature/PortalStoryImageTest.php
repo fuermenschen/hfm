@@ -9,6 +9,8 @@ use App\Models\Partner;
 use App\Services\AthleteStoryImageService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\ImageManager;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -38,6 +40,24 @@ it('generates event and athlete specific story images', function (): void {
 
     expect($image['filename'])->toBe('story_single_light_'.$athlete->public_id_string.'.jpg')
         ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920]);
+});
+
+it('composites SVG logos onto their background before scaling', function (): void {
+    $service = app(AthleteStoryImageService::class);
+    $method = new ReflectionMethod(AthleteStoryImageService::class, 'decodeSvg');
+    $method->setAccessible(true);
+    $logo = $method->invoke(
+        $service,
+        new ImageManager(Driver::class),
+        resource_path('images/vbk_dark.svg'),
+        '#1b2e47',
+    )->scale(width: 258, height: 160);
+
+    $native = $logo->core()->native();
+    $minimumRed = $native->getImageChannelStatistics()[Imagick::CHANNEL_RED]['minima'];
+
+    expect($native->getImageAlphaChannel())->toBeFalse()
+        ->and($minimumRed)->toBeGreaterThanOrEqual(27 * 257);
 });
 
 it('wraps event titles into balanced lines', function (): void {

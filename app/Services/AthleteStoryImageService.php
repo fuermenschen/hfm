@@ -60,8 +60,7 @@ class AthleteStoryImageService
         $image = $manager->createImage(1080, 1920)->fill($variant->backgroundColor());
         $font = resource_path('fonts/darkmode_on_');
 
-        $logo = $this->decodeSvg($manager, $variant->logoPath())
-            ->fillTransparentAreas($variant->backgroundColor())
+        $logo = $this->decodeSvg($manager, $variant->logoPath(), $variant->backgroundColor())
             ->scaleDown(width: 550);
         $image->insert($logo, 265, 115);
 
@@ -93,8 +92,7 @@ class AthleteStoryImageService
         );
 
         foreach ($this->partnerLogos($event, $variant) as $partnerLogo) {
-            $partnerLogoImage = $this->decodeSvg($manager, $partnerLogo['path'])
-                ->fillTransparentAreas($variant->backgroundColor())
+            $partnerLogoImage = $this->decodeSvg($manager, $partnerLogo['path'], $variant->backgroundColor())
                 ->scale(width: $partnerLogo['width'] - 16, height: 160);
             $image->insert(
                 $partnerLogoImage,
@@ -262,7 +260,7 @@ class AthleteStoryImageService
         }
     }
 
-    protected function decodeSvg(ImageManager $manager, string $path): ImageInterface
+    protected function decodeSvg(ImageManager $manager, string $path, string $backgroundColor): ImageInterface
     {
         $svg = new \Imagick;
         $svg->setResolution(300, 300);
@@ -272,6 +270,12 @@ class AthleteStoryImageService
         $svg->setImageFormat('png');
         $svg->setImageAlphaChannel(\Imagick::ALPHACHANNEL_ACTIVATE);
 
-        return $manager->decode($svg->getImagesBlob());
+        // Compose before scaling: ImageMagick 6 can otherwise interpolate transparent black pixels into SVG edges.
+        $background = new \Imagick;
+        $background->newImage($svg->getImageWidth(), $svg->getImageHeight(), new \ImagickPixel($backgroundColor));
+        $background->setImageFormat('png');
+        $background->compositeImage($svg, \Imagick::COMPOSITE_OVER, 0, 0);
+
+        return $manager->decode($background->getImagesBlob());
     }
 }
