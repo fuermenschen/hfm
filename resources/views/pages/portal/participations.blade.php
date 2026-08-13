@@ -37,88 +37,30 @@
                     </flux:callout>
                 @endunless
 
-                @if ($registration['verified'])
-                <section class="space-y-3" aria-labelledby="story-images-{{ $registration['id'] }}">
+                 @if ($registration['verified'])
+                 <div class="flex flex-wrap gap-3">
+                     <flux:button href="{{ $registration['welcomeLetterUrl'] }}" variant="outline" icon="document-arrow-down">
+                         Willkommensbrief herunterladen
+                     </flux:button>
+                 </div>
+
+                 <section class="space-y-3" aria-labelledby="story-images-{{ $registration['id'] }}">
                     <flux:callout icon="megaphone" color="green" class="rounded-2xl" inline>
-                        <flux:callout.heading id="story-images-{{ $registration['id'] }}">Deine Spendenaktion teilen</flux:callout.heading>
-                        <flux:callout.text>Fertige, personalisierte Story für Instagram und WhatsApp.</flux:callout.text>
+                         <flux:callout.heading id="story-images-{{ $registration['id'] }}">Deine Runden können noch mehr bewegen</flux:callout.heading>
+                         <flux:callout.text>Gewinne weitere Spender:innen für deine Spendenaktion: Teile personalisierte Bilder und Texte.</flux:callout.text>
                         <x-slot name="actions">
                             <flux:modal.trigger name="share-story-{{ $registration['id'] }}" data-story-share-open="share-story-{{ $registration['id'] }}">
-                                <flux:button variant="primary" icon="arrow-up-tray">Story teilen</flux:button>
+                                <flux:button variant="outline" icon="arrow-up-tray">Story teilen</flux:button>
                             </flux:modal.trigger>
                         </x-slot>
                     </flux:callout>
 
-                    <flux:modal name="share-story-{{ $registration['id'] }}" class="space-y-6 sm:w-full md:w-xl">
-                        <div>
-                            <flux:heading size="lg">Deine Spendenaktion teilen</flux:heading>
-                            <flux:text class="mt-1">Nutze eine fertige Story oder kopiere einen persönlichen Text.</flux:text>
-                        </div>
-
-                        <flux:tab.group>
-                            <flux:tabs variant="segmented">
-                                <flux:tab name="story" selected>Story</flux:tab>
-                                <flux:tab name="text">Text</flux:tab>
-                            </flux:tabs>
-
-                            <flux:tab.panel name="story" class="pt-5">
-                                <div
-                                    id="share-story-{{ $registration['id'] }}"
-                                    data-story-share
-                                    data-story-share-light-preview="{{ route('portal.story-image.preview', ['athleteRegistration' => $registration['id'], 'variant' => 'light']) }}"
-                                    data-story-share-dark-preview="{{ route('portal.story-image.preview', ['athleteRegistration' => $registration['id'], 'variant' => 'dark']) }}"
-                                    data-story-share-light-download="{{ route('portal.story-image.download', ['athleteRegistration' => $registration['id'], 'variant' => 'light']) }}"
-                                    data-story-share-dark-download="{{ route('portal.story-image.download', ['athleteRegistration' => $registration['id'], 'variant' => 'dark']) }}"
-                                >
-                                    <div class="grid grid-cols-2 gap-3">
-                                        @foreach (['light' => 'Hell', 'dark' => 'Dunkel'] as $variant => $label)
-                                            <button data-story-variant="{{ $variant }}" type="button" class="overflow-hidden rounded-xl border-2 border-transparent text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hfm-red data-[selected=true]:border-hfm-red">
-                                                <div class="relative aspect-[9/16]">
-                                                    <div data-story-preview-skeleton="{{ $variant }}" class="absolute inset-0 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700"></div>
-                                                    <img data-story-preview="{{ $variant }}" alt="{{ $label }} Vorschau deiner Story" class="hidden size-full object-cover" />
-                                                </div>
-                                                <span class="block p-2 text-sm font-medium">{{ $label }}</span>
-                                            </button>
-                                        @endforeach
-                                    </div>
-
-                                    <div class="mt-5 flex flex-wrap gap-3">
-                                        <flux:button data-share-story variant="primary" icon="arrow-up-tray">Story teilen</flux:button>
-                                        <flux:button data-download-story variant="outline" icon="arrow-down-tray">Story-Bild herunterladen</flux:button>
-                                    </div>
-                                    <flux:text data-story-share-status class="mt-3" role="status" aria-live="polite"></flux:text>
-                                </div>
-                            </flux:tab.panel>
-
-                            <flux:tab.panel name="text" class="space-y-4 pt-5">
-                                <flux:text>Wähle eine Vorlage, teile sie direkt oder kopiere sie für WhatsApp, Instagram und andere Apps.</flux:text>
-
-                                <flux:tab.group>
-                                    <flux:tabs variant="segmented">
-                                        <flux:tab name="hochdeutsch" selected>Hochdeutsch</flux:tab>
-                                        <flux:tab name="schweizerdeutsch">Schweizerdeutsch</flux:tab>
-                                    </flux:tabs>
-
-                                    @foreach (['hochdeutsch', 'schweizerdeutsch'] as $language)
-                                        <flux:tab.panel :name="$language" class="space-y-4 pt-4">
-                                            @foreach ($registration['shareTexts'] as $template)
-                                                @php($shareText = $template[$language])
-                                                <div data-share-text-template class="space-y-3">
-                                                    <flux:heading size="sm">{{ $shareText['title'] }}</flux:heading>
-                                                    <textarea data-share-text-content readonly class="min-h-48 w-full resize-none rounded-lg border border-zinc-300 bg-zinc-50 p-3 text-sm leading-6 dark:border-slate-700 dark:bg-slate-800">{{ $shareText['text'] }}</textarea>
-                                                    <div class="flex flex-wrap gap-3">
-                                                        <flux:button data-share-text variant="primary" icon="arrow-up-tray">Text teilen</flux:button>
-                                                        <flux:button data-copy-text variant="outline" icon="clipboard-document">Text kopieren</flux:button>
-                                                    </div>
-                                                    <flux:text data-share-text-status class="text-sm" role="status" aria-live="polite"></flux:text>
-                                                </div>
-                                            @endforeach
-                                        </flux:tab.panel>
-                                    @endforeach
-                                </flux:tab.group>
-                            </flux:tab.panel>
-                        </flux:tab.group>
-                    </flux:modal>
+                     <x-portal.story-share
+                         :registration-id="$registration['id']"
+                         :athlete-name="null"
+                         :share-texts="$registration['shareTexts']"
+                         show-text-tab
+                     />
                 </section>
                 @endif
 

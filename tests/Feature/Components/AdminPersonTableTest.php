@@ -1,6 +1,7 @@
 <?php
 
 use App\Components\AdminPersonTable;
+use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
 
 it('renders athlete and donor tables with their role labels', function (string $role, string $label): void {
     Livewire::test(AdminPersonTable::class, ['role' => $role])
@@ -326,4 +328,38 @@ it('does not start a single athlete document while another is running', function
     } finally {
         $lock->release();
     }
+});
+
+it('shows story image links for the selected athlete event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+    $registration = AthleteRegistration::query()
+        ->where('external_user_id', $athlete->id)
+        ->where('donation_event_id', $event->id)
+        ->firstOrFail();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee(route('admin.story-image.download', [$registration, 'light']), false)
+        ->assertSee(route('admin.story-image.download', [$registration, 'dark']), false);
+});
+
+it('downloads story images for admins and blocks external users', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+    $registration = AthleteRegistration::query()
+        ->where('external_user_id', $athlete->id)
+        ->where('donation_event_id', $event->id)
+        ->firstOrFail();
+
+    actingAs(User::factory()->create());
+
+    get(route('admin.story-image.download', [$registration, 'light']))
+        ->assertDownload('story_single_light_'.$athlete->public_id_string.'.jpg');
+
+    auth('web')->logout();
+    actingAs($athlete, 'external');
+
+    get(route('admin.story-image.download', [$registration, 'light']))
+        ->assertRedirect();
 });

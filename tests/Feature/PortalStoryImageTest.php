@@ -2,6 +2,7 @@
 
 use App\Enums\StoryImageVariant;
 use App\Models\AthleteRegistration;
+use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
@@ -95,6 +96,31 @@ it('allows athletes to retrieve only their own published event images', function
         ->assertNotFound();
 });
 
+it('allows donors with pending donations to retrieve supported athlete images', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    $donor = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+    Donation::factory()->forPair($donor, $registration)->create(['verified' => false]);
+
+    actingAs($donor, 'external');
+
+    get(route('portal.story-image.download', [$registration, StoryImageVariant::Light->value]))
+        ->assertDownload('story_single_light_'.$athlete->public_id_string.'.jpg');
+});
+
+it('denies story images to external users without a donation or athlete registration', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    $stranger = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+
+    actingAs($stranger, 'external');
+
+    get(route('portal.story-image.download', [$registration, StoryImageVariant::Light->value]))
+        ->assertNotFound();
+});
+
 it('shows personalized story sharing on athlete participation pages', function (): void {
     $event = DonationEvent::factory()->year(2036)->create();
     $athlete = ExternalUser::factory()->create();
@@ -104,7 +130,8 @@ it('shows personalized story sharing on athlete participation pages', function (
 
     get(route('portal.participations'))
         ->assertSuccessful()
-        ->assertSeeText('Deine Spendenaktion teilen')
+        ->assertSeeText('Deine Runden können noch mehr bewegen')
+        ->assertSeeText('Gewinne weitere Spender:innen für deine Spendenaktion: Teile personalisierte Bilder und Texte.')
         ->assertSeeText('Story teilen')
         ->assertSeeText('Kurz & direkt')
         ->assertSeeText('Etwas ausführlicher')
@@ -116,6 +143,39 @@ it('shows personalized story sharing on athlete participation pages', function (
         ->assertSee(route('portal.story-image.download', [$registration, 'dark']), false)
         ->assertSee(route('portal.story-image.preview', [$registration, 'light']), false)
         ->assertSee(route('portal.story-image.preview', [$registration, 'dark']), false);
+});
+
+it('shows welcome letter downloads for confirmed athlete participations', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+
+    actingAs($athlete, 'external');
+
+    get(route('portal.participations'))
+        ->assertSuccessful()
+        ->assertSeeText('Willkommensbrief herunterladen')
+        ->assertSee(route('portal.welcome-letter.download', $registration), false);
+});
+
+it('shows story image downloads for donors', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    $donor = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+    Donation::factory()->forPair($donor, $registration)->create(['verified' => false]);
+
+    actingAs($donor, 'external');
+
+    get(route('portal.donations'))
+        ->assertSuccessful()
+        ->assertSeeText('Weitere Spender:innen für '.$athlete->privacy_name.' ('.$athlete->public_id_string.') finden')
+        ->assertSeeText('Kennst du jemanden, der '.$athlete->privacy_name.' ('.$athlete->public_id_string.') unterstützen möchte? Teile diese persönliche Story auf WhatsApp oder Instagram.')
+        ->assertSeeText('Story teilen')
+        ->assertDontSeeText('Text kopieren')
+        ->assertDontSeeText('Story-Bild hell')
+        ->assertSee(route('portal.story-image.download', [$registration, 'light']), false)
+        ->assertSee(route('portal.story-image.download', [$registration, 'dark']), false);
 });
 
 it('renders share text for equal split participations', function (): void {

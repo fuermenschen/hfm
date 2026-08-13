@@ -9,6 +9,9 @@ use App\Models\ExternalUser;
 use App\Services\AthleteDocumentService;
 use Barryvdh\DomPDF\PDF;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
+
 it('downloads a document only for the selected event registration', function (): void {
     $event = DonationEvent::factory()->create(['slug' => '2026']);
     $otherEvent = DonationEvent::factory()->create(['slug' => '2027']);
@@ -75,4 +78,39 @@ it('rejects selected athletes outside the selected event', function (): void {
         AthleteDocumentType::PersonalizedFlyer,
         [$athlete->id],
     ))->toThrow(InvalidArgumentException::class);
+});
+
+it('downloads welcome letters for the owning confirmed athlete', function (): void {
+    $event = DonationEvent::factory()->create(['slug' => '2026']);
+    $athlete = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+
+    $pdf = Mockery::mock(PDF::class);
+    $pdf->shouldReceive('output')->once()->andReturn('%PDF-test');
+    $documents = Mockery::mock(AthleteDocumentService::class);
+    $documents->shouldReceive('render')
+        ->once()
+        ->with(Mockery::on(fn (AthleteRegistration $value): bool => $value->is($registration)), AthleteDocumentType::WelcomeLetter)
+        ->andReturn(['pdf' => $pdf, 'filename' => 'welcome-letter.pdf']);
+    app()->instance(AthleteDocumentService::class, $documents);
+
+    actingAs($athlete, 'external');
+
+    get(route('portal.welcome-letter.download', $registration))
+        ->assertDownload('welcome-letter.pdf');
+});
+
+it('denies welcome letters to other users and unconfirmed athletes', function (): void {
+    $event = DonationEvent::factory()->create(['slug' => '2026']);
+    $athlete = ExternalUser::factory()->create();
+    $stranger = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forEvent($event)->forExternalUser($athlete)->create(['verified' => false]);
+
+    actingAs($stranger, 'external');
+
+    get(route('portal.welcome-letter.download', $registration))->assertNotFound();
+
+    actingAs($athlete, 'external');
+
+    get(route('portal.welcome-letter.download', $registration))->assertNotFound();
 });

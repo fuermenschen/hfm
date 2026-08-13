@@ -24,6 +24,24 @@ class AthleteStoryImageService
 
     public function __construct(private readonly AdminFileStorage $adminFileStorage) {}
 
+    public function authorizePortalAccess(AthleteRegistration $registration): void
+    {
+        $registration->loadMissing('donationEvent');
+
+        $externalUserId = auth('external')->id();
+        $isAthlete = $registration->external_user_id === $externalUserId;
+        $isDonor = $registration->donations()
+            ->where('donor_external_user_id', $externalUserId)
+            ->exists();
+
+        abort_unless(
+            ($isAthlete || $isDonor)
+                && $registration->verified === true
+                && $registration->donationEvent->is_published === true,
+            404,
+        );
+    }
+
     /**
      * @return array{contents:string,filename:string}
      */
