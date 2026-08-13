@@ -56,7 +56,8 @@ it('renders SVG logos without black pixels before scaling', function (): void {
     $native = $logo->core()->native();
     $minimumRed = $native->getImageChannelStatistics()[Imagick::CHANNEL_RED]['minima'];
 
-    expect($minimumRed)->toBeGreaterThanOrEqual(27 * 257);
+    expect($native->getImageAlphaChannel())->toBeFalse()
+        ->and($minimumRed)->toBeGreaterThanOrEqual(27 * 257);
 });
 
 it('wraps event titles into balanced lines', function (): void {
