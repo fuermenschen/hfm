@@ -262,19 +262,34 @@ class AthleteStoryImageService
 
     protected function decodeSvg(ImageManager $manager, string $path, string $backgroundColor): ImageInterface
     {
-        $contents = file_get_contents($path);
-        throw_unless($contents !== false, \RuntimeException::class, sprintf('Unable to read SVG [%s].', $path));
-
         $svg = new \Imagick;
         $svg->setResolution(300, 300);
-        $svg->readImageBlob(preg_replace(
-            '/\A(<svg\b[^>]*>)/i',
-            '$1<rect width="100%" height="100%" fill="'.$backgroundColor.'"/>',
-            $contents,
-            1,
-        ) ?? $contents);
+        $svg->setBackgroundColor(new \ImagickPixel('transparent'));
+        $svg->readImage($path);
         $svg->setIteratorIndex(0);
         $svg->setImageFormat('png');
+
+        $background = new \ImagickPixel($backgroundColor)->getColor();
+        $pixels = new \ImagickPixelIterator($svg);
+
+        foreach ($pixels as $row) {
+            foreach ($row as $pixel) {
+                $color = $pixel->getColor();
+                $alpha = $color['a'];
+                $pixel->setColor(sprintf(
+                    'rgb(%d,%d,%d)',
+                    round($color['r'] * $alpha + $background['r'] * (1 - $alpha)),
+                    round($color['g'] * $alpha + $background['g'] * (1 - $alpha)),
+                    round($color['b'] * $alpha + $background['b'] * (1 - $alpha)),
+                ));
+                $pixel->setColorValue(
+                    \Imagick::COLOR_ALPHA,
+                    1,
+                );
+            }
+
+            $pixels->syncIterator();
+        }
 
         return $manager->decode($svg->getImagesBlob());
     }

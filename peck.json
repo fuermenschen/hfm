@@ -69,7 +69,9 @@
             "entrypoint",
             "deletable",
             "participations",
-            "svg"
+            "svg",
+            "vbk",
+            "windlicht"
         ],
         "paths": []
     }
