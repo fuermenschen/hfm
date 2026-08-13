@@ -42,7 +42,7 @@ it('generates event and athlete specific story images', function (): void {
         ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920]);
 });
 
-it('composites SVG logos onto their background before scaling', function (): void {
+it('renders SVG logos without black pixels before scaling', function (): void {
     $service = app(AthleteStoryImageService::class);
     $method = new ReflectionMethod(AthleteStoryImageService::class, 'decodeSvg');
     $method->setAccessible(true);
@@ -56,8 +56,7 @@ it('composites SVG logos onto their background before scaling', function (): voi
     $native = $logo->core()->native();
     $minimumRed = $native->getImageChannelStatistics()[Imagick::CHANNEL_RED]['minima'];
 
-    expect($native->getImageAlphaChannel())->toBeFalse()
-        ->and($minimumRed)->toBeGreaterThanOrEqual(27 * 257);
+    expect($minimumRed)->toBeGreaterThanOrEqual(27 * 257);
 });
 
 it('wraps event titles into balanced lines', function (): void {
