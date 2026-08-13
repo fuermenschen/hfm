@@ -20,11 +20,15 @@ use function Pest\Laravel\seed;
 it('seeds local development graph with external users and two events', function (): void {
     config()->set('app.env', 'local');
     Storage::fake('public');
+    Storage::disk('public')->put('partners/windlicht_light.svg', '<svg />');
+    Storage::disk('public')->put('partners/windlicht_dark.svg', '<svg />');
+    Storage::disk('public')->put('partners/vbk_light.svg', '<svg />');
+    Storage::disk('public')->put('partners/vbk_dark.svg', '<svg />');
 
     seed(DatabaseSeeder::class);
 
     expect(DonationEvent::query()->whereIn('slug', ['2025', '2026'])->count())->toBe(2)
-        ->and(Partner::query()->count())->toBe(3)
+        ->and(Partner::query()->count())->toBe(5)
         ->and(Sponsor::query()->count())->toBe(4)
         ->and(Faq::query()->count())->toBe(4)
         ->and(SportType::query()->count())->toBe(5)
@@ -49,6 +53,11 @@ it('seeds local development graph with external users and two events', function 
 
     expect($currentEvent)->not->toBeNull()
         ->and($currentEvent?->slug)->toBe('2026')
+        ->and($currentEvent?->partners->pluck('name')->all())->toBe([
+            'Brühlgut Stiftung',
+            'Vereinigung Begleitung Kranker',
+            'Stiftung Windlicht',
+        ])
         ->and($currentEvent?->contentValue('home.about_heading'))->toBe('Um was geht es?')
         ->and($currentEvent?->partners()->wherePivot('is_published', true)->count())->toBe(3)
         ->and($currentEvent?->sponsors()->wherePivot('is_published', true)->count())->toBe(4)

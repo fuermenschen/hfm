@@ -120,6 +120,20 @@ class DatabaseSeeder extends Seeder
                 'beneficiary_blurb' => 'Die Dargebotene Hand bietet Menschen in schwierigen Lebenslagen Unterstützung.',
                 'url' => 'https://www.143.ch/',
             ],
+            [
+                'name' => 'Vereinigung Begleitung Kranker',
+                'logo_light_filename' => 'vbk_light.svg',
+                'logo_dark_filename' => 'vbk_dark.svg',
+                'beneficiary_blurb' => 'Die VBK schenkt kranken und sterbenden Menschen Zeit, Nähe und persönliche Begleitung durch geschulte Freiwillige und entlastet dabei ihre Angehörigen.',
+                'url' => 'https://begleitung-kranker.ch/',
+            ],
+            [
+                'name' => 'Stiftung Windlicht',
+                'logo_light_filename' => 'windlicht_light.svg',
+                'logo_dark_filename' => 'windlicht_dark.svg',
+                'beneficiary_blurb' => 'Die Stiftung Windlicht stärkt Kinder psychisch erkrankter Eltern, indem sie ihnen Halt, Gemeinschaft und eine Auszeit vom belastenden Familienalltag bietet.',
+                'url' => 'https://www.stiftung-windlicht.ch',
+            ],
         ])->map(fn (array $attributes): Partner => Partner::query()->updateOrCreate(
             ['name' => $attributes['name']],
             $attributes,
@@ -149,9 +163,6 @@ class DatabaseSeeder extends Seeder
         $sportTypePivots = SportType::query()->orderBy('id')->get()->mapWithKeys(
             fn (SportType $sportType, int $index): array => [$sportType->id => ['sort_order' => ($index + 1) * 10, 'is_enabled' => true]],
         );
-        $partnerPivots = $partners->values()->mapWithKeys(
-            fn (Partner $partner, int $index): array => [$partner->id => ['sort_order' => ($index + 1) * 10, 'is_published' => true]],
-        );
         $sponsorPivots = $sponsors->values()->mapWithKeys(
             fn (Sponsor $sponsor, int $index): array => [$sponsor->id => [
                 'size' => $index === 0 ? 'large' : 'medium',
@@ -161,7 +172,17 @@ class DatabaseSeeder extends Seeder
             ]],
         );
 
-        $events->each(function (DonationEvent $event) use ($sportTypePivots, $partnerPivots, $sponsorPivots, $faqPivots): void {
+        $events->each(function (DonationEvent $event) use ($sportTypePivots, $partners, $sponsorPivots, $faqPivots): void {
+            $partnerNames = $event->slug === '2026'
+                ? ['Brühlgut Stiftung', 'Stiftung Windlicht', 'Vereinigung Begleitung Kranker']
+                : ['Brühlgut Stiftung', 'Institut Kinderseele Schweiz', 'Tel. 143 - Die Dargebotene Hand'];
+            $partnerPivots = $partners
+                ->filter(fn (Partner $partner): bool => in_array($partner->name, $partnerNames, true))
+                ->values()
+                ->mapWithKeys(
+                    fn (Partner $partner, int $index): array => [$partner->id => ['sort_order' => ($index + 1) * 10, 'is_published' => true]],
+                );
+
             $event->sportTypes()->sync($sportTypePivots->all());
             $event->partners()->sync($partnerPivots->all());
             $event->sponsors()->sync($sponsorPivots->all());
