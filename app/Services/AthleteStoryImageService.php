@@ -262,20 +262,20 @@ class AthleteStoryImageService
 
     protected function decodeSvg(ImageManager $manager, string $path, string $backgroundColor): ImageInterface
     {
+        $contents = file_get_contents($path);
+        throw_unless($contents !== false, \RuntimeException::class, sprintf('Unable to read SVG [%s].', $path));
+
         $svg = new \Imagick;
         $svg->setResolution(300, 300);
-        $svg->setBackgroundColor(new \ImagickPixel('transparent'));
-        $svg->readImage($path);
+        $svg->readImageBlob(preg_replace(
+            '/\A(<svg\b[^>]*>)/i',
+            '$1<rect width="100%" height="100%" fill="'.$backgroundColor.'"/>',
+            $contents,
+            1,
+        ) ?? $contents);
         $svg->setIteratorIndex(0);
         $svg->setImageFormat('png');
-        $svg->setImageAlphaChannel(\Imagick::ALPHACHANNEL_ACTIVATE);
 
-        // Compose before scaling: ImageMagick 6 can otherwise interpolate transparent black pixels into SVG edges.
-        $background = new \Imagick;
-        $background->newImage($svg->getImageWidth(), $svg->getImageHeight(), new \ImagickPixel($backgroundColor));
-        $background->setImageFormat('png');
-        $background->compositeImage($svg, \Imagick::COMPOSITE_OVER, 0, 0);
-
-        return $manager->decode($background->getImagesBlob());
+        return $manager->decode($svg->getImagesBlob());
     }
 }
