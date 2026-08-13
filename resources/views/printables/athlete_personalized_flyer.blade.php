@@ -18,7 +18,7 @@
             position: absolute;
             width: 5.5cm;
             top: 17.1cm;
-            left: 8.45cm;
+            left: 8.4cm;
             font-size: 14px;
             font-weight: bold;
         }
