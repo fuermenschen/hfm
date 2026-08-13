@@ -174,11 +174,10 @@ class DatabaseSeeder extends Seeder
 
         $events->each(function (DonationEvent $event) use ($sportTypePivots, $partners, $sponsorPivots, $faqPivots): void {
             $partnerNames = $event->slug === '2026'
-                ? ['Brühlgut Stiftung', 'Stiftung Windlicht', 'Vereinigung Begleitung Kranker']
+                ? ['Brühlgut Stiftung', 'Vereinigung Begleitung Kranker', 'Stiftung Windlicht']
                 : ['Brühlgut Stiftung', 'Institut Kinderseele Schweiz', 'Tel. 143 - Die Dargebotene Hand'];
-            $partnerPivots = $partners
-                ->filter(fn (Partner $partner): bool => in_array($partner->name, $partnerNames, true))
-                ->values()
+            $partnerPivots = collect($partnerNames)
+                ->map(fn (string $partnerName): Partner => $partners->firstOrFail(fn (Partner $partner): bool => $partner->name === $partnerName))
                 ->mapWithKeys(
                     fn (Partner $partner, int $index): array => [$partner->id => ['sort_order' => ($index + 1) * 10, 'is_published' => true]],
                 );

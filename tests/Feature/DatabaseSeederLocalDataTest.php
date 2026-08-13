@@ -58,6 +58,11 @@ it('seeds local development graph with external users and two events', function 
             'Vereinigung Begleitung Kranker',
             'Stiftung Windlicht',
         ])
+        ->and($currentEvent?->partners()->orderByPivot('sort_order')->pluck('name')->all())->toBe([
+            'Brühlgut Stiftung',
+            'Vereinigung Begleitung Kranker',
+            'Stiftung Windlicht',
+        ])
         ->and($currentEvent?->contentValue('home.about_heading'))->toBe('Um was geht es?')
         ->and($currentEvent?->partners()->wherePivot('is_published', true)->count())->toBe(3)
         ->and($currentEvent?->sponsors()->wherePivot('is_published', true)->count())->toBe(4)
