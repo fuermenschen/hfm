@@ -4,23 +4,94 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\ExternalUser;
-use Barryvdh\DomPDF\PDF;
+use App\Enums\AthleteDocumentType;
+use App\Models\AthleteRegistration;
+use App\Settings\InvoiceSettings;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\DomPDF\PDF as DomPdfWrapper;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Illuminate\Support\Str;
 
 class AthleteDocumentService
 {
     /**
-     * @return array{pdf:PDF,filename:string}
+     * @return array{pdf:DomPdfWrapper,filename:string}
      */
-    // Service currently has no production call site; kept for planned relaunch of athlete documents.
-    // TODO(dead-code): Remove ignore when welcome letter flow is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
-    public function buildWelcomeLetter(ExternalUser $athlete): array
+    public function render(AthleteRegistration $registration, AthleteDocumentType $type): array
     {
-        $filename = $athlete->first_name.'_'.$athlete->last_name.'_Willkommensbrief.pdf';
-        /** @var PDF $pdf */
-        $pdf = resolve('dompdf.wrapper')->loadView('printables.athlete_welcome_letter', ['athlete' => $athlete])
-            ->setPaper('a4', 'portrait');
+        $registration->loadMissing(['donationEvent', 'externalUser', 'partner', 'sportType']);
+
+        $athlete = $registration->externalUser;
+        $event = $registration->donationEvent;
+        $viewData = [
+            'registration' => $registration,
+            'athlete' => $athlete,
+            'event' => $event,
+            'partnerName' => $registration->partner->name ?? __('app.equal_split_full'),
+        ];
+
+        if ($type === AthleteDocumentType::WelcomeLetter) {
+            $invoiceSettings = resolve(InvoiceSettings::class);
+            $logoPath = resource_path('images/logo_light.svg');
+
+            throw_unless(is_file($logoPath), \RuntimeException::class, 'Logo asset file could not be resolved.');
+
+            $logoData = file_get_contents($logoPath);
+
+            throw_if($logoData === false, \RuntimeException::class, 'Logo asset file could not be read.');
+
+            $associationName = trim($invoiceSettings->creditor_name) !== ''
+                ? $invoiceSettings->creditor_name
+                : (string) config('app.name');
+            $associationUrl = (string) config('app.url');
+            $associationDomain = parse_url($associationUrl, PHP_URL_HOST);
+
+            if (! is_string($associationDomain) || $associationDomain === '') {
+                $associationDomain = trim((string) preg_replace('#^https?://#i', '', $associationUrl), '/');
+            }
+
+            $street = trim(implode(' ', array_filter([
+                $invoiceSettings->creditor_street,
+                $invoiceSettings->creditor_building_number,
+            ])));
+            $city = trim(implode(' ', array_filter([
+                $invoiceSettings->creditor_postal_code,
+                $invoiceSettings->creditor_city,
+            ])));
+
+            $viewData += [
+                'associationName' => $associationName,
+                'associationDomain' => $associationDomain,
+                'associationCity' => $invoiceSettings->creditor_city,
+                'officialAddress' => array_values(array_filter([
+                    $associationName,
+                    trim($invoiceSettings->creditor_care_of) !== '' ? 'c/o '.$invoiceSettings->creditor_care_of : null,
+                    $street !== '' ? $street : null,
+                    $city !== '' ? $city : null,
+                ], fn (mixed $line): bool => is_string($line) && trim($line) !== '')),
+                'mailFromAddress' => (string) config('mail.from.address'),
+                'eventDate' => $event->starts_at?->format('d.m.Y') ?? '',
+                'eventStartTime' => $event->starts_at?->format('G:i') ?? '',
+                'eventEndTime' => $event->ends_at?->format('G:i') ?? '',
+                'logoData' => base64_encode($logoData),
+                'qrCodeDataUri' => $this->qrCodeDataUri(),
+            ];
+        }
+
+        /** @var DomPdfWrapper $pdf */
+        $pdf = Pdf::loadView($type->view(), $viewData)
+            ->setPaper($type->paper(), 'portrait');
+
+        $filename = sprintf(
+            '%s_%s_%s_%s.pdf',
+            Str::slug($event->slug),
+            Str::of($athlete->privacy_name)->replaceMatches('/[^\pL\pN]+/u', '_')->trim('_'),
+            Str::of($athlete->public_id_string)->replaceMatches('/[^A-Za-z0-9-]+/', '_')->trim('_'),
+            $type->filenameSuffix(),
+        );
 
         return [
             'pdf' => $pdf,
@@ -28,22 +99,16 @@ class AthleteDocumentService
         ];
     }
 
-    /**
-     * @return array{pdf:PDF,filename:string}
-     */
-    // Service currently has no production call site; kept for planned relaunch of athlete documents.
-    // TODO(dead-code): Remove ignore when personalized flyer flow is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
-    public function buildPersonalizedFlyer(ExternalUser $athlete): array
+    protected function qrCodeDataUri(): string
     {
-        $filename = $athlete->first_name.'_'.$athlete->last_name.'_Flyer.pdf';
-        /** @var PDF $pdf */
-        $pdf = resolve('dompdf.wrapper')->loadView('printables.athlete_personalized_flyer', ['athlete' => $athlete])
-            ->setPaper('a5', 'portrait');
+        $qrCode = new QrCode(
+            data: route('portal.dashboard'),
+            errorCorrectionLevel: ErrorCorrectionLevel::Low,
+            size: 100,
+            margin: 0,
+            foregroundColor: new Color(27, 46, 71),
+        );
 
-        return [
-            'pdf' => $pdf,
-            'filename' => $filename,
-        ];
+        return (new PngWriter)->write($qrCode)->getDataUri();
     }
 }

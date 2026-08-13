@@ -3,10 +3,15 @@
 use App\Components\AdminPersonTable;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
+use App\Models\Partner;
+use App\Models\User;
 use App\Settings\EventSettings;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+
+use function Pest\Laravel\actingAs;
 
 it('renders athlete and donor tables with their role labels', function (string $role, string $label): void {
     Livewire::test(AdminPersonTable::class, ['role' => $role])
@@ -71,6 +76,67 @@ it('filters unique athletes by event and shows their linked events', function ()
         ->set('eventSlug', $event2026->slug)
         ->assertSee($bothEvents->first_name)
         ->assertDontSee($only2025->first_name);
+});
+
+it('shows selected partner and public ID for athletes', function (): void {
+    $event = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'Test Partner']);
+    $athlete = ExternalUser::factory()->asAthlete($event, [
+        'partner_id' => $partner->id,
+    ])->create([
+        'public_id' => '4WUFNB',
+    ]);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee('Benefizpartner:in')
+        ->assertSee('Test Partner')
+        ->assertDontSee('4WU-FNB')
+        ->call('toggleColumn', 'public_id_string')
+        ->assertSee('4WU-FNB');
+});
+
+it('shows equal split for athletes without a selected partner', function (): void {
+    $event = DonationEvent::factory()->create();
+    $athlete = ExternalUser::factory()->asAthlete($event, [
+        'partner_id' => null,
+    ])->create();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee(__('app.equal_split_full'));
+});
+
+it('searches athletes by public ID and selected partner', function (): void {
+    $event = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'Search Partner']);
+    $matchingAthlete = ExternalUser::factory()->asAthlete($event, ['partner_id' => $partner->id])->create([
+        'first_name' => 'Matching Athlete',
+        'public_id' => '4WUFNB',
+    ]);
+    $otherAthlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Other Athlete']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->set('search', '4WUFNB')
+        ->assertSee($matchingAthlete->first_name)
+        ->assertDontSee($otherAthlete->first_name)
+        ->set('search', 'Search Partner')
+        ->assertSee($matchingAthlete->first_name)
+        ->assertDontSee($otherAthlete->first_name);
+});
+
+it('sorts athletes by selected partner', function (): void {
+    $event = DonationEvent::factory()->create();
+    $alphaPartner = Partner::factory()->create(['name' => 'Alpha Partner']);
+    $betaPartner = Partner::factory()->create(['name' => 'Beta Partner']);
+    ExternalUser::factory()->asAthlete($event, ['partner_id' => $betaPartner->id])->create(['first_name' => 'Beta Athlete']);
+    ExternalUser::factory()->asAthlete($event, ['partner_id' => $alphaPartner->id])->create(['first_name' => 'Alpha Athlete']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('sortBy', 'partner')
+        ->assertSeeInOrder(['Alpha Partner', 'Beta Partner']);
 });
 
 it('filters donors through the athlete registration event', function (): void {
@@ -160,4 +226,104 @@ it('shows all people when the event filter is explicitly empty', function (): vo
         ->test(AdminPersonTable::class, ['role' => 'athlete'])
         ->assertSet('eventSlug', '')
         ->assertSee('Visible Athlete');
+});
+
+it('explains why athlete documents require one selected event', function (): void {
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', '')
+        ->assertSee('Für Dokumente bitte genau einen Anlass auswählen.')
+        ->assertSee('Willkommensbrief')
+        ->assertSee('Personalisierter Flyer')
+        ->assertSee('Alle Sportler:innen')
+        ->assertSee('Ausgewählte Sportler:innen')
+        ->assertSee('Dokumente werden erstellt...');
+});
+
+it('downloads a flyer for an athlete in the selected event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create([
+        'first_name' => 'Peter',
+        'last_name' => 'Muster',
+        'public_id' => '4WUFNB',
+    ]);
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('downloadAthleteDocument', $athlete->id, 'personalized-flyer')
+        ->assertFileDownloaded('2026_Peter_M_4WU-FNB_Personalisierter_Flyer.pdf');
+});
+
+it('downloads selected athlete flyers as an event-scoped archive', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$athlete->id])
+        ->call('downloadSelectedAthleteDocuments', 'personalized-flyer')
+        ->assertFileDownloaded('2026_Personalisierte_Flyer.zip');
+});
+
+it('downloads all athlete flyers for the selected event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('downloadAllAthleteDocuments', 'personalized-flyer')
+        ->assertFileDownloaded('2026_Personalisierte_Flyer.zip');
+});
+
+it('does not download athlete documents without a selected event', function (): void {
+    $athlete = ExternalUser::factory()->asAthlete()->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', '')
+        ->call('downloadAthleteDocument', $athlete->id, 'personalized-flyer')
+        ->assertNoFileDownloaded();
+});
+
+it('does not start a second athlete document archive while one is running', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+    $lock = Cache::lock('admin-athlete-document-download:'.auth()->id(), 600);
+    expect($lock->get())->toBeTrue();
+
+    try {
+        Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+            ->set('eventSlug', $event->slug)
+            ->set('checkboxValues', [$athlete->id])
+            ->call('downloadSelectedAthleteDocuments', 'personalized-flyer')
+            ->assertNoFileDownloaded();
+    } finally {
+        $lock->release();
+    }
+});
+
+it('does not start a single athlete document while another is running', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+    $lock = Cache::lock('admin-athlete-document-download:'.auth()->id(), 600);
+    expect($lock->get())->toBeTrue();
+
+    try {
+        Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+            ->set('eventSlug', $event->slug)
+            ->call('downloadAthleteDocument', $athlete->id, 'personalized-flyer')
+            ->assertNoFileDownloaded();
+    } finally {
+        $lock->release();
+    }
 });

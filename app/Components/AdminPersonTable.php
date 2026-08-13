@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Actions\DownloadAthleteDocumentAction;
+use App\Actions\DownloadAthleteDocumentArchiveAction;
+use App\Enums\AthleteDocumentType;
+use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Services\AthleteService;
 use App\Services\CurrentDonationEventService;
 use App\Services\DonorService;
+use Closure;
+use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -32,14 +41,22 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     protected CurrentDonationEventService $currentDonationEventService;
 
+    protected DownloadAthleteDocumentAction $downloadAthleteDocumentAction;
+
+    protected DownloadAthleteDocumentArchiveAction $downloadAthleteDocumentArchiveAction;
+
     public function boot(
         AthleteService $athleteService,
         DonorService $donorService,
         CurrentDonationEventService $currentDonationEventService,
+        DownloadAthleteDocumentAction $downloadAthleteDocumentAction,
+        DownloadAthleteDocumentArchiveAction $downloadAthleteDocumentArchiveAction,
     ): void {
         $this->athleteService = $athleteService;
         $this->donorService = $donorService;
         $this->currentDonationEventService = $currentDonationEventService;
+        $this->downloadAthleteDocumentAction = $downloadAthleteDocumentAction;
+        $this->downloadAthleteDocumentArchiveAction = $downloadAthleteDocumentArchiveAction;
     }
 
     public function mount(string $role = ''): void
@@ -78,13 +95,26 @@ class AdminPersonTable extends AbstractDatatableComponent
             'phone_number',
             'city',
             'country_of_residence',
+            'public_id',
+            'athleteRegistrations.partner.name',
         ];
     }
 
     protected function baseQuery(): Builder
     {
         if ($this->role === 'athlete') {
-            return $this->athleteService->all()->with('athleteRegistrations.donationEvent');
+            $query = $this->athleteService->all()->with(['athleteRegistrations.donationEvent', 'athleteRegistrations.partner']);
+            $partnerQuery = AthleteRegistration::query()
+                ->select('partners.name')
+                ->join('partners', 'partners.id', '=', 'athlete_registrations.partner_id')
+                ->whereColumn('athlete_registrations.external_user_id', 'external_users.id')
+                ->limit(1);
+
+            if ($this->eventSlug !== null && $this->eventSlug !== '') {
+                $partnerQuery->whereHas('donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
+            }
+
+            return $query->addSelect(['selected_partner_name' => $partnerQuery]);
         }
 
         return $this->donorService->all()->with('donationsAsDonor.athleteRegistration.donationEvent');
@@ -120,11 +150,17 @@ class AdminPersonTable extends AbstractDatatableComponent
      */
     protected function sortColumns(): array
     {
-        return [
+        $columns = [
             'first_name' => 'external_users.first_name',
             'last_name' => 'external_users.last_name',
             'email' => 'external_users.email',
         ];
+
+        if ($this->role === 'athlete') {
+            $columns['partner'] = 'selected_partner_name';
+        }
+
+        return $columns;
     }
 
     /**
@@ -132,15 +168,23 @@ class AdminPersonTable extends AbstractDatatableComponent
      */
     protected function columnDefinitions(): array
     {
-        return [
+        $columns = [
             'first_name' => ['label' => 'Vorname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Vorname'],
             'last_name' => ['label' => 'Nachname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Nachname'],
             'email' => ['label' => 'E-Mail', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'export_key' => 'E-Mail', 'tooltip' => true, 'truncate' => 52],
             'phone_number' => ['label' => 'Telefon', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Telefon'],
             'city' => ['label' => 'Ort', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Ort'],
             'country_of_residence' => ['label' => 'Wohnsitzland', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Wohnsitzland'],
-            'events' => ['label' => 'Anlässe', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Anlässe'],
         ];
+
+        if ($this->role === 'athlete') {
+            $columns['public_id_string'] = ['label' => 'Öffentliche ID', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-32', 'export_key' => 'Öffentliche ID'];
+            $columns['partner'] = ['label' => 'Benefizpartner:in', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Benefizpartner:in'];
+        }
+
+        $columns['events'] = ['label' => 'Anlässe', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Anlässe'];
+
+        return $columns;
     }
 
     /**
@@ -148,7 +192,7 @@ class AdminPersonTable extends AbstractDatatableComponent
      */
     protected function defaultVisibleColumns(): array
     {
-        return [
+        $columns = [
             'first_name',
             'last_name',
             'email',
@@ -156,6 +200,12 @@ class AdminPersonTable extends AbstractDatatableComponent
             'city',
             'events',
         ];
+
+        if ($this->role === 'athlete') {
+            array_splice($columns, 5, 0, ['partner']);
+        }
+
+        return $columns;
     }
 
     /**
@@ -172,6 +222,23 @@ class AdminPersonTable extends AbstractDatatableComponent
             ->unique('id')
             ->sortByDesc('starts_at')
             ->values();
+    }
+
+    public function selectedAthletePartner(ExternalUser $person): string
+    {
+        if ($this->role !== 'athlete' || $this->eventSlug === null || $this->eventSlug === '') {
+            return '-';
+        }
+
+        $registration = $person->athleteRegistrations->first(
+            fn (AthleteRegistration $registration): bool => $registration->donationEvent->slug === $this->eventSlug,
+        );
+
+        if (! $registration instanceof AthleteRegistration) {
+            return '-';
+        }
+
+        return $registration->partner->name ?? __('app.equal_split_full');
     }
 
     public function roleLabel(): string
@@ -240,12 +307,153 @@ class AdminPersonTable extends AbstractDatatableComponent
         return $this->exportRowsToDownload($rows, $this->exportPrefix().'_auswahl', $format);
     }
 
+    public function documentDownloadsEnabled(): bool
+    {
+        return $this->role === 'athlete' && $this->eventSlug !== null && $this->eventSlug !== '';
+    }
+
+    public function downloadAthleteDocument(int $externalUserId, string $type): ?HttpResponse
+    {
+        $event = $this->documentEvent();
+        $documentType = $this->documentType($type);
+
+        if (! $event instanceof DonationEvent || ! $documentType instanceof AthleteDocumentType) {
+            return null;
+        }
+
+        try {
+            return $this->withDocumentDownloadLock(fn (): HttpResponse => ($this->downloadAthleteDocumentAction)($event, $externalUserId, $documentType));
+        } catch (ModelNotFoundException) {
+            $this->toastDocumentError('Die Sportler:in wurde im ausgewählten Anlass nicht gefunden.');
+
+            return null;
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            $this->toastDocumentError($invalidArgumentException->getMessage());
+
+            return null;
+        }
+    }
+
+    public function downloadAllAthleteDocuments(string $type): ?HttpResponse
+    {
+        return $this->downloadAthleteDocumentArchive($type);
+    }
+
+    public function downloadSelectedAthleteDocuments(string $type): ?HttpResponse
+    {
+        $selectedIds = $this->selectedIds();
+
+        if ($selectedIds === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine Sportler:in aus.');
+
+            return null;
+        }
+
+        return $this->downloadAthleteDocumentArchive($type, $selectedIds);
+    }
+
+    /**
+     * @param  array<int, int>|null  $externalUserIds
+     */
+    protected function downloadAthleteDocumentArchive(string $type, ?array $externalUserIds = null): ?HttpResponse
+    {
+        $event = $this->documentEvent();
+        $documentType = $this->documentType($type);
+
+        if (! $event instanceof DonationEvent || ! $documentType instanceof AthleteDocumentType) {
+            return null;
+        }
+
+        try {
+            return $this->withDocumentDownloadLock(fn (): HttpResponse => ($this->downloadAthleteDocumentArchiveAction)($event, $documentType, $externalUserIds));
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            $this->toastDocumentError($invalidArgumentException->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * @param  Closure():HttpResponse  $download
+     */
+    protected function withDocumentDownloadLock(Closure $download): ?HttpResponse
+    {
+        $lock = Cache::lock('admin-athlete-document-download:'.Auth::id(), 600);
+
+        if (! $lock->get()) {
+            Flux::toast(
+                heading: 'Dokumente werden bereits erstellt',
+                text: 'Bitte warte, bis der aktuelle Download abgeschlossen ist.',
+                variant: 'warning',
+            );
+
+            return null;
+        }
+
+        try {
+            return $download();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    protected function documentEvent(): ?DonationEvent
+    {
+        $this->ensureAuthenticated();
+
+        if (! $this->documentDownloadsEnabled()) {
+            Flux::toast(
+                heading: 'Anlass auswählen',
+                text: 'Dokumente können nur für einen ausgewählten Anlass erstellt werden.',
+                variant: 'warning',
+            );
+
+            return null;
+        }
+
+        $event = DonationEvent::query()->where('slug', $this->eventSlug)->first();
+
+        if ($event instanceof DonationEvent) {
+            return $event;
+        }
+
+        Flux::toast(
+            heading: 'Anlass nicht gefunden',
+            text: 'Der ausgewählte Anlass ist nicht mehr verfügbar.',
+            variant: 'danger',
+        );
+
+        return null;
+    }
+
+    protected function documentType(string $type): ?AthleteDocumentType
+    {
+        $documentType = AthleteDocumentType::tryFrom($type);
+
+        if ($documentType instanceof AthleteDocumentType) {
+            return $documentType;
+        }
+
+        Flux::toast(
+            heading: 'Ungültiges Dokument',
+            text: 'Dieser Dokumenttyp ist nicht verfügbar.',
+            variant: 'danger',
+        );
+
+        return null;
+    }
+
+    protected function toastDocumentError(string $text): void
+    {
+        Flux::toast(heading: 'Dokumente nicht erstellt', text: $text, variant: 'danger');
+    }
+
     /**
      * @return array<string, scalar|null>
      */
     protected function exportRow(mixed $row): array
     {
-        return [
+        $export = [
             'Vorname' => data_get($row, 'first_name'),
             'Nachname' => data_get($row, 'last_name'),
             'E-Mail' => data_get($row, 'email'),
@@ -254,6 +462,13 @@ class AdminPersonTable extends AbstractDatatableComponent
             'Wohnsitzland' => data_get($row, 'country_of_residence'),
             'Anlässe' => $row instanceof ExternalUser ? $this->linkedEvents($row)->pluck('slug')->implode(', ') : '',
         ];
+
+        if ($this->role === 'athlete' && $row instanceof ExternalUser) {
+            $export['Öffentliche ID'] = data_get($row, 'public_id_string');
+            $export['Benefizpartner:in'] = $this->selectedAthletePartner($row);
+        }
+
+        return $export;
     }
 
     protected function exportPrefix(): string

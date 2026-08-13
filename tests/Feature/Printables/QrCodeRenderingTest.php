@@ -4,24 +4,8 @@ use App\Models\AthleteRegistration;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
-use Illuminate\Foundation\Vite as FoundationVite;
-use Illuminate\Support\Facades\Vite;
-use Illuminate\Support\HtmlString;
 
 it('renders athlete welcome letter with embedded png qr code', function (): void {
-    Vite::swap(new class extends FoundationVite
-    {
-        public function __invoke($entrypoints, $buildDirectory = null)
-        {
-            return new HtmlString('');
-        }
-
-        public function asset($asset, $buildDirectory = null)
-        {
-            return resource_path('images/letterhead_hfm.svg');
-        }
-    });
-
     $partner = Partner::factory()->create(['name' => 'Brühlgut Stiftung']);
     $sportType = SportType::create(['name' => 'Laufen']);
 
@@ -46,8 +30,25 @@ it('renders athlete welcome letter with embedded png qr code', function (): void
     ]);
     $athlete->setRelation('partner', $partner);
     $athlete->setRelation('sportType', $sportType);
+    $athlete->setRelation('externalUser', $athleteIdentity);
+    $athlete->setRelation('donationEvent', $athlete->donationEvent);
 
-    $html = view('printables.athlete_welcome_letter', ['athlete' => $athlete])->render();
+    $html = view('printables.athlete_welcome_letter', [
+        'registration' => $athlete,
+        'athlete' => $athleteIdentity,
+        'event' => $athlete->donationEvent,
+        'associationName' => 'Verein für Menschen',
+        'associationDomain' => 'fuer-menschen.ch',
+        'associationCity' => 'Winterthur',
+        'officialAddress' => ['Verein für Menschen', 'c/o Kai Frehner', 'Rössligasse 6', '8400 Winterthur'],
+        'mailFromAddress' => 'info@fuer-menschen.ch',
+        'partnerName' => 'Brühlgut Stiftung',
+        'eventDate' => '12.09.2026',
+        'eventStartTime' => '11:00',
+        'eventEndTime' => '16:00',
+        'logoData' => base64_encode(file_get_contents(resource_path('images/logo_light.svg'))),
+        'qrCodeDataUri' => 'data:image/png;base64,'.base64_encode('png'),
+    ])->render();
 
     preg_match('/<img src="(data:image\/png;base64,[^"]+)" alt="QR Code"\s*\/>/', $html, $matches);
 
