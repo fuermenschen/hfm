@@ -8,8 +8,8 @@
         .name {
             position: absolute;
             width: 4.5cm;
-            top: 16.7cm;
-            left: 3.25cm;
+            top: 17.1cm;
+            left: 3.35cm;
             font-size: 14px;
             font-weight: bold;
         }
@@ -17,8 +17,8 @@
         .partner {
             position: absolute;
             width: 5.5cm;
-            top: 16.7cm;
-            left: 8.3cm;
+            top: 17.1cm;
+            left: 8.4cm;
             font-size: 14px;
             font-weight: bold;
         }
