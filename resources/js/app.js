@@ -89,9 +89,13 @@ function prepareStoryFile(container, variant) {
             state.readyFiles.set(variant, file);
             const preview = container.querySelector(`[data-story-preview="${variant}"]`);
             if (preview) {
-                preview.src = URL.createObjectURL(file);
-                preview.classList.remove("hidden");
-                container.querySelector(`[data-story-preview-skeleton="${variant}"]`)?.setAttribute("hidden", "hidden");
+                const previewUrl = URL.createObjectURL(file);
+                state.previewUrls.set(variant, previewUrl);
+                preview.src = previewUrl;
+                requestAnimationFrame(() => preview.classList.remove("opacity-0"));
+                const skeleton = container.querySelector(`[data-story-preview-skeleton="${variant}"]`);
+                skeleton?.classList.add("opacity-0");
+                window.setTimeout(() => skeleton?.setAttribute("hidden", "hidden"), 300);
             }
 
             return file;
@@ -128,6 +132,12 @@ function selectStoryVariant(container, variant) {
         .catch(() => setStoryShareStatus(container, "Bild konnte nicht vorbereitet werden. Bitte herunterladen."));
 }
 
+function cleanupStoryShare(scope = document) {
+    scope.querySelectorAll("[data-story-share]").forEach((container) => {
+        container.storyShareState?.previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    });
+}
+
 function initStoryShare(scope = document) {
     scope.querySelectorAll("[data-story-share]").forEach((container) => {
         if (container.dataset.storyShareInitialized === "1") {
@@ -135,7 +145,7 @@ function initStoryShare(scope = document) {
         }
 
         container.dataset.storyShareInitialized = "1";
-        container.storyShareState = { files: new Map(), readyFiles: new Map(), variant: "light" };
+        container.storyShareState = { files: new Map(), readyFiles: new Map(), previewUrls: new Map(), variant: "light" };
         container.querySelectorAll("[data-story-variant]").forEach((button) => {
             button.addEventListener("click", () => selectStoryVariant(container, button.dataset.storyVariant));
         });
@@ -263,7 +273,9 @@ document.addEventListener("click", (event) => {
 
     const container = document.getElementById(trigger.dataset.storyShareOpen);
     if (container?.storyShareState) {
+        setStoryShareStatus(container, "Bilder werden vorbereitet. Das kann einen Moment dauern.");
         Promise.all([prepareStoryFile(container, "light"), prepareStoryFile(container, "dark")])
+            .then(() => setStoryShareStatus(container, "Bilder sind bereit zum Teilen."))
             .catch(() => setStoryShareStatus(container, "Bilder konnten nicht vorbereitet werden. Bitte versuche es erneut."));
         selectStoryVariant(container, "light");
     }
@@ -272,6 +284,8 @@ document.addEventListener("click", (event) => {
 initStoryShare();
 initShareTexts();
 initExpandableComments();
+
+document.addEventListener("livewire:navigating", () => cleanupStoryShare());
 
 document.addEventListener("livewire:navigated", () => {
     initHeroLqip();

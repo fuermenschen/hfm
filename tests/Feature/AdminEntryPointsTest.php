@@ -1,6 +1,7 @@
 <?php
 
 use App\Components\AdminAssociationDonationInvoiceForm;
+use App\Components\AdminNormalizeSvgFiles;
 use App\Components\AdminPersonTable;
 use App\Models\User;
 use Livewire\Livewire;
@@ -31,7 +32,9 @@ it('renders tools page with association donation invoice entrypoint', function (
 
     get('/admin/tools')
         ->assertSuccessful()
-        ->assertSee('Spendenrechnung erstellen');
+        ->assertSee('Spendenrechnung erstellen')
+        ->assertSee('SVGs normalisieren');
 
     Livewire::test(AdminAssociationDonationInvoiceForm::class)->assertStatus(200);
+    Livewire::test(AdminNormalizeSvgFiles::class)->assertSuccessful();
 });

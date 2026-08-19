@@ -6,6 +6,7 @@ namespace App\Components;
 
 use App\Actions\DownloadAthleteDocumentAction;
 use App\Actions\DownloadAthleteDocumentArchiveAction;
+use App\Actions\DownloadAthleteStoryImageArchiveAction;
 use App\Enums\AthleteDocumentType;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
@@ -45,18 +46,22 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     protected DownloadAthleteDocumentArchiveAction $downloadAthleteDocumentArchiveAction;
 
+    protected DownloadAthleteStoryImageArchiveAction $downloadAthleteStoryImageArchiveAction;
+
     public function boot(
         AthleteService $athleteService,
         DonorService $donorService,
         CurrentDonationEventService $currentDonationEventService,
         DownloadAthleteDocumentAction $downloadAthleteDocumentAction,
         DownloadAthleteDocumentArchiveAction $downloadAthleteDocumentArchiveAction,
+        DownloadAthleteStoryImageArchiveAction $downloadAthleteStoryImageArchiveAction,
     ): void {
         $this->athleteService = $athleteService;
         $this->donorService = $donorService;
         $this->currentDonationEventService = $currentDonationEventService;
         $this->downloadAthleteDocumentAction = $downloadAthleteDocumentAction;
         $this->downloadAthleteDocumentArchiveAction = $downloadAthleteDocumentArchiveAction;
+        $this->downloadAthleteStoryImageArchiveAction = $downloadAthleteStoryImageArchiveAction;
     }
 
     public function mount(string $role = ''): void
@@ -365,6 +370,24 @@ class AdminPersonTable extends AbstractDatatableComponent
         return $this->downloadAthleteDocumentArchive($type, $selectedIds);
     }
 
+    public function downloadAllAthleteStoryImages(): ?HttpResponse
+    {
+        return $this->downloadAthleteStoryImageArchive();
+    }
+
+    public function downloadSelectedAthleteStoryImages(): ?HttpResponse
+    {
+        $selectedIds = $this->selectedIds();
+
+        if ($selectedIds === []) {
+            $this->toastNoSelection('Bitte wähle mindestens eine Sportler:in aus.');
+
+            return null;
+        }
+
+        return $this->downloadAthleteStoryImageArchive($selectedIds);
+    }
+
     /**
      * @param  array<int, int>|null  $externalUserIds
      */
@@ -379,6 +402,26 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         try {
             return $this->withDocumentDownloadLock(fn (): HttpResponse => ($this->downloadAthleteDocumentArchiveAction)($event, $documentType, $externalUserIds));
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            $this->toastDocumentError($invalidArgumentException->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * @param  array<int, int>|null  $externalUserIds
+     */
+    protected function downloadAthleteStoryImageArchive(?array $externalUserIds = null): ?HttpResponse
+    {
+        $event = $this->documentEvent();
+
+        if (! $event instanceof DonationEvent) {
+            return null;
+        }
+
+        try {
+            return $this->withDocumentDownloadLock(fn (): HttpResponse => ($this->downloadAthleteStoryImageArchiveAction)($event, $externalUserIds));
         } catch (\InvalidArgumentException $invalidArgumentException) {
             $this->toastDocumentError($invalidArgumentException->getMessage());
 

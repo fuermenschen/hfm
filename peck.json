@@ -71,7 +71,9 @@
             "participations",
             "svg",
             "vbk",
-            "windlicht"
+            "windlicht",
+            "normalizer",
+            "imagick"
         ],
         "paths": []
     }

@@ -9,7 +9,10 @@ use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\Partner;
 use App\Support\AdminFiles\AdminFileStorage;
+use App\Support\AdminFiles\SvgNormalizer;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Imagick\Driver;
 use Intervention\Image\Format;
@@ -22,7 +25,10 @@ class AthleteStoryImageService
 
     private const int TITLE_MAX_WIDTH = 920;
 
-    public function __construct(private readonly AdminFileStorage $adminFileStorage) {}
+    public function __construct(
+        private readonly AdminFileStorage $adminFileStorage,
+        private readonly SvgNormalizer $svgNormalizer,
+    ) {}
 
     public function authorizePortalAccess(AthleteRegistration $registration): void
     {
@@ -48,14 +54,27 @@ class AthleteStoryImageService
     public function build(AthleteRegistration $registration, StoryImageVariant $variant): array
     {
         $registration->loadMissing(['donationEvent', 'externalUser']);
+        $partnerLogos = $this->partnerLogos($registration->donationEvent, $variant);
+        $baseCacheKey = $this->baseCacheKey($registration->donationEvent, $variant, $partnerLogos);
 
-        $event = $registration->donationEvent;
-        $athlete = $registration->externalUser;
-        $filename = sprintf(
-            'story_single_%s_%s.jpg',
-            $variant->value,
-            $athlete->public_id_string,
+        return Cache::rememberForever(
+            $this->cacheKey($registration, $variant, $baseCacheKey),
+            fn (): array => $this->renderPersonalized(
+                $registration,
+                $variant,
+                Cache::rememberForever(
+                    $baseCacheKey,
+                    fn (): string => $this->renderBase($registration->donationEvent, $variant, $partnerLogos),
+                ),
+            ),
         );
+    }
+
+    /**
+     * @param  array<int, array{path:string,x:int,y:int,width:int}>  $partnerLogos
+     */
+    protected function renderBase(DonationEvent $event, StoryImageVariant $variant, array $partnerLogos): string
+    {
         $manager = new ImageManager(Driver::class);
         $image = $manager->createImage(1080, 1920)->fill($variant->backgroundColor());
         $font = resource_path('fonts/darkmode_on_');
@@ -81,17 +100,8 @@ class AthleteStoryImageService
         $this->drawText($image, 'Wähle in der Liste', $variant->textColor(), $font.'light.otf', 45, 350, 1370, 'left');
         $this->drawText($image, 'meinen Namen aus:', $variant->textColor(), $font.'light.otf', 45, 350, 1440, 'left');
         $this->drawRoundedBar($image);
-        $this->drawText(
-            $image,
-            $athlete->privacy_name.' ('.$athlete->public_id_string.')',
-            '#f8fafc',
-            $font.'medium.otf',
-            50,
-            self::CENTER_X,
-            1576,
-        );
 
-        foreach ($this->partnerLogos($event, $variant) as $partnerLogo) {
+        foreach ($partnerLogos as $partnerLogo) {
             $partnerLogoImage = $this->decodeSvg($manager, $partnerLogo['path'], $variant->backgroundColor())
                 ->scale(width: $partnerLogo['width'] - 16, height: 160);
             $image->insert(
@@ -101,14 +111,105 @@ class AthleteStoryImageService
             );
         }
 
+        return $image->encodeUsingFormat(Format::PNG)->toString();
+    }
+
+    /**
+     * @return array{contents:string,filename:string}
+     */
+    protected function renderPersonalized(AthleteRegistration $registration, StoryImageVariant $variant, string $base): array
+    {
+        $athlete = $registration->externalUser;
+        $manager = new ImageManager(Driver::class);
+        $image = $manager->decodeBinary($base);
+        $this->drawText(
+            $image,
+            $athlete->privacy_name.' ('.$athlete->public_id_string.')',
+            '#f8fafc',
+            resource_path('fonts/darkmode_on_medium.otf'),
+            50,
+            self::CENTER_X,
+            1576,
+        );
+
         // 4:4:4 sampling keeps thin logo strokes crisp; 4:2:0 blurs them.
         $image->core()->native()->setImageProperty('jpeg:sampling-factor', '1x1');
         $contents = $image->encodeUsingFormat(Format::JPEG, quality: 95)->toString();
 
         return [
             'contents' => $contents,
-            'filename' => $filename,
+            'filename' => sprintf('story_single_%s_%s.jpg', $variant->value, $athlete->public_id_string),
         ];
+    }
+
+    /**
+     * @param  array<int, array{path:string,x:int,y:int,width:int}>  $partnerLogos
+     */
+    protected function baseCacheKey(DonationEvent $event, StoryImageVariant $variant, array $partnerLogos): string
+    {
+        $fingerprint = [
+            'version' => 'story-image-base-v1',
+            'variant' => $variant->value,
+            'event' => [
+                'id' => $event->id,
+                'title' => $event->title,
+                'starts_at' => $event->starts_at?->toAtomString(),
+                'location_city' => $event->location_city,
+            ],
+            'host' => $this->appHost(),
+            'assets' => [
+                'logo' => $this->fileHash($variant->logoPath()),
+                'fonts' => collect(['light.otf', 'medium.otf', 'xbold.otf'])
+                    ->mapWithKeys(fn (string $font): array => [$font => $this->fileHash(resource_path('fonts/darkmode_on_'.$font))])
+                    ->all(),
+                'partners' => collect($partnerLogos)
+                    ->map(fn (array $logo): array => [
+                        'hash' => $this->fileHash($logo['path']),
+                        'x' => $logo['x'],
+                        'y' => $logo['y'],
+                        'width' => $logo['width'],
+                    ])
+                    ->all(),
+            ],
+            'render' => [
+                'width' => 1080,
+                'height' => 1920,
+                'format' => 'png',
+            ],
+        ];
+
+        return 'story-image-base:'.hash('sha256', json_encode($fingerprint, JSON_THROW_ON_ERROR));
+    }
+
+    protected function cacheKey(AthleteRegistration $registration, StoryImageVariant $variant, string $baseCacheKey): string
+    {
+        $athlete = $registration->externalUser;
+        $fingerprint = [
+            'version' => 'story-image-personalized-v1',
+            'base' => $baseCacheKey,
+            'variant' => $variant->value,
+            'registration' => [
+                'id' => $registration->id,
+                'privacy_name' => $athlete->privacy_name,
+                'public_id' => $athlete->public_id_string,
+            ],
+            'font' => $this->fileHash(resource_path('fonts/darkmode_on_medium.otf')),
+            'render' => [
+                'jpeg_quality' => 95,
+                'jpeg_sampling_factor' => '1x1',
+            ],
+        ];
+
+        return 'story-image:'.hash('sha256', json_encode($fingerprint, JSON_THROW_ON_ERROR));
+    }
+
+    protected function fileHash(string $path): string
+    {
+        $hash = hash_file('sha256', $path);
+
+        throw_unless(is_string($hash), \RuntimeException::class, 'Datei konnte nicht gehasht werden.');
+
+        return $hash;
     }
 
     protected function drawText(
@@ -265,31 +366,12 @@ class AthleteStoryImageService
         $svg = new \Imagick;
         $svg->setResolution(300, 300);
         $svg->setBackgroundColor(new \ImagickPixel('transparent'));
-        $svg->readImage($path);
+        $svg->readImageBlob($this->svgNormalizer->normalize(File::get($path)), $path);
         $svg->setIteratorIndex(0);
+        $svg->setImageBackgroundColor(new \ImagickPixel($backgroundColor));
+        $svg = $svg->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+        $svg->setImageAlphaChannel(\Imagick::ALPHACHANNEL_DEACTIVATE);
         $svg->setImageFormat('png');
-
-        $background = new \ImagickPixel($backgroundColor)->getColor();
-        $pixels = new \ImagickPixelIterator($svg);
-
-        foreach ($pixels as $row) {
-            foreach ($row as $pixel) {
-                $color = $pixel->getColor();
-                $alpha = $color['a'];
-                $pixel->setColor(sprintf(
-                    'rgb(%d,%d,%d)',
-                    round($color['r'] * $alpha + $background['r'] * (1 - $alpha)),
-                    round($color['g'] * $alpha + $background['g'] * (1 - $alpha)),
-                    round($color['b'] * $alpha + $background['b'] * (1 - $alpha)),
-                ));
-                $pixel->setColorValue(
-                    \Imagick::COLOR_ALPHA,
-                    1,
-                );
-            }
-
-            $pixels->syncIterator();
-        }
 
         return $manager->decode($svg->getImagesBlob());
     }

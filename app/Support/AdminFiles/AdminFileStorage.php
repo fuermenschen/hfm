@@ -10,17 +10,66 @@ use Illuminate\Support\Str;
 
 class AdminFileStorage
 {
-    public function __construct(protected ReferencedFileFinder $referencedFileFinder) {}
+    public function __construct(
+        protected ReferencedFileFinder $referencedFileFinder,
+        protected SvgNormalizer $svgNormalizer,
+    ) {}
 
     public function store(UploadedFile $file, string $directory = ''): string
     {
         $directory = $this->normalizeDirectory($directory);
         $filename = $this->availableFilename($directory, $this->safeFilename($file->getClientOriginalName()));
+        $path = $this->joinPath($directory, $filename);
+
+        if ($this->isSvg($path)) {
+            $contents = $file->get();
+
+            throw_if(! is_string($contents), \RuntimeException::class, 'SVG konnte nicht gelesen werden.');
+            throw_unless(Storage::disk('public')->put($path, $this->svgNormalizer->normalize($contents)), \RuntimeException::class, 'SVG konnte nicht gespeichert werden.');
+
+            return $path;
+        }
+
         $path = $file->storeAs($directory, $filename, 'public');
 
         throw_if(! is_string($path) || $path === '', \RuntimeException::class, 'Datei konnte nicht gespeichert werden.');
 
         return $path;
+    }
+
+    /**
+     * @return array{scanned:int,normalized:int,unchanged:int,failed:array<int, array{path:string,message:string}>}
+     */
+    public function normalizeSvgFiles(): array
+    {
+        $disk = Storage::disk('public');
+        $result = ['scanned' => 0, 'normalized' => 0, 'unchanged' => 0, 'failed' => []];
+
+        foreach ($disk->allFiles() as $path) {
+            if (! $this->isSvg($path)) {
+                continue;
+            }
+
+            $result['scanned']++;
+
+            try {
+                $contents = $disk->get($path);
+                $normalized = $this->svgNormalizer->normalize($contents);
+
+                if ($normalized === $contents) {
+                    $result['unchanged']++;
+
+                    continue;
+                }
+
+                throw_unless($disk->put($path, $normalized), \RuntimeException::class, 'SVG konnte nicht gespeichert werden.');
+                $result['normalized']++;
+            } catch (\Throwable $throwable) {
+                $result['failed'][] = ['path' => $path, 'message' => $throwable->getMessage()];
+            }
+        }
+
+        return $result;
     }
 
     public function createDirectory(string $directory, string $name): string
@@ -184,6 +233,11 @@ class AdminFileStorage
         $name = Str::slug($name) ?: 'file';
 
         return $extension === '' ? $name : $name.'.'.$extension;
+    }
+
+    protected function isSvg(string $path): bool
+    {
+        return strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'svg';
     }
 
     protected function safeDirectoryName(string $name): string

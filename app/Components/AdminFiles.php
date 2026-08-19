@@ -92,10 +92,18 @@ class AdminFiles extends Component
         $this->validate();
 
         try {
-            $path = $this->files()->store($this->file, $this->directory);
+            $directory = $this->files()->normalizeDirectory($this->directory);
         } catch (\InvalidArgumentException $invalidArgumentException) {
             throw ValidationException::withMessages([
                 'directory' => $invalidArgumentException->getMessage(),
+            ]);
+        }
+
+        try {
+            $path = $this->files()->store($this->file, $directory);
+        } catch (\InvalidArgumentException|\RuntimeException $exception) {
+            throw ValidationException::withMessages([
+                'file' => $exception->getMessage(),
             ]);
         }
 
