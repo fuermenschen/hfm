@@ -561,7 +561,7 @@ class AthleteRegistrationWizard extends Component
 
         foreach ([2, 7] as $days) {
             $externalUser->notify(
-                new AthleteRegistrationReminder($athleteRegistration, $externalUser->first_name)
+                new AthleteRegistrationReminder((int) $athleteRegistration->getKey(), $externalUser->first_name)
                     ->delay(now()->addDays($days))
             );
         }

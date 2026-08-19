@@ -15,7 +15,7 @@ class DonorRegistrationReminder extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public readonly Donation $donation,
+        public readonly int $donationId,
         public readonly string $firstName,
     ) {}
 
@@ -30,7 +30,7 @@ class DonorRegistrationReminder extends Notification implements ShouldQueue
     public function shouldSend(object $notifiable, string $channel): bool
     {
         return Donation::query()
-            ->whereKey($this->donation->getKey())
+            ->whereKey($this->donationId)
             ->where('verified', false)
             ->exists();
     }

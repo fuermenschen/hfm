@@ -15,7 +15,7 @@ it('suppresses athlete reminders after registration confirmation', function (): 
         'external_user_id' => $externalUser->id,
         'verified' => false,
     ]);
-    $reminder = new AthleteRegistrationReminder($registration, $externalUser->first_name);
+    $reminder = new AthleteRegistrationReminder((int) $registration->getKey(), $externalUser->first_name);
 
     expect($reminder)
         ->toBeInstanceOf(ShouldQueue::class)
@@ -29,7 +29,7 @@ it('suppresses athlete reminders after registration confirmation', function (): 
 it('suppresses donor reminders after donation confirmation', function (): void {
     $externalUser = ExternalUser::factory()->create(['first_name' => 'Mira']);
     $donation = Donation::factory()->forDonorExternalUser($externalUser)->create(['verified' => false]);
-    $reminder = new DonorRegistrationReminder($donation, $externalUser->first_name);
+    $reminder = new DonorRegistrationReminder((int) $donation->getKey(), $externalUser->first_name);
 
     expect($reminder)
         ->toBeInstanceOf(ShouldQueue::class)
@@ -47,7 +47,7 @@ it('explains athlete confirmation and links to the portal', function (): void {
         'verified' => false,
     ]);
 
-    $mail = (new AthleteRegistrationReminder($registration, $externalUser->first_name))->toMail($externalUser);
+    $mail = (new AthleteRegistrationReminder((int) $registration->getKey(), $externalUser->first_name))->toMail($externalUser);
 
     expect($mail->subject)->toBe('Erinnerung: Bitte bestätige deine Sportler:innen-Anmeldung')
         ->and($mail->introLines)->toContain('Mit der Bestätigung stellen wir sicher, dass die Anmeldung wirklich von dir stammt. Ohne Bestätigung können Spender:innen dich nicht auswählen.')
@@ -59,7 +59,7 @@ it('explains donor confirmation and links to the portal', function (): void {
     $externalUser = ExternalUser::factory()->create(['first_name' => 'Mira']);
     $donation = Donation::factory()->forDonorExternalUser($externalUser)->create(['verified' => false]);
 
-    $mail = (new DonorRegistrationReminder($donation, $externalUser->first_name))->toMail($externalUser);
+    $mail = (new DonorRegistrationReminder((int) $donation->getKey(), $externalUser->first_name))->toMail($externalUser);
 
     expect($mail->subject)->toBe('Erinnerung: Bitte bestätige deine Spende')
         ->and($mail->introLines)->toContain('Mit der Bestätigung stellen wir sicher, dass die Spende wirklich von dir stammt. So verhindern wir, dass eine Rechnung an jemanden geschickt wird, der nicht spenden wollte.')

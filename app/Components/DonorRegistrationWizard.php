@@ -557,7 +557,7 @@ class DonorRegistrationWizard extends Component
 
         foreach ([2, 7] as $days) {
             $externalUser->notify(
-                new DonorRegistrationReminder($donation, $externalUser->first_name)
+                new DonorRegistrationReminder((int) $donation->getKey(), $externalUser->first_name)
                     ->delay(now()->addDays($days))
             );
         }

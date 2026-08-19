@@ -15,7 +15,7 @@ class AthleteRegistrationReminder extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public readonly AthleteRegistration $athleteRegistration,
+        public readonly int $athleteRegistrationId,
         public readonly string $firstName,
     ) {}
 
@@ -30,7 +30,7 @@ class AthleteRegistrationReminder extends Notification implements ShouldQueue
     public function shouldSend(object $notifiable, string $channel): bool
     {
         return AthleteRegistration::query()
-            ->whereKey($this->athleteRegistration->getKey())
+            ->whereKey($this->athleteRegistrationId)
             ->where('verified', false)
             ->exists();
     }
