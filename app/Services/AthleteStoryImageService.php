@@ -55,26 +55,26 @@ class AthleteStoryImageService
     {
         $registration->loadMissing(['donationEvent', 'externalUser']);
         $partnerLogos = $this->partnerLogos($registration->donationEvent, $variant);
+        $baseCacheKey = $this->baseCacheKey($registration->donationEvent, $variant, $partnerLogos);
 
         return Cache::rememberForever(
-            $this->cacheKey($registration, $variant, $partnerLogos),
-            fn (): array => $this->render($registration, $variant, $partnerLogos),
+            $this->cacheKey($registration, $variant, $baseCacheKey),
+            fn (): array => $this->renderPersonalized(
+                $registration,
+                $variant,
+                Cache::rememberForever(
+                    $baseCacheKey,
+                    fn (): string => $this->renderBase($registration->donationEvent, $variant, $partnerLogos),
+                ),
+            ),
         );
     }
 
     /**
      * @param  array<int, array{path:string,x:int,y:int,width:int}>  $partnerLogos
-     * @return array{contents:string,filename:string}
      */
-    protected function render(AthleteRegistration $registration, StoryImageVariant $variant, array $partnerLogos): array
+    protected function renderBase(DonationEvent $event, StoryImageVariant $variant, array $partnerLogos): string
     {
-        $event = $registration->donationEvent;
-        $athlete = $registration->externalUser;
-        $filename = sprintf(
-            'story_single_%s_%s.jpg',
-            $variant->value,
-            $athlete->public_id_string,
-        );
         $manager = new ImageManager(Driver::class);
         $image = $manager->createImage(1080, 1920)->fill($variant->backgroundColor());
         $font = resource_path('fonts/darkmode_on_');
@@ -100,15 +100,6 @@ class AthleteStoryImageService
         $this->drawText($image, 'Wähle in der Liste', $variant->textColor(), $font.'light.otf', 45, 350, 1370, 'left');
         $this->drawText($image, 'meinen Namen aus:', $variant->textColor(), $font.'light.otf', 45, 350, 1440, 'left');
         $this->drawRoundedBar($image);
-        $this->drawText(
-            $image,
-            $athlete->privacy_name.' ('.$athlete->public_id_string.')',
-            '#f8fafc',
-            $font.'medium.otf',
-            50,
-            self::CENTER_X,
-            1576,
-        );
 
         foreach ($partnerLogos as $partnerLogo) {
             $partnerLogoImage = $this->decodeSvg($manager, $partnerLogo['path'], $variant->backgroundColor())
@@ -120,33 +111,47 @@ class AthleteStoryImageService
             );
         }
 
+        return $image->encodeUsingFormat(Format::PNG)->toString();
+    }
+
+    /**
+     * @return array{contents:string,filename:string}
+     */
+    protected function renderPersonalized(AthleteRegistration $registration, StoryImageVariant $variant, string $base): array
+    {
+        $athlete = $registration->externalUser;
+        $manager = new ImageManager(Driver::class);
+        $image = $manager->decodeBinary($base);
+        $this->drawText(
+            $image,
+            $athlete->privacy_name.' ('.$athlete->public_id_string.')',
+            '#f8fafc',
+            resource_path('fonts/darkmode_on_medium.otf'),
+            50,
+            self::CENTER_X,
+            1576,
+        );
+
         // 4:4:4 sampling keeps thin logo strokes crisp; 4:2:0 blurs them.
         $image->core()->native()->setImageProperty('jpeg:sampling-factor', '1x1');
         $contents = $image->encodeUsingFormat(Format::JPEG, quality: 95)->toString();
 
         return [
             'contents' => $contents,
-            'filename' => $filename,
+            'filename' => sprintf('story_single_%s_%s.jpg', $variant->value, $athlete->public_id_string),
         ];
     }
 
     /**
      * @param  array<int, array{path:string,x:int,y:int,width:int}>  $partnerLogos
      */
-    protected function cacheKey(AthleteRegistration $registration, StoryImageVariant $variant, array $partnerLogos): string
+    protected function baseCacheKey(DonationEvent $event, StoryImageVariant $variant, array $partnerLogos): string
     {
-        $event = $registration->donationEvent;
-        $athlete = $registration->externalUser;
-
         $fingerprint = [
-            'version' => 'story-image-v1',
+            'version' => 'story-image-base-v1',
             'variant' => $variant->value,
-            'registration' => [
-                'id' => $registration->id,
-                'privacy_name' => $athlete->privacy_name,
-                'public_id' => $athlete->public_id_string,
-            ],
             'event' => [
+                'id' => $event->id,
                 'title' => $event->title,
                 'starts_at' => $event->starts_at?->toAtomString(),
                 'location_city' => $event->location_city,
@@ -169,6 +174,27 @@ class AthleteStoryImageService
             'render' => [
                 'width' => 1080,
                 'height' => 1920,
+                'format' => 'png',
+            ],
+        ];
+
+        return 'story-image-base:'.hash('sha256', json_encode($fingerprint, JSON_THROW_ON_ERROR));
+    }
+
+    protected function cacheKey(AthleteRegistration $registration, StoryImageVariant $variant, string $baseCacheKey): string
+    {
+        $athlete = $registration->externalUser;
+        $fingerprint = [
+            'version' => 'story-image-personalized-v1',
+            'base' => $baseCacheKey,
+            'variant' => $variant->value,
+            'registration' => [
+                'id' => $registration->id,
+                'privacy_name' => $athlete->privacy_name,
+                'public_id' => $athlete->public_id_string,
+            ],
+            'font' => $this->fileHash(resource_path('fonts/darkmode_on_medium.otf')),
+            'render' => [
                 'jpeg_quality' => 95,
                 'jpeg_sampling_factor' => '1x1',
             ],

@@ -40,12 +40,15 @@ it('generates event and athlete specific story images', function (): void {
     $service = app(AthleteStoryImageService::class);
     $image = $service->build($registration, StoryImageVariant::Light);
     $logosMethod = new ReflectionMethod(AthleteStoryImageService::class, 'partnerLogos');
+    $baseCacheKeyMethod = new ReflectionMethod(AthleteStoryImageService::class, 'baseCacheKey');
     $cacheKeyMethod = new ReflectionMethod(AthleteStoryImageService::class, 'cacheKey');
     $partnerLogos = $logosMethod->invoke($service, $event, StoryImageVariant::Light);
-    $cacheKey = $cacheKeyMethod->invoke($service, $registration, StoryImageVariant::Light, $partnerLogos);
+    $baseCacheKey = $baseCacheKeyMethod->invoke($service, $event, StoryImageVariant::Light, $partnerLogos);
+    $cacheKey = $cacheKeyMethod->invoke($service, $registration, StoryImageVariant::Light, $baseCacheKey);
 
     expect($image['filename'])->toBe('story_single_light_'.$athlete->public_id_string.'.jpg')
         ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920])
+        ->and(Cache::has($baseCacheKey))->toBeTrue()
         ->and(Cache::has($cacheKey))->toBeTrue();
 
     Cache::forever($cacheKey, ['contents' => 'cached-image', 'filename' => 'cached.jpg']);
@@ -57,9 +60,30 @@ it('generates event and athlete specific story images', function (): void {
 
     Storage::disk('public')->put('partners/bruehlgut_light.svg', '<svg xmlns="http://www.w3.org/2000/svg"/>');
     $changedPartnerLogos = $logosMethod->invoke($service, $event, StoryImageVariant::Light);
-    $changedCacheKey = $cacheKeyMethod->invoke($service, $registration, StoryImageVariant::Light, $changedPartnerLogos);
+    $changedBaseCacheKey = $baseCacheKeyMethod->invoke($service, $event, StoryImageVariant::Light, $changedPartnerLogos);
+    $changedCacheKey = $cacheKeyMethod->invoke($service, $registration, StoryImageVariant::Light, $changedBaseCacheKey);
 
-    expect($changedCacheKey)->not->toBe($cacheKey);
+    expect($changedBaseCacheKey)->not->toBe($baseCacheKey)
+        ->and($changedCacheKey)->not->toBe($cacheKey);
+});
+
+it('shares an event base image between athlete caches', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $firstRegistration = AthleteRegistration::factory()->forVerifiedEventUser($event, ExternalUser::factory()->create())->create();
+    $secondRegistration = AthleteRegistration::factory()->forVerifiedEventUser($event, ExternalUser::factory()->create())->create();
+    $service = app(AthleteStoryImageService::class);
+    $logosMethod = new ReflectionMethod(AthleteStoryImageService::class, 'partnerLogos');
+    $baseCacheKeyMethod = new ReflectionMethod(AthleteStoryImageService::class, 'baseCacheKey');
+    $cacheKeyMethod = new ReflectionMethod(AthleteStoryImageService::class, 'cacheKey');
+    $partnerLogos = $logosMethod->invoke($service, $event, StoryImageVariant::Light);
+    $baseCacheKey = $baseCacheKeyMethod->invoke($service, $event, StoryImageVariant::Light, $partnerLogos);
+
+    $service->build($firstRegistration, StoryImageVariant::Light);
+    $service->build($secondRegistration, StoryImageVariant::Light);
+
+    expect(Cache::has($baseCacheKey))->toBeTrue()
+        ->and($cacheKeyMethod->invoke($service, $firstRegistration, StoryImageVariant::Light, $baseCacheKey))
+        ->not->toBe($cacheKeyMethod->invoke($service, $secondRegistration, StoryImageVariant::Light, $baseCacheKey));
 });
 
 it('renders SVG logos without black pixels before scaling', function (): void {
