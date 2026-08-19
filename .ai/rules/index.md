@@ -4,5 +4,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| app/Notifications/** | .ai/rules/notifications.md |
 | **/*.php | .ai/rules/php-null-coalescing.md |
 | **/* | .ai/rules/no-ponytail-markers.md |
