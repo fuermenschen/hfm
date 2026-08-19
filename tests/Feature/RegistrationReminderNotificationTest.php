@@ -74,3 +74,8 @@ it('explains why initial confirmations are required', function (): void {
     expect($athleteMail->introLines)->toContain('Bitte öffne den unten stehenden Link und bestätige deine Registrierung. Damit stellen wir sicher, dass die Anmeldung wirklich von dir stammt.')
         ->and($donorMail->introLines)->toContain('Mit deiner Bestätigung stellen wir sicher, dass die Spende wirklich von dir stammt und keine Rechnung an jemanden geschickt wird, der nicht spenden wollte.');
 });
+
+it('sends athlete confirmation synchronously', function (): void {
+    expect(new ConfirmAthleteRegistration('Mira', 'https://example.com/confirm'))
+        ->not->toBeInstanceOf(ShouldQueue::class);
+});
