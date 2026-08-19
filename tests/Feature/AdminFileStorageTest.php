@@ -25,9 +25,10 @@ it('stores arbitrary files in nested directories', function (): void {
 
 it('suffixes duplicate filenames', function (): void {
     $storage = app(AdminFileStorage::class);
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg"/> ';
 
-    $firstPath = $storage->store(UploadedFile::fake()->create('logo.svg'), 'partners');
-    $secondPath = $storage->store(UploadedFile::fake()->create('logo.svg'), 'partners');
+    $firstPath = $storage->store(UploadedFile::fake()->createWithContent('logo.svg', $svg), 'partners');
+    $secondPath = $storage->store(UploadedFile::fake()->createWithContent('logo.svg', $svg), 'partners');
 
     expect($firstPath)->toBe('partners/logo.svg')
         ->and($secondPath)->toBe('partners/logo-2.svg');

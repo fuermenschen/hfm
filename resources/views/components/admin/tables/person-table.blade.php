@@ -20,11 +20,11 @@
                                     size="sm"
                                     icon="document-text"
                                     wire:loading.attr="disabled"
-                                    wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments"
+                                    wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
                                     :disabled="! $this->documentDownloadsEnabled()"
                                 >
-                                    <span wire:loading.remove wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments">Dokumente</span>
-                                    <span wire:loading wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments">Wird erstellt...</span>
+                                    <span wire:loading.remove wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages">Dokumente</span>
+                                    <span wire:loading wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages">Wird erstellt...</span>
                                 </flux:button>
                                 <flux:menu>
                                     <flux:menu.group heading="Willkommensbrief">
@@ -67,6 +67,26 @@
                                             Ausgewählte Sportler:innen
                                         </flux:menu.item>
                                     </flux:menu.group>
+                                    <flux:menu.group heading="Story-Bilder">
+                                        <flux:menu.item
+                                            wire:click="downloadAllAthleteStoryImages"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadAllAthleteStoryImages"
+                                            icon="photo"
+                                            :disabled="! $this->documentDownloadsEnabled()"
+                                        >
+                                            Alle Sportler:innen
+                                        </flux:menu.item>
+                                        <flux:menu.item
+                                            wire:click="downloadSelectedAthleteStoryImages"
+                                            wire:loading.attr="disabled"
+                                            wire:target="downloadSelectedAthleteStoryImages"
+                                            icon="check-circle"
+                                            :disabled="! $this->documentDownloadsEnabled() || $this->selectedCount() === 0"
+                                        >
+                                            Ausgewählte Sportler:innen
+                                        </flux:menu.item>
+                                    </flux:menu.group>
                                 </flux:menu>
                             </flux:dropdown>
                             @if (! $this->documentDownloadsEnabled())
@@ -74,7 +94,7 @@
                                     <flux:callout.text>Für Dokumente bitte genau einen Anlass auswählen.</flux:callout.text>
                                 </flux:callout>
                             @endif
-                            <flux:text wire:loading.flex wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments" class="items-center gap-1 text-sm text-zinc-500">
+                            <flux:text wire:loading.flex wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages" class="items-center gap-1 text-sm text-zinc-500">
                                 <flux:icon.arrow-path class="size-4 animate-spin" />
                                 Dokumente werden erstellt...
                             </flux:text>

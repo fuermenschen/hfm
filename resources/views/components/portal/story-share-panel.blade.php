@@ -10,8 +10,13 @@
         @foreach (['light' => 'Hell', 'dark' => 'Dunkel'] as $variant => $label)
             <button data-story-variant="{{ $variant }}" type="button" class="overflow-hidden rounded-xl border-2 border-transparent text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hfm-red data-[selected=true]:border-hfm-red">
                 <div class="relative aspect-[9/16]">
-                    <div data-story-preview-skeleton="{{ $variant }}" class="absolute inset-0 animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700"></div>
-                    <img data-story-preview="{{ $variant }}" alt="{{ $label }} Vorschau{{ $athleteName ? ' für '.$athleteName : ' deiner Story' }}" class="hidden size-full object-cover" />
+                    <div data-story-preview-skeleton="{{ $variant }}" class="absolute inset-0 rounded-lg bg-zinc-200 transition-opacity duration-300 ease-out motion-reduce:transition-none dark:bg-zinc-700">
+                        <div class="flex size-full flex-col items-center justify-center gap-2 text-zinc-500 dark:text-zinc-300">
+                            <flux:icon.loading class="size-7 motion-safe:animate-spin" />
+                            <span class="text-center text-xs font-medium">Bild wird vorbereitet</span>
+                        </div>
+                    </div>
+                    <img data-story-preview="{{ $variant }}" alt="{{ $label }} Vorschau{{ $athleteName ? ' für '.$athleteName : ' deiner Story' }}" class="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 ease-out motion-reduce:transition-none" />
                 </div>
                 <span class="block p-2 text-sm font-medium">{{ $label }}</span>
             </button>

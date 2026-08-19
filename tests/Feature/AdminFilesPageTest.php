@@ -47,6 +47,24 @@ it('uploads files to selected directories', function (): void {
     Storage::disk('public')->assertExists('documents/reports/annual-report.pdf');
 });
 
+it('normalizes uploaded SVG files', function (): void {
+    Livewire::test(AdminFiles::class)
+        ->set('directory', 'partners')
+        ->set('file', UploadedFile::fake()->createWithContent('logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1v1H0z"/></svg>'))
+        ->assertSet('file', null)
+        ->assertHasNoErrors();
+
+    expect(Storage::disk('public')->get('partners/logo.svg'))->toContain('stroke="none"');
+});
+
+it('rejects malformed SVG uploads', function (): void {
+    Livewire::test(AdminFiles::class)
+        ->set('file', UploadedFile::fake()->createWithContent('logo.svg', '<svg>'))
+        ->assertHasErrors('file');
+
+    Storage::disk('public')->assertMissing('logo.svg');
+});
+
 it('lists folders and opens directories', function (): void {
     Storage::disk('public')->put('documents/report.pdf', 'pdf');
     Storage::disk('public')->put('documents/.gitignore', 'ignored');

@@ -90,8 +90,10 @@ function prepareStoryFile(container, variant) {
             const preview = container.querySelector(`[data-story-preview="${variant}"]`);
             if (preview) {
                 preview.src = URL.createObjectURL(file);
-                preview.classList.remove("hidden");
-                container.querySelector(`[data-story-preview-skeleton="${variant}"]`)?.setAttribute("hidden", "hidden");
+                requestAnimationFrame(() => preview.classList.remove("opacity-0"));
+                const skeleton = container.querySelector(`[data-story-preview-skeleton="${variant}"]`);
+                skeleton?.classList.add("opacity-0");
+                window.setTimeout(() => skeleton?.setAttribute("hidden", "hidden"), 300);
             }
 
             return file;
@@ -263,7 +265,9 @@ document.addEventListener("click", (event) => {
 
     const container = document.getElementById(trigger.dataset.storyShareOpen);
     if (container?.storyShareState) {
+        setStoryShareStatus(container, "Bilder werden vorbereitet. Das kann einen Moment dauern.");
         Promise.all([prepareStoryFile(container, "light"), prepareStoryFile(container, "dark")])
+            .then(() => setStoryShareStatus(container, "Bilder sind bereit zum Teilen."))
             .catch(() => setStoryShareStatus(container, "Bilder konnten nicht vorbereitet werden. Bitte versuche es erneut."));
         selectStoryVariant(container, "light");
     }

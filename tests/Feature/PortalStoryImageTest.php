@@ -7,6 +7,7 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Services\AthleteStoryImageService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Imagick\Driver;
@@ -36,10 +37,29 @@ it('generates event and athlete specific story images', function (): void {
         ->forVerifiedEventUser($event, $athlete)
         ->create();
 
-    $image = app(AthleteStoryImageService::class)->build($registration, StoryImageVariant::Light);
+    $service = app(AthleteStoryImageService::class);
+    $image = $service->build($registration, StoryImageVariant::Light);
+    $logosMethod = new ReflectionMethod(AthleteStoryImageService::class, 'partnerLogos');
+    $cacheKeyMethod = new ReflectionMethod(AthleteStoryImageService::class, 'cacheKey');
+    $partnerLogos = $logosMethod->invoke($service, $event, StoryImageVariant::Light);
+    $cacheKey = $cacheKeyMethod->invoke($service, $registration, StoryImageVariant::Light, $partnerLogos);
 
     expect($image['filename'])->toBe('story_single_light_'.$athlete->public_id_string.'.jpg')
-        ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920]);
+        ->and(getimagesizefromstring($image['contents']))->toMatchArray(['0' => 1080, '1' => 1920])
+        ->and(Cache::has($cacheKey))->toBeTrue();
+
+    Cache::forever($cacheKey, ['contents' => 'cached-image', 'filename' => 'cached.jpg']);
+
+    expect($service->build($registration, StoryImageVariant::Light))->toBe([
+        'contents' => 'cached-image',
+        'filename' => 'cached.jpg',
+    ]);
+
+    Storage::disk('public')->put('partners/bruehlgut_light.svg', '<svg xmlns="http://www.w3.org/2000/svg"/>');
+    $changedPartnerLogos = $logosMethod->invoke($service, $event, StoryImageVariant::Light);
+    $changedCacheKey = $cacheKeyMethod->invoke($service, $registration, StoryImageVariant::Light, $changedPartnerLogos);
+
+    expect($changedCacheKey)->not->toBe($cacheKey);
 });
 
 it('renders SVG logos without black pixels before scaling', function (): void {
@@ -153,6 +173,8 @@ it('shows personalized story sharing on athlete participation pages', function (
         ->assertSeeText('Deine Runden können noch mehr bewegen')
         ->assertSeeText('Gewinne weitere Spender:innen für deine Spendenaktion: Teile personalisierte Bilder und Texte.')
         ->assertSeeText('Story teilen')
+        ->assertSeeText('Bild wird vorbereitet')
+        ->assertSee('transition-opacity')
         ->assertSeeText('Kurz & direkt')
         ->assertSeeText('Etwas ausführlicher')
         ->assertSeeText('Für eine gute Sache')

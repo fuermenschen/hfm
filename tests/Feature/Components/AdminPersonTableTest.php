@@ -236,6 +236,7 @@ it('explains why athlete documents require one selected event', function (): voi
         ->assertSee('Für Dokumente bitte genau einen Anlass auswählen.')
         ->assertSee('Willkommensbrief')
         ->assertSee('Personalisierter Flyer')
+        ->assertSee('Story-Bilder')
         ->assertSee('Alle Sportler:innen')
         ->assertSee('Ausgewählte Sportler:innen')
         ->assertSee('Dokumente werden erstellt...');
@@ -280,6 +281,19 @@ it('downloads all athlete flyers for the selected event', function (): void {
         ->set('eventSlug', $event->slug)
         ->call('downloadAllAthleteDocuments', 'personalized-flyer')
         ->assertFileDownloaded('2026_Personalisierte_Flyer.zip');
+});
+
+it('downloads selected athlete Story images as an event-scoped archive', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create();
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$athlete->id])
+        ->call('downloadSelectedAthleteStoryImages')
+        ->assertFileDownloaded('2026_Story-Bilder.zip');
 });
 
 it('does not download athlete documents without a selected event', function (): void {

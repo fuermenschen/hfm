@@ -50,6 +50,8 @@
                     @livewire('admin-webling-interface-test')
                 </flux:modal>
             </flux:card>
+
+            @livewire('admin-normalize-svg-files')
         </div>
     @endsection
 
