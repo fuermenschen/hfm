@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\AthleteNewDonation;
 use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
+use App\Notifications\DonorRegistrationReminder;
 use App\Settings\EventSettings;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -131,6 +132,19 @@ it('creates external user and donation for new donors', function (): void {
         ->and($donation->athlete_registration_id)->toBe($athleteRegistration->id);
 
     Notification::assertSentTo($externalUser, ConfirmDonorRegistration::class);
+    Notification::assertSentToTimes($externalUser, DonorRegistrationReminder::class, 2);
+
+    $reminderDelays = Notification::sent($externalUser, DonorRegistrationReminder::class)
+        ->map(fn (DonorRegistrationReminder $notification): int => $notification->delay->getTimestamp() - now()->getTimestamp())
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($reminderDelays[0])->toBeGreaterThan(2 * 24 * 60 * 60 - 60)
+        ->and($reminderDelays[0])->toBeLessThan(2 * 24 * 60 * 60 + 60)
+        ->and($reminderDelays[1])->toBeGreaterThan(7 * 24 * 60 * 60 - 60)
+        ->and($reminderDelays[1])->toBeLessThan(7 * 24 * 60 * 60 + 60);
+
     Notification::assertSentTo($athleteRegistration->externalUser, AthleteNewDonation::class);
 });
 

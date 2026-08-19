@@ -9,6 +9,7 @@ use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Models\User;
+use App\Notifications\AthleteRegistrationReminder;
 use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
 use App\Settings\EventSettings;
@@ -119,6 +120,18 @@ it('creates external user registration and sends confirmation for new participan
         ->and($registration->partner_id)->toBeNull();
 
     Notification::assertSentTo($externalUser, ConfirmAthleteRegistration::class);
+    Notification::assertSentToTimes($externalUser, AthleteRegistrationReminder::class, 2);
+
+    $reminderDelays = Notification::sent($externalUser, AthleteRegistrationReminder::class)
+        ->map(fn (AthleteRegistrationReminder $notification): int => $notification->delay->getTimestamp() - now()->getTimestamp())
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($reminderDelays[0])->toBeGreaterThan(2 * 24 * 60 * 60 - 60)
+        ->and($reminderDelays[0])->toBeLessThan(2 * 24 * 60 * 60 + 60)
+        ->and($reminderDelays[1])->toBeGreaterThan(7 * 24 * 60 * 60 - 60)
+        ->and($reminderDelays[1])->toBeLessThan(7 * 24 * 60 * 60 + 60);
 });
 
 it('requires swiss residence and telephone format for new participants', function (): void {

@@ -32,7 +32,7 @@ class ConfirmAthleteRegistration extends Notification implements ShouldQueue
             ->subject('Bitte bestätige deine Sportler:innen-Anmeldung')
             ->greeting('Hallo '.$this->firstName)
             ->line('Deine Anmeldung als Sportler:in ist bei uns eingegangen. Vielen Dank!')
-            ->line('Bitte öffne den unten stehenden Link und bestätige deine Registrierung.')
+            ->line('Bitte öffne den unten stehenden Link und bestätige deine Registrierung. Damit stellen wir sicher, dass die Anmeldung wirklich von dir stammt.')
             ->action('Anmeldung bestätigen', $this->confirmationUrl)
             ->line('Erst nach der Bestätigung können dich Spender:innen später auswählen.')
             ->line('Falls du diese Anmeldung nicht gestartet hast, kontaktiere uns bitte.');

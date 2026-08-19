@@ -10,6 +10,7 @@ use App\Models\Donation;
 use App\Models\ExternalUser;
 use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
+use App\Notifications\DonorRegistrationReminder;
 use App\Rules\ValidZipCode;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Contracts\View\Factory;
@@ -553,6 +554,13 @@ class DonorRegistrationWizard extends Component
         ]);
 
         $externalUser->notify(new ConfirmDonorRegistration($externalUser->first_name, $confirmationUrl));
+
+        foreach ([2, 7] as $days) {
+            $externalUser->notify(
+                new DonorRegistrationReminder($donation, $externalUser->first_name)
+                    ->delay(now()->addDays($days))
+            );
+        }
     }
 
     protected function createNewExternalUserDonation(): bool

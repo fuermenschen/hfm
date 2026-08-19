@@ -9,6 +9,7 @@ use App\Models\AthleteRegistration;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
+use App\Notifications\AthleteRegistrationReminder;
 use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
 use App\Rules\ValidZipCode;
@@ -557,6 +558,13 @@ class AthleteRegistrationWizard extends Component
         ]);
 
         $externalUser->notify(new ConfirmAthleteRegistration($externalUser->first_name, $confirmationUrl));
+
+        foreach ([2, 7] as $days) {
+            $externalUser->notify(
+                new AthleteRegistrationReminder($athleteRegistration, $externalUser->first_name)
+                    ->delay(now()->addDays($days))
+            );
+        }
     }
 
     protected function createNewExternalUserRegistration(): bool
