@@ -145,6 +145,7 @@ jobs:
             $PHP_BIN artisan migrate --force || { echo "Migrations failed! Exiting."; exit 1; }
 
             echo "Optimizing application..."
+            $PHP_BIN artisan optimize:clear || { echo "Optimization cache clear failed! Exiting."; exit 1; }
             $PHP_BIN artisan optimize || { echo "Optimization failed! Exiting."; exit 1; }
 
       - name: Bring the application back online

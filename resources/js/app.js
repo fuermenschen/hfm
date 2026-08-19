@@ -89,7 +89,9 @@ function prepareStoryFile(container, variant) {
             state.readyFiles.set(variant, file);
             const preview = container.querySelector(`[data-story-preview="${variant}"]`);
             if (preview) {
-                preview.src = URL.createObjectURL(file);
+                const previewUrl = URL.createObjectURL(file);
+                state.previewUrls.set(variant, previewUrl);
+                preview.src = previewUrl;
                 requestAnimationFrame(() => preview.classList.remove("opacity-0"));
                 const skeleton = container.querySelector(`[data-story-preview-skeleton="${variant}"]`);
                 skeleton?.classList.add("opacity-0");
@@ -130,6 +132,12 @@ function selectStoryVariant(container, variant) {
         .catch(() => setStoryShareStatus(container, "Bild konnte nicht vorbereitet werden. Bitte herunterladen."));
 }
 
+function cleanupStoryShare(scope = document) {
+    scope.querySelectorAll("[data-story-share]").forEach((container) => {
+        container.storyShareState?.previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    });
+}
+
 function initStoryShare(scope = document) {
     scope.querySelectorAll("[data-story-share]").forEach((container) => {
         if (container.dataset.storyShareInitialized === "1") {
@@ -137,7 +145,7 @@ function initStoryShare(scope = document) {
         }
 
         container.dataset.storyShareInitialized = "1";
-        container.storyShareState = { files: new Map(), readyFiles: new Map(), variant: "light" };
+        container.storyShareState = { files: new Map(), readyFiles: new Map(), previewUrls: new Map(), variant: "light" };
         container.querySelectorAll("[data-story-variant]").forEach((button) => {
             button.addEventListener("click", () => selectStoryVariant(container, button.dataset.storyVariant));
         });
@@ -276,6 +284,8 @@ document.addEventListener("click", (event) => {
 initStoryShare();
 initShareTexts();
 initExpandableComments();
+
+document.addEventListener("livewire:navigating", () => cleanupStoryShare());
 
 document.addEventListener("livewire:navigated", () => {
     initHeroLqip();
