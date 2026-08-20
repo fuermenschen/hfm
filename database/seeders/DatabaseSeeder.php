@@ -15,6 +15,7 @@ use App\Models\SportType;
 use App\Models\User;
 use App\Settings\EventSettings;
 use App\Settings\InvoiceSettings;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -208,8 +209,8 @@ class DatabaseSeeder extends Seeder
 
         $donorPool = $donorOnlyUsers->merge($dualRoleUsers)->values();
 
-        $this->createDonationsForEvent($registrations2025, $donorPool, 70);
-        $this->createDonationsForEvent($registrations2026, $donorPool, 150);
+        $this->createDonationsForEvent($registrations2025, $donorPool, $pastEvent, 70);
+        $this->createDonationsForEvent($registrations2026, $donorPool, $futureEvent, 150);
 
         $this->seedPortalSmokeScenario($portalUser, $registrations2026, $futureEvent);
     }
@@ -244,17 +245,19 @@ class DatabaseSeeder extends Seeder
     protected function createEventRegistrations(Collection $externalUsers, DonationEvent $event): Collection
     {
         $partnerIds = $event->partners()->pluck('partners.id');
+        $count = $externalUsers->count();
 
-        return $externalUsers->map(function (ExternalUser $externalUser, int $index) use ($event, $partnerIds): AthleteRegistration {
+        return $externalUsers->map(function (ExternalUser $externalUser, int $index) use ($event, $partnerIds, $count): AthleteRegistration {
             $factory = AthleteRegistration::factory()
                 ->forEvent($event)
                 ->forExternalUser($externalUser);
+            $createdAt = $this->localScenarioTimestamp($event, $index, $count, -45, -1);
 
             if ($index % 3 === 0) {
-                return $factory->state(['partner_id' => null])->verified()->create();
+                return $factory->state(['partner_id' => null, 'created_at' => $createdAt])->verified()->create();
             }
 
-            return $factory->withPartner($partnerIds->random())->verified()->create();
+            return $factory->withPartner($partnerIds->random())->state(['created_at' => $createdAt])->verified()->create();
         });
     }
 
@@ -262,13 +265,27 @@ class DatabaseSeeder extends Seeder
      * @param  Collection<int, AthleteRegistration>  $registrations
      * @param  Collection<int, ExternalUser>  $donorPool
      */
-    protected function createDonationsForEvent(Collection $registrations, Collection $donorPool, int $count): void
+    protected function createDonationsForEvent(Collection $registrations, Collection $donorPool, DonationEvent $event, int $count): void
     {
-        $pairPool = $this->buildPairPool($registrations, $donorPool)->shuffle()->take($count);
+        $pairPool = $this->buildPairPool($registrations, $donorPool)->shuffle()->take($count)->values();
 
-        $pairPool->each(function (array $pair): void {
-            Donation::factory()->forPair($pair['donor'], $pair['registration'])->create();
+        $pairPool->each(function (array $pair, int $index) use ($event, $count): void {
+            Donation::factory()
+                ->forPair($pair['donor'], $pair['registration'])
+                ->state(['created_at' => $this->localScenarioTimestamp($event, $index, $count, -45, 8)])
+                ->create();
         });
+    }
+
+    protected function localScenarioTimestamp(DonationEvent $event, int $index, int $count, int $firstDay, int $lastDay): Carbon
+    {
+        $span = $lastDay - $firstDay;
+        $stepCount = max($count - 1, 1);
+
+        return $event->starts_at
+            ->copy()
+            ->startOfDay()
+            ->addDays($firstDay + (int) floor($index * $span / $stepCount));
     }
 
     /**
