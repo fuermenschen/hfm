@@ -74,12 +74,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare PHP environment
+        uses: ./.github/actions/laravel-ci-prepare
+        timeout-minutes: 5
         with:
-          php-version: "8.4"
-          tools: composer:v2
-          extensions: imagick
+          setup-node: "false"
+          install-php-dependencies: "false"
+          install-node-dependencies: "false"
+          bootstrap-laravel: "false"
+          create-sqlite-database: "false"
 
       - name: Validate composer files
         run: composer validate --strict --no-check-publish
@@ -99,10 +102,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Node
-        uses: actions/setup-node@v7
+      - name: Prepare Node environment
+        uses: ./.github/actions/laravel-ci-prepare
+        timeout-minutes: 5
         with:
-          node-version: "24"
+          setup-php: "false"
+          install-php-dependencies: "false"
+          install-node-dependencies: "false"
+          bootstrap-laravel: "false"
+          create-sqlite-database: "false"
 
       - name: Audit npm advisories (fail on high+)
         run: npm audit --audit-level=high --package-lock-only

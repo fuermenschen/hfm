@@ -64,33 +64,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # Install PHP and Composer dependencies
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Prepare deployment environment
+        uses: ./.github/actions/laravel-ci-prepare
+        timeout-minutes: 10
+        env:
+          COMPOSER_AUTH: >-
+            {"http-basic":{"composer.fluxui.dev":{"username":"${{ secrets.FLUX_USERNAME }}","password":"${{ secrets.FLUX_LICENSE_KEY }}"}}}
         with:
-          php-version: 8.4
-          tools: composer:v2
-          extensions: imagick
-          coverage: none # No need for code coverage in deployment
-
-      - name: Add Flux Credentials Loaded From ENV
-        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
-
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
-
-      # Install Node.js and build assets
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: "npm"
-
-      - name: Install Node dependencies
-        run: npm install
-
-      - name: Build assets
-        run: npm run build
+          coverage: none
+          bootstrap-laravel: "false"
+          create-sqlite-database: "false"
+          composer-install-command: composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+          build-assets: "true"
 
       # Deploy built assets and PHP dependencies to the server
       - name: Deploy application files
