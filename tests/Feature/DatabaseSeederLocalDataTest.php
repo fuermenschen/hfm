@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Enums\GroupMembershipRole;
+use App\Enums\GroupMembershipStatus;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Faq;
 use App\Models\Partner;
@@ -27,6 +30,10 @@ it('seeds local development graph with external users and two events', function 
 
     seed(DatabaseSeeder::class);
 
+    $soleAdminGroup = EventGroup::query()->where('name', 'Winterthur Solo')->firstOrFail();
+    $multiAdminGroup = EventGroup::query()->where('name', 'Gipfelstürmerinnen')->firstOrFail();
+    $pendingGroup = EventGroup::query()->where('name', 'Noch offen')->firstOrFail();
+
     expect(DonationEvent::query()->whereIn('slug', ['2025', '2026'])->count())->toBe(2)
         ->and(Partner::query()->count())->toBe(5)
         ->and(Sponsor::query()->count())->toBe(4)
@@ -38,6 +45,17 @@ it('seeds local development graph with external users and two events', function 
         ->and(DonationEvent::query()->orderBy('slug')->withCount('faqs')->pluck('faqs_count')->all())->toBe([4, 4])
         ->and(ExternalUser::query()->count())->toBe(100)
         ->and(AthleteRegistration::query()->count())->toBe(33)
+        ->and(EventGroup::query()->count())->toBe(3)
+        ->and(EventGroup::query()->whereRelation('donationEvent', 'slug', '2026')->count())->toBe(3)
+        ->and(AthleteRegistration::query()->where('group_membership_status', GroupMembershipStatus::Accepted)->where('group_membership_role', GroupMembershipRole::Admin)->count())->toBe(4)
+        ->and(AthleteRegistration::query()->where('group_membership_status', GroupMembershipStatus::Accepted)->where('group_membership_role', GroupMembershipRole::Member)->count())->toBe(1)
+        ->and(AthleteRegistration::query()->where('group_membership_status', GroupMembershipStatus::Pending)->whereNull('group_membership_role')->count())->toBe(1)
+        ->and($soleAdminGroup->donation_event_id)->toBe(DonationEvent::query()->where('slug', '2026')->value('id'))
+        ->and($soleAdminGroup->athleteRegistrations()->where('group_membership_status', GroupMembershipStatus::Accepted)->where('group_membership_role', GroupMembershipRole::Admin)->count())->toBe(1)
+        ->and($multiAdminGroup->athleteRegistrations()->where('group_membership_status', GroupMembershipStatus::Accepted)->where('group_membership_role', GroupMembershipRole::Admin)->count())->toBe(2)
+        ->and($multiAdminGroup->athleteRegistrations()->where('group_membership_status', GroupMembershipStatus::Accepted)->where('group_membership_role', GroupMembershipRole::Member)->count())->toBe(1)
+        ->and($pendingGroup->athleteRegistrations()->where('group_membership_status', GroupMembershipStatus::Accepted)->where('group_membership_role', GroupMembershipRole::Admin)->count())->toBe(1)
+        ->and($pendingGroup->athleteRegistrations()->where('group_membership_status', GroupMembershipStatus::Pending)->whereNull('group_membership_role')->count())->toBe(1)
         ->and(AthleteRegistration::query()->whereNull('partner_id')->count())->toBe(12)
         ->and(Donation::query()->count())->toBe(220)
         ->and(Donation::query()->whereNull('donor_external_user_id')->count())->toBe(0)

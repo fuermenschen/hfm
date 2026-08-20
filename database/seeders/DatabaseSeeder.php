@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\GroupMembershipRole;
+use App\Enums\GroupMembershipStatus;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Faq;
 use App\Models\Partner;
@@ -209,10 +212,73 @@ class DatabaseSeeder extends Seeder
 
         $donorPool = $donorOnlyUsers->merge($dualRoleUsers)->values();
 
+        $this->seedEventGroupScenario($registrations2026, $futureEvent);
         $this->createDonationsForEvent($registrations2025, $donorPool, $pastEvent, 70);
         $this->createDonationsForEvent($registrations2026, $donorPool, $futureEvent, 150);
 
         $this->seedPortalSmokeScenario($portalUser, $registrations2026, $futureEvent);
+    }
+
+    /**
+     * @param  Collection<int, AthleteRegistration>  $registrations
+     */
+    protected function seedEventGroupScenario(Collection $registrations, DonationEvent $event): void
+    {
+        $soleAdminGroup = EventGroup::factory()
+            ->forEvent($event)
+            ->create(['name' => 'Winterthur Solo']);
+        $this->assignGroupMembership(
+            $registrations->firstOrFail(),
+            $soleAdminGroup,
+            GroupMembershipStatus::Accepted,
+            GroupMembershipRole::Admin,
+        );
+
+        $multiAdminGroup = EventGroup::factory()
+            ->forEvent($event)
+            ->create(['name' => 'Gipfelstürmerinnen']);
+        $registrations->skip(1)->take(2)->each(function (AthleteRegistration $registration) use ($multiAdminGroup): void {
+            $this->assignGroupMembership(
+                $registration,
+                $multiAdminGroup,
+                GroupMembershipStatus::Accepted,
+                GroupMembershipRole::Admin,
+            );
+        });
+        $this->assignGroupMembership(
+            $registrations->skip(3)->firstOrFail(),
+            $multiAdminGroup,
+            GroupMembershipStatus::Accepted,
+            GroupMembershipRole::Member,
+        );
+
+        $pendingGroup = EventGroup::factory()
+            ->forEvent($event)
+            ->create(['name' => 'Noch offen']);
+        $this->assignGroupMembership(
+            $registrations->skip(4)->firstOrFail(),
+            $pendingGroup,
+            GroupMembershipStatus::Accepted,
+            GroupMembershipRole::Admin,
+        );
+        $this->assignGroupMembership(
+            $registrations->skip(5)->firstOrFail(),
+            $pendingGroup,
+            GroupMembershipStatus::Pending,
+        );
+    }
+
+    protected function assignGroupMembership(
+        AthleteRegistration $registration,
+        EventGroup $group,
+        GroupMembershipStatus $status,
+        ?GroupMembershipRole $role = null,
+    ): void {
+        $registration->updateOrFail([
+            'event_group_id' => $group->id,
+            'group_membership_status' => $status,
+            'group_membership_role' => $role,
+        ]);
     }
 
     /**

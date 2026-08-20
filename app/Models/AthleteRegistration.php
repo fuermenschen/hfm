@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\GroupMembershipRole;
+use App\Enums\GroupMembershipStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property DonationEvent $donationEvent
  * @property ExternalUser $externalUser
+ * @property EventGroup|null $eventGroup
  * @property SportType $sportType
  * @property Partner|null $partner
  * @property Collection<int, Donation> $donations
@@ -23,6 +26,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'external_user_id',
     'sport_type_id',
     'partner_id',
+    'event_group_id',
+    'group_membership_status',
+    'group_membership_role',
     'adult',
     'rounds_estimated',
     'rounds_done',
@@ -42,6 +48,11 @@ class AthleteRegistration extends Model
     public function externalUser(): BelongsTo
     {
         return $this->belongsTo(ExternalUser::class);
+    }
+
+    public function eventGroup(): BelongsTo
+    {
+        return $this->belongsTo(EventGroup::class);
     }
 
     public function sportType(): BelongsTo
@@ -67,6 +78,8 @@ class AthleteRegistration extends Model
             'adult' => 'boolean',
             'notify_previous_donors' => 'boolean',
             'verified' => 'boolean',
+            'group_membership_status' => GroupMembershipStatus::class,
+            'group_membership_role' => GroupMembershipRole::class,
         ];
     }
 }
