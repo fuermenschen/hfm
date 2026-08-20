@@ -55,10 +55,6 @@ inputs:
     description: Install Playwright system dependencies and browsers
     required: false
     default: "false"
-  playwright-browser:
-    description: Playwright browser to install
-    required: false
-    default: chromium
   build-assets:
     description: Build frontend assets
     required: false
@@ -128,12 +124,12 @@ runs:
     - name: Install Playwright system dependencies
       if: inputs.install-playwright == 'true'
       shell: bash
-      run: npx playwright install-deps ${{ inputs.playwright-browser }}
+      run: npx playwright install-deps chromium
 
     - name: Install Playwright browser
       if: inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: npx playwright install ${{ inputs.playwright-browser }}
+      run: npx playwright install chromium
 
     - name: Build assets
       if: inputs.build-assets == 'true'
