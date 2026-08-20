@@ -87,7 +87,7 @@
                     @endforeach
                 </div>
 
-                <flux:text class="mt-7 text-sm">Tag 0 ist Tag des Anlassess. Die erwartete Spendensumme basiert auf den geschätzten Runden.</flux:text>
+                <flux:text class="mt-7 text-sm">Tag 0 ist Tag des Anlasses. Die erwartete Spendensumme basiert auf den geschätzten Runden.</flux:text>
             @endif
         </flux:card>
 
