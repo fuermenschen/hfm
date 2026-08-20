@@ -9,6 +9,7 @@ permissions:
 jobs:
   mariadb-migration-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       mariadb:
@@ -43,25 +44,13 @@ jobs:
           restore-keys: |
             composer-
 
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-
       - name: Add Flux Credentials Loaded From ENV
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
-      - name: Install Node Dependencies
-        run: npm install
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        timeout-minutes: 5
 
       - name: Create MariaDB Test Environment
         run: |
@@ -86,6 +75,7 @@ jobs:
             echo "Waiting for MariaDB to be ready..."
             sleep 2
           done
+        timeout-minutes: 2
 
       - name: Run Migration Tests
         run: |
@@ -103,10 +93,12 @@ jobs:
 
           echo "Testing fresh migrations with seeding..."
           php artisan migrate:fresh --seed --force --database=mariadb --no-interaction
+        timeout-minutes: 3
 
       - name: Run Basic Database Tests
         run: |
           ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --stop-on-failure
+        timeout-minutes: 3
         env:
           DB_CONNECTION: mariadb
           DB_HOST: 127.0.0.1
