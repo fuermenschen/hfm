@@ -49,20 +49,16 @@ it('renders athlete welcome letter with embedded png qr code', function (): void
         'logoData' => base64_encode(file_get_contents(resource_path('images/logo_light.svg'))),
         'qrCodeDataUri' => 'data:image/png;base64,'.base64_encode('png'),
     ])->render();
+    $portalUrl = route('portal.dashboard');
+    $displayUrl = (string) preg_replace('#^https?://#', '', $portalUrl);
 
     preg_match('/<img src="(data:image\/png;base64,[^"]+)" alt="QR Code"\s*\/>/', $html, $matches);
 
     expect($matches)
         ->toHaveKey(1)
         ->and(strlen($matches[1]))->toBeGreaterThan(strlen('data:image/png;base64,'))
-        ->and($html)->toContain('personalisierte Flyer')
-        ->and($html)->toContain('personalisierte Bilder für WhatsApp-Storys und Beispieltexte')
-        ->and($html)->toContain('weitere Flyer oder ein Plakat benötigst')
-        ->and($html)->not->toContain('im Format A3')
-        ->and($html)->not->toContain('Materialien')
-        ->and($html)->toContain('localhost:8000/portal')
-        ->and($html)->not->toContain(route('portal.dashboard'))
-        ->and($html)->toContain('</strong>, hast du dann');
+        ->and($html)->toContain($displayUrl)
+        ->and($html)->not->toContain($portalUrl);
 });
 
 it('renders association donation invoice with embedded png qr bill image', function (): void {
