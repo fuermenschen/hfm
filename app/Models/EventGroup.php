@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\GroupMembershipRole;
+use App\Enums\GroupMembershipStatus;
 use Database\Factories\EventGroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -35,9 +37,19 @@ class EventGroup extends Model
         return $this->belongsTo(DonationEvent::class);
     }
 
+    /** @return HasMany<AthleteRegistration, $this> */
     public function athleteRegistrations(): HasMany
     {
         return $this->hasMany(AthleteRegistration::class);
+    }
+
+    /** @return HasMany<AthleteRegistration, $this> */
+    public function acceptedAdmins(): HasMany
+    {
+        return $this->athleteRegistrations()
+            ->where('verified', true)
+            ->where('group_membership_status', GroupMembershipStatus::Accepted->value)
+            ->where('group_membership_role', GroupMembershipRole::Admin->value);
     }
 
     public static function normalizeName(string $name): string

@@ -1,8 +1,28 @@
 <?php
 
+use App\Models\AthleteRegistration;
+use App\Models\DonationEvent;
+use App\Models\ExternalUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\BrowserTestCase;
 use Tests\TestCase;
+
+function eventGroupTestEvent(bool $ended = false): DonationEvent
+{
+    return DonationEvent::factory()->create([
+        'starts_at' => now('Europe/Zurich')->subDay(),
+        'ends_at' => $ended ? now('Europe/Zurich')->subSecond() : now('Europe/Zurich')->addDay(),
+    ]);
+}
+
+function eventGroupTestRegistration(DonationEvent $donationEvent, ?ExternalUser $externalUser = null): AthleteRegistration
+{
+    return AthleteRegistration::factory()
+        ->forEvent($donationEvent)
+        ->forExternalUser($externalUser ?? ExternalUser::factory()->create())
+        ->verified()
+        ->create();
+}
 
 /*
 |--------------------------------------------------------------------------

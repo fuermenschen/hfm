@@ -144,6 +144,11 @@ class DonationEvent extends Model
         return $now->greaterThanOrEqualTo($this->registration_opens_at) && $now->lessThanOrEqualTo($this->donor_registration_closes_at);
     }
 
+    public function hasEnded(): bool
+    {
+        return Date::now($this->timezone)->greaterThanOrEqualTo($this->ends_at);
+    }
+
     protected function casts(): array
     {
         return [
