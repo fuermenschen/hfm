@@ -97,7 +97,7 @@ jobs:
 
       - name: Run Basic Database Tests
         run: |
-          ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --stop-on-failure
+          ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --exclude-testsuite=Browser --stop-on-failure
         timeout-minutes: 3
         env:
           DB_CONNECTION: mariadb
