@@ -225,3 +225,23 @@ it('compares all events in dashboard charts', function (): void {
             ['day' => 0, 'event_'.$secondEvent->id => 1, 'event_'.$firstEvent->id => 1],
         ]);
 });
+
+it('includes thirty days before the event in chart ticks when available', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-08-12 15:00:00',
+    ]);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-09-14 15:00:00',
+    ]);
+
+    $data = app(GetDashboardDataAction::class)($event);
+
+    expect($data['chartTickValues'])->toBe([-31, -30, 0, 2]);
+});

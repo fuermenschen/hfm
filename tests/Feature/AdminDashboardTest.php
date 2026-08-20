@@ -64,6 +64,9 @@ it('renders cumulative charts when dashboard has data from multiple days', funct
         ->assertSuccessful()
         ->assertSee('Sportler:innen-Registrierungen')
         ->assertSee('Erwartete Spendensumme')
+        ->assertSee('scale="linear"', false)
+        ->assertSee('tick-values=', false)
+        ->assertDontSee('x-data="{ chartWidth:', false)
         ->assertSee('ui-chart', false);
 });
 

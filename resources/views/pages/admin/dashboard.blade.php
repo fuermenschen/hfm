@@ -61,9 +61,9 @@
                                             <flux:chart.line :field="$chartEvent['field']" :class="$chartColors[$chartEvent['colorIndex']]" curve="none" />
                                         @endforeach
 
-                                        <flux:chart.axis axis="x" field="day" :tick-values="$chartTickValues" tick-prefix="Tag ">
+                                        <flux:chart.axis axis="x" field="day" scale="linear" :tick-values="$chartTickValues" tick-prefix="Tag&nbsp;">
                                             <flux:chart.axis.grid />
-                                            <flux:chart.axis.tick />
+                                            <flux:chart.axis.tick class="text-[10px] sm:text-xs" />
                                             <flux:chart.axis.line />
                                         </flux:chart.axis>
 
@@ -74,20 +74,20 @@
 
                                         <flux:chart.cursor />
                                     </flux:chart.svg>
+                                </flux:chart.viewport>
 
-                                    <flux:chart.tooltip>
-                                        <flux:chart.tooltip.heading field="day" />
-                                        @foreach ($chartEvents as $chartEvent)
-                                            <flux:chart.tooltip.value :field="$chartEvent['field']" :label="$chartEvent['label']" :format="$metric['format']" />
-                                        @endforeach
-                                    </flux:chart.tooltip>
-                                </flux:chart>
+                                <flux:chart.tooltip>
+                                    <flux:chart.tooltip.heading field="day" />
+                                    @foreach ($chartEvents as $chartEvent)
+                                        <flux:chart.tooltip.value :field="$chartEvent['field']" :label="$chartEvent['label']" :format="$metric['format']" />
+                                    @endforeach
+                                </flux:chart.tooltip>
                             </flux:chart>
                         </section>
                     @endforeach
                 </div>
 
-                <flux:text class="mt-7 text-sm">Tag 0 ist Anlassbeginn. Erwartete Spendensumme nach Eingangsdatum der Spende, berechnet mit aktuellen Schätzrunden und Spendenbedingungen. Spätere Änderungen wirken rückwirkend auf den Verlauf.</flux:text>
+                <flux:text class="mt-7 text-sm">Tag 0 ist Tag des Anlassess. Die erwartete Spendensumme basiert auf den geschätzten Runden.</flux:text>
             @endif
         </flux:card>
 

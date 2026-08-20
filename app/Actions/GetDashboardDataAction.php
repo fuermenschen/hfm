@@ -220,7 +220,15 @@ class GetDashboardDataAction
             }
         }
 
-        $chartTickValues = array_values(array_unique([$minimumDay, 0, $maximumDay]));
+        $chartTickValues = [$minimumDay];
+
+        if ($minimumDay <= -30) {
+            $chartTickValues[] = -30;
+        }
+
+        $chartTickValues[] = 0;
+        $chartTickValues[] = $maximumDay;
+        $chartTickValues = array_values(array_unique($chartTickValues));
         sort($chartTickValues);
 
         return compact('chartData', 'chartTickValues');
