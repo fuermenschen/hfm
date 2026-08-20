@@ -1,0 +1,141 @@
+name: Laravel CI prepare
+
+description: Set up PHP/Node and prepare Laravel for CI jobs
+
+inputs:
+  php-version:
+    description: PHP version
+    required: false
+    default: "8.4"
+  node-version:
+    description: Node version
+    required: false
+    default: "24"
+  coverage:
+    description: PHP coverage driver
+    required: false
+    default: none
+  php-extensions:
+    description: Comma-separated PHP extensions to enable
+    required: false
+    default: imagick
+  setup-php:
+    description: Set up PHP and Composer
+    required: false
+    default: "true"
+  setup-node:
+    description: Set up Node.js and npm cache
+    required: false
+    default: "true"
+  install-php-dependencies:
+    description: Install Composer dependencies
+    required: false
+    default: "true"
+  composer-install-command:
+    description: Composer install command
+    required: false
+    default: composer install --no-interaction --prefer-dist --optimize-autoloader --no-progress
+  install-node-dependencies:
+    description: Install Node dependencies
+    required: false
+    default: "true"
+  node-install-command:
+    description: Node install command
+    required: false
+    default: npm install
+  bootstrap-laravel:
+    description: Copy the environment file and generate an application key
+    required: false
+    default: "true"
+  create-sqlite-database:
+    description: Create the SQLite database file
+    required: false
+    default: "true"
+  install-playwright:
+    description: Install Playwright system dependencies and browsers
+    required: false
+    default: "false"
+  playwright-browser:
+    description: Playwright browser to install
+    required: false
+    default: chromium
+  build-assets:
+    description: Build frontend assets
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup PHP
+      if: inputs.setup-php == 'true'
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+        tools: composer:v2
+        coverage: ${{ inputs.coverage }}
+        extensions: ${{ inputs.php-extensions }}
+
+    - name: Setup Node
+      if: inputs.setup-node == 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Cache Composer downloads
+      if: inputs.install-php-dependencies == 'true'
+      uses: actions/cache@v6
+      with:
+        path: ~/.composer/cache/files
+        key: composer-cache-${{ hashFiles('**/composer.lock') }}
+        restore-keys: composer-cache-
+
+    - name: Install Node dependencies
+      if: inputs.install-node-dependencies == 'true'
+      shell: bash
+      run: ${{ inputs.node-install-command }}
+
+    - name: Create SQLite database
+      if: inputs.create-sqlite-database == 'true'
+      shell: bash
+      run: mkdir -p database && touch database/database.sqlite
+
+    - name: Install PHP dependencies
+      if: inputs.install-php-dependencies == 'true'
+      shell: bash
+      run: ${{ inputs.composer-install-command }}
+
+    - name: Copy environment file
+      if: inputs.bootstrap-laravel == 'true'
+      shell: bash
+      run: cp .env.example .env
+
+    - name: Generate application key
+      if: inputs.bootstrap-laravel == 'true'
+      shell: bash
+      run: php artisan key:generate --no-interaction
+
+    - name: Cache Playwright browsers
+      if: inputs.install-playwright == 'true'
+      id: playwright-cache
+      uses: actions/cache@v6
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+
+    - name: Install Playwright system dependencies
+      if: inputs.install-playwright == 'true'
+      shell: bash
+      run: npx playwright install-deps ${{ inputs.playwright-browser }}
+
+    - name: Install Playwright browser
+      if: inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npx playwright install ${{ inputs.playwright-browser }}
+
+    - name: Build assets
+      if: inputs.build-assets == 'true'
+      shell: bash
+      run: npm run build

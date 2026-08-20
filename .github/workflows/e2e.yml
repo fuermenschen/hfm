@@ -21,66 +21,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.4
-          tools: composer:v2
-          extensions: imagick
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: "npm"
-          cache-dependency-path: package-lock.json
-
-      - name: Cache Composer downloads
-        uses: actions/cache@v6
-        with:
-          path: ~/.composer/cache/files
-          key: composer-cache-${{ hashFiles('**/composer.lock') }}
-          restore-keys: composer-cache-
-
-      - name: Install Node Dependencies
-        run: npm install
-        timeout-minutes: 5
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v6
-        timeout-minutes: 5
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright system dependencies
-        run: npx playwright install-deps chromium
-        timeout-minutes: 5
-
-      - name: Install Playwright browser
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install chromium
+      - name: Prepare Laravel CI environment
+        uses: ./.github/actions/laravel-ci-prepare
         timeout-minutes: 15
-
-      - name: Create SQLite Database
-        run: mkdir -p database && touch database/database.sqlite
-
-      - name: Add Flux Credentials Loaded From ENV
-        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
-
-      - name: Install PHP Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-progress
-        timeout-minutes: 5
-
-      - name: Copy Environment File
-        run: cp .env.example .env
-
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Build Assets
-        run: npm run build
+        env:
+          COMPOSER_AUTH: >-
+            {"http-basic":{"composer.fluxui.dev":{"username":"${{ secrets.FLUX_USERNAME }}","password":"${{ secrets.FLUX_LICENSE_KEY }}"}}}
+        with:
+          install-playwright: "true"
+          build-assets: "true"
 
       - name: Run fresh DB migrations with seed
         run: php artisan migrate:fresh --seed --no-interaction --force
