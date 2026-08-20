@@ -96,6 +96,12 @@
             margin-top: 0.6rem;
         }
 
+        .qr-code .url {
+            font-size: 9px;
+            margin-top: 0;
+            overflow-wrap: anywhere;
+        }
+
     </style>
 
     <!-- Logo and Sender -->
@@ -153,14 +159,14 @@
         <p>
             Wir möchten dir das Suchen von
             Spender:innen so einfach wie möglich machen.
-            Deshalb erhältst du anbei verschiedene personalisierte Materialien, die dich dabei unterstützen.
-            Zudem findest du in deinem persönlichen Bereich auf der Webseite weitere personalisierte Materialien.
+            Deshalb erhältst du anbei personalisierte Flyer, die dich dabei unterstützen.
+            In deinem persönlichen Bereich auf der Webseite findest du weitere Inhalte, zum Beispiel personalisierte Bilder für WhatsApp-Storys und Beispieltexte.
         </p>
         <p>
-            Wenn du weitere Materialien benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
+            Wenn du weitere Flyer oder ein Plakat benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
         </p>
         <p>
-            Am Anlass selbst, am <strong>{{ $eventDate }}</strong> hast du dann von {{ $eventStartTime }}&nbsp;Uhr bis {{ $eventEndTime }}&nbsp;Uhr
+            Am Anlass selbst, am <strong>{{ $eventDate }}</strong>, hast du dann von {{ $eventStartTime }}&nbsp;Uhr bis {{ $eventEndTime }}&nbsp;Uhr
             Zeit, um so viele Runden wie möglich
             zurückzulegen. Alles weitere, etwa das Eintreiben der Spenden, erledigen wir für dich.
         </p>
@@ -188,6 +194,7 @@
     <div class="qr-code">
         <img src="{{ $qrCodeDataUri }}" alt="QR Code" />
         <p>Direktlink zu deinem persönlichen Bereich</p>
+        <p class="url">{{ preg_replace('#^https?://#', '', route('portal.dashboard')) }}</p>
     </div>
 
 @endsection
