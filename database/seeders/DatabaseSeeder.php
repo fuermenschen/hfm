@@ -236,14 +236,14 @@ class DatabaseSeeder extends Seeder
         $multiAdminGroup = EventGroup::factory()
             ->forEvent($event)
             ->create(['name' => 'Gipfelstürmerinnen']);
-        $registrations->skip(1)->take(2)->each(
-            fn (AthleteRegistration $registration): bool => $this->assignGroupMembership(
+        $registrations->skip(1)->take(2)->each(function (AthleteRegistration $registration) use ($multiAdminGroup): void {
+            $this->assignGroupMembership(
                 $registration,
                 $multiAdminGroup,
                 GroupMembershipStatus::Accepted,
                 GroupMembershipRole::Admin,
-            ),
-        );
+            );
+        });
         $this->assignGroupMembership(
             $registrations->skip(3)->firstOrFail(),
             $multiAdminGroup,
@@ -272,8 +272,8 @@ class DatabaseSeeder extends Seeder
         EventGroup $group,
         GroupMembershipStatus $status,
         ?GroupMembershipRole $role = null,
-    ): bool {
-        return $registration->update([
+    ): void {
+        $registration->updateOrFail([
             'event_group_id' => $group->id,
             'group_membership_status' => $status,
             'group_membership_role' => $role,
