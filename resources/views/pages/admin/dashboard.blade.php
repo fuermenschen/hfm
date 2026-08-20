@@ -1,7 +1,22 @@
 @component('layouts.admin', ['title' => $greeting . Auth::user()->name])
 
     @section('content')
-        @php($routeParameters = ['anlass' => $selectedEventSlug ?? ''])
+        @php
+            $routeParameters = ['anlass' => $selectedEventSlug ?? ''];
+            $chartColors = [
+                'text-red-600 dark:text-red-400',
+                'text-sky-600 dark:text-sky-400',
+                'text-emerald-600 dark:text-emerald-400',
+                'text-violet-600 dark:text-violet-400',
+                'text-amber-600 dark:text-amber-400',
+                'text-pink-600 dark:text-pink-400',
+            ];
+            $chartMetrics = [
+                ['title' => 'Sportler:innen-Registrierungen', 'data' => $chartData['registrations'], 'format' => null],
+                ['title' => 'Spenden', 'data' => $chartData['donations'], 'format' => null],
+                ['title' => 'Erwartete Spendensumme', 'data' => $chartData['expectedAmount'], 'format' => ['style' => 'currency', 'currency' => 'CHF']],
+            ];
+        @endphp
 
         <form method="GET" action="{{ route('admin.dashboard') }}" class="flex justify-end">
             <flux:field class="w-full sm:w-80">
@@ -16,6 +31,65 @@
                 </flux:select>
             </flux:field>
         </form>
+
+        <flux:card class="mt-9">
+            <flux:heading size="xl">Entwicklung bis zum Anlass</flux:heading>
+            <flux:text class="mt-1">Kumulative Registrierungen, Spenden und erwartete Spendensumme relativ zum Start des Anlasses.</flux:text>
+
+            @if ($chartEvents === [] || $chartData['registrations'] === [])
+                <flux:text class="mt-5">Für diesen Zeitraum sind noch keine Daten vorhanden.</flux:text>
+            @elseif (count($chartData['registrations']) === 1)
+                <flux:text class="mt-5">Für eine Entwicklung werden Daten von mindestens zwei Tagen benötigt.</flux:text>
+            @else
+                <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2" aria-label="Anlässe">
+                    @foreach ($chartEvents as $chartEvent)
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="size-2 rounded-full {{ $chartColors[$chartEvent['colorIndex']] }} bg-current"></span>
+                            <span>{{ $chartEvent['label'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="mt-7 space-y-10">
+                    @foreach ($chartMetrics as $metric)
+                        <section>
+                            <flux:heading size="lg">{{ $metric['title'] }}</flux:heading>
+                            <flux:chart :value="$metric['data']" class="mt-4">
+                                <flux:chart.viewport class="h-56 sm:h-64">
+                                    <flux:chart.svg>
+                                        @foreach ($chartEvents as $chartEvent)
+                                            <flux:chart.line :field="$chartEvent['field']" :class="$chartColors[$chartEvent['colorIndex']]" curve="none" />
+                                        @endforeach
+
+                                        <flux:chart.axis axis="x" field="day" :tick-values="$chartTickValues" tick-prefix="Tag ">
+                                            <flux:chart.axis.grid />
+                                            <flux:chart.axis.tick />
+                                            <flux:chart.axis.line />
+                                        </flux:chart.axis>
+
+                                        <flux:chart.axis axis="y" :format="$metric['format']">
+                                            <flux:chart.axis.grid />
+                                            <flux:chart.axis.tick />
+                                        </flux:chart.axis>
+
+                                        <flux:chart.cursor />
+                                    </flux:chart.svg>
+
+                                    <flux:chart.tooltip>
+                                        <flux:chart.tooltip.heading field="day" />
+                                        @foreach ($chartEvents as $chartEvent)
+                                            <flux:chart.tooltip.value :field="$chartEvent['field']" :label="$chartEvent['label']" :format="$metric['format']" />
+                                        @endforeach
+                                    </flux:chart.tooltip>
+                                </flux:chart>
+                            </flux:chart>
+                        </section>
+                    @endforeach
+                </div>
+
+                <flux:text class="mt-7 text-sm">Tag 0 ist Anlassbeginn. Erwartete Spendensumme nach Eingangsdatum der Spende, berechnet mit aktuellen Schätzrunden und Spendenbedingungen. Spätere Änderungen wirken rückwirkend auf den Verlauf.</flux:text>
+            @endif
+        </flux:card>
 
         <!-- Athlete -->
         <x-stats title="Sportler:innen">
