@@ -21,7 +21,7 @@ class RequestEventGroupMembershipAction
     public function __invoke(EventGroup $eventGroup, ExternalUser $externalUser): void
     {
         /** @var list<ExternalUser> $recipients */
-        $recipients = DB::transaction(function () use ($eventGroup, $externalUser): array {
+        $recipients = DB::transaction(function () use (&$eventGroup, $externalUser): array {
             $eventGroup = $this->eventGroupMembershipService->lockActiveGroup($eventGroup);
             $registration = $this->eventGroupMembershipService->verifiedRegistration($eventGroup->donationEvent, $externalUser);
 

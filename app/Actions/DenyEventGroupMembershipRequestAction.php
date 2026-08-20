@@ -20,7 +20,7 @@ class DenyEventGroupMembershipRequestAction
 
     public function __invoke(EventGroup $eventGroup, AthleteRegistration $athleteRegistration, ExternalUser $externalUser): void
     {
-        $applicant = DB::transaction(function () use ($eventGroup, $athleteRegistration, $externalUser): ?AthleteRegistration {
+        $applicant = DB::transaction(function () use (&$eventGroup, $athleteRegistration, $externalUser): ?AthleteRegistration {
             $eventGroup = $this->eventGroupMembershipService->lockActiveGroup($eventGroup);
             $this->eventGroupMembershipService->acceptedAdmin($eventGroup, $externalUser);
             $applicant = $this->eventGroupMembershipService->lockedRegistration($athleteRegistration);

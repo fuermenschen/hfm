@@ -31,6 +31,18 @@ it('denies users without a verified registration and web admins', function (): v
         ->and(Gate::forUser(User::factory()->create())->allows('view', $group))->toBeFalse();
 });
 
+it('authorizes groups without loading their donation event', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create();
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    $group->unsetRelation('donationEvent');
+
+    expect($group->relationLoaded('donationEvent'))->toBeFalse()
+        ->and(Gate::forUser($admin->externalUser)->allows('view', $group))->toBeTrue()
+        ->and(Gate::forUser($admin->externalUser)->allows('processRequests', $group))->toBeTrue()
+        ->and($group->relationLoaded('donationEvent'))->toBeFalse();
+});
+
 it('denies group management when registration belongs to another event', function (): void {
     $event = eventGroupTestEvent();
     $group = EventGroup::factory()->forEvent($event)->create();

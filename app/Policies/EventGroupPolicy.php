@@ -21,7 +21,9 @@ class EventGroupPolicy
         }
 
         return AthleteRegistration::query()
-            ->verifiedForEventUser($eventGroup->donationEvent, $externalUser)
+            ->where('donation_event_id', $eventGroup->donation_event_id)
+            ->where('external_user_id', $externalUser->id)
+            ->where('verified', true)
             ->exists();
     }
 
@@ -57,7 +59,9 @@ class EventGroupPolicy
         }
 
         return AthleteRegistration::query()
-            ->verifiedForEventUser($eventGroup->donationEvent, $externalUser)
+            ->where('donation_event_id', $eventGroup->donation_event_id)
+            ->where('external_user_id', $externalUser->id)
+            ->where('verified', true)
             ->whereBelongsTo($eventGroup)
             ->where('group_membership_status', GroupMembershipStatus::Accepted->value)
             ->where('group_membership_role', GroupMembershipRole::Admin->value)
