@@ -26,6 +26,7 @@ yarn-error.log
 env-production-secret.txt
 /e2e-results/**
 /test-results/**
+/tests/Browser/Screenshots/
 
 # Laravel Boost generated/local agent files
 /.mcp.json

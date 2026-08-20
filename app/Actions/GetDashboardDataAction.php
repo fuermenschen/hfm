@@ -12,6 +12,7 @@ use App\Models\Partner;
 use App\Services\AthleteService;
 use App\Services\DonationService;
 use App\Services\DonorService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -43,6 +44,9 @@ class GetDashboardDataAction
      *     estimatedAmounts: array<int, float>,
      *     actualAmounts: array<int, float>,
      *     mostRecentActivities: array<int, array<string, mixed>>,
+     *     chartEvents: array<int, array{field: string, label: string, colorIndex: int}>,
+     *     chartData: array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>},
+     *     chartTickValues: array<int, int>,
      * }
      */
     public function __invoke(?DonationEvent $event = null): array
@@ -50,7 +54,7 @@ class GetDashboardDataAction
         $greeting = $this->greeting();
         $events = DonationEvent::query()
             ->latest('starts_at')
-            ->get(['id', 'title', 'slug', 'is_published']);
+            ->get(['id', 'title', 'slug', 'timezone', 'starts_at', 'is_published']);
         $selectedEventSlug = $event?->slug;
 
         $partners = $event instanceof DonationEvent
@@ -87,6 +91,9 @@ class GetDashboardDataAction
 
         $estimatedAmounts = $this->donationService->calculateEstimatedTotalPerPartner($donations);
         $actualAmounts = $this->donationService->calculateActualTotalPerPartner($donations);
+        $chartDonationEvents = $event instanceof DonationEvent ? collect([$event]) : $events;
+        $chartEvents = $this->chartEvents($chartDonationEvents);
+        ['chartData' => $chartData, 'chartTickValues' => $chartTickValues] = $this->buildChartData($chartDonationEvents, $chartEvents, $donations);
 
         $mostRecentActivities = $this->buildRecentActivities($event);
 
@@ -109,7 +116,130 @@ class GetDashboardDataAction
             'estimatedAmounts',
             'actualAmounts',
             'mostRecentActivities',
+            'chartEvents',
+            'chartData',
+            'chartTickValues',
         );
+    }
+
+    /**
+     * @param  Collection<int, DonationEvent>  $events
+     * @return array<int, array{field: string, label: string, colorIndex: int}>
+     */
+    protected function chartEvents(Collection $events): array
+    {
+        return $events
+            ->values()
+            ->map(fn (DonationEvent $chartEvent, int $index): array => [
+                'field' => 'event_'.$chartEvent->id,
+                'label' => $chartEvent->title.' ('.$chartEvent->slug.')'.($chartEvent->is_published ? '' : ' - NICHT VERÖFFENTLICHT'),
+                'colorIndex' => $index % 6,
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, DonationEvent>  $events
+     * @param  array<int, array{field: string, label: string, colorIndex: int}>  $chartEvents
+     * @param  Collection<int, Donation>  $donations
+     * @return array{chartData: array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>}, chartTickValues: array<int, int>}
+     */
+    protected function buildChartData(Collection $events, array $chartEvents, Collection $donations): array
+    {
+        if ($chartEvents === []) {
+            return [
+                'chartData' => ['registrations' => [], 'donations' => [], 'expectedAmount' => []],
+                'chartTickValues' => [],
+            ];
+        }
+
+        $eventsById = $events->keyBy('id');
+        $deltas = ['registrations' => [], 'donations' => [], 'expectedAmount' => []];
+        $days = [];
+
+        foreach (AthleteRegistration::query()
+            ->whereIn('donation_event_id', $eventsById->keys())
+            ->get(['donation_event_id', 'created_at']) as $registration) {
+            $chartEvent = $eventsById->get($registration->donation_event_id);
+            if (! $chartEvent instanceof DonationEvent) {
+                continue;
+            }
+
+            if (! $registration->created_at instanceof Carbon) {
+                continue;
+            }
+
+            $day = $this->relativeDay($registration->created_at, $chartEvent);
+            $field = 'event_'.$chartEvent->id;
+            $deltas['registrations'][$field][$day] = ($deltas['registrations'][$field][$day] ?? 0) + 1;
+            $days[] = $day;
+        }
+
+        foreach ($donations as $donation) {
+            $registration = $donation->athleteRegistration;
+            $chartEvent = $eventsById->get($registration->donation_event_id);
+            if (! $chartEvent instanceof DonationEvent) {
+                continue;
+            }
+
+            if (! $donation->created_at instanceof Carbon) {
+                continue;
+            }
+
+            $day = $this->relativeDay($donation->created_at, $chartEvent);
+            $field = 'event_'.$chartEvent->id;
+            $deltas['donations'][$field][$day] = ($deltas['donations'][$field][$day] ?? 0) + 1;
+            $deltas['expectedAmount'][$field][$day] = ($deltas['expectedAmount'][$field][$day] ?? 0.0) + $this->donationService->calculateEstimatedAmount($donation);
+            $days[] = $day;
+        }
+
+        if ($days === []) {
+            return [
+                'chartData' => ['registrations' => [], 'donations' => [], 'expectedAmount' => []],
+                'chartTickValues' => [],
+            ];
+        }
+
+        $minimumDay = min(min($days), 0);
+        $maximumDay = max(max($days), 0);
+        $chartData = ['registrations' => [], 'donations' => [], 'expectedAmount' => []];
+
+        foreach (array_keys($chartData) as $metric) {
+            $totals = array_fill_keys(array_column($chartEvents, 'field'), 0.0);
+
+            for ($day = $minimumDay; $day <= $maximumDay; $day++) {
+                $point = ['day' => $day];
+
+                foreach ($chartEvents as $chartEvent) {
+                    $field = $chartEvent['field'];
+                    $totals[$field] += $deltas[$metric][$field][$day] ?? 0.0;
+                    $point[$field] = $metric === 'expectedAmount' ? round($totals[$field], 2) : (int) $totals[$field];
+                }
+
+                $chartData[$metric][] = $point;
+            }
+        }
+
+        $chartTickValues = [$minimumDay];
+
+        if ($minimumDay <= -30) {
+            $chartTickValues[] = -30;
+        }
+
+        $chartTickValues[] = 0;
+        $chartTickValues[] = $maximumDay;
+        $chartTickValues = array_values(array_unique($chartTickValues));
+        sort($chartTickValues);
+
+        return compact('chartData', 'chartTickValues');
+    }
+
+    protected function relativeDay(Carbon $createdAt, DonationEvent $event): int
+    {
+        return (int) $event->starts_at
+            ->copy()
+            ->startOfDay()
+            ->diffInDays($createdAt->copy()->setTimezone($event->timezone)->startOfDay(), false);
     }
 
     protected function greeting(): string

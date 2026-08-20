@@ -63,7 +63,11 @@ it('seeds local development graph with external users and two events', function 
         ->and(Donation::query()->whereRelation('athleteRegistration.donationEvent', 'slug', '2025')->count())->toBe(70)
         ->and(Donation::query()->whereRelation('athleteRegistration.donationEvent', 'slug', '2026')->count())->toBe(150)
         ->and(AthleteRegistration::query()->whereRelation('donationEvent', 'slug', '2025')->count())->toBe(10)
-        ->and(AthleteRegistration::query()->whereRelation('donationEvent', 'slug', '2026')->count())->toBe(23);
+        ->and(AthleteRegistration::query()->whereRelation('donationEvent', 'slug', '2026')->count())->toBe(23)
+        ->and(AthleteRegistration::query()->whereRelation('donationEvent', 'slug', '2025')->pluck('created_at')->unique()->count())->toBeGreaterThan(1)
+        ->and(AthleteRegistration::query()->whereRelation('donationEvent', 'slug', '2026')->pluck('created_at')->unique()->count())->toBeGreaterThan(1)
+        ->and(Donation::query()->whereRelation('athleteRegistration.donationEvent', 'slug', '2025')->pluck('created_at')->unique()->count())->toBeGreaterThan(1)
+        ->and(Donation::query()->whereRelation('athleteRegistration.donationEvent', 'slug', '2026')->pluck('created_at')->unique()->count())->toBeGreaterThan(1);
 
     Cache::flush();
 

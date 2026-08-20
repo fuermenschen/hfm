@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
+use App\Models\SportType;
 use App\Models\User;
 use App\Settings\EventSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +22,8 @@ it('renders the admin dashboard for authenticated users', function () {
     get('/admin')
         ->assertSuccessful()
         ->assertSee('Sportler:innen')
+        ->assertSee('Entwicklung bis zum Anlass')
+        ->assertSee('Für diesen Zeitraum sind noch keine Daten vorhanden.')
         ->assertSee('Spenden (tatsächlich)')
         ->assertSee('Letzte Aktivitäten');
 });
@@ -33,6 +37,37 @@ it('renders partner cards even when partner totals are missing', function () {
     get('/admin')
         ->assertSuccessful()
         ->assertSee('Test Partner');
+});
+
+it('renders cumulative charts when dashboard has data from multiple days', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $sportType = SportType::query()->create(['name' => 'Run']);
+
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-09-10 15:00:00',
+    ]);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-09-11 15:00:00',
+    ]);
+
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+
+    actingAs(User::factory()->create());
+
+    get(route('admin.dashboard'))
+        ->assertSuccessful()
+        ->assertSee('Sportler:innen-Registrierungen')
+        ->assertSee('Erwartete Spendensumme')
+        ->assertSee('scale="linear"', false)
+        ->assertSee('tick-values=', false)
+        ->assertDontSee('x-data="{ chartWidth:', false)
+        ->assertSee('ui-chart', false);
 });
 
 it('defaults dashboard data and links to the current event', function (): void {

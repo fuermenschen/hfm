@@ -154,3 +154,94 @@ it('scopes dashboard data and activities to an event', function (): void {
         ->and(collect($data['mostRecentActivities'])->pluck('name')->implode(' '))
         ->not->toContain('Other');
 });
+
+it('builds cumulative chart data relative to each event start', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+    $athlete = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'external_user_id' => $athlete->id,
+        'sport_type_id' => $sportType->id,
+        'rounds_estimated' => 10,
+        'created_at' => '2026-09-10 15:00:00',
+    ]);
+    $donor = ExternalUser::factory()->create();
+    Donation::factory()->forPair($donor, $registration)->create([
+        'amount_per_round' => 2,
+        'amount_min' => null,
+        'amount_max' => null,
+        'created_at' => '2026-09-11 15:00:00',
+    ]);
+
+    $data = app(GetDashboardDataAction::class)($event);
+
+    expect($data['chartEvents'])->toBe([
+        ['field' => 'event_'.$event->id, 'label' => $event->title.' ('.$event->slug.')', 'colorIndex' => 0],
+    ])
+        ->and($data['chartTickValues'])->toBe([-2, 0])
+        ->and($data['chartData']['registrations'])->toBe([
+            ['day' => -2, 'event_'.$event->id => 1],
+            ['day' => -1, 'event_'.$event->id => 1],
+            ['day' => 0, 'event_'.$event->id => 1],
+        ])
+        ->and($data['chartData']['donations'])->toBe([
+            ['day' => -2, 'event_'.$event->id => 0],
+            ['day' => -1, 'event_'.$event->id => 1],
+            ['day' => 0, 'event_'.$event->id => 1],
+        ])
+        ->and($data['chartData']['expectedAmount'])->toBe([
+            ['day' => -2, 'event_'.$event->id => 0.0],
+            ['day' => -1, 'event_'.$event->id => 20.0],
+            ['day' => 0, 'event_'.$event->id => 20.0],
+        ]);
+});
+
+it('compares all events in dashboard charts', function (): void {
+    $firstEvent = DonationEvent::factory()->year(2025)->create(['starts_at' => '2025-09-12 11:00:00']);
+    $secondEvent = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00', 'is_published' => false]);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $firstEvent->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2025-09-11 15:00:00',
+    ]);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $secondEvent->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-09-12 15:00:00',
+    ]);
+
+    $data = app(GetDashboardDataAction::class)();
+
+    expect($data['chartEvents'])->toHaveCount(2)
+        ->and(collect($data['chartEvents'])->pluck('label')->all())->toBe([
+            $secondEvent->title.' ('.$secondEvent->slug.') - NICHT VERÖFFENTLICHT',
+            $firstEvent->title.' ('.$firstEvent->slug.')',
+        ])
+        ->and($data['chartData']['registrations'])->toBe([
+            ['day' => -1, 'event_'.$secondEvent->id => 0, 'event_'.$firstEvent->id => 1],
+            ['day' => 0, 'event_'.$secondEvent->id => 1, 'event_'.$firstEvent->id => 1],
+        ]);
+});
+
+it('includes thirty days before the event in chart ticks when available', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-08-12 15:00:00',
+    ]);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-09-14 15:00:00',
+    ]);
+
+    $data = app(GetDashboardDataAction::class)($event);
+
+    expect($data['chartTickValues'])->toBe([-31, -30, 0, 2]);
+});
