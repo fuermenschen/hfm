@@ -7,6 +7,8 @@ namespace App\Models;
 use App\Enums\GroupMembershipRole;
 use App\Enums\GroupMembershipStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property DonationEvent $donationEvent
  * @property ExternalUser $externalUser
  * @property EventGroup|null $eventGroup
+ * @property int|null $event_group_id
+ * @property GroupMembershipStatus|null $group_membership_status
+ * @property GroupMembershipRole|null $group_membership_role
  * @property SportType $sportType
  * @property Partner|null $partner
  * @property Collection<int, Donation> $donations
@@ -68,6 +73,27 @@ class AthleteRegistration extends Model
     public function donations(): HasMany
     {
         return $this->hasMany(Donation::class);
+    }
+
+    public function hasGroupMembership(): bool
+    {
+        return $this->event_group_id !== null
+            || $this->group_membership_status !== null
+            || $this->group_membership_role !== null;
+    }
+
+    /**
+     * @api
+     *
+     * @param  Builder<AthleteRegistration>  $query
+     */
+    #[Scope]
+    protected function verifiedForEventUser(Builder $query, DonationEvent $donationEvent, ExternalUser $externalUser): void
+    {
+        $query
+            ->whereBelongsTo($donationEvent)
+            ->whereBelongsTo($externalUser)
+            ->where('verified', true);
     }
 
     protected function casts(): array

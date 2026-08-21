@@ -69,6 +69,27 @@ it('resolves event group relationships and enum casts', function (): void {
         ->and($admin->group_membership_role)->toBe(GroupMembershipRole::Admin);
 });
 
+it('creates only valid group membership column combinations', function (): void {
+    $event = DonationEvent::factory()->create();
+    $group = EventGroup::factory()->forEvent($event)->create();
+    $registration = AthleteRegistration::factory()->forEvent($event)->create();
+    $pending = AthleteRegistration::factory()->pendingGroup($group)->create();
+    $member = AthleteRegistration::factory()->acceptedMember($group)->create();
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+
+    expect([
+        [$registration->event_group_id, $registration->group_membership_status, $registration->group_membership_role],
+        [$pending->event_group_id, $pending->group_membership_status, $pending->group_membership_role],
+        [$member->event_group_id, $member->group_membership_status, $member->group_membership_role],
+        [$admin->event_group_id, $admin->group_membership_status, $admin->group_membership_role],
+    ])->toBe([
+        [null, null, null],
+        [$group->id, GroupMembershipStatus::Pending, null],
+        [$group->id, GroupMembershipStatus::Accepted, GroupMembershipRole::Member],
+        [$group->id, GroupMembershipStatus::Accepted, GroupMembershipRole::Admin],
+    ]);
+});
+
 it('keeps factory group memberships on the group event', function (): void {
     $groupEvent = DonationEvent::factory()->create();
     $otherEvent = DonationEvent::factory()->create();
