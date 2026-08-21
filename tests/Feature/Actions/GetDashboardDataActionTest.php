@@ -177,24 +177,15 @@ it('builds cumulative chart data relative to each event start', function (): voi
     $data = app(GetDashboardDataAction::class)($event);
 
     expect($data['chartEvents'])->toBe([
-        ['field' => 'event_'.$event->id, 'label' => $event->title.' ('.$event->slug.')', 'colorIndex' => 0],
+        ['field' => 'event_'.$event->id, 'slug' => $event->slug, 'label' => $event->title.' ('.$event->slug.')', 'colorIndex' => 0],
     ])
-        ->and($data['chartTickValues'])->toBe([-2, 0])
-        ->and($data['chartData']['registrations'])->toBe([
-            ['day' => -2, 'event_'.$event->id => 1],
-            ['day' => -1, 'event_'.$event->id => 1],
-            ['day' => 0, 'event_'.$event->id => 1],
-        ])
-        ->and($data['chartData']['donations'])->toBe([
-            ['day' => -2, 'event_'.$event->id => 0],
-            ['day' => -1, 'event_'.$event->id => 1],
-            ['day' => 0, 'event_'.$event->id => 1],
-        ])
-        ->and($data['chartData']['expectedAmount'])->toBe([
-            ['day' => -2, 'event_'.$event->id => 0.0],
-            ['day' => -1, 'event_'.$event->id => 20.0],
-            ['day' => 0, 'event_'.$event->id => 20.0],
-        ]);
+        ->and($data['chartTickValues'])->toBe([-60, -30, 0, 14])
+        ->and($data['chartData']['registrations'])->toHaveCount(75)
+        ->and($data['chartData']['registrations'][0])->toBe(['day' => -60, 'event_'.$event->id => 0])
+        ->and($data['chartData']['registrations'][74])->toBe(['day' => 14, 'event_'.$event->id => 1])
+        ->and($data['chartData']['donations'][0])->toBe(['day' => -60, 'event_'.$event->id => 0])
+        ->and($data['chartData']['donations'][74])->toBe(['day' => 14, 'event_'.$event->id => 1])
+        ->and($data['chartData']['expectedAmount'][74])->toBe(['day' => 14, 'event_'.$event->id => 20.0]);
 });
 
 it('compares all events in dashboard charts', function (): void {
@@ -220,28 +211,47 @@ it('compares all events in dashboard charts', function (): void {
             $secondEvent->title.' ('.$secondEvent->slug.') - NICHT VERÖFFENTLICHT',
             $firstEvent->title.' ('.$firstEvent->slug.')',
         ])
-        ->and($data['chartData']['registrations'])->toBe([
-            ['day' => -1, 'event_'.$secondEvent->id => 0, 'event_'.$firstEvent->id => 1],
-            ['day' => 0, 'event_'.$secondEvent->id => 1, 'event_'.$firstEvent->id => 1],
+        ->and($data['chartData']['registrations'][0])->toBe([
+            'day' => -60,
+            'event_'.$secondEvent->id => 0,
+            'event_'.$firstEvent->id => 0,
+        ])
+        ->and($data['chartData']['registrations'][74])->toBe([
+            'day' => 14,
+            'event_'.$secondEvent->id => 1,
+            'event_'.$firstEvent->id => 1,
         ]);
 });
 
-it('includes thirty days before the event in chart ticks when available', function (): void {
+it('limits chart activity to sixty days before through fourteen days after an event', function (): void {
     $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
     $sportType = SportType::query()->create(['name' => 'Run']);
 
-    AthleteRegistration::factory()->create([
+    $earlyRegistration = AthleteRegistration::factory()->create([
         'donation_event_id' => $event->id,
         'sport_type_id' => $sportType->id,
-        'created_at' => '2026-08-12 15:00:00',
+        'created_at' => '2026-06-01 15:00:00',
     ]);
     AthleteRegistration::factory()->create([
         'donation_event_id' => $event->id,
         'sport_type_id' => $sportType->id,
-        'created_at' => '2026-09-14 15:00:00',
+        'created_at' => '2026-09-26 15:00:00',
     ]);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-09-27 15:00:00',
+    ]);
+    $donor = ExternalUser::factory()->create();
+    Donation::factory()->forPair($donor, $earlyRegistration)->create(['created_at' => '2026-06-01 15:00:00']);
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $earlyRegistration)->create(['created_at' => '2026-09-27 15:00:00']);
 
     $data = app(GetDashboardDataAction::class)($event);
 
-    expect($data['chartTickValues'])->toBe([-31, -30, 0, 2]);
+    expect($data['chartTickValues'])->toBe([-60, -30, 0, 14])
+        ->and($data['chartData']['registrations'])->toHaveCount(75)
+        ->and($data['chartData']['registrations'][0])->toBe(['day' => -60, 'event_'.$event->id => 1])
+        ->and($data['chartData']['registrations'][74])->toBe(['day' => 14, 'event_'.$event->id => 2])
+        ->and($data['chartData']['donations'][0])->toBe(['day' => -60, 'event_'.$event->id => 1])
+        ->and($data['chartData']['donations'][74])->toBe(['day' => 14, 'event_'.$event->id => 1]);
 });
