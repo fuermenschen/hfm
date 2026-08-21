@@ -44,7 +44,7 @@ class GetDashboardDataAction
      *     estimatedAmounts: array<int, float>,
      *     actualAmounts: array<int, float>,
      *     mostRecentActivities: array<int, array<string, mixed>>,
-     *     chartEvents: array<int, array{field: string, label: string, colorIndex: int}>,
+     *     chartEvents: array<int, array{field: string, slug: string, label: string, colorIndex: int}>,
      *     chartData: array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>},
      *     chartTickValues: array<int, int>,
      * }
@@ -124,7 +124,7 @@ class GetDashboardDataAction
 
     /**
      * @param  Collection<int, DonationEvent>  $events
-     * @return array<int, array{field: string, label: string, colorIndex: int}>
+     * @return array<int, array{field: string, slug: string, label: string, colorIndex: int}>
      */
     protected function chartEvents(Collection $events): array
     {
@@ -132,6 +132,7 @@ class GetDashboardDataAction
             ->values()
             ->map(fn (DonationEvent $chartEvent, int $index): array => [
                 'field' => 'event_'.$chartEvent->id,
+                'slug' => $chartEvent->slug,
                 'label' => $chartEvent->title.' ('.$chartEvent->slug.')'.($chartEvent->is_published ? '' : ' - NICHT VERÖFFENTLICHT'),
                 'colorIndex' => $index % 6,
             ])
@@ -140,7 +141,7 @@ class GetDashboardDataAction
 
     /**
      * @param  Collection<int, DonationEvent>  $events
-     * @param  array<int, array{field: string, label: string, colorIndex: int}>  $chartEvents
+     * @param  array<int, array{field: string, slug: string, label: string, colorIndex: int}>  $chartEvents
      * @param  Collection<int, Donation>  $donations
      * @return array{chartData: array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>}, chartTickValues: array<int, int>}
      */
@@ -170,6 +171,11 @@ class GetDashboardDataAction
             }
 
             $day = $this->relativeDay($registration->created_at, $chartEvent);
+            if ($day > 14) {
+                continue;
+            }
+
+            $day = max($day, -60);
             $field = 'event_'.$chartEvent->id;
             $deltas['registrations'][$field][$day] = ($deltas['registrations'][$field][$day] ?? 0) + 1;
             $days[] = $day;
@@ -187,6 +193,11 @@ class GetDashboardDataAction
             }
 
             $day = $this->relativeDay($donation->created_at, $chartEvent);
+            if ($day > 14) {
+                continue;
+            }
+
+            $day = max($day, -60);
             $field = 'event_'.$chartEvent->id;
             $deltas['donations'][$field][$day] = ($deltas['donations'][$field][$day] ?? 0) + 1;
             $deltas['expectedAmount'][$field][$day] = ($deltas['expectedAmount'][$field][$day] ?? 0.0) + $this->donationService->calculateEstimatedAmount($donation);
@@ -200,8 +211,8 @@ class GetDashboardDataAction
             ];
         }
 
-        $minimumDay = min(min($days), 0);
-        $maximumDay = max(max($days), 0);
+        $minimumDay = -60;
+        $maximumDay = 14;
         $chartData = ['registrations' => [], 'donations' => [], 'expectedAmount' => []];
 
         foreach (array_keys($chartData) as $metric) {
@@ -220,16 +231,7 @@ class GetDashboardDataAction
             }
         }
 
-        $chartTickValues = [$minimumDay];
-
-        if ($minimumDay <= -30) {
-            $chartTickValues[] = -30;
-        }
-
-        $chartTickValues[] = 0;
-        $chartTickValues[] = $maximumDay;
-        $chartTickValues = array_values(array_unique($chartTickValues));
-        sort($chartTickValues);
+        $chartTickValues = [-60, -30, 0, 14];
 
         return compact('chartData', 'chartTickValues');
     }
