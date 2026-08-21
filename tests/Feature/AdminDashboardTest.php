@@ -7,6 +7,7 @@ use App\Models\Partner;
 use App\Models\SportType;
 use App\Models\User;
 use App\Settings\EventSettings;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Laravel\actingAs;
@@ -40,6 +41,7 @@ it('renders partner cards even when partner totals are missing', function () {
 });
 
 it('renders cumulative charts when dashboard has data from multiple days', function (): void {
+    Carbon::setTestNow('2026-09-02 12:00:00');
     $event = DonationEvent::factory()->year(2026)->create();
     $sportType = SportType::query()->create(['name' => 'Run']);
 
@@ -66,8 +68,16 @@ it('renders cumulative charts when dashboard has data from multiple days', funct
         ->assertSee('Erwartete Spendensumme')
         ->assertSee('scale="linear"', false)
         ->assertSee('tick-values=', false)
+        ->assertSee('Heute:')
+        ->assertSee('Tag -10')
+        ->assertSee('data-today-marker', false)
+        ->assertSee('stroke-width="2"', false)
+        ->assertSee('stroke-dasharray="4 4"', false)
+        ->assertSee('Die vertikale gestrichelte Linie markiert den heutigen Stand.')
         ->assertDontSee('x-data="{ chartWidth:', false)
         ->assertSee('ui-chart', false);
+
+    Carbon::setTestNow();
 });
 
 it('defaults dashboard data and links to the current event', function (): void {

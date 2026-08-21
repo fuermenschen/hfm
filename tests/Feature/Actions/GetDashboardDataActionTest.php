@@ -7,6 +7,7 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
+use Carbon\Carbon;
 
 it('builds dashboard data with expected aggregates', function (): void {
     $sportType = SportType::query()->create(['name' => 'Run']);
@@ -156,6 +157,7 @@ it('scopes dashboard data and activities to an event', function (): void {
 });
 
 it('builds cumulative chart data relative to each event start', function (): void {
+    Carbon::setTestNow('2026-10-01 12:00:00');
     $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
     $sportType = SportType::query()->create(['name' => 'Run']);
     $athlete = ExternalUser::factory()->create();
@@ -175,6 +177,7 @@ it('builds cumulative chart data relative to each event start', function (): voi
     ]);
 
     $data = app(GetDashboardDataAction::class)($event);
+    Carbon::setTestNow();
 
     expect($data['chartEvents'])->toBe([
         ['field' => 'event_'.$event->id, 'slug' => $event->slug, 'label' => $event->title.' ('.$event->slug.')', 'colorIndex' => 0],
@@ -189,6 +192,7 @@ it('builds cumulative chart data relative to each event start', function (): voi
 });
 
 it('compares all events in dashboard charts', function (): void {
+    Carbon::setTestNow('2026-10-01 12:00:00');
     $firstEvent = DonationEvent::factory()->year(2025)->create(['starts_at' => '2025-09-12 11:00:00']);
     $secondEvent = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00', 'is_published' => false]);
     $sportType = SportType::query()->create(['name' => 'Run']);
@@ -205,6 +209,7 @@ it('compares all events in dashboard charts', function (): void {
     ]);
 
     $data = app(GetDashboardDataAction::class)();
+    Carbon::setTestNow();
 
     expect($data['chartEvents'])->toHaveCount(2)
         ->and(collect($data['chartEvents'])->pluck('label')->all())->toBe([
@@ -224,6 +229,7 @@ it('compares all events in dashboard charts', function (): void {
 });
 
 it('limits chart activity to sixty days before through fourteen days after an event', function (): void {
+    Carbon::setTestNow('2026-10-01 12:00:00');
     $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
     $sportType = SportType::query()->create(['name' => 'Run']);
 
@@ -247,6 +253,7 @@ it('limits chart activity to sixty days before through fourteen days after an ev
     Donation::factory()->forPair(ExternalUser::factory()->create(), $earlyRegistration)->create(['created_at' => '2026-09-27 15:00:00']);
 
     $data = app(GetDashboardDataAction::class)($event);
+    Carbon::setTestNow();
 
     expect($data['chartTickValues'])->toBe([-60, -30, 0, 14])
         ->and($data['chartData']['registrations'])->toHaveCount(75)
@@ -254,4 +261,22 @@ it('limits chart activity to sixty days before through fourteen days after an ev
         ->and($data['chartData']['registrations'][74])->toBe(['day' => 14, 'event_'.$event->id => 2])
         ->and($data['chartData']['donations'][0])->toBe(['day' => -60, 'event_'.$event->id => 1])
         ->and($data['chartData']['donations'][74])->toBe(['day' => 14, 'event_'.$event->id => 1]);
+});
+
+it('marks today relative to events that are in preparation', function (): void {
+    Carbon::setTestNow('2026-09-02 12:00:00');
+    $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'created_at' => '2026-08-23 15:00:00',
+    ]);
+    $data = app(GetDashboardDataAction::class)($event);
+    Carbon::setTestNow();
+
+    expect($data['chartTodayMarkers'])->toBe([['slug' => $event->slug, 'day' => -10]])
+        ->and($data['chartTickValues'])->toBe([-60, -30, -10, 0, 14])
+        ->and($data['chartData']['registrations'][74])->toBe(['day' => 14, 'event_'.$event->id => 1]);
 });
