@@ -47,6 +47,7 @@ class GetDashboardDataAction
      *     chartEvents: array<int, array{field: string, slug: string, label: string, colorIndex: int}>,
      *     chartData: array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>},
      *     chartTickValues: array<int, int>,
+     *     chartTodayMarkers: array<int, array{slug: string, day: int}>,
      * }
      */
     public function __invoke(?DonationEvent $event = null): array
@@ -94,6 +95,19 @@ class GetDashboardDataAction
         $chartDonationEvents = $event instanceof DonationEvent ? collect([$event]) : $events;
         $chartEvents = $this->chartEvents($chartDonationEvents);
         ['chartData' => $chartData, 'chartTickValues' => $chartTickValues] = $this->buildChartData($chartDonationEvents, $chartEvents, $donations);
+        $chartTodayMarkers = [];
+
+        foreach ($chartDonationEvents as $chartDonationEvent) {
+            $day = $this->relativeDay(now($chartDonationEvent->timezone), $chartDonationEvent);
+            if ($day >= -60 && $day < 0) {
+                $chartTodayMarkers[] = ['slug' => $chartDonationEvent->slug, 'day' => $day];
+            }
+        }
+
+        $chartTodayValues = array_values(array_unique(array_column($chartTodayMarkers, 'day')));
+        sort($chartTodayValues);
+        $chartTickValues = array_values(array_unique([...$chartTickValues, ...$chartTodayValues]));
+        sort($chartTickValues);
 
         $mostRecentActivities = $this->buildRecentActivities($event);
 
@@ -119,6 +133,7 @@ class GetDashboardDataAction
             'chartEvents',
             'chartData',
             'chartTickValues',
+            'chartTodayMarkers',
         );
     }
 
@@ -229,6 +244,7 @@ class GetDashboardDataAction
 
                 $chartData[$metric][] = $point;
             }
+
         }
 
         $chartTickValues = [-60, -30, 0, 14];

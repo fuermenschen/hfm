@@ -61,6 +61,11 @@
                                             <flux:chart.line :field="$chartEvent['field']" :class="$chartColors[$chartEvent['colorIndex']]" curve="none" />
                                         @endforeach
 
+                                        @foreach ($chartTodayMarkers as $marker)
+                                            @php($position = (($marker['day'] - min($chartTickValues)) / (max($chartTickValues) - min($chartTickValues))) * 100)
+                                            <line data-today-marker x1="{{ $position }}%" x2="{{ $position }}%" y1="0" y2="100%" class="text-zinc-500 dark:text-zinc-300" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" pointer-events="none" />
+                                        @endforeach
+
                                         <flux:chart.axis axis="x" field="day" scale="linear" :tick-values="$chartTickValues" tick-prefix="Tag&nbsp;">
                                             <flux:chart.axis.grid />
                                             <flux:chart.axis.tick class="text-[10px] sm:text-xs" />
@@ -78,7 +83,7 @@
                                     <flux:chart.tooltip>
                                         <div class="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 p-2 text-xs font-medium text-zinc-800 dark:border-zinc-500 dark:bg-zinc-600 dark:text-zinc-100">
                                             Tag&nbsp;<slot field="day"></slot>
-                                        </div>
+                                         </div>
                                         @foreach ($chartEvents as $chartEvent)
                                             <flux:chart.tooltip.value :field="$chartEvent['field']" :label="$chartEvent['slug']" :format="$metric['format']" />
                                         @endforeach
@@ -89,7 +94,16 @@
                     @endforeach
                 </div>
 
-                <flux:text class="mt-7 text-sm">Tag 0 ist Tag des Anlasses. Die erwartete Spendensumme basiert auf den geschätzten Runden.</flux:text>
+                <flux:text class="mt-7 text-sm">
+                    Tag 0 ist Tag des Anlasses. Die erwartete Spendensumme basiert auf den geschätzten Runden.
+                    @if ($chartTodayMarkers !== [])
+                        Heute:
+                        @foreach ($chartTodayMarkers as $marker)
+                            {{ $marker['slug'] }} Tag {{ $marker['day'] }}{{ $loop->last ? '.' : ',' }}
+                        @endforeach
+                        Die vertikale gestrichelte Linie markiert den heutigen Stand.
+                    @endif
+                </flux:text>
             @endif
         </flux:card>
 
