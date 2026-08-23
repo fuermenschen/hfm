@@ -1,3 +1,11 @@
+@use('Laravel\Pulse\Facades\Pulse')
+
+@once
+    @push('head')
+        {!! Pulse::css() !!}
+    @endpush
+@endonce
+
 @component('layouts.admin', ['title' => 'Pulse'])
 
     @section('content')
