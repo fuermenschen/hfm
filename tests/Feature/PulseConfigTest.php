@@ -29,13 +29,15 @@ it('groups high-cardinality cache keys on the pulse dashboard', function (string
     'ungrouped key stays as-is' => ['some-other-key', 'some-other-key'],
 ]);
 
-it('ignores pulse dashboard requests at its actual path', function (): void {
-    $path = '/'.config('pulse.path');
-
+it('ignores pulse dashboard requests at its actual path', function (string $path): void {
     foreach ([SlowRequests::class, UserRequests::class] as $recorder) {
         $ignored = collect(config('pulse.recorders.'.$recorder.'.ignore'))
             ->contains(fn (string $pattern): bool => preg_match($pattern, $path) === 1);
 
         expect($ignored)->toBeTrue();
     }
-});
+})->with(fn () => [
+    'dashboard path' => ['/admin/pulse'],
+    'trailing slash' => ['/admin/pulse/'],
+    'subpath' => ['/admin/pulse/some/card'],
+]);
