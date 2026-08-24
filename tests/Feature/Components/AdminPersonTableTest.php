@@ -3,6 +3,7 @@
 use App\Components\AdminPersonTable;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\User;
@@ -107,6 +108,29 @@ it('shows equal split for athletes without a selected partner', function (): voi
     Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
         ->set('eventSlug', $event->slug)
         ->assertSee(__('app.equal_split_full'));
+});
+
+it('shows selected group and confirmation pills for athletes', function (): void {
+    $event = DonationEvent::factory()->create();
+    $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Team Blau']);
+
+    $confirmedAthlete = ExternalUser::factory()->asAthlete($event, [
+        'event_group_id' => $group->id,
+        'verified' => true,
+    ])->create(['first_name' => 'Confirmed Athlete']);
+    $unconfirmedAthlete = ExternalUser::factory()->asAthlete($event, [
+        'event_group_id' => $group->id,
+        'verified' => false,
+    ])->create(['first_name' => 'Unconfirmed Athlete']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee('Gruppe')
+        ->assertSee('OK')
+        ->assertSee('Team Blau')
+        ->assertSee($confirmedAthlete->first_name)
+        ->assertSee($unconfirmedAthlete->first_name)
+        ->assertSee('NOK');
 });
 
 it('searches athletes by public ID and selected partner', function (): void {
