@@ -4,7 +4,8 @@
 
 @section('content')
     @php
-        $membershipStatus = $registration->event_group_id === $eventGroup->id && ! $eventGroup->donationEvent->hasEnded()
+        $membershipStatus = $registration->event_group_id === $eventGroup->id
+            && ($registration->group_membership_status?->value === 'accepted' || ! $eventGroup->donationEvent->hasEnded())
             ? $registration->group_membership_status?->value
             : null;
         $membershipRole = $registration->event_group_id === $eventGroup->id ? $registration->group_membership_role?->value : null;

@@ -23,7 +23,7 @@ class PortalEventGroupDiscoveryController extends Controller
             404,
         );
 
-        $athleteRegistration->load('donationEvent:id,title,timezone,ends_at,is_published');
+        $athleteRegistration->load('donationEvent:id,slug,title,timezone,ends_at,is_published');
         abort_unless($athleteRegistration->donationEvent->is_published, 404);
 
         $groups = EventGroup::query()

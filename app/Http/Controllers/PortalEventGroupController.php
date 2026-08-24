@@ -21,7 +21,7 @@ class PortalEventGroupController extends Controller
         [$externalUser, , $viewData] = $portalContext($request);
         Gate::forUser($externalUser)->authorize('view', $eventGroup);
 
-        $eventGroup->load('donationEvent:id,title,timezone,ends_at,is_published');
+        $eventGroup->load('donationEvent:id,slug,title,timezone,ends_at,is_published');
         abort_unless($eventGroup->donationEvent->is_published, 404);
         $registration = AthleteRegistration::query()
             ->verifiedForEventUser($eventGroup->donationEvent, $externalUser)

@@ -58,6 +58,7 @@ it('shows only group metadata to confirmed non-members', function (): void {
         ->assertSuccessful()
         ->assertSeeText('Noch nicht Mitglied')
         ->assertSeeText('Team Blau')
+        ->assertSee(route('portal.participations', ['anlass' => $event->slug]), false)
         ->assertDontSeeText($member->externalUser->privacy_name)
         ->assertDontSee('secret@example.test')
         ->assertDontSee('+41790000000');
@@ -147,6 +148,7 @@ it('limits discovery to the owned participation event and accepted counts', func
         ->assertSuccessful()
         ->assertSeeText('Sichtbar')
         ->assertSeeText('1 bestätigte Mitglieder')
+        ->assertSee(route('portal.participations', ['anlass' => $event->slug]), false)
         ->assertDontSeeText($hidden->name);
 });
 
@@ -262,6 +264,7 @@ it('renders accepted archive members only and no mutations after event end', fun
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
         ->assertSeeText('Archiv')
+        ->assertSeeText('Administrator:in')
         ->assertSeeText($member->externalUser->privacy_name)
         ->assertDontSeeText($pending->externalUser->privacy_name)
         ->assertDontSeeText('Offene Anfragen')
@@ -271,6 +274,7 @@ it('renders accepted archive members only and no mutations after event end', fun
 
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
+        ->assertSeeText('Mitglied')
         ->assertSeeText('Noch nicht Mitglied')
         ->assertDontSeeText('Anfrage offen');
 
