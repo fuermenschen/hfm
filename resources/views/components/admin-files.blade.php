@@ -6,10 +6,7 @@
                     @if ($breadcrumb['current'])
                         <flux:breadcrumbs.item>{{ $breadcrumb['label'] }}</flux:breadcrumbs.item>
                     @else
-                        <flux:breadcrumbs.item
-                            href="#"
-                            wire:click.prevent="openDirectory(@js($breadcrumb['path']))"
-                        >
+                        <flux:breadcrumbs.item href="#" wire:click.prevent="openDirectory(@js($breadcrumb['path']))">
                             {{ $breadcrumb['label'] }}</flux:breadcrumbs.item>
                     @endif
                 @endforeach

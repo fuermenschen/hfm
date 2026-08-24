@@ -87,7 +87,7 @@
         ],
         "precommit": [
             "vendor/bin/rector process",
-            "vendor/bin/pint --dirty --blade",
+            "vendor/bin/pint",
             "vendor/bin/peck",
             "npm run build",
             "vendor/bin/phpstan analyze",
@@ -96,7 +96,7 @@
         ],
         "lint:ai": [
             "vendor/bin/rector process --ansi",
-            "vendor/bin/pint --dirty --blade -q",
+            "vendor/bin/pint -q",
             "vendor/bin/peck -q"
         ],
         "test:sca:ai": [
