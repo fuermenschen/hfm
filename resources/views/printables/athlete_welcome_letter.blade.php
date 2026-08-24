@@ -101,7 +101,6 @@
             margin-top: 0;
             overflow-wrap: anywhere;
         }
-
     </style>
 
     <!-- Logo and Sender -->
@@ -111,7 +110,8 @@
         <div>
             <p>
                 @foreach ($officialAddress as $line)
-                    {{ $line }}<br>
+                    {{ $line }}<br
+                     />
                 @endforeach
             </p>
             <p>{{ $mailFromAddress }}</p>
@@ -125,9 +125,9 @@
             @if ($registration->adult === false)
                 An die Eltern von
             @endif
-            <br>
-            {{ $athlete->first_name }} {{ $athlete->last_name }}<br>
-            {{ $athlete->address }}<br>
+            <br />
+            {{ $athlete->first_name }} {{ $athlete->last_name }}<br />
+            {{ $athlete->address }}<br />
             {{ $athlete->zip_code }} {{ $athlete->city }}
         </p>
     </div>
@@ -144,12 +144,8 @@
 
     <!-- Body -->
     <div class="body">
-        <p>
-            Liebe:r {{ $athlete->first_name }}
-        </p>
-        <p>
-            Vielen Dank, dass du beim Anlass <strong>{{ $event->title }}</strong> mitmachst!
-        </p>
+        <p>Liebe:r {{ $athlete->first_name }}</p>
+        <p>Vielen Dank, dass du beim Anlass <strong>{{ $event->title }}</strong> mitmachst!</p>
         <p>
             Du hast bei deiner Anmeldung angegeben, dass du ungefähr
             <strong>{{ $registration->rounds_estimated }} Runden</strong>
@@ -157,37 +153,32 @@
             die Organisation <strong>{{ $partnerName }}</strong>.
         </p>
         <p>
-            Wir möchten dir das Suchen von
-            Spender:innen so einfach wie möglich machen.
-            Deshalb erhältst du anbei personalisierte Flyer, die dich dabei unterstützen.
-            In deinem persönlichen Bereich auf der Webseite findest du weitere Inhalte, zum Beispiel personalisierte Bilder für WhatsApp-Storys und Beispieltexte.
+            Wir möchten dir das Suchen von Spender:innen so einfach wie möglich machen. Deshalb erhältst du anbei
+            personalisierte Flyer, die dich dabei unterstützen. In deinem persönlichen Bereich auf der Webseite findest
+            du weitere Inhalte, zum Beispiel personalisierte Bilder für WhatsApp-Storys und Beispieltexte.
         </p>
         <p>
-            Wenn du weitere Flyer oder ein Plakat benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei uns.
+            Wenn du weitere Flyer oder ein Plakat benötigst oder sonst etwas von uns brauchst, melde dich jederzeit bei
+            uns.
         </p>
         <p>
             Am Anlass selbst, am <strong>{{ $eventDate }}</strong>, hast du dann von {{ $eventStartTime }}&nbsp;Uhr bis {{ $eventEndTime }}&nbsp;Uhr
-            Zeit, um so viele Runden wie möglich
-            zurückzulegen. Alles weitere, etwa das Eintreiben der Spenden, erledigen wir für dich.
+            Zeit, um so viele Runden wie möglich zurückzulegen. Alles weitere, etwa das Eintreiben der Spenden,
+            erledigen wir für dich.
         </p>
         <p>
-            Kurz vor dem Anlass senden wir dir nochmals alle wichtigen Informationen per Mail zu. Zudem
-            aktualisieren wir
-            laufend die Webseite mit den neusten Informationen.
+            Kurz vor dem Anlass senden wir dir nochmals alle wichtigen Informationen per Mail zu. Zudem aktualisieren
+            wir laufend die Webseite mit den neusten Informationen.
         </p>
+        <p>Wir freuen uns, dass du dabei bist und wünschen dir viel Erfolg bei der Spender:innen-Suche!</p>
         <p>
-            Wir freuen uns, dass du dabei bist und wünschen dir viel Erfolg bei der Spender:innen-Suche!
-        </p>
-        <p>
-            Herzliche Grüsse<br>
+            Herzliche Grüsse<br />
             Das Team von {{ $event->title }}
         </p>
         <p>
-        P.S.: Auch dieses Jahr dürfen sich die Sportler:innen, die am meisten Spendengelder sammeln, auf attraktive Preise freuen!
+            P.S.: Auch dieses Jahr dürfen sich die Sportler:innen, die am meisten Spendengelder sammeln, auf attraktive
+            Preise freuen!
         </p>
-
-
-
     </div>
 
     <!-- QR Code -->

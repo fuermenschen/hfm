@@ -1,5 +1,9 @@
 @if ($this->isColumnSortable($column))
-    <button type="button" wire:click="sortByColumn('{{ $column }}')" class="inline-flex cursor-pointer items-center gap-1">
+    <button
+        type="button"
+        wire:click="sortByColumn('{{ $column }}')"
+        class="inline-flex cursor-pointer items-center gap-1"
+    >
         <span>{{ $label }}</span>
 
         @if ($this->sortIndicator($column) === 'asc')

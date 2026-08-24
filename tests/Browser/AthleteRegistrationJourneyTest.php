@@ -66,7 +66,8 @@ it('lets a logged in external user register and confirm through email link', fun
     $page->navigate($confirmationUrl)->assertPathIs('/portal');
     $page->script('window.portalSpaMarker = true');
 
-    $page->pressAndWaitFor('Anmeldung bestätigen', 0.2)
+    $page->click('[wire\\:key="pending-athlete-'.$registration->id.'"]:has-text("Anmeldung bestätigen")')
+        ->wait(0.2)
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
         ->assertSee('Bestätigt')
         ->assertDontSee('Bestätigung ausstehend')
@@ -145,7 +146,8 @@ it('lets a returning guest resume registration through a signed login link', fun
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
+        ->click('[wire\\:key="pending-athlete-'.$registration->id.'"]:has-text("Anmeldung bestätigen")')
+        ->wait(0.2)
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
         ->assertNoJavaScriptErrors();
 
@@ -210,7 +212,8 @@ it('lets a new guest register and confirm through email link', function (): void
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->pressAndWaitFor('Anmeldung bestätigen', 0.2)
+        ->click('[wire\\:key="pending-athlete-'.$registration->id.'"]:has-text("Anmeldung bestätigen")')
+        ->wait(0.2)
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
         ->assertNoJavaScriptErrors();
 

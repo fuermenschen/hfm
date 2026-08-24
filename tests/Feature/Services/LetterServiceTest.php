@@ -39,7 +39,6 @@ it('builds and posts a letter for a debitor', function (): void {
         $bodyBlocks = $data['body'];
         $intro = $bodyBlocks[3][0]['content']['html'] ?? '';
         $outro = $bodyBlocks[5][0]['content']['html'] ?? '';
-        dump($intro, $outro);
         expect($intro)->toContain('Liebe:r Anna')
             ->and($outro)->toContain('Bitte verwende zur');
 

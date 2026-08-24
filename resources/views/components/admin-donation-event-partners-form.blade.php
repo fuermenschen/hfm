@@ -5,7 +5,13 @@
             icon="exclamation-triangle"
             heading="Bitte überprüfe die Partner:innen"
             tabindex="-1"
-            x-init="$nextTick(() => { const field = $el.parentElement.querySelector('[aria-invalid=true]'); (field ?? $el).scrollIntoView({ behavior: 'smooth', block: 'center' }); (field ?? $el).focus(); })"
+            x-init="
+                $nextTick(() => {
+                    const field = $el.parentElement.querySelector('[aria-invalid=true]');
+                    (field ?? $el).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    (field ?? $el).focus();
+                })
+            "
         >
             <ul class="list-disc space-y-1 pl-5">
                 @foreach ($errors->all() as $error)
@@ -27,11 +33,15 @@
         </div>
 
         <flux:callout icon="information-circle">
-            Veröffentlichte Partner:innen erscheinen auf der Startseite und in der Anmeldung. Partner:innen mit bestehenden Anmeldungen können nicht entfernt werden.
+            Veröffentlichte Partner:innen erscheinen auf der Startseite und in der Anmeldung. Partner:innen mit
+            bestehenden Anmeldungen können nicht entfernt werden.
         </flux:callout>
 
         @forelse ($assignedPartnerRows as $index => $partnerRow)
-            <div wire:key="event-partner-assigned-{{ $partnerRow['id'] }}" class="grid gap-4 border-t border-zinc-200 pt-5 dark:border-zinc-700 lg:grid-cols-[minmax(12rem,1fr)_2fr]">
+            <div
+                wire:key="event-partner-assigned-{{ $partnerRow['id'] }}"
+                class="grid gap-4 border-t border-zinc-200 pt-5 lg:grid-cols-[minmax(12rem,1fr)_2fr] dark:border-zinc-700"
+            >
                 <div class="space-y-2">
                     <flux:heading>{{ $partnerRow['name'] }}</flux:heading>
 
@@ -59,7 +69,7 @@
                     @if ($partnerRow['was_attached'] && ! $partnerRow['is_locked'])
                         <flux:callout
                             x-cloak
-                            x-show="!$wire.partnerRows[{{ $index }}].attached"
+                            x-show="! $wire.partnerRows[{{ $index }}].attached"
                             variant="warning"
                             icon="exclamation-triangle"
                             heading="Vom Anlass entfernen"
@@ -72,7 +82,7 @@
                 <div class="grid items-start gap-4 sm:grid-cols-2">
                     <flux:switch
                         wire:model="partnerRows.{{ $index }}.is_published"
-                        x-bind:disabled="!$wire.partnerRows[{{ $index }}].attached"
+                        x-bind:disabled="! $wire.partnerRows[{{ $index }}].attached"
                         label="Veröffentlicht"
                         description="Sichtbar auf Startseite und in Anmeldung."
                     />
@@ -80,14 +90,17 @@
                     <flux:field>
                         <div class="flex items-center gap-1">
                             <flux:label badge="Pflichtfeld">Reihenfolge</flux:label>
-                            <x-admin.field-info label="Reihenfolge" text="Kleinere Zahlen erscheinen zuerst. Bei gleicher Zahl wird nach Name sortiert." />
+                            <x-admin.field-info
+                                label="Reihenfolge"
+                                text="Kleinere Zahlen erscheinen zuerst. Bei gleicher Zahl wird nach Name sortiert."
+                            />
                         </div>
                         <flux:input
                             type="number"
                             min="0"
                             step="1"
                             wire:model="partnerRows.{{ $index }}.sort_order"
-                            x-bind:disabled="!$wire.partnerRows[{{ $index }}].attached"
+                            x-bind:disabled="! $wire.partnerRows[{{ $index }}].attached"
                             required
                         />
                         <flux:error name="partnerRows.{{ $index }}.sort_order" />
@@ -110,16 +123,21 @@
         </div>
 
         @forelse ($availablePartnerRows as $index => $partnerRow)
-            <div wire:key="event-partner-available-{{ $partnerRow['id'] }}" class="flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+            <div
+                wire:key="event-partner-available-{{ $partnerRow['id'] }}"
+                class="flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700"
+            >
                 <flux:text class="font-medium">{{ $partnerRow['name'] }}</flux:text>
                 <flux:spacer />
-                <flux:button type="button" size="sm" variant="primary" wire:click="attachPartner({{ $index }})">Zuordnen</flux:button>
+                <flux:button type="button" size="sm" variant="primary" wire:click="attachPartner({{ $index }})"
+                    >Zuordnen</flux:button>
             </div>
         @empty
             @if ($partnerRows === [])
                 <flux:callout icon="user-group" heading="Keine Partner:innen vorhanden">
                     Erfasse zuerst Partner:innen in der Partner:innen-Verwaltung.
-                    <flux:callout.link href="{{ route('admin.partners.index') }}" wire:navigate.hover>Partner:innen verwalten</flux:callout.link>
+                    <flux:callout.link href="{{ route('admin.partners.index') }}" wire:navigate.hover>
+                        Partner:innen verwalten</flux:callout.link>
                 </flux:callout>
             @else
                 <flux:text>Alle Partner:innen sind zugeordnet.</flux:text>
@@ -129,12 +147,17 @@
 
     <div class="sticky bottom-0 z-20 flex items-center gap-3 border-t border-zinc-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/95">
         <div x-cloak x-show="$wire.$dirty() || $wire.hasUnsavedChanges" class="space-y-1.5">
-            <flux:text class="text-sm text-accent">Ungespeicherte Änderungen</flux:text>
+            <flux:text class="text-accent text-sm">Ungespeicherte Änderungen</flux:text>
             <div class="flex flex-wrap gap-1.5">
                 @foreach ($partnerRows as $index => $partnerRow)
-                    <flux:badge size="sm" x-cloak x-show="$wire.$dirty('partnerRows.{{ $index }}')">{{ $partnerRow['name'] }}</flux:badge>
+                    <flux:badge
+                        size="sm"
+                        x-cloak
+                        x-show="$wire.$dirty('partnerRows.{{ $index }}')"
+                    >{{ $partnerRow['name'] }}</flux:badge>
                 @endforeach
-                <flux:badge size="sm" x-cloak x-show="$wire.hasUnsavedChanges && !$wire.$dirty()">Zuordnungen</flux:badge>
+                <flux:badge size="sm" x-cloak x-show="$wire.hasUnsavedChanges && ! $wire.$dirty()"
+                    >Zuordnungen</flux:badge>
             </div>
         </div>
         <flux:spacer />

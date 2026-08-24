@@ -19,7 +19,9 @@
 
                 <flux:callout>
                     <flux:callout.heading icon="exclamation-triangle">Änderungen gelten sofort</flux:callout.heading>
-                    <flux:callout.text>Gespeicherte Einstellungen werden unmittelbar aktiv und können das Verhalten im gesamten System beeinflussen.</flux:callout.text>
+                    <flux:callout.text>
+                        Gespeicherte Einstellungen werden unmittelbar aktiv und können das Verhalten im gesamten System
+                        beeinflussen.</flux:callout.text>
                 </flux:callout>
             </div>
         </flux:tab.panel>
@@ -41,7 +43,8 @@
                         <div class="space-y-1">
                             <div class="flex items-center justify-between gap-3">
                                 <flux:heading size="lg">{{ $classTitle }}</flux:heading>
-                                <flux:text wire:dirty wire:target="{{ $classTargets }}" class="text-xs text-accent">Ungespeichert</flux:text>
+                                <flux:text wire:dirty wire:target="{{ $classTargets }}" class="text-accent text-xs"
+                                    >Ungespeichert</flux:text>
                             </div>
                             @if (! empty($classDesc))
                                 <flux:subheading>{{ $classDesc }}</flux:subheading>
@@ -62,21 +65,35 @@
                                 <flux:field>
                                     <span>
                                         <flux:label>{{ $title }}</flux:label>
-                                        <span wire:dirty wire:target="values.{{ $fqcn }}.{{ $name }}" class="ml-1 text-xs opacity-70 text-accent">(ungespeichert)</span>
+                                        <span
+                                            wire:dirty
+                                            wire:target="values.{{ $fqcn }}.{{ $name }}"
+                                            class="text-accent ml-1 text-xs opacity-70"
+                                        >(ungespeichert)</span>
                                     </span>
 
-                                    @switch($type)
-                                        @case('?int')
-                                        @case('int')
+                                    @switch ($type)
+                                        @case ('?int')
+                                        @case ('int')
                                             @if ($options !== null)
-                                                <flux:select wire:model="values.{{ $fqcn }}.{{ $name }}" variant="listbox" class="w-full max-w-2xl">
+                                                <flux:select
+                                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                                    variant="listbox"
+                                                    class="w-full max-w-2xl"
+                                                >
                                                     <flux:select.option value="">- Bitte wählen -</flux:select.option>
-                                                    @foreach($options as $optionLabel => $optionValue)
-                                                        <flux:select.option :value="(string) $optionValue">{{ $optionLabel }}</flux:select.option>
+                                                    @foreach ($options as $optionLabel => $optionValue)
+                                                        <flux:select.option :value="(string) $optionValue">
+                                                            {{ $optionLabel }}</flux:select.option>
                                                     @endforeach
                                                 </flux:select>
                                             @elseif ($encrypted)
-                                                <flux:input type="password" viewable wire:model="values.{{ $fqcn }}.{{ $name }}" class="w-full max-w-md" />
+                                                <flux:input
+                                                    type="password"
+                                                    viewable
+                                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                                    class="w-full max-w-md"
+                                                />
                                             @else
                                                 <flux:input
                                                     type="number"
@@ -86,15 +103,18 @@
                                                 />
                                             @endif
                                             @break
-
-                                        @case('bool')
+                                        @case ('bool')
                                             <flux:switch wire:model="values.{{ $fqcn }}.{{ $name }}" />
                                             @break
-
-                                        @case('float')
-                                        @case('double')
+                                        @case ('float')
+                                        @case ('double')
                                             @if ($encrypted)
-                                                <flux:input type="password" viewable wire:model="values.{{ $fqcn }}.{{ $name }}" class="w-full max-w-md" />
+                                                <flux:input
+                                                    type="password"
+                                                    viewable
+                                                    wire:model="values.{{ $fqcn }}.{{ $name }}"
+                                                    class="w-full max-w-md"
+                                                />
                                             @else
                                                 <flux:input
                                                     type="number"
@@ -104,15 +124,13 @@
                                                 />
                                             @endif
                                             @break
-
-                                        @case('array')
+                                        @case ('array')
                                             <flux:textarea
                                                 wire:model="values.{{ $fqcn }}.{{ $name }}"
                                                 placeholder="JSON oder komma-getrennte Werte"
                                                 class="w-full max-w-2xl"
                                             />
                                             @break
-
                                         @default
                                             <flux:input
                                                 type="{{ $encrypted ? 'password' : 'text' }}"
@@ -162,7 +180,9 @@
                 <flux:text class="mt-2 space-y-2">
                     <p>Du bist dabei, die Einstellungen für <strong>{{ $title }}</strong> zu ändern.</p>
                     <p class="text-sm opacity-80">Dies kann Auswirkungen auf das Systemverhalten haben.</p>
-                    <p class="text-xs opacity-70">{{ $changedCount }} {{ $changedCount === 1 ? 'Feld wird' : 'Felder werden' }} gespeichert.</p>
+                    <p class="text-xs opacity-70">
+                        {{ $changedCount }} {{ $changedCount === 1 ? 'Feld wird' : 'Felder werden' }} gespeichert.
+                    </p>
                 </flux:text>
             </div>
 

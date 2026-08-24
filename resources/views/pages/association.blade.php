@@ -5,14 +5,16 @@
         Verein für Menschen
     @endcomponent
 
-    <div class="w-full max-w-2xl mx-auto text-left sm:text-center flex flex-col space-y-6">
-        <span>Der <strong>Verein für Menschen</strong> ist der Trägerverein des Spendenanlasses <strong>Höhenmeter für
-            Menschen</strong>. Er wurde nach der ersten Durchführung des Anlasses <strong>Höhenmeter für
-            Menschen</strong> in Winterthur gegründet.</span>
-        <span>Auf dieser Seite findest du alle Informationen zu unserem Verein, unsere Statuten und ein <strong>Formular, um
-            Mitglied zu werden</strong>.</span>
+    <div class="mx-auto flex w-full max-w-2xl flex-col space-y-6 text-left sm:text-center">
+        <span
+            >Der <strong>Verein für Menschen</strong> ist der Trägerverein des Spendenanlasses
+            <strong>Höhenmeter für Menschen</strong>. Er wurde nach der ersten Durchführung des Anlasses
+            <strong>Höhenmeter für Menschen</strong> in Winterthur gegründet.</span>
+        <span
+            >Auf dieser Seite findest du alle Informationen zu unserem Verein, unsere Statuten und ein
+            <strong>Formular, um Mitglied zu werden</strong>.</span>
     </div>
-    <div class="flex md:flex-row flex-col gap-3 my-12 justify-center w-full items-center">
+    <div class="my-12 flex w-full flex-col items-center justify-center gap-3 md:flex-row">
         <flux:button
             href="#hintergruende"
             label="Hintergründe"
@@ -23,69 +25,61 @@
         >
             Hintergründe
         </flux:button>
-        <flux:button
-            href="#mitglied-werden"
-            icon="user-circle"
-            variant="filled"
-            class="grow sm:max-w-50 w-full"
-        >
+        <flux:button href="#mitglied-werden" icon="user-circle" variant="filled" class="w-full grow sm:max-w-50">
             Mitglied Werden
         </flux:button>
-        <flux:button
-            href="#direkt-spenden"
-            icon="banknotes"
-            variant="filled"
-            class="grow sm:max-w-50 w-full"
-        >
+        <flux:button href="#direkt-spenden" icon="banknotes" variant="filled" class="w-full grow sm:max-w-50">
             Direkt Spenden
         </flux:button>
         <flux:button
             href="https://vfme.webling.ch/portal/"
             icon="arrow-top-right-on-square"
             variant="filled"
-            class="grow sm:max-w-50 w-full"
+            class="w-full grow sm:max-w-50"
             target="_blank"
         >
             Mitgliederportal
         </flux:button>
-        <flux:button
-            href="#dokumente"
-            variant="filled"
-            icon="document"
-            size="xs"
-            class="hidden md:inline-flex"
-        >
+        <flux:button href="#dokumente" variant="filled" icon="document" size="xs" class="hidden md:inline-flex">
             Dokumente
         </flux:button>
     </div>
 
     <x-page-subtitle id="hintergruende">Hintergründe</x-page-subtitle>
-    <div class="flex gap-6 flex-col sm:flex-row">
+    <div class="flex flex-col gap-6 sm:flex-row">
         <div class="flex flex-col space-y-6">
             <span>
-                Im September 2024 wurde der Spendenanlass <strong>Höhenmeter für Menschen</strong> zum ersten Mal in Winterthur
-                durchgeführt. Der Anlass war ein voller Erfolg und hat über Fr. 10'000.- an Spendengeldern eingebracht. Diese
-                Spenden wurden an die Organisation <strong>Stiftung Kinderseele Schweiz</strong>, <strong>Brühlgut Stiftung Winterthur</strong> und an <strong>Tel. 143 - Die Dargebotene Hand</strong> gespendet.
+                Im September 2024 wurde der Spendenanlass <strong>Höhenmeter für Menschen</strong> zum ersten Mal in
+                Winterthur durchgeführt. Der Anlass war ein voller Erfolg und hat über Fr. 10'000.- an Spendengeldern
+                eingebracht. Diese Spenden wurden an die Organisation <strong>Stiftung Kinderseele Schweiz</strong>,
+                <strong>Brühlgut Stiftung Winterthur</strong> und an
+                <strong>Tel. 143 - Die Dargebotene Hand</strong> gespendet.
             </span>
             <span>
-                Die Durchführung 2024 wurde durch den Verein <x-inline-link href="https://www.rt25.ch" target="_blank">RoundTable 25 Winterthur</x-inline-link> organisiert und finanziert. Dies als eines mehrer Sozialprojekte des RoundTable, welcher sich in Winterthur  und Umgebung vielfältig sozial engagiert.
+                Die Durchführung 2024 wurde durch den Verein
+                <x-inline-link href="https://www.rt25.ch" target="_blank">RoundTable 25 Winterthur</x-inline-link>
+                organisiert und finanziert. Dies als eines mehrer Sozialprojekte des RoundTable, welcher sich in
+                Winterthur und Umgebung vielfältig sozial engagiert.
             </span>
         </div>
         <div class="flex flex-col space-y-6">
             <span>
-                Anfangs 2025 wurde der <strong>Verein für Menschen</strong> gegründet, der fortan den <strong>Höhenmeter für Menschen</strong> organisiert. Die Abspaltung von RoundTable 25 Winterthur hatte insbesondere organisatorische Gründe.
+                Anfangs 2025 wurde der <strong>Verein für Menschen</strong> gegründet, der fortan den
+                <strong>Höhenmeter für Menschen</strong> organisiert. Die Abspaltung von RoundTable 25 Winterthur hatte
+                insbesondere organisatorische Gründe.
             </span>
             <span>
-                Der Verein für Menschen ist ein anerkannter, gemeinnütziger Verein, der sich für die Organisation von Spendenanlässen zugunsten von sozialen Projekten in der Schweiz einsetzt. Für den Moment beschränkt sich der Verein auf die Organisation des <strong>Höhenmeter für Menschen</strong> in Winterthur, plant jedoch, dies in Zukunft auch in anderen Städten der Schweiz zu tun.
+                Der Verein für Menschen ist ein anerkannter, gemeinnütziger Verein, der sich für die Organisation von
+                Spendenanlässen zugunsten von sozialen Projekten in der Schweiz einsetzt. Für den Moment beschränkt sich
+                der Verein auf die Organisation des <strong>Höhenmeter für Menschen</strong> in Winterthur, plant
+                jedoch, dies in Zukunft auch in anderen Städten der Schweiz zu tun.
             </span>
         </div>
     </div>
 
     <x-page-subtitle id="dokumente">Dokumente</x-page-subtitle>
-    <span>
-        Hier findest du die Statuten des Vereins für Menschen sowie das Protokoll der Gründungsversammlung.
-    </span>
-    <div class="flex flex-col gap-6 sm:flex-row mt-6">
+    <span> Hier findest du die Statuten des Vereins für Menschen sowie das Protokoll der Gründungsversammlung. </span>
+    <div class="mt-6 flex flex-col gap-6 sm:flex-row">
         <flux:button
             href="{{ Vite::asset('resources/files/statuten.pdf') }}"
             target="_blank"
@@ -99,14 +93,15 @@
             target="_blank"
             variant="filled"
             icon-trailing="document-arrow-down"
-        >Protokoll Gründungsversammlung
+            >Protokoll Gründungsversammlung
         </flux:button>
     </div>
 
     <x-page-subtitle id="mitglied-werden">Anmeldeformular Mitgliedschaft</x-page-subtitle>
-    Du möchtest Mitglied beim <strong>Verein für
-        Menschen</strong> werden? Mega! Du kannst dich hier anmelden und dich dann auf die Art engangieren, die du möchtest. Oder du bleibst nur im Hintergrund und unterstützt uns mit deinem Jahresbeitrag. Jede Art ist sehr willkommen. Wir freuen uns!
-
+    Du möchtest Mitglied beim
+    <strong>Verein für Menschen</strong>
+    werden? Mega! Du kannst dich hier anmelden und dich dann auf die Art engangieren, die du möchtest. Oder du bleibst
+    nur im Hintergrund und unterstützt uns mit deinem Jahresbeitrag. Jede Art ist sehr willkommen. Wir freuen uns!
     <div class="mt-6">
         <flux:button
             href="https://vfme.webling.ch/forms/memberform/d33043f696f66f3fed32"
@@ -120,17 +115,21 @@
     </div>
 
     <x-page-subtitle id="direkt-spenden">Direkt Spenden</x-page-subtitle>
-    <div>Du möchtest uns direkt unterstützen? Du kannst jederzeit sehr gerne direkt spenden. Unsere IBAN lautet:
+    <div>
+        Du möchtest uns direkt unterstützen? Du kannst jederzeit sehr gerne direkt spenden. Unsere IBAN lautet:
         <strong>CH95&nbsp;0070&nbsp;0114&nbsp;9030&nbsp;5392&nbsp;4</strong>.
     </div>
-    <div class="mt-3">Wenn du von uns eine Rechnung und Ende Jahr eine <strong>Spendenbestätigung</strong> haben
-        möchtest, fülle das untenstehende Formular aus.
+    <div class="mt-3">
+        Wenn du von uns eine Rechnung und Ende Jahr eine <strong>Spendenbestätigung</strong> haben möchtest, fülle das
+        untenstehende Formular aus.
     </div>
 
     @livewire('association-donation-form')
 
     <x-page-subtitle>Newsletter</x-page-subtitle>
-    <div class="mt-3">Wenn du lieber nur Neuigkeiten erhalten möchtest, kannst du dich hier für den Newsletter anmelden.</div>
+    <div class="mt-3">
+        Wenn du lieber nur Neuigkeiten erhalten möchtest, kannst du dich hier für den Newsletter anmelden.
+    </div>
 
     @livewire('newsletter-registration-form')
 

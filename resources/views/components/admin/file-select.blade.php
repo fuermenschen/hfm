@@ -15,17 +15,25 @@
         </div>
     @endif
 
-    <flux:select {{ $attributes->whereStartsWith('wire:model') }} variant="listbox" searchable clearable :placeholder="$placeholder">
+    <flux:select
+        {{ $attributes->whereStartsWith('wire:model') }}
+        variant="listbox"
+        searchable
+        clearable
+        :placeholder="$placeholder"
+    >
         <flux:select.option value="">{{ $placeholder }}</flux:select.option>
 
         @foreach ($files as $file)
-            <flux:select.option value="{{ $valueFor($file['path']) }}">{{ $valueFor($file['path']) }}</flux:select.option>
+            <flux:select.option value="{{ $valueFor($file['path']) }}">
+                {{ $valueFor($file['path']) }}</flux:select.option>
         @endforeach
     </flux:select>
 
     @if ($selectedUrl !== null)
         <flux:text class="text-xs">
-            <a href="{{ $selectedUrl }}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Ausgewählte Datei öffnen</a>
+            <a href="{{ $selectedUrl }}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline"
+                >Ausgewählte Datei öffnen</a>
         </flux:text>
     @endif
 

@@ -3,7 +3,11 @@
         <x-slot:toolbar>
             <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
-                    <flux:input wire:model.live.debounce.300ms="search" placeholder="Sponsor:innen suchen..." icon="magnifying-glass" />
+                    <flux:input
+                        wire:model.live.debounce.300ms="search"
+                        placeholder="Sponsor:innen suchen..."
+                        icon="magnifying-glass"
+                    />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
@@ -43,7 +47,7 @@
                         </flux:table.column>
                     @endforeach
                     @if ($this->canEditRows())
-                        <flux:table.column class="w-1 whitespace-nowrap text-right">Aktion</flux:table.column>
+                        <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
                     @endif
                 </flux:table.columns>
 
@@ -57,7 +61,11 @@
                         </flux:table.cell>
                     </flux:table.row>
                     @forelse ($sponsors as $row)
-                        <flux:table.row wire:key="sponsor-{{ $row->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.row
+                            wire:key="sponsor-{{ $row->id }}"
+                            wire:loading.remove
+                            wire:target="{{ $this->tableLoadingTargets() }}"
+                        >
                             <flux:table.cell>
                                 <flux:field variant="inline">
                                     <flux:checkbox value="{{ $row->id }}" />
@@ -80,9 +88,23 @@
                             @if ($this->canEditRows())
                                 <flux:table.cell class="w-1 whitespace-nowrap">
                                     <div class="flex justify-end gap-1">
-                                        <flux:button size="xs" variant="ghost" icon="pencil-square" square tooltip="Bearbeiten" wire:click="openEdit({{ $row->id }})" />
+                                        <flux:button
+                                            size="xs"
+                                            variant="ghost"
+                                            icon="pencil-square"
+                                            square
+                                            tooltip="Bearbeiten"
+                                            wire:click="openEdit({{ $row->id }})"
+                                        />
                                         @if ($this->canDeleteRows())
-                                            <flux:button size="xs" variant="danger" icon="trash" square tooltip="Löschen" wire:click="confirmDeleteRow({{ $row->id }})" />
+                                            <flux:button
+                                                size="xs"
+                                                variant="danger"
+                                                icon="trash"
+                                                square
+                                                tooltip="Löschen"
+                                                wire:click="confirmDeleteRow({{ $row->id }})"
+                                            />
                                         @endif
                                     </div>
                                 </flux:table.cell>
@@ -95,7 +117,8 @@
                                     <flux:icon.magnifying-glass class="size-5" />
                                     @if (trim($search) !== '')
                                         <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
-                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')"
+                                            >Suche zurücksetzen</flux:button>
                                     @else
                                         <flux:text>Keine Sponsor:innen vorhanden.</flux:text>
                                     @endif
@@ -114,7 +137,12 @@
         </x-slot:footer>
     </x-datatable>
 
-    <flux:modal name="{{ $this->createModalName() }}" wire:model.self="createModalOpen" class="md:w-xl" wire:close="cancelCreate">
+    <flux:modal
+        name="{{ $this->createModalName() }}"
+        wire:model.self="createModalOpen"
+        class="md:w-xl"
+        wire:close="cancelCreate"
+    >
         <form wire:submit="saveCreate" class="space-y-6">
             <div>
                 <flux:heading size="lg">Sponsor:in erstellen</flux:heading>
@@ -130,18 +158,32 @@
                 <flux:field class="sm:col-span-2">
                     <div class="flex items-center gap-1">
                         <flux:label>Beschreibung</flux:label>
-                        <x-admin.field-info label="Beschreibung" text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst." />
+                        <x-admin.field-info
+                            label="Beschreibung"
+                            text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst."
+                        />
                     </div>
                     <flux:textarea wire:model="createForm.description" />
                     <flux:error name="createForm.description" />
                 </flux:field>
 
-                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt." wire:model="createForm.logo_filename" :selected="$createForm['logo_filename'] ?? null" />
+                <x-admin.file-select
+                    directory="sponsors"
+                    extensions="svg,png,jpg,jpeg,webp"
+                    recursive
+                    label="Logo"
+                    help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt."
+                    wire:model="createForm.logo_filename"
+                    :selected="$createForm['logo_filename'] ?? null"
+                />
 
                 <flux:field>
                     <div class="flex items-center gap-1">
                         <flux:label>URL</flux:label>
-                        <x-admin.field-info label="URL" text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet." />
+                        <x-admin.field-info
+                            label="URL"
+                            text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet."
+                        />
                     </div>
                     <flux:input wire:model="createForm.url" />
                     <flux:error name="createForm.url" />
@@ -159,7 +201,12 @@
         </form>
     </flux:modal>
 
-    <flux:modal name="{{ $this->editModalName() }}" wire:model.self="editModalOpen" class="md:w-xl" wire:close="cancelEdit">
+    <flux:modal
+        name="{{ $this->editModalName() }}"
+        wire:model.self="editModalOpen"
+        class="md:w-xl"
+        wire:close="cancelEdit"
+    >
         <form wire:submit="saveEdit" class="space-y-6">
             <div>
                 <flux:heading size="lg">Sponsor:in bearbeiten</flux:heading>
@@ -175,18 +222,32 @@
                 <flux:field class="sm:col-span-2">
                     <div class="flex items-center gap-1">
                         <flux:label>Beschreibung</flux:label>
-                        <x-admin.field-info label="Beschreibung" text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst." />
+                        <x-admin.field-info
+                            label="Beschreibung"
+                            text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst."
+                        />
                     </div>
                     <flux:textarea wire:model="editForm.description" />
                     <flux:error name="editForm.description" />
                 </flux:field>
 
-                <x-admin.file-select directory="sponsors" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo" help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt." wire:model="editForm.logo_filename" :selected="$editForm['logo_filename'] ?? null" />
+                <x-admin.file-select
+                    directory="sponsors"
+                    extensions="svg,png,jpg,jpeg,webp"
+                    recursive
+                    label="Logo"
+                    help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt."
+                    wire:model="editForm.logo_filename"
+                    :selected="$editForm['logo_filename'] ?? null"
+                />
 
                 <flux:field>
                     <div class="flex items-center gap-1">
                         <flux:label>URL</flux:label>
-                        <x-admin.field-info label="URL" text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet." />
+                        <x-admin.field-info
+                            label="URL"
+                            text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet."
+                        />
                     </div>
                     <flux:input wire:model="editForm.url" />
                     <flux:error name="editForm.url" />
@@ -214,7 +275,13 @@
             <div class="flex gap-2">
                 <flux:spacer />
                 <flux:button type="button" variant="ghost" wire:click="cancelDeleteRow">Abbrechen</flux:button>
-                <flux:button type="button" variant="danger" wire:click="deleteRow" wire:target="deleteRow" wire:loading.attr="disabled">Löschen</flux:button>
+                <flux:button
+                    type="button"
+                    variant="danger"
+                    wire:click="deleteRow"
+                    wire:target="deleteRow"
+                    wire:loading.attr="disabled"
+                >Löschen</flux:button>
             </div>
         </div>
     </flux:modal>

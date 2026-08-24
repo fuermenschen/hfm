@@ -80,7 +80,7 @@ composer precommit
 
 `composer precommit` runs:
 
-- `vendor/bin/pint --dirty`
+- `vendor/bin/pint --dirty --blade`
 - `npm run build`
 - `vendor/bin/phpstan`
 - `php artisan test --parallel`

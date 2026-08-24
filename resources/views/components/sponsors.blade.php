@@ -5,8 +5,6 @@
             <p class="mt-4 text-lg leading-8">Wir danken unseren Sponsor:innen für die Unterstützung.</p>
         </div>
 
-        <div class="mx-auto mt-10 flex flex-wrap justify-center gap-4 sm:gap-6">
-            {{ $slot }}
-        </div>
+        <div class="mx-auto mt-10 flex flex-wrap justify-center gap-4 sm:gap-6">{{ $slot }}</div>
     </div>
 </div>
