@@ -46,7 +46,9 @@
             @elseif ($currentDonationEvent?->athleteRegistrationIsOpen())
                 <flux:callout icon="user-group" variant="secondary" class="mb-6">
                     <flux:callout.heading>Als Gruppe teilnehmen?</flux:callout.heading>
-                    <flux:callout.text>Jede Person meldet sich zunächst einzeln als Sportler:in an. Nach Bestätigung der Teilnahme können im Portal Gruppen gegründet oder Beitrittsanfragen gestellt werden.</flux:callout.text>
+                    <flux:callout.text>
+                        Jede Person meldet sich zunächst einzeln als Sportler:in an. Nach Bestätigung der Teilnahme
+                        können im Portal Gruppen gegründet oder Beitrittsanfragen gestellt werden.</flux:callout.text>
                 </flux:callout>
                 @livewire('athlete-registration-wizard')
             @else
