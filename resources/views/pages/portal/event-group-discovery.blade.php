@@ -52,7 +52,10 @@
             @empty
                 <flux:card class="text-center"
                     ><flux:heading level="2">Noch keine Gruppe</flux:heading
-                    ><flux:text class="mt-2">Gründe die erste Gruppe für diesen Anlass.</flux:text></flux:card>
+                    ><flux:text
+                        class="mt-2"
+                        >{{ $eventEnded ? 'Für diesen Anlass sind keine Gruppen archiviert.' : 'Gründe die erste Gruppe für diesen Anlass.' }}</flux:text
+                    ></flux:card>
             @endforelse
         </div>
     </div>

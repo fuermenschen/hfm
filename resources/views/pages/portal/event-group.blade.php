@@ -3,6 +3,23 @@
 @section('title', $eventGroup->name)
 
 @section('content')
+    @php
+        $membershipStatus = $registration->event_group_id === $eventGroup->id && ! $eventGroup->donationEvent->hasEnded()
+            ? $registration->group_membership_status?->value
+            : null;
+        $membershipRole = $registration->event_group_id === $eventGroup->id ? $registration->group_membership_role?->value : null;
+        $membershipLabel = match (true) {
+            $membershipStatus === 'accepted' && $membershipRole === 'admin' => 'Administrator:in',
+            $membershipStatus === 'accepted' => 'Mitglied',
+            $membershipStatus === 'pending' => 'Anfrage offen',
+            default => 'Noch nicht Mitglied',
+        };
+        $membershipColor = match ($membershipLabel) {
+            'Administrator:in' => 'green',
+            'Anfrage offen' => 'amber',
+            default => 'zinc',
+        };
+    @endphp
     <div class="space-y-8">
         <header class="space-y-3">
             <flux:button
@@ -18,7 +35,12 @@
                         >{{ $eventGroup->donationEvent->title }} · {{ $accepted->count() }} bestätigte
                         Mitglieder</flux:text>
                 </div>
-                <flux:badge :color="$isAdmin ? 'green' : 'zinc'">{{ $isAdmin ? 'Administrator:in' : 'Mitgliedschaft anzeigen' }}</flux:badge>
+                <div class="flex flex-wrap gap-2">
+                    <flux:badge :color="$membershipColor">{{ $membershipLabel }}</flux:badge>
+                    @if ($isAdmin && ! $eventGroup->donationEvent->hasEnded())
+                        <flux:badge color="amber">{{ $pending->count() }} offene Anfragen</flux:badge>
+                    @endif
+                </div>
             </div>
         </header>
 

@@ -6,7 +6,10 @@
             <flux:callout icon="exclamation-triangle" variant="warning" inline>
                 <flux:callout.text>Der Name bleibt dauerhaft und kann nicht geändert werden.</flux:callout.text>
             </flux:callout>
-            <flux:button type="submit" wire:target="submit" icon="user-group">Gruppe verbindlich gründen</flux:button>
+            <flux:button type="submit" wire:target="submit" icon="user-group">
+                <span wire:loading.remove wire:target="submit">Gruppe verbindlich gründen</span>
+                <span wire:loading wire:target="submit">Wird gespeichert ...</span>
+            </flux:button>
         </form>
     @else
         @php

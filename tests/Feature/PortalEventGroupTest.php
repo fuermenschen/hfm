@@ -56,6 +56,7 @@ it('shows only group metadata to confirmed non-members', function (): void {
 
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
+        ->assertSeeText('Noch nicht Mitglied')
         ->assertSeeText('Team Blau')
         ->assertDontSeeText($member->externalUser->privacy_name)
         ->assertDontSee('secret@example.test')
@@ -77,12 +78,15 @@ it('renders pending and admin views with only allowed identity fields', function
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
         ->assertSeeText('Deine Anfrage ist offen')
+        ->assertSeeText('Anfrage offen')
         ->assertDontSeeText($accepted->externalUser->privacy_name)
         ->assertDontSee('member-secret@example.test');
 
     actingAs($admin->externalUser, 'external');
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
+        ->assertSeeText('Administrator:in')
+        ->assertSeeText('1 offene Anfragen')
         ->assertSeeText($accepted->externalUser->privacy_name)
         ->assertSeeText('Berglauf')
         ->assertSeeText('Geschätzte Runden')
@@ -92,6 +96,12 @@ it('renders pending and admin views with only allowed identity fields', function
         ->assertDontSee('member-secret@example.test')
         ->assertDontSee('Secret Street 1')
         ->assertDontSee('Secret Street 2');
+
+    actingAs($accepted->externalUser, 'external');
+
+    get(route('portal.event-groups.show', $group))
+        ->assertSuccessful()
+        ->assertSeeText('Mitglied');
 });
 
 it('allows confirmed athletes to request a group and redirects to its detail page', function (): void {
@@ -140,6 +150,18 @@ it('limits discovery to the owned participation event and accepted counts', func
         ->assertDontSeeText($hidden->name);
 });
 
+it('explains that ended empty discovery is read-only', function (): void {
+    $event = eventGroupTestEvent(ended: true);
+    $registration = eventGroupTestRegistration($event);
+
+    actingAs($registration->externalUser, 'external');
+
+    get(route('portal.event-groups.discover', $registration))
+        ->assertSuccessful()
+        ->assertSeeText('Für diesen Anlass sind keine Gruppen archiviert.')
+        ->assertDontSeeText('Gründe die erste Gruppe für diesen Anlass.');
+});
+
 it('creates, withdraws, and deletes groups through portal actions', function (): void {
     $event = eventGroupTestEvent();
     $creator = eventGroupTestRegistration($event);
@@ -171,6 +193,16 @@ it('creates, withdraws, and deletes groups through portal actions', function ():
         ->assertRedirect(route('portal.participations', ['anlass' => $event->slug]));
 
     expect(EventGroup::query()->find($group->id))->toBeNull();
+});
+
+it('shows create loading feedback', function (): void {
+    $event = eventGroupTestEvent();
+    $registration = eventGroupTestRegistration($event);
+
+    Livewire::actingAs($registration->externalUser, 'external')
+        ->test(PortalEventGroupActions::class, ['registrationId' => $registration->id, 'action' => 'create'])
+        ->assertSee('Gruppe verbindlich gründen')
+        ->assertSee('Wird gespeichert ...');
 });
 
 it('processes pending applicants and member roles through portal actions', function (): void {
@@ -234,6 +266,22 @@ it('renders accepted archive members only and no mutations after event end', fun
         ->assertDontSeeText($pending->externalUser->privacy_name)
         ->assertDontSeeText('Offene Anfragen')
         ->assertDontSeeText('Gruppe verlassen');
+
+    actingAs($pending->externalUser, 'external');
+
+    get(route('portal.event-groups.show', $group))
+        ->assertSuccessful()
+        ->assertSeeText('Noch nicht Mitglied')
+        ->assertDontSeeText('Anfrage offen');
+
+    actingAs($admin->externalUser, 'external');
+
+    get(route('portal.participations', ['anlass' => $event->slug]))
+        ->assertSuccessful()
+        ->assertSeeText($group->name)
+        ->assertSeeText('2 bestätigte Mitglieder')
+        ->assertSeeText('Archiv öffnen')
+        ->assertSee(route('portal.event-groups.show', $group), false);
 });
 
 it('sends signed group links in request and outcome emails', function (): void {

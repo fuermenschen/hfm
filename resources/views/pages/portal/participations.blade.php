@@ -51,11 +51,31 @@
                     <section class="space-y-3" aria-labelledby="group-{{ $registration['id'] }}">
                         <flux:heading size="sm" level="3" id="group-{{ $registration['id'] }}">Gruppe</flux:heading>
                         @if ($registration['eventEnded'])
-                            <flux:callout icon="archive-box" variant="secondary" inline
-                                ><flux:callout.text>
-                                    Dieser Anlass ist beendet. Gruppen sind nur noch als Archiv
-                                    verfügbar.</flux:callout.text
-                                ></flux:callout>
+                            @if ($registration['group'] !== null && $registration['group']['status'] === 'accepted')
+                                <flux:callout icon="archive-box" variant="secondary" inline>
+                                    <flux:callout.heading>
+                                        {{ $registration['group']['name'] }} · {{ $registration['group']['acceptedCount'] }} bestätigte
+                                        Mitglieder
+                                    </flux:callout.heading>
+                                    <flux:callout.text>
+                                        Dieser Anlass ist beendet. Die Gruppe ist nur noch als Archiv
+                                        verfügbar.</flux:callout.text>
+                                    <x-slot name="actions">
+                                        <flux:button
+                                            href="{{ route('portal.event-groups.show', $registration['group']['id']) }}"
+                                            variant="outline"
+                                            size="sm"
+                                            wire:navigate
+                                        >Archiv öffnen</flux:button>
+                                    </x-slot>
+                                </flux:callout>
+                            @else
+                                <flux:callout icon="archive-box" variant="secondary" inline
+                                    ><flux:callout.text>
+                                        Dieser Anlass ist beendet. Gruppen sind nur noch als Archiv
+                                        verfügbar.</flux:callout.text
+                                    ></flux:callout>
+                            @endif
                         @elseif ($registration['group'] === null)
                             <div class="flex flex-wrap gap-3">
                                 <flux:button

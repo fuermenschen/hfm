@@ -44,6 +44,17 @@ it('rejects non-admin removals and removing the last admin', function (): void {
         ->and(fn () => $action($group, $admin, $admin->externalUser))->toThrow(ValidationException::class);
 });
 
+it('rejects an admin registration from another event', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create();
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    $member = AthleteRegistration::factory()->acceptedMember($group)->create();
+    $admin->update(['donation_event_id' => eventGroupTestEvent()->id]);
+
+    expect(fn () => resolve(RemoveEventGroupMemberAction::class)($group, $member, $admin->externalUser))
+        ->toThrow(AuthorizationException::class);
+});
+
 it('blocks removals after event end', function (): void {
     $event = eventGroupTestEvent(ended: true);
     $group = EventGroup::factory()->forEvent($event)->create();
