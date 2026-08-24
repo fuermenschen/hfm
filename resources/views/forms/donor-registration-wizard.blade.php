@@ -145,7 +145,7 @@
                     <flux:field>
                         <flux:label>PLZ / Ort</flux:label>
 
-                        <flux:input.group data-test="zip-city-group" style="display: flex; width: 100%">
+                        <flux:input.group style="display: flex; width: 100%">
                             <div data-flux-input style="flex: 0 0 33.333333%">
                                 <flux:input
                                     wire:model.live.blur="zip_code"
@@ -246,7 +246,6 @@
                                     wire:key="athlete-{{ $registration['id'] }}"
                                     value="{{ $registration['id'] }}"
                                     label="{{ $registration['display_name'] }}"
-                                    data-test="athlete-option-{{ $registration['id'] }}"
                                 >
                                     <span class="font-medium">{{ $registration['privacy_name'] }}</span>
                                     <span class="font-light">&nbsp;({{ $registration['public_id_string'] }})</span>

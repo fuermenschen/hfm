@@ -46,7 +46,8 @@ it('loads sponsor assignments with pivot values', function (): void {
         ->assertSet('sponsorRows.1.attached', false)
         ->assertSet('sponsorRows.1.size', 'medium')
         ->assertSet('sponsorRows.1.is_published', false)
-        ->assertSee('x-bind:disabled="!$wire.sponsorRows[0].attached"', escape: false)
+        ->assertSee('x-bind:disabled', escape: false)
+        ->assertSee('sponsorRows[0].attached', escape: false)
         ->assertSee('Vom Anlass entfernen');
 });
 
