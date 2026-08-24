@@ -1,3 +1,1 @@
-<h3 class="text-lg font-bold leading-9 sm:text-lg sm:leading-10 mb-1 mt-3">
-    {{ $slot }}
-</h3>
+<h3 class="mt-3 mb-1 text-lg leading-9 font-bold sm:text-lg sm:leading-10">{{ $slot }}</h3>

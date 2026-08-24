@@ -1,6 +1,4 @@
-<form wire:submit="save"
-      class="flex flex-col w-96 max-w-full space-y-6 mt-6 sm:mx-auto items-stretch">
-
+<form wire:submit="save" class="mt-6 flex w-96 max-w-full flex-col items-stretch space-y-6 sm:mx-auto">
     @csrf
 
     <x-honeypot livewire-model="extraFields" />
@@ -31,6 +29,6 @@
     />
 
     <span class="sm:col-span-2">
-            <flux:button type="submit" icon="paper-airplane">Nachricht senden</flux:button>
-        </span>
+        <flux:button type="submit" icon="paper-airplane">Nachricht senden</flux:button>
+    </span>
 </form>

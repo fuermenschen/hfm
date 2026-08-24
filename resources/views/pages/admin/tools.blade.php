@@ -1,13 +1,11 @@
-@component('layouts.admin', ['title' => "Werkzeuge"])
-
+@component('layouts.admin', ['title' => 'Werkzeuge'])
     @section('content')
-
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             <flux:card>
                 <div class="mb-6">
                     <flux:heading size="lg">Spendenrechnung erstellen</flux:heading>
-                    <flux:subheading>Für Spenden, die direkt an den Trägerverein gehen, kannst du hier eine Rechnung
-                        erstellen
+                    <flux:subheading
+                        >Für Spenden, die direkt an den Trägerverein gehen, kannst du hier eine Rechnung erstellen
                     </flux:subheading>
                 </div>
 
@@ -28,7 +26,9 @@
             <flux:card>
                 <div class="mb-6">
                     <flux:heading size="lg">Webling Schnittstellen-Test</flux:heading>
-                    <flux:subheading>Testet die Webling-Schnittstelle manuell: erstellt einen Testdebitor, generiert ein PDF, ermöglicht die manuelle Prüfung und räumt danach automatisch auf.</flux:subheading>
+                    <flux:subheading
+                        >Testet die Webling-Schnittstelle manuell: erstellt einen Testdebitor, generiert ein PDF,
+                        ermöglicht die manuelle Prüfung und räumt danach automatisch auf.</flux:subheading>
                 </div>
 
                 <flux:modal.trigger name="webling-interface-test">

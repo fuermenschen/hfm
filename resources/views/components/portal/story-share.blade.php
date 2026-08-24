@@ -28,7 +28,9 @@
             </flux:tab.panel>
 
             <flux:tab.panel name="text" class="space-y-4 pt-5">
-                <flux:text>Wähle eine Vorlage, teile sie direkt oder kopiere sie für WhatsApp, Instagram und andere Apps.</flux:text>
+                <flux:text
+                    >Wähle eine Vorlage, teile sie direkt oder kopiere sie für WhatsApp, Instagram und andere
+                    Apps.</flux:text>
 
                 <flux:tab.group>
                     <flux:tabs variant="segmented">
@@ -42,12 +44,23 @@
                                 @php($shareText = $template[$language])
                                 <div data-share-text-template class="space-y-3">
                                     <flux:heading size="sm">{{ $shareText['title'] }}</flux:heading>
-                                    <textarea data-share-text-content readonly class="min-h-48 w-full resize-none rounded-lg border border-zinc-300 bg-zinc-50 p-3 text-sm leading-6 dark:border-slate-700 dark:bg-slate-800">{{ $shareText['text'] }}</textarea>
+                                    <textarea
+                                        data-share-text-content
+                                        readonly
+                                        class="min-h-48 w-full resize-none rounded-lg border border-zinc-300 bg-zinc-50 p-3 text-sm leading-6 dark:border-slate-700 dark:bg-slate-800"
+                                    >{{ $shareText['text'] }}</textarea>
                                     <div class="flex flex-wrap gap-3">
-                                        <flux:button data-share-text variant="primary" icon="arrow-up-tray">Text teilen</flux:button>
-                                        <flux:button data-copy-text variant="outline" icon="clipboard-document">Text kopieren</flux:button>
+                                        <flux:button data-share-text variant="primary" icon="arrow-up-tray"
+                                            >Text teilen</flux:button>
+                                        <flux:button data-copy-text variant="outline" icon="clipboard-document"
+                                            >Text kopieren</flux:button>
                                     </div>
-                                    <flux:text data-share-text-status class="text-sm" role="status" aria-live="polite"></flux:text>
+                                    <flux:text
+                                        data-share-text-status
+                                        class="text-sm"
+                                        role="status"
+                                        aria-live="polite"
+                                    ></flux:text>
                                 </div>
                             @endforeach
                         </flux:tab.panel>

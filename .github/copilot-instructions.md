@@ -1,20 +1,4 @@
 <laravel-boost-guidelines>
-=== .ai/php-null-coalescing rules ===
-
-# PHP Null Coalescing
-
-- Prefer `??` for undefined or `null` fallbacks.
-- PHP differs from many languages: `??` uses `isset()` semantics. Property and array chains are not fully evaluated first.
-- Use `$registration->partner->name ?? 'Alle Partnerorganisationen'`; missing/null chain parts safely return fallback. No `instanceof`, ternary, or `?->` needed.
-- Method calls are not protected. `$object->relationship()->name ?? 'Fallback'` still invokes `relationship()` and may throw.
-- Keep conditionals when `false`, `0`, or `''` should fall back, or when non-null value needs transformation.
-
-```php
-$username = $_GET['user'] ?? 'nobody';
-$username = isset($_GET['user']) ? $_GET['user'] : 'nobody';
-$username = $_GET['user'] ?? $_POST['user'] ?? 'nobody';
-```
-
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -100,6 +84,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 2. Use `"quoted phrases"` for exact position matching: `"infinite scroll"` requires adjacent words in order.
 3. Combine words and phrases for mixed queries: `middleware "rate limit"`.
 4. Use multiple queries for OR logic: `queries=["authentication", "middleware"]`.
+
+## Project Rules
+
+- This project keeps committed, area-grouped rules in `.ai/rules` (settled decisions, non-obvious traps, standing constraints). Before you enter plan mode or create/edit any file, you MUST first: open @.ai/rules/index.md (it maps file globs to rule files), read every rule file whose globs cover the path(s) in scope, and run `grep -rin 'keyword' .ai/rules` to catch what a path match alone misses. Do not write code until you have read and are following every matching rule.
+- Record durable rules with `record-rule` so the next agent or teammate inherits them instead of working them out again. Pass a `glob` (e.g. `app/Http/Controllers/**`), a short `title`, and a few-line `note`. Always use `record-rule`, never your native memory or notes tool — native memory is personal and session-scoped; only `.ai/rules` is shared with the team and persists in the repo.
 
 ## Artisan
 

@@ -12,16 +12,27 @@
                             @if ($isCurrentEvent ?? false)
                                 <flux:badge color="blue" icon="star">Aktueller Anlass</flux:badge>
                             @endif
-                            <flux:badge :color="$donationEvent->is_published ? 'green' : 'zinc'" :icon="$donationEvent->is_published ? 'globe-alt' : 'pencil-square'">
+                            <flux:badge
+                                :color="$donationEvent->is_published ? 'green' : 'zinc'"
+                                :icon="$donationEvent->is_published ? 'globe-alt' : 'pencil-square'"
+                            >
                                 {{ $donationEvent->is_published ? 'Veröffentlicht' : 'Entwurf' }}
                             </flux:badge>
                         </div>
                     @else
-                        <flux:subheading>Nach dem Erstellen können Partner:innen und Sponsor:innen zugeordnet werden.</flux:subheading>
+                        <flux:subheading
+                            >Nach dem Erstellen können Partner:innen und Sponsor:innen zugeordnet
+                            werden.</flux:subheading>
                     @endif
                 </div>
 
-                <flux:button as="a" href="{{ route('admin.donation-events.index') }}" variant="ghost" icon="arrow-left" wire:navigate.hover>
+                <flux:button
+                    as="a"
+                    href="{{ route('admin.donation-events.index') }}"
+                    variant="ghost"
+                    icon="arrow-left"
+                    wire:navigate.hover
+                >
                     Zur Übersicht
                 </flux:button>
             </div>

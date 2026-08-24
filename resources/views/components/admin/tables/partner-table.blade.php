@@ -3,7 +3,11 @@
         <x-slot:toolbar>
             <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
-                    <flux:input wire:model.live.debounce.300ms="search" placeholder="Partner:innen suchen..." icon="magnifying-glass" />
+                    <flux:input
+                        wire:model.live.debounce.300ms="search"
+                        placeholder="Partner:innen suchen..."
+                        icon="magnifying-glass"
+                    />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
@@ -43,7 +47,7 @@
                         </flux:table.column>
                     @endforeach
                     @if ($this->canEditRows())
-                        <flux:table.column class="w-1 whitespace-nowrap text-right">Aktion</flux:table.column>
+                        <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
                     @endif
                 </flux:table.columns>
 
@@ -57,7 +61,11 @@
                         </flux:table.cell>
                     </flux:table.row>
                     @forelse ($partners as $row)
-                        <flux:table.row wire:key="partner-{{ $row->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.row
+                            wire:key="partner-{{ $row->id }}"
+                            wire:loading.remove
+                            wire:target="{{ $this->tableLoadingTargets() }}"
+                        >
                             <flux:table.cell>
                                 <flux:field variant="inline">
                                     <flux:checkbox value="{{ $row->id }}" />
@@ -80,9 +88,23 @@
                             @if ($this->canEditRows())
                                 <flux:table.cell class="w-1 whitespace-nowrap">
                                     <div class="flex justify-end gap-1">
-                                        <flux:button size="xs" variant="ghost" icon="pencil-square" square tooltip="Bearbeiten" wire:click="openEdit({{ $row->id }})" />
+                                        <flux:button
+                                            size="xs"
+                                            variant="ghost"
+                                            icon="pencil-square"
+                                            square
+                                            tooltip="Bearbeiten"
+                                            wire:click="openEdit({{ $row->id }})"
+                                        />
                                         @if ($this->canDeleteRows())
-                                            <flux:button size="xs" variant="danger" icon="trash" square tooltip="Löschen" wire:click="confirmDeleteRow({{ $row->id }})" />
+                                            <flux:button
+                                                size="xs"
+                                                variant="danger"
+                                                icon="trash"
+                                                square
+                                                tooltip="Löschen"
+                                                wire:click="confirmDeleteRow({{ $row->id }})"
+                                            />
                                         @endif
                                     </div>
                                 </flux:table.cell>
@@ -95,7 +117,8 @@
                                     <flux:icon.magnifying-glass class="size-5" />
                                     @if (trim($search) !== '')
                                         <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
-                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')"
+                                            >Suche zurücksetzen</flux:button>
                                     @else
                                         <flux:text>Keine Partner:innen vorhanden.</flux:text>
                                     @endif
@@ -114,7 +137,12 @@
         </x-slot:footer>
     </x-datatable>
 
-    <flux:modal name="{{ $this->createModalName() }}" wire:model.self="createModalOpen" class="md:w-xl" wire:close="cancelCreate">
+    <flux:modal
+        name="{{ $this->createModalName() }}"
+        wire:model.self="createModalOpen"
+        class="md:w-xl"
+        wire:close="cancelCreate"
+    >
         <form wire:submit="saveCreate" class="space-y-6">
             <div>
                 <flux:heading size="lg">Partner:in erstellen</flux:heading>
@@ -127,14 +155,33 @@
                     <flux:error name="createForm.name" />
                 </flux:field>
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" help="Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="createForm.logo_light_filename" :selected="$createForm['logo_light_filename'] ?? null" />
+                <x-admin.file-select
+                    directory="partners"
+                    extensions="svg,png,jpg,jpeg,webp"
+                    recursive
+                    label="Logo hell"
+                    help="Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt."
+                    wire:model="createForm.logo_light_filename"
+                    :selected="$createForm['logo_light_filename'] ?? null"
+                />
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" help="Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="createForm.logo_dark_filename" :selected="$createForm['logo_dark_filename'] ?? null" />
+                <x-admin.file-select
+                    directory="partners"
+                    extensions="svg,png,jpg,jpeg,webp"
+                    recursive
+                    label="Logo dunkel"
+                    help="Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt."
+                    wire:model="createForm.logo_dark_filename"
+                    :selected="$createForm['logo_dark_filename'] ?? null"
+                />
 
                 <flux:field class="sm:col-span-2">
                     <div class="flex items-center gap-1">
                         <flux:label>Kurztext</flux:label>
-                        <x-admin.field-info label="Kurztext" text="Dieser allgemeine Kurztext beschreibt die begünstigte Organisation. Er erscheint auf der öffentlichen Startseite und gilt unabhängig vom Anlass." />
+                        <x-admin.field-info
+                            label="Kurztext"
+                            text="Dieser allgemeine Kurztext beschreibt die begünstigte Organisation. Er erscheint auf der öffentlichen Startseite und gilt unabhängig vom Anlass."
+                        />
                     </div>
                     <flux:textarea wire:model="createForm.beneficiary_blurb" />
                     <flux:error name="createForm.beneficiary_blurb" />
@@ -143,7 +190,10 @@
                 <flux:field class="sm:col-span-2">
                     <div class="flex items-center gap-1">
                         <flux:label>URL</flux:label>
-                        <x-admin.field-info label="URL" text="Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt." />
+                        <x-admin.field-info
+                            label="URL"
+                            text="Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt."
+                        />
                     </div>
                     <flux:input wire:model="createForm.url" />
                     <flux:error name="createForm.url" />
@@ -161,7 +211,12 @@
         </form>
     </flux:modal>
 
-    <flux:modal name="{{ $this->editModalName() }}" wire:model.self="editModalOpen" class="md:w-xl" wire:close="cancelEdit">
+    <flux:modal
+        name="{{ $this->editModalName() }}"
+        wire:model.self="editModalOpen"
+        class="md:w-xl"
+        wire:close="cancelEdit"
+    >
         <form wire:submit="saveEdit" class="space-y-6">
             <div>
                 <flux:heading size="lg">Partner:in bearbeiten</flux:heading>
@@ -174,14 +229,33 @@
                     <flux:error name="editForm.name" />
                 </flux:field>
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo hell" help="Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="editForm.logo_light_filename" :selected="$editForm['logo_light_filename'] ?? null" />
+                <x-admin.file-select
+                    directory="partners"
+                    extensions="svg,png,jpg,jpeg,webp"
+                    recursive
+                    label="Logo hell"
+                    help="Dieses Logo wird auf der öffentlichen Startseite in der hellen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt."
+                    wire:model="editForm.logo_light_filename"
+                    :selected="$editForm['logo_light_filename'] ?? null"
+                />
 
-                <x-admin.file-select directory="partners" extensions="svg,png,jpg,jpeg,webp" recursive label="Logo dunkel" help="Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt." wire:model="editForm.logo_dark_filename" :selected="$editForm['logo_dark_filename'] ?? null" />
+                <x-admin.file-select
+                    directory="partners"
+                    extensions="svg,png,jpg,jpeg,webp"
+                    recursive
+                    label="Logo dunkel"
+                    help="Dieses Logo wird auf der öffentlichen Startseite in der dunklen Darstellung verwendet. Für jede Partnerorganisation werden eine helle und eine dunkle Variante benötigt."
+                    wire:model="editForm.logo_dark_filename"
+                    :selected="$editForm['logo_dark_filename'] ?? null"
+                />
 
                 <flux:field class="sm:col-span-2">
                     <div class="flex items-center gap-1">
                         <flux:label>Kurztext</flux:label>
-                        <x-admin.field-info label="Kurztext" text="Dieser allgemeine Kurztext beschreibt die begünstigte Organisation. Er erscheint auf der öffentlichen Startseite und gilt unabhängig vom Anlass." />
+                        <x-admin.field-info
+                            label="Kurztext"
+                            text="Dieser allgemeine Kurztext beschreibt die begünstigte Organisation. Er erscheint auf der öffentlichen Startseite und gilt unabhängig vom Anlass."
+                        />
                     </div>
                     <flux:textarea wire:model="editForm.beneficiary_blurb" />
                     <flux:error name="editForm.beneficiary_blurb" />
@@ -190,7 +264,10 @@
                 <flux:field class="sm:col-span-2">
                     <div class="flex items-center gap-1">
                         <flux:label>URL</flux:label>
-                        <x-admin.field-info label="URL" text="Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt." />
+                        <x-admin.field-info
+                            label="URL"
+                            text="Diese Adresse wird auf der öffentlichen Startseite mit der Partnerorganisation und ihrem Logo verlinkt."
+                        />
                     </div>
                     <flux:input wire:model="editForm.url" />
                     <flux:error name="editForm.url" />
@@ -218,7 +295,13 @@
             <div class="flex gap-2">
                 <flux:spacer />
                 <flux:button type="button" variant="ghost" wire:click="cancelDeleteRow">Abbrechen</flux:button>
-                <flux:button type="button" variant="danger" wire:click="deleteRow" wire:target="deleteRow" wire:loading.attr="disabled">Löschen</flux:button>
+                <flux:button
+                    type="button"
+                    variant="danger"
+                    wire:click="deleteRow"
+                    wire:target="deleteRow"
+                    wire:loading.attr="disabled"
+                >Löschen</flux:button>
             </div>
         </div>
     </flux:modal>

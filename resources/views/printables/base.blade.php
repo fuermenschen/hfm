@@ -15,12 +15,12 @@
             font-size: 12px;
             margin: 0;
             padding: 0;
-            color: #1B2E47;
+            color: #1b2e47;
         }
     </style>
 </head>
 
 <body>
-@yield('body')
+    @yield('body')
 </body>
 </html>

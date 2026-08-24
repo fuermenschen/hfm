@@ -8,8 +8,6 @@
     </flux:table.column>
 @else
     <flux:table.cell sticky class="{{ $columnClass }}">
-        <div class="flex h-full w-full items-center justify-center">
-            {{ $slot }}
-        </div>
+        <div class="flex h-full w-full items-center justify-center">{{ $slot }}</div>
     </flux:table.cell>
 @endif

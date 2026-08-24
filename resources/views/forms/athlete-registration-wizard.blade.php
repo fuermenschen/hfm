@@ -1,7 +1,9 @@
 <div
     class="mt-8 w-full"
     x-data
-    x-on:athlete-registration-wizard-step-changed.window="$nextTick(() => $refs.card.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
+    x-on:athlete-registration-wizard-step-changed.window="
+        $nextTick(() => $refs.card.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    "
 >
     <div x-ref="card" class="w-full scroll-mt-6 overflow-hidden border-y border-zinc-200 dark:border-zinc-700">
         <x-honeypot livewire-model="extraFields" />
@@ -10,54 +12,54 @@
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     @if ($displaySteps !== [])
-                        <flux:text size="sm" class="font-medium text-hfm-red dark:text-hfm-lightred">
+                        <flux:text size="sm" class="text-hfm-red dark:text-hfm-lightred font-medium">
                             Schritt {{ $currentDisplayStepNumber }} von {{ count($displaySteps) }}
                         </flux:text>
                     @endif
                     <flux:heading size="lg" class="mt-1">
-                        @switch($currentStep)
-                            @case('start')
+                        @switch ($currentStep)
+                            @case ('start')
                                 Mit welcher E-Mail-Adresse möchtest du dich anmelden?
                                 @break
-                            @case('personal')
+                            @case ('personal')
                                 Deine Angaben
                                 @break
-                            @case('login-link-sent')
+                            @case ('login-link-sent')
                                 Bitte prüfe deine E-Mail
                                 @break
-                            @case('registration')
+                            @case ('registration')
                                 Dein Einsatz
                                 @break
-                            @case('previous-donors')
+                            @case ('previous-donors')
                                 Frühere Spender:innen informieren?
                                 @break
-                            @case('submitted')
+                            @case ('submitted')
                                 Anmeldung erhalten
                                 @break
                         @endswitch
                     </flux:heading>
                     <flux:text class="mt-2 max-w-xl">
-                        @switch($currentStep)
-                            @case('start')
+                        @switch ($currentStep)
+                            @case ('start')
                                 Wir prüfen, ob bereits ein Profil für dich existiert.
                                 @break
-                            @case('personal')
+                            @case ('personal')
                                 Neue Sportler:innen erfassen ihre Kontaktdaten einmalig.
                                 @break
-                            @case('login-link-sent')
+                            @case ('login-link-sent')
                                 Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.
                                 @break
-                            @case('registration')
+                            @case ('registration')
                                 @if ($isAuthenticatedExternalUser && $externalUser)
                                     Du meldest dich mit deinem bestehenden Profil als {{ $externalUser->full_name }} an.
                                 @else
                                     Diese Angaben sehen Spender:innen später als Orientierung.
                                 @endif
                                 @break
-                            @case('previous-donors')
+                            @case ('previous-donors')
                                 Wir können Menschen informieren, die dich früher schon unterstützt haben.
                                 @break
-                            @case('submitted')
+                            @case ('submitted')
                                 Bitte prüfe deine E-Mail und bestätige deine Anmeldung im Portal.
                                 @break
                         @endswitch
@@ -127,22 +129,34 @@
                         />
                     </div>
 
-                    <flux:callout wire:loading.flex wire:target="next" icon="shield-check" variant="secondary" class="w-full sm:col-span-2">
-                        <flux:callout.heading>Wir prüfen, ob wir deine E-Mail-Adresse bereits im System haben...</flux:callout.heading>
-                        <flux:callout.text>Wir verzögern diese Prüfung absichtlich kurz, damit bestehende Profile besser geschützt sind.</flux:callout.text>
+                    <flux:callout
+                        wire:loading.flex
+                        wire:target="next"
+                        icon="shield-check"
+                        variant="secondary"
+                        class="w-full sm:col-span-2"
+                    >
+                        <flux:callout.heading>
+                            Wir prüfen, ob wir deine E-Mail-Adresse bereits im System haben...</flux:callout.heading>
+                        <flux:callout.text>
+                            Wir verzögern diese Prüfung absichtlich kurz, damit bestehende Profile besser geschützt
+                            sind.</flux:callout.text>
                     </flux:callout>
                 </div>
             @elseif ($currentStep === 'login-link-sent')
                 <div class="grid min-h-80 place-items-center text-center">
                     <div class="max-w-lg space-y-5">
-                        <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred">
+                        <div class="bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred mx-auto flex size-14 items-center justify-center rounded-full">
                             <flux:icon.envelope class="size-8" />
                         </div>
                         <div>
                             <flux:heading size="lg">Login-Link verschickt</flux:heading>
-                            <flux:text class="mt-2">Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.</flux:text>
+                            <flux:text class="mt-2"
+                                >Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser
+                                Anmeldung.</flux:text>
                         </div>
-                        <flux:button variant="ghost" wire:click="goTo('start')">Andere E-Mail-Adresse verwenden</flux:button>
+                        <flux:button variant="ghost" wire:click="goTo('start')"
+                            >Andere E-Mail-Adresse verwenden</flux:button>
                     </div>
                 </div>
             @elseif ($currentStep === 'personal')
@@ -150,20 +164,76 @@
                     <flux:callout icon="check-circle" variant="success">
                         <flux:callout.heading>Bekannte Angaben werden wiederverwendet</flux:callout.heading>
                         <flux:callout.text>
-                            Nach dem Login überspringen wiederkehrende Sportler:innen diesen Schritt. Persönliche Daten werden im Wizard nicht editiert.
+                            Nach dem Login überspringen wiederkehrende Sportler:innen diesen Schritt. Persönliche Daten
+                            werden im Wizard nicht editiert.
                         </flux:callout.text>
                     </flux:callout>
                 @else
                     <div class="grid gap-6 sm:grid-cols-2">
-                        <flux:input wire:model.live.blur="first_name" label="Vorname" placeholder="Francesca" icon-trailing="user" autocomplete="given-name" required />
-                        <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
-                        <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
+                        <flux:input
+                            wire:model.live.blur="first_name"
+                            label="Vorname"
+                            placeholder="Francesca"
+                            icon-trailing="user"
+                            autocomplete="given-name"
+                            required
+                        />
+                        <flux:input
+                            wire:model.live.blur="last_name"
+                            label="Nachname"
+                            placeholder="Arslan"
+                            icon-trailing="user"
+                            autocomplete="family-name"
+                            required
+                        />
+                        <flux:input
+                            wire:model.live.blur="address"
+                            label="Adresse"
+                            placeholder="Zelglistrasse 41"
+                            icon-trailing="home"
+                            autocomplete="street-address"
+                            required
+                            class="sm:col-span-2"
+                        />
 
-                        <flux:input wire:model.live.blur="zip_code" label="PLZ" mask="9999" placeholder="8406" autocomplete="postal-code" icon-trailing="map-pin" required />
+                        <flux:input
+                            wire:model.live.blur="zip_code"
+                            label="PLZ"
+                            mask="9999"
+                            placeholder="8406"
+                            autocomplete="postal-code"
+                            icon-trailing="map-pin"
+                            required
+                        />
 
-                        <flux:input wire:model.live.blur="city" label="Ort" placeholder="Winterthur" icon-trailing="map-pin" autocomplete="address-level2" required />
-                        <flux:input wire:model.live.blur="phone_number" label="Telefon" mask="999 999 99 99" placeholder="079 123 45 67" icon-trailing="phone" autocomplete="tel" type="tel" required class="sm:col-span-2" />
-                        <flux:input wire:model="email" label="E-Mail" icon-trailing="envelope" autocomplete="email" type="email" readonly description:trailing="E-Mail-Adresse ändern? Anmeldung neu starten." />
+                        <flux:input
+                            wire:model.live.blur="city"
+                            label="Ort"
+                            placeholder="Winterthur"
+                            icon-trailing="map-pin"
+                            autocomplete="address-level2"
+                            required
+                        />
+                        <flux:input
+                            wire:model.live.blur="phone_number"
+                            label="Telefon"
+                            mask="999 999 99 99"
+                            placeholder="079 123 45 67"
+                            icon-trailing="phone"
+                            autocomplete="tel"
+                            type="tel"
+                            required
+                            class="sm:col-span-2"
+                        />
+                        <flux:input
+                            wire:model="email"
+                            label="E-Mail"
+                            icon-trailing="envelope"
+                            autocomplete="email"
+                            type="email"
+                            readonly
+                            description:trailing="E-Mail-Adresse ändern? Anmeldung neu starten."
+                        />
                     </div>
                 @endif
             @elseif ($currentStep === 'registration')
@@ -178,11 +248,20 @@
                     @endif
 
                     @if ($sportTypes->isEmpty())
-                        <flux:callout icon="exclamation-triangle" variant="warning" heading="Keine Sportarten verfügbar" />
+                        <flux:callout
+                            icon="exclamation-triangle"
+                            variant="warning"
+                            heading="Keine Sportarten verfügbar"
+                        />
                     @else
                         <flux:radio.group wire:model.live="sport_type_id" label="Sportart" variant="buttons">
                             @foreach ($sportTypes as $sportType)
-                                <flux:radio wire:key="sport-type-{{ $sportType->id }}" value="{{ $sportType->id }}" label="{{ $sportType->name }}" class="cursor-pointer" />
+                                <flux:radio
+                                    wire:key="sport-type-{{ $sportType->id }}"
+                                    value="{{ $sportType->id }}"
+                                    label="{{ $sportType->name }}"
+                                    class="cursor-pointer"
+                                />
                             @endforeach
                         </flux:radio.group>
                     @endif
@@ -198,13 +277,29 @@
                         required
                     />
 
-                    <flux:radio.group wire:model.live="partner_id" label="Ich sammle für" variant="cards" class="flex-col">
+                    <flux:radio.group
+                        wire:model.live="partner_id"
+                        label="Ich sammle für"
+                        variant="cards"
+                        class="flex-col"
+                    >
                         @if ($allowEqualSplitOption)
-                            <flux:radio value="0" icon="scale" label="{{ ucfirst(__('app.equal_split')) }}" description="Meine Spenden werden gleichmässig auf alle Benefizpartner:innen verteilt." />
+                            <flux:radio
+                                value="0"
+                                icon="scale"
+                                label="{{ ucfirst(__('app.equal_split')) }}"
+                                description="Meine Spenden werden gleichmässig auf alle Benefizpartner:innen verteilt."
+                            />
                         @endif
 
                         @forelse ($partners as $partner)
-                            <flux:radio wire:key="partner-{{ $partner->id }}" value="{{ $partner->id }}" icon="heart" label="{{ $partner->name }}" description="Meine Spenden gehen an diese Organisation." />
+                            <flux:radio
+                                wire:key="partner-{{ $partner->id }}"
+                                value="{{ $partner->id }}"
+                                icon="heart"
+                                label="{{ $partner->name }}"
+                                description="Meine Spenden gehen an diese Organisation."
+                            />
                         @empty
                             <flux:radio disabled value="-1" label="Keine Partner:innen verfügbar" />
                         @endforelse
@@ -228,7 +323,9 @@
                         <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                             <flux:field variant="inline">
                                 <flux:checkbox wire:model.live="privacy_accepted" />
-                                <flux:label>Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.</flux:label>
+                                <flux:label
+                                    >Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses
+                                    verwendet werden.</flux:label>
                                 <flux:error name="privacy_accepted" />
                             </flux:field>
                         </div>
@@ -252,14 +349,18 @@
                     @if (! $notify_previous_donors)
                         <flux:callout icon="exclamation-triangle" variant="warning">
                             <flux:callout.heading>Hinweis</flux:callout.heading>
-                            <flux:callout.text>Ohne Hinweis an frühere Spender:innen kann es länger dauern, bis erste Spenden eintreffen.</flux:callout.text>
+                            <flux:callout.text>
+                                Ohne Hinweis an frühere Spender:innen kann es länger dauern, bis erste Spenden
+                                eintreffen.</flux:callout.text>
                         </flux:callout>
                     @endif
 
                     <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                         <flux:field variant="inline">
                             <flux:checkbox wire:model.live="privacy_accepted" />
-                            <flux:label>Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.</flux:label>
+                            <flux:label
+                                >Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses
+                                verwendet werden.</flux:label>
                             <flux:error name="privacy_accepted" />
                         </flux:field>
                     </div>
@@ -267,12 +368,14 @@
             @elseif ($currentStep === 'submitted')
                 <div class="grid min-h-80 place-items-center text-center">
                     <div class="max-w-lg space-y-5">
-                        <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred">
+                        <div class="bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred mx-auto flex size-14 items-center justify-center rounded-full">
                             <flux:icon.check class="size-8" />
                         </div>
                         <div>
                             <flux:heading size="lg">Anmeldung erhalten</flux:heading>
-                            <flux:text class="mt-2">Wir haben dir eine E-Mail geschickt. Öffne dein Portal über den Link und bestätige dort deine Anmeldung.</flux:text>
+                            <flux:text class="mt-2"
+                                >Wir haben dir eine E-Mail geschickt. Öffne dein Portal über den Link und bestätige dort
+                                deine Anmeldung.</flux:text>
                         </div>
                     </div>
                 </div>
@@ -280,21 +383,29 @@
         </div>
 
         @if (! in_array($currentStep, ['submitted', 'login-link-sent'], true))
-            <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 py-5 dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-700">
                 @if ($canGoBack)
-                    <flux:button variant="ghost" icon="arrow-left" wire:click="back">
-                        Zurück
-                    </flux:button>
+                    <flux:button variant="ghost" icon="arrow-left" wire:click="back"> Zurück </flux:button>
                 @else
                     <span></span>
                 @endif
 
                 @if ($isFinalStep)
-                    <flux:button variant="primary" icon:trailing="check" wire:click="submit" class="data-loading:opacity-50">
+                    <flux:button
+                        variant="primary"
+                        icon:trailing="check"
+                        wire:click="submit"
+                        class="data-loading:opacity-50"
+                    >
                         Anmeldung absenden
                     </flux:button>
                 @else
-                    <flux:button variant="primary" icon:trailing="arrow-right" wire:click="next" class="data-loading:opacity-50">
+                    <flux:button
+                        variant="primary"
+                        icon:trailing="arrow-right"
+                        wire:click="next"
+                        class="data-loading:opacity-50"
+                    >
                         Weiter
                     </flux:button>
                 @endif

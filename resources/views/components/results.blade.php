@@ -33,7 +33,9 @@
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-sm">Höhenmeter überwunden</div>
-                <div class="mt-1 text-2xl font-semibold">{{ number_format($totals['elevation_m'], 0, '.', "'") }} m</div>
+                <div class="mt-1 text-2xl font-semibold">
+                    {{ number_format($totals['elevation_m'], 0, '.', "'") }} m
+                </div>
             </div>
             <flux:icon name="fire" class="size-8" />
         </div>
@@ -44,7 +46,9 @@
             <div class="flex items-center justify-between">
                 <div>
                     <div class="text-sm">Total Spenden</div>
-                    <div class="mt-1 text-4xl font-semibold tracking-tight">Fr. {{ number_format($totals['donations_total'], 2, '.', "'") }}</div>
+                    <div class="mt-1 text-4xl font-semibold tracking-tight">
+                        Fr. {{ number_format($totals['donations_total'], 2, '.', "'") }}
+                    </div>
                 </div>
                 <flux:icon name="banknotes" class="size-10" />
             </div>

@@ -55,7 +55,7 @@ Before opening a pull request, run:
 composer precommit
 ```
 
-This command runs formatting (`pint --dirty`), frontend build checks, static analysis (`phpstan`), parallel Pest tests, and Playwright end-to-end tests.
+This command runs formatting (`pint --dirty --blade`), frontend build checks, static analysis (`phpstan`), parallel Pest tests, and Playwright end-to-end tests.
 
 ## 📘 Additional Docs
 

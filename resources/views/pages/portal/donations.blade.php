@@ -14,36 +14,49 @@
         <x-portal.success-message />
 
         @forelse ($donations as $donation)
-            <flux:card class="space-y-6 rounded-xl border-hfm-light/40 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <flux:card class="border-hfm-light/40 space-y-6 rounded-xl bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <flux:heading size="lg" level="2">{{ $donation['athlete'] }}</flux:heading>
                         <flux:text class="mt-1">{{ $donation['event'] }}{{ $donation['date'] ? ' · '.$donation['date'] : '' }}</flux:text>
                     </div>
 
-                    <flux:badge :color="$donation['verified'] ? 'green' : 'amber'" icon="{{ $donation['verified'] ? 'check-circle' : 'clock' }}">
+                    <flux:badge
+                        :color="$donation['verified'] ? 'green' : 'amber'"
+                        icon="{{ $donation['verified'] ? 'check-circle' : 'clock' }}"
+                    >
                         {{ $donation['verified'] ? 'Bestätigt' : 'Bestätigung ausstehend' }}
                     </flux:badge>
                 </div>
 
-                 @unless ($donation['verified'])
+                @unless ($donation['verified'])
                     <flux:callout icon="clock" variant="warning" class="rounded-2xl">
                         <flux:callout.heading>Noch 1 Schritt: Spende bestätigen</flux:callout.heading>
                         <x-slot name="actions">
-                            <livewire:portal-confirmation-button type="donation" :record-id="$donation['id']" :wire:key="'registration-donation-'.$donation['id']" />
+                            <livewire:portal-confirmation-button
+                                type="donation"
+                                :record-id="$donation['id']"
+                                :wire:key="'registration-donation-'.$donation['id']"
+                            />
                         </x-slot>
                     </flux:callout>
-                 @endunless
+                @endunless
 
-                 <dl class="grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-xl bg-hfm-light/15 p-4 dark:bg-slate-800">
-                        <dt class="text-sm text-hfm-dark dark:text-hfm-light">Voraussichtlicher eigener Beitrag</dt>
-                        <dd class="mt-1 text-2xl font-semibold tabular-nums"><span class="text-base font-medium">Fr.</span> {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}</dd>
+                <dl class="grid gap-3 sm:grid-cols-2">
+                    <div class="bg-hfm-light/15 rounded-xl p-4 dark:bg-slate-800">
+                        <dt class="text-hfm-dark dark:text-hfm-light text-sm">Voraussichtlicher eigener Beitrag</dt>
+                        <dd class="mt-1 text-2xl font-semibold tabular-nums">
+                            <span class="text-base font-medium">Fr.</span>
+                            {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}
+                        </dd>
                     </div>
                     <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
                         <dt class="text-sm text-emerald-700 dark:text-emerald-300">Aktueller eigener Beitrag</dt>
                         @if ($donation['hasCompletedRounds'])
-                            <dd class="mt-1 text-2xl font-semibold tabular-nums"><span class="text-base font-medium">Fr.</span> {{ number_format($donation['currentAmount'], 2, '.', "'") }}</dd>
+                            <dd class="mt-1 text-2xl font-semibold tabular-nums">
+                                <span class="text-base font-medium">Fr.</span>
+                                {{ number_format($donation['currentAmount'], 2, '.', "'") }}
+                            </dd>
                         @else
                             <dd class="mt-2 font-medium text-zinc-500 dark:text-zinc-400">Noch nicht final</dd>
                         @endif
@@ -51,48 +64,78 @@
                 </dl>
 
                 <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Sportart</dt><dd class="mt-1 font-medium">{{ $donation['sport'] }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Begünstigte</dt><dd class="mt-1 font-medium">{{ $donation['partner'] }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Pro Runde</dt><dd class="mt-1 font-medium tabular-nums">Fr. {{ number_format($donation['amountPerRound'], 2, '.', "'") }}</dd></div>
-                    <div><dt class="text-sm text-zinc-500 dark:text-zinc-400">Minimum / Maximum</dt><dd class="mt-1 font-medium tabular-nums">{{ $donation['amountMin'] !== null ? 'Fr. '.number_format($donation['amountMin'], 2, '.', "'") : '–' }} / {{ $donation['amountMax'] !== null ? 'Fr. '.number_format($donation['amountMax'], 2, '.', "'") : '–' }}</dd></div>
+                    <div>
+                        <dt class="text-sm text-zinc-500 dark:text-zinc-400">Sportart</dt>
+                        <dd class="mt-1 font-medium">{{ $donation['sport'] }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-zinc-500 dark:text-zinc-400">Begünstigte</dt>
+                        <dd class="mt-1 font-medium">{{ $donation['partner'] }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-zinc-500 dark:text-zinc-400">Pro Runde</dt>
+                        <dd class="mt-1 font-medium tabular-nums">
+                            Fr. {{ number_format($donation['amountPerRound'], 2, '.', "'") }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm text-zinc-500 dark:text-zinc-400">Minimum / Maximum</dt>
+                        <dd class="mt-1 font-medium tabular-nums">
+                            {{ $donation['amountMin'] !== null ? 'Fr. '.number_format($donation['amountMin'], 2, '.', "'") : '–' }} / {{ $donation['amountMax'] !== null ? 'Fr. '.number_format($donation['amountMax'], 2, '.', "'") : '–' }}
+                        </dd>
+                    </div>
                 </dl>
 
-                 @if ($donation['comment'])
+                @if ($donation['comment'])
                     <div>
                         <flux:heading size="sm" level="3">Dein Kommentar</flux:heading>
                         <flux:text class="mt-1">{{ $donation['comment'] }}</flux:text>
                     </div>
-                 @endif
+                @endif
 
-                 @if ($donation['athleteVerified'])
-                     <section class="space-y-3" aria-labelledby="donor-story-{{ $donation['id'] }}">
-                         <flux:callout icon="megaphone" color="green" class="rounded-2xl" inline>
-                             <flux:callout.heading id="donor-story-{{ $donation['id'] }}">Weitere Spender:innen für {{ $donation['athlete'] }} finden</flux:callout.heading>
-                             <flux:callout.text>Kennst du jemanden, der {{ $donation['athlete'] }} unterstützen möchte? Teile diese persönliche Story auf WhatsApp oder Instagram.</flux:callout.text>
-                             <x-slot name="actions">
-                                 <flux:modal.trigger name="share-story-donor-{{ $donation['id'] }}" data-story-share-open="share-story-donor-{{ $donation['id'] }}">
-                                       <flux:button variant="outline" icon="arrow-up-tray">Story teilen</flux:button>
-                                 </flux:modal.trigger>
-                             </x-slot>
-                         </flux:callout>
+                @if ($donation['athleteVerified'])
+                    <section class="space-y-3" aria-labelledby="donor-story-{{ $donation['id'] }}">
+                        <flux:callout icon="megaphone" color="green" class="rounded-2xl" inline>
+                            <flux:callout.heading id="donor-story-{{ $donation['id'] }}">
+                                Weitere Spender:innen für {{ $donation['athlete'] }} finden</flux:callout.heading>
+                            <flux:callout.text>
+                                Kennst du jemanden, der {{ $donation['athlete'] }} unterstützen möchte? Teile diese
+                                persönliche Story auf WhatsApp oder Instagram.</flux:callout.text>
+                            <x-slot name="actions">
+                                <flux:modal.trigger
+                                    name="share-story-donor-{{ $donation['id'] }}"
+                                    data-story-share-open="share-story-donor-{{ $donation['id'] }}"
+                                >
+                                    <flux:button variant="outline" icon="arrow-up-tray">Story teilen</flux:button>
+                                </flux:modal.trigger>
+                            </x-slot>
+                        </flux:callout>
 
-                         <x-portal.story-share
-                             :registration-id="$donation['athleteRegistrationId']"
-                             :share-id="'donor-'.$donation['id']"
-                             :athlete-name="$donation['athlete']"
-                             :heading="'Weitere Spender:innen für '.$donation['athlete'].' finden'"
-                             description="Diese personalisierte Story kannst du direkt weitergeben."
-                         />
-                     </section>
-                 @endif
-             </flux:card>
+                        <x-portal.story-share
+                            :registration-id="$donation['athleteRegistrationId']"
+                            :share-id="'donor-'.$donation['id']"
+                            :athlete-name="$donation['athlete']"
+                            :heading="'Weitere Spender:innen für '.$donation['athlete'].' finden'"
+                            description="Diese personalisierte Story kannst du direkt weitergeben."
+                        />
+                    </section>
+                @endif
+            </flux:card>
         @empty
-            <flux:card class="rounded-xl border-hfm-light/40 bg-white text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-hfm-light/25 text-hfm-dark dark:bg-slate-800 dark:text-hfm-light"><flux:icon.heart class="size-6" /></div>
+            <flux:card class="border-hfm-light/40 rounded-xl bg-white text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <div class="bg-hfm-light/25 text-hfm-dark dark:text-hfm-light mx-auto flex size-12 items-center justify-center rounded-full dark:bg-slate-800">
+                    <flux:icon.heart class="size-6" />
+                </div>
                 <flux:heading size="lg" level="2" class="mt-4">Noch keine Spende</flux:heading>
                 <flux:text class="mt-2">Für den gewählten Anlass ist keine Spende vorhanden.</flux:text>
                 @if ($donorRegistrationOpen)
-                    <flux:button href="{{ route('become-donor') }}" wire:navigate icon="heart" variant="primary" class="mt-5">Beim aktuellen Anlass spenden</flux:button>
+                    <flux:button
+                        href="{{ route('become-donor') }}"
+                        wire:navigate
+                        icon="heart"
+                        variant="primary"
+                        class="mt-5"
+                    >Beim aktuellen Anlass spenden</flux:button>
                 @endif
             </flux:card>
         @endforelse
