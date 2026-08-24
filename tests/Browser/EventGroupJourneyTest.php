@@ -64,6 +64,125 @@ it('lets an applicant request membership and an admin accept it', function (): v
     expect($applicant->refresh()->group_membership_role?->value)->toBe('member');
 });
 
+it('lets an applicant withdraw a pending request and request again', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Gipfelteam']);
+    AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    $applicant = eventGroupTestRegistration($event);
+
+    $page = visit(portalLoginUrl($applicant->externalUser))
+        ->navigate(route('portal.event-groups.discover', $applicant))
+        ->click('Beitritt anfragen')
+        ->assertPresent('dialog[open] >> internal:role=button[name="Beitritt anfragen"]')
+        ->click('dialog[open] >> internal:role=button[name="Beitritt anfragen"]')
+        ->assertSee('Deine Anfrage ist offen')
+        ->click('Anfrage zurückziehen')
+        ->assertSee('Anfrage zurückziehen?')
+        ->assertPresent('dialog[open] >> internal:role=button[name="Anfrage zurückziehen"]')
+        ->click('dialog[open] >> internal:role=button[name="Anfrage zurückziehen"]')
+        ->assertSee('Deine Beitrittsanfrage wurde zurückgezogen.')
+        ->navigate(route('portal.event-groups.discover', $applicant))
+        ->assertSee('Beitritt anfragen');
+
+    expect($applicant->refresh()->event_group_id)->toBeNull();
+    $page->assertNoJavaScriptErrors();
+});
+
+it('lets a denied applicant request the same group again', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Gipfelteam']);
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    $applicant = eventGroupTestRegistration($event);
+
+    $page = visit(portalLoginUrl($applicant->externalUser))
+        ->navigate(route('portal.event-groups.discover', $applicant))
+        ->click('Beitritt anfragen')
+        ->assertPresent('dialog[open] >> internal:role=button[name="Beitritt anfragen"]')
+        ->click('dialog[open] >> internal:role=button[name="Beitritt anfragen"]')
+        ->assertSee('Deine Anfrage ist offen');
+
+    $page->navigate(portalLoginUrl($admin->externalUser))
+        ->navigate(route('portal.event-groups.show', $group))
+        ->click('Ablehnen')
+        ->assertSee('Ablehnen?')
+        ->assertPresent('dialog[open] >> internal:role=button[name="Ablehnen"]')
+        ->click('dialog[open] >> internal:role=button[name="Ablehnen"]')
+        ->assertSee('Die Anfrage wurde abgelehnt.')
+        ->assertNoJavaScriptErrors();
+
+    $page->navigate(portalLoginUrl($applicant->externalUser))
+        ->navigate(route('portal.event-groups.discover', $applicant))
+        ->assertSee('Beitritt anfragen')
+        ->click('Beitritt anfragen')
+        ->assertPresent('dialog[open] >> internal:role=button[name="Beitritt anfragen"]')
+        ->click('dialog[open] >> internal:role=button[name="Beitritt anfragen"]')
+        ->assertSee('Deine Anfrage ist offen')
+        ->assertNoJavaScriptErrors();
+
+    expect($applicant->refresh()->event_group_id)->toBe($group->id);
+});
+
+it('opens an ended group archive from participations', function (): void {
+    $event = eventGroupTestEvent(ended: true);
+    $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Archivteam']);
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    $member = AthleteRegistration::factory()->acceptedMember($group)->create();
+    $pending = AthleteRegistration::factory()->pendingGroup($group)->create();
+
+    $page = visit(portalLoginUrl($admin->externalUser))
+        ->click('Teilnahmen')
+        ->assertSee('Archivteam')
+        ->assertSee('2 bestätigte Mitglieder')
+        ->click('Archiv öffnen')
+        ->assertPathIs('/portal/gruppen/'.$group->id)
+        ->assertSee('Archiv')
+        ->assertSee($member->externalUser->privacy_name)
+        ->assertDontSee($pending->externalUser->privacy_name)
+        ->assertDontSee('Offene Anfragen')
+        ->assertDontSee('Gruppe verlassen')
+        ->assertNoJavaScriptErrors();
+
+    expect($page->script('document.querySelector("h1")?.textContent'))->toContain('Archivteam');
+});
+
+it('lets a sole admin delete a group through the confirmation dialog', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Löschteam']);
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+
+    visit(portalLoginUrl($admin->externalUser))
+        ->navigate(route('portal.event-groups.show', $group))
+        ->assertSee('Gruppe löschen')
+        ->click('Gruppe löschen')
+        ->assertSee('Gruppe löschen?')
+        ->assertSee('Löschteam')
+        ->assertPresent('dialog[open] >> internal:role=button[name="Gruppe löschen"]')
+        ->click('dialog[open] >> internal:role=button[name="Gruppe löschen"]')
+        ->assertPathIs('/portal/teilnahmen')
+        ->assertDontSee('Löschteam')
+        ->assertNoJavaScriptErrors();
+
+    expect(EventGroup::query()->find($group->id))->toBeNull()
+        ->and($admin->refresh()->event_group_id)->toBeNull();
+});
+
+it('renders group management clearly on mobile', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Mobileteam']);
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    AthleteRegistration::factory()->pendingGroup($group)->create();
+
+    visit(portalLoginUrl($admin->externalUser))
+        ->on()->mobile()
+        ->navigate(route('portal.event-groups.show', $group))
+        ->assertSee('Mobileteam')
+        ->assertSee('Administrator:in')
+        ->assertSee('1 offene Anfragen')
+        ->assertSee('Offene Anfragen (1)')
+        ->assertSee('Annehmen')
+        ->assertNoJavaScriptErrors();
+});
+
 it('shows member and admin management controls without leaking private profile fields', function (): void {
     $event = eventGroupTestEvent();
     $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Waldläufer']);
