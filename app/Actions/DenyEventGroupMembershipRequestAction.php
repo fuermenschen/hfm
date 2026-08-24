@@ -57,6 +57,7 @@ class DenyEventGroupMembershipRequestAction
             firstName: $applicant->externalUser->first_name,
             groupName: $eventGroup->name,
             eventTitle: $eventGroup->donationEvent->title,
+            eventGroupId: $eventGroup->id,
         ));
     }
 }

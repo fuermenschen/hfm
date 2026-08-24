@@ -38,3 +38,21 @@ it('lets a denied applicant request the same group again', function (): void {
 
     expect($applicant->refresh()->event_group_id)->toBe($group->id);
 });
+
+it('includes a direct signed group link in denial email', function (): void {
+    $event = eventGroupTestEvent();
+    $group = EventGroup::factory()->forEvent($event)->create();
+    $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
+    $applicant = AthleteRegistration::factory()->pendingGroup($group)->create();
+
+    $notification = new EventGroupMembershipDenied(
+        firstName: $applicant->externalUser->first_name,
+        groupName: $group->name,
+        eventTitle: $event->title,
+        eventGroupId: $group->id,
+    );
+
+    $url = $notification->toMail($applicant->externalUser)->actionUrl;
+
+    expect($url)->toBeString()->toContain('redirect=group%3A'.$group->id);
+});

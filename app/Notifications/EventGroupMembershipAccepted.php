@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
+use App\Models\ExternalUser;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 
 /** @api */
 class EventGroupMembershipAccepted extends Notification
@@ -17,6 +19,7 @@ class EventGroupMembershipAccepted extends Notification
         public readonly string $firstName,
         public readonly string $groupName,
         public readonly string $eventTitle,
+        public readonly ?int $eventGroupId = null,
     ) {}
 
     /**
@@ -34,10 +37,19 @@ class EventGroupMembershipAccepted extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject('Deine Gruppenanfrage wurde angenommen')
             ->greeting('Hallo '.$this->firstName)
             ->line('Du bist jetzt Mitglied der Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.'.');
+
+        if ($this->eventGroupId !== null && $notifiable instanceof ExternalUser) {
+            $message->action('Gruppe öffnen', URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+                'uuid' => $notifiable->uuid,
+                'redirect' => 'group:'.$this->eventGroupId,
+            ]));
+        }
+
+        return $message;
     }
 
     /**
