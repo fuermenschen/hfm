@@ -44,6 +44,7 @@
                             :registration-id="$registration->id"
                             action="request"
                             :group-id="$group['id']"
+                            :group-name="$group['name']"
                             :wire:key="'group-request-'.$registration->id.'-'.$group['id']"
                         />
                     @endif

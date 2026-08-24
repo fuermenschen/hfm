@@ -10,8 +10,10 @@
         </form>
     @else
         @php
-            $labels = ['request' => 'Beitritt anfragen', 'withdraw' => 'Anfrage zurückziehen', 'leave' => 'Gruppe verlassen', 'accept' => 'Annehmen', 'deny' => 'Ablehnen', 'remove' => 'Entfernen', 'promote' => 'Zu Administrator:in machen', 'demote' => 'Administratorrechte entfernen', 'delete' => 'Gruppe löschen'];
-            $confirmations = ['request' => 'Deine Anfrage wird als offen gespeichert. Bis sie zurückgezogen oder abgelehnt wird, kannst du keiner anderen Gruppe beitreten.', 'withdraw' => 'Möchtest du diese Beitrittsanfrage zurückziehen?', 'leave' => 'Möchtest du diese Gruppe wirklich verlassen?', 'accept' => 'Möchtest du diese Person als Mitglied aufnehmen?', 'deny' => 'Möchtest du diese Beitrittsanfrage ablehnen?', 'remove' => 'Möchtest du dieses Mitglied aus der Gruppe entfernen?', 'promote' => 'Möchtest du diesem Mitglied Administratorrechte geben?', 'demote' => 'Möchtest du dieser Person die Administratorrechte entziehen?', 'delete' => 'Möchtest du diese Gruppe endgültig löschen?'];
+            $groupName = $groupName ?? 'diese Gruppe';
+            $targetName = $targetName ?? 'diese Person';
+            $labels = ['request' => 'Beitritt anfragen', 'withdraw' => 'Anfrage zurückziehen', 'leave' => 'Gruppe verlassen', 'accept' => 'Annehmen', 'deny' => 'Ablehnen', 'remove' => 'Aus Gruppe entfernen', 'promote' => 'Zu Administrator:in machen', 'demote' => 'Admin-Rechte entfernen', 'delete' => 'Gruppe löschen'];
+            $confirmations = ['request' => 'Deine Anfrage wird als offen gespeichert. Bis sie zurückgezogen oder abgelehnt wird, kannst du keiner anderen Gruppe beitreten.', 'withdraw' => 'Möchtest du deine Anfrage für die Gruppe "'.$groupName.'" zurückziehen?', 'leave' => 'Möchtest du die Gruppe "'.$groupName.'" verlassen?', 'accept' => 'Möchtest du '.$targetName.' als Mitglied in die Gruppe "'.$groupName.'" aufnehmen?', 'deny' => 'Möchtest du die Anfrage von '.$targetName.' für die Gruppe "'.$groupName.'" ablehnen?', 'remove' => 'Möchtest du '.$targetName.' aus der Gruppe "'.$groupName.'" entfernen?', 'promote' => 'Möchtest du '.$targetName.' zum/zur Administrator:in der Gruppe "'.$groupName.'" machen?', 'demote' => 'Möchtest du die Admin-Rechte von '.$targetName.' entfernen?', 'delete' => 'Möchtest du die Gruppe "'.$groupName.'" endgültig löschen?'];
         @endphp
         <flux:button
             wire:click="confirm"

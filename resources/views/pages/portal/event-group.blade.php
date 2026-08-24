@@ -38,6 +38,7 @@
                         :registration-id="$registration->id"
                         action="withdraw"
                         :group-id="$eventGroup->id"
+                        :group-name="$eventGroup->name"
                         :wire:key="'group-withdraw-'.$registration->id"
                     />
                 </x-slot>
@@ -47,6 +48,7 @@
                 :registration-id="$registration->id"
                 action="leave"
                 :group-id="$eventGroup->id"
+                :group-name="$eventGroup->name"
                 :wire:key="'group-leave-'.$registration->id"
             />
         @elseif ($registration->event_group_id === $eventGroup->id && $registration->group_membership_status->value === 'accepted' && $registration->group_membership_role->value === 'admin')
@@ -60,44 +62,62 @@
         @if ($registration->event_group_id === $eventGroup->id && $registration->group_membership_status->value === 'accepted')
             <section class="space-y-4">
                 <flux:heading size="lg" level="2">Mitglieder</flux:heading>
-                @foreach ($accepted as $member)
-                    <flux:card class="border-hfm-light/40 flex flex-col gap-3 rounded-xl bg-white sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-900">
-                        <div>
-                            <flux:heading level="3">{{ $member->externalUser->privacy_name }} ({{ $member->externalUser->public_id_string }})</flux:heading>
-                            @if ($member->group_membership_role->value === 'admin')
-                                <flux:badge class="mt-2" color="green">Administrator:in</flux:badge>
-                            @endif
-                        </div>
-                        @if ($isAdmin && ! $eventGroup->donationEvent->hasEnded() && ! $member->is($registration))
-                            <div class="flex flex-wrap gap-2">
-                                @if ($member->group_membership_role->value === 'member')
-                                    <livewire:portal-event-group-actions
-                                        :registration-id="$registration->id"
-                                        action="promote"
-                                        :group-id="$eventGroup->id"
-                                        :target-registration-id="$member->id"
-                                        :wire:key="'group-promote-'.$member->id"
-                                    />
-                                @else
-                                    <livewire:portal-event-group-actions
-                                        :registration-id="$registration->id"
-                                        action="demote"
-                                        :group-id="$eventGroup->id"
-                                        :target-registration-id="$member->id"
-                                        :wire:key="'group-demote-'.$member->id"
-                                    />
+                <div class="grid gap-4 sm:grid-cols-2">
+                    @foreach ($accepted as $member)
+                        <flux:card class="border-hfm-light/40 flex flex-col gap-3 rounded-xl bg-white dark:border-slate-700 dark:bg-slate-900">
+                            <div>
+                                <flux:heading level="3">{{ $member->externalUser->privacy_name }} ({{ $member->externalUser->public_id_string }})</flux:heading>
+                                @if ($member->group_membership_role->value === 'admin')
+                                    <flux:badge class="mt-2" color="green">Administrator:in</flux:badge>
                                 @endif
-                                <livewire:portal-event-group-actions
-                                    :registration-id="$registration->id"
-                                    action="remove"
-                                    :group-id="$eventGroup->id"
-                                    :target-registration-id="$member->id"
-                                    :wire:key="'group-remove-'.$member->id"
-                                />
                             </div>
-                        @endif
-                    </flux:card>
-                @endforeach
+                            <dl class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <dt class="text-sm text-zinc-500 dark:text-zinc-400">Sportart</dt>
+                                    <dd class="mt-1 font-medium">{{ $member->sportType->name }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm text-zinc-500 dark:text-zinc-400">Geschätzte Runden</dt>
+                                    <dd class="mt-1 font-medium tabular-nums">{{ $member->rounds_estimated }}</dd>
+                                </div>
+                            </dl>
+                            @if ($isAdmin && ! $eventGroup->donationEvent->hasEnded() && ! $member->is($registration))
+                                <div class="flex flex-wrap gap-2">
+                                    @if ($member->group_membership_role->value === 'member')
+                                        <livewire:portal-event-group-actions
+                                            :registration-id="$registration->id"
+                                            action="promote"
+                                            :group-id="$eventGroup->id"
+                                            :target-registration-id="$member->id"
+                                            :group-name="$eventGroup->name"
+                                            :target-name="$member->externalUser->privacy_name"
+                                            :wire:key="'group-promote-'.$member->id"
+                                        />
+                                    @else
+                                        <livewire:portal-event-group-actions
+                                            :registration-id="$registration->id"
+                                            action="demote"
+                                            :group-id="$eventGroup->id"
+                                            :target-registration-id="$member->id"
+                                            :group-name="$eventGroup->name"
+                                            :target-name="$member->externalUser->privacy_name"
+                                            :wire:key="'group-demote-'.$member->id"
+                                        />
+                                    @endif
+                                    <livewire:portal-event-group-actions
+                                        :registration-id="$registration->id"
+                                        action="remove"
+                                        :group-id="$eventGroup->id"
+                                        :target-registration-id="$member->id"
+                                        :group-name="$eventGroup->name"
+                                        :target-name="$member->externalUser->privacy_name"
+                                        :wire:key="'group-remove-'.$member->id"
+                                    />
+                                </div>
+                            @endif
+                        </flux:card>
+                    @endforeach
+                </div>
             </section>
         @endif
 
@@ -113,6 +133,8 @@
                                 action="accept"
                                 :group-id="$eventGroup->id"
                                 :target-registration-id="$applicant->id"
+                                :group-name="$eventGroup->name"
+                                :target-name="$applicant->externalUser->privacy_name"
                                 :wire:key="'group-accept-'.$applicant->id"
                             />
                             <livewire:portal-event-group-actions
@@ -120,6 +142,8 @@
                                 action="deny"
                                 :group-id="$eventGroup->id"
                                 :target-registration-id="$applicant->id"
+                                :group-name="$eventGroup->name"
+                                :target-name="$applicant->externalUser->privacy_name"
                                 :wire:key="'group-deny-'.$applicant->id"
                             />
                         </div>
@@ -133,6 +157,7 @@
                     :registration-id="$registration->id"
                     action="delete"
                     :group-id="$eventGroup->id"
+                    :group-name="$eventGroup->name"
                     :wire:key="'group-delete-'.$eventGroup->id"
                 />
             @endif

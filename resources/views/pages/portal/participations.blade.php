@@ -61,15 +61,9 @@
                                 <flux:button
                                     href="{{ $registration['groupDiscoveryUrl'] }}"
                                     variant="outline"
-                                    icon="magnifying-glass"
-                                    wire:navigate
-                                    >Gruppe finden</flux:button
-                                ><flux:button
-                                    href="{{ $registration['groupDiscoveryUrl'] }}"
-                                    variant="outline"
                                     icon="user-group"
                                     wire:navigate
-                                    >Gruppe gründen</flux:button>
+                                >Gruppe finden oder gründen</flux:button>
                             </div>
                         @elseif ($registration['group']['status'] === 'pending')
                             <flux:callout icon="clock" variant="warning" inline
@@ -80,6 +74,7 @@
                                         :registration-id="$registration['id']"
                                         action="withdraw"
                                         :group-id="$registration['group']['id']"
+                                        :group-name="$registration['group']['name']"
                                         :wire:key="'participation-group-withdraw-'.$registration['id']"
                                     /></x-slot
                             ></flux:callout>
@@ -93,6 +88,7 @@
                                         <flux:button
                                             href="{{ route('portal.event-groups.show', $registration['group']['id']) }}"
                                             variant="outline"
+                                            size="sm"
                                             wire:navigate
                                         >{{ $registration['group']['role'] === 'admin' ? 'Gruppe verwalten' : 'Gruppe öffnen' }}</flux:button>
                                         @if ($registration['group']['role'] !== 'admin')
@@ -100,6 +96,7 @@
                                                 :registration-id="$registration['id']"
                                                 action="leave"
                                                 :group-id="$registration['group']['id']"
+                                                :group-name="$registration['group']['name']"
                                                 :wire:key="'participation-group-leave-'.$registration['id']"
                                             />
                                         @endif

@@ -37,18 +37,32 @@ class PortalEventGroupActions extends Component
     #[Locked]
     public ?int $targetRegistrationId = null;
 
+    #[Locked]
+    public ?string $groupName = null;
+
+    #[Locked]
+    public ?string $targetName = null;
+
     public string $name = '';
 
     public bool $confirming = false;
 
-    public function mount(int $registrationId, string $action, ?int $groupId = null, ?int $targetRegistrationId = null): void
-    {
+    public function mount(
+        int $registrationId,
+        string $action,
+        ?int $groupId = null,
+        ?int $targetRegistrationId = null,
+        ?string $groupName = null,
+        ?string $targetName = null,
+    ): void {
         abort_unless(in_array($action, ['create', 'request', 'withdraw', 'leave', 'accept', 'deny', 'remove', 'promote', 'demote', 'delete'], true), 404);
 
         $this->registrationId = $registrationId;
         $this->groupId = $groupId;
         $this->action = $action;
         $this->targetRegistrationId = $targetRegistrationId;
+        $this->groupName = $groupName;
+        $this->targetName = $targetName;
     }
 
     public function submit(

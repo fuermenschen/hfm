@@ -11,14 +11,16 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
 
 /** @api */
-class EventGroupMembershipDenied extends Notification
+class EventGroupMemberLeft extends Notification
 {
     use Queueable;
 
     public function __construct(
         public readonly string $firstName,
+        public readonly string $memberName,
         public readonly string $groupName,
         public readonly string $eventTitle,
+        public readonly ?int $eventGroupId = null,
     ) {}
 
     /**
@@ -31,28 +33,27 @@ class EventGroupMembershipDenied extends Notification
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('Deine Gruppenanfrage wurde abgelehnt')
+            ->subject('Ein Mitglied hat die Gruppe verlassen')
             ->greeting('Hallo '.$this->firstName)
-            ->line('Deine Anfrage für die Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.' wurde abgelehnt.')
-            ->line('Du kannst dich jederzeit bei einer Gruppe erneut anfragen.');
+            ->line($this->memberName.' hat die Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.' verlassen.');
 
-        if (! $notifiable instanceof ExternalUser) {
+        if ($this->eventGroupId === null || ! $notifiable instanceof ExternalUser) {
             return $message;
         }
 
         $uuid = $notifiable->getAttribute('uuid');
 
-        if (is_string($uuid) && $uuid !== '') {
-            $message->action('Zum Portal', URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
-                'uuid' => $uuid,
-            ]));
+        if (! is_string($uuid) || $uuid === '') {
+            return $message;
         }
+
+        $message->action('Gruppe öffnen', URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+            'uuid' => $uuid,
+            'redirect' => 'group:'.$this->eventGroupId,
+        ]));
 
         return $message;
     }

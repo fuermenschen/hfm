@@ -5,6 +5,7 @@ use App\Enums\GroupMembershipRole;
 use App\Enums\GroupMembershipStatus;
 use App\Models\AthleteRegistration;
 use App\Models\EventGroup;
+use App\Models\SportType;
 use App\Notifications\EventGroupMembershipAccepted;
 use App\Notifications\EventGroupMembershipRequested;
 use Illuminate\Support\Facades\Notification;
@@ -19,11 +20,14 @@ it('shows group entry points in confirmed participation cards', function (): voi
 
     actingAs($registration->externalUser, 'external');
 
-    get(route('portal.participations'))
+    $response = get(route('portal.participations'));
+
+    $response
         ->assertSuccessful()
-        ->assertSeeText('Gruppe finden')
-        ->assertSeeText('Gruppe gründen')
+        ->assertSeeText('Gruppe finden oder gründen')
         ->assertSee(route('portal.event-groups.discover', $registration), false);
+
+    expect(substr_count($response->getContent(), 'Gruppe finden oder gründen'))->toBe(1);
 });
 
 it('keeps group controls hidden until participation is confirmed', function (): void {
@@ -64,6 +68,8 @@ it('renders pending and admin views with only allowed identity fields', function
     $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
     $pending = AthleteRegistration::factory()->pendingGroup($group)->create();
     $accepted = AthleteRegistration::factory()->acceptedMember($group)->create();
+    $sportType = SportType::query()->create(['name' => 'Berglauf']);
+    $accepted->update(['sport_type_id' => $sportType->id, 'rounds_estimated' => 42]);
     $pending->externalUser->update(['email' => 'pending-secret@example.test', 'address' => 'Secret Street 1']);
     $accepted->externalUser->update(['email' => 'member-secret@example.test', 'address' => 'Secret Street 2']);
 
@@ -78,6 +84,9 @@ it('renders pending and admin views with only allowed identity fields', function
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
         ->assertSeeText($accepted->externalUser->privacy_name)
+        ->assertSeeText('Berglauf')
+        ->assertSeeText('Geschätzte Runden')
+        ->assertSeeText('42')
         ->assertSeeText($pending->externalUser->privacy_name)
         ->assertDontSee('pending-secret@example.test')
         ->assertDontSee('member-secret@example.test')

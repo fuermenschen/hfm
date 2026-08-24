@@ -29,8 +29,11 @@ class PortalEventGroupController extends Controller
 
         $accepted = $eventGroup->athleteRegistrations()
             ->where('group_membership_status', GroupMembershipStatus::Accepted->value)
-            ->with(['externalUser' => fn ($query) => $query->select(['id', 'first_name', 'last_name', 'public_id'])])
-            ->get(['id', 'external_user_id', 'event_group_id', 'group_membership_role']);
+            ->with([
+                'externalUser' => fn ($query) => $query->select(['id', 'first_name', 'last_name', 'public_id']),
+                'sportType:id,name',
+            ])
+            ->get(['id', 'external_user_id', 'event_group_id', 'sport_type_id', 'rounds_estimated', 'group_membership_role']);
         $isAdmin = $registration->event_group_id === $eventGroup->id
             && $registration->group_membership_status === GroupMembershipStatus::Accepted
             && $registration->group_membership_role === GroupMembershipRole::Admin;

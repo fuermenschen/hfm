@@ -7,6 +7,8 @@ use App\Models\EventGroup;
 use App\Notifications\EventGroupMembershipDenied;
 use Illuminate\Support\Facades\Notification;
 
+use function Pest\Laravel\get;
+
 it('denies one pending request, clears it, and notifies its applicant once', function (): void {
     $event = eventGroupTestEvent();
     $group = EventGroup::factory()->forEvent($event)->create();
@@ -39,7 +41,7 @@ it('lets a denied applicant request the same group again', function (): void {
     expect($applicant->refresh()->event_group_id)->toBe($group->id);
 });
 
-it('includes a direct signed group link in denial email', function (): void {
+it('includes a signed portal link in denial email', function (): void {
     $event = eventGroupTestEvent();
     $group = EventGroup::factory()->forEvent($event)->create();
     $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
@@ -49,10 +51,13 @@ it('includes a direct signed group link in denial email', function (): void {
         firstName: $applicant->externalUser->first_name,
         groupName: $group->name,
         eventTitle: $event->title,
-        eventGroupId: $group->id,
     );
 
-    $url = $notification->toMail($applicant->externalUser)->actionUrl;
+    $mail = $notification->toMail($applicant->externalUser);
 
-    expect($url)->toBeString()->toContain('redirect=group%3A'.$group->id);
+    expect($mail->actionText)->toBe('Zum Portal')
+        ->and($mail->actionUrl)->toBeString();
+    expect(str_contains($mail->actionUrl, 'redirect=group%3A'.$group->id))->toBeFalse();
+
+    get($mail->actionUrl)->assertRedirect(route('portal.dashboard'));
 });

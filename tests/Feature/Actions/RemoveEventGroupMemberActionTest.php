@@ -3,7 +3,9 @@
 use App\Actions\RemoveEventGroupMemberAction;
 use App\Models\AthleteRegistration;
 use App\Models\EventGroup;
+use App\Notifications\EventGroupMemberRemoved;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 it('lets an admin remove accepted members', function (): void {
@@ -11,6 +13,7 @@ it('lets an admin remove accepted members', function (): void {
     $group = EventGroup::factory()->forEvent($event)->create();
     $admin = AthleteRegistration::factory()->acceptedAdmin($group)->create();
     $member = AthleteRegistration::factory()->acceptedMember($group)->create();
+    Notification::fake();
 
     resolve(RemoveEventGroupMemberAction::class)($group, $member, $admin->externalUser);
 
@@ -19,6 +22,15 @@ it('lets an admin remove accepted members', function (): void {
     expect($member->event_group_id)->toBeNull()
         ->and($member->group_membership_status)->toBeNull()
         ->and($member->group_membership_role)->toBeNull();
+
+    Notification::assertSentTo($member->externalUser, EventGroupMemberRemoved::class, function (EventGroupMemberRemoved $notification) use ($event, $group, $member): bool {
+        $mail = $notification->toMail($member->externalUser);
+
+        return $notification->groupName === $group->name
+            && $notification->eventTitle === $event->title
+            && $mail->actionText === 'Zum Portal'
+            && ! str_contains($mail->actionUrl, 'redirect=group%3A');
+    });
 });
 
 it('rejects non-admin removals and removing the last admin', function (): void {

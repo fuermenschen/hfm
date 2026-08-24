@@ -6,8 +6,10 @@ namespace App\Actions;
 
 use App\Enums\GroupMembershipRole;
 use App\Enums\GroupMembershipStatus;
+use App\Models\AthleteRegistration;
 use App\Models\EventGroup;
 use App\Models\ExternalUser;
+use App\Notifications\EventGroupMemberLeft;
 use App\Services\EventGroupMembershipService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +21,8 @@ class LeaveEventGroupAction
 
     public function __invoke(EventGroup $eventGroup, ExternalUser $externalUser): void
     {
-        DB::transaction(function () use ($eventGroup, $externalUser): void {
+        /** @var list<ExternalUser> $recipients */
+        $recipients = DB::transaction(function () use (&$eventGroup, $externalUser): array {
             $eventGroup = $this->eventGroupMembershipService->lockActiveGroup($eventGroup);
             $registration = $this->eventGroupMembershipService->verifiedRegistration($eventGroup->donationEvent, $externalUser);
 
@@ -33,7 +36,26 @@ class LeaveEventGroupAction
                 throw ValidationException::withMessages(['group' => 'Die letzte Administratorin oder der letzte Administrator kann die Gruppe nicht verlassen.']);
             }
 
-            $this->eventGroupMembershipService->clearMembership($registration, GroupMembershipStatus::Accepted);
+            $recipients = $eventGroup->acceptedAdmins()
+                ->whereKeyNot($registration)
+                ->with('externalUser')
+                ->get()
+                ->map(fn (AthleteRegistration $admin): ExternalUser => $admin->externalUser)
+                ->all();
+
+            return $this->eventGroupMembershipService->clearMembership($registration, GroupMembershipStatus::Accepted)
+                ? $recipients
+                : [];
         });
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new EventGroupMemberLeft(
+                firstName: $recipient->first_name,
+                memberName: $externalUser->privacy_name,
+                groupName: $eventGroup->name,
+                eventTitle: $eventGroup->donationEvent->title,
+                eventGroupId: $eventGroup->id,
+            ));
+        }
     }
 }

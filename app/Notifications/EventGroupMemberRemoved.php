@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
 
 /** @api */
-class EventGroupMembershipDenied extends Notification
+class EventGroupMemberRemoved extends Notification
 {
     use Queueable;
 
@@ -31,16 +31,12 @@ class EventGroupMembershipDenied extends Notification
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('Deine Gruppenanfrage wurde abgelehnt')
+            ->subject('Du wurdest aus einer Gruppe entfernt')
             ->greeting('Hallo '.$this->firstName)
-            ->line('Deine Anfrage für die Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.' wurde abgelehnt.')
-            ->line('Du kannst dich jederzeit bei einer Gruppe erneut anfragen.');
+            ->line('Du wurdest aus der Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.' entfernt.');
 
         if (! $notifiable instanceof ExternalUser) {
             return $message;
