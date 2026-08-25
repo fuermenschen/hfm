@@ -10,5 +10,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Models/** | .ai/rules/models.md |
 | app/Notifications/** | .ai/rules/notifications.md |
 | **/*.php | .ai/rules/php-null-coalescing.md |
+| resources/views/vendor/pulse/** | .ai/rules/pulse.md |
 | app/Services/** | .ai/rules/services.md |
 | resources/views/**/*.blade.php | .ai/rules/views.md |
