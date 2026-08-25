@@ -62,6 +62,15 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.item
+                icon="user-circle"
+                class="[&_[data-content]]:text-base text-base"
+                href="{{ route('portal.profile', $eventParameters) }}"
+                :current="request()->routeIs('portal.profile')"
+                wire:navigate
+            >
+                Profil
+            </flux:sidebar.item>
+            <flux:sidebar.item
                 icon="question-mark-circle"
                 class="[&_[data-content]]:text-base text-base"
                 href="{{ route('contact') }}"

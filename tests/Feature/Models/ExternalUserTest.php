@@ -1,6 +1,16 @@
 <?php
 
 use App\Models\ExternalUser;
+use Illuminate\Support\Facades\Schema;
+
+it('requires external user contact fields', function (): void {
+    $columns = collect(Schema::getColumns('external_users'))->keyBy('name');
+
+    expect($columns['address']['nullable'])->toBeFalse()
+        ->and($columns['zip_code']['nullable'])->toBeFalse()
+        ->and($columns['city']['nullable'])->toBeFalse()
+        ->and($columns['phone_number']['nullable'])->toBeFalse();
+});
 
 it('generates a unique public id on external user create', function () {
     $user = ExternalUser::factory()->create();
