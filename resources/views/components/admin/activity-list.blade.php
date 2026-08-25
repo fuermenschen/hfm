@@ -8,7 +8,7 @@
     @else
         <flux:timeline align="start" class="mt-7">
             @foreach ($activities as $activity)
-            <x-admin.activity-list-entry :activity="$activity" />
+                <x-admin.activity-list-entry :activity="$activity" />
             @endforeach
         </flux:timeline>
     @endif

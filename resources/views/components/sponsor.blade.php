@@ -3,24 +3,21 @@
 @php
     use Illuminate\Support\Str;
 
-    $modalId = 'sponsor-modal-' . Str::slug($title);
+    $modalId = 'sponsor-modal-'.Str::slug($title);
     $sizeClasses = [
-    'small' => 'w-1/2 sm:w-1/4',
-    'medium' => 'w-2/3 sm:w-1/3',
-    'large' => 'w-4/5 sm:w-2/5',
-][$variant] ?? 'w-40 sm:w-48 md:w-56 lg:w-64';
+        'small' => 'w-1/2 sm:w-1/4',
+        'medium' => 'w-2/3 sm:w-1/3',
+        'large' => 'w-4/5 sm:w-2/5',
+    ][$variant] ?? 'w-40 sm:w-48 md:w-56 lg:w-64';
 @endphp
 
 <div class="{{ $sizeClasses }}">
     <div
-        class="p-6 bg-white/50 rounded-lg shadow-lg cursor-pointer aspect-[2/1] flex items-center justify-center mx-auto"
+        class="mx-auto flex aspect-[2/1] cursor-pointer items-center justify-center rounded-lg bg-white/50 p-6 shadow-lg"
         x-data="{}"
-        x-on:click="$flux.modal('{{ $modalId }}').show()">
-        <img src="{{ $logoUrl }}"
-             alt="{{ $title }} Logo"
-             class="w-full h-auto object-contain mx-auto">
-
-
+        x-on:click="$flux.modal('{{ $modalId }}').show()"
+    >
+        <img src="{{ $logoUrl }}" alt="{{ $title }} Logo" class="mx-auto h-auto w-full object-contain" />
     </div>
     <flux:modal name="{{ $modalId }}" class="w-full space-y-6">
         <div class="space-y-6">
@@ -37,7 +34,7 @@
                 <flux:text>{{ $contributionText }}</flux:text>
             </div>
 
-            <div class="flex justify-between items-center">
+            <div class="flex items-center justify-between">
                 <flux:button as="a" href="{{ $url }}" target="_blank" rel="noopener noreferrer">
                     Zur Website
                 </flux:button>

@@ -1,6 +1,12 @@
-<div class="mt-6"
-     x-data="{ registrationQueued: $wire.entangle('registrationQueued').live }"
-     x-effect="if (registrationQueued) { $flux.modal('newsletter-registration-success').show() }">
+<div
+    class="mt-6"
+    x-data="{ registrationQueued: $wire.entangle('registrationQueued').live }"
+    x-effect="
+        if (registrationQueued) {
+            $flux.modal('newsletter-registration-success').show();
+        }
+    "
+>
     <flux:modal name="newsletter-registration-success" class="sm:w-full md:w-xl" :dismissible="false">
         <div class="space-y-6">
             <div>
@@ -10,13 +16,13 @@
 
             <div class="flex gap-2">
                 <flux:spacer />
-                <flux:button variant="primary" x-on:click="window.location.href = '{{ route('home') }}'">Zur Startseite</flux:button>
+                <flux:button variant="primary" x-on:click="window.location.href = '{{ route('home') }}'"
+                    >Zur Startseite</flux:button>
             </div>
         </div>
     </flux:modal>
 
-    <form wire:submit="save"
-          class="flex flex-col space-y-6 sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-6">
+    <form wire:submit="save" class="flex max-w-full flex-col space-y-6 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
         @csrf
 
         <x-honeypot livewire-model="extraFields" />
@@ -55,7 +61,7 @@
             />
         </div>
 
-        <flux:button icon="paper-airplane" label="Anmelden" type="submit" class="sm:col-span-2 justify-self-start">
+        <flux:button icon="paper-airplane" label="Anmelden" type="submit" class="justify-self-start sm:col-span-2">
             Anmelden
         </flux:button>
     </form>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\GetPortalContextAction;
+use App\Enums\GroupMembershipStatus;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Services\AthleteShareTextService;
@@ -28,17 +29,23 @@ class PortalParticipationsController extends Controller
             ->whereHas('donationEvent', fn (Builder $query): Builder => $query->where('is_published', true))
             ->when($selectedEvent instanceof DonationEvent, fn (Builder $query): Builder => $query->whereBelongsTo($selectedEvent))
             ->with([
-                'donationEvent:id,title,timezone,starts_at,location_city',
+                'donationEvent:id,slug,title,timezone,starts_at,ends_at,location_city',
                 'sportType:id,name',
                 'partner:id,name',
                 'externalUser:id,public_id',
+                'eventGroup' => fn ($query) => $query
+                    ->select(['id', 'donation_event_id', 'name'])
+                    ->withCount([
+                        'athleteRegistrations as accepted_count' => fn ($query) => $query->where('group_membership_status', GroupMembershipStatus::Accepted->value),
+                        'athleteRegistrations as pending_count' => fn ($query) => $query->where('group_membership_status', GroupMembershipStatus::Pending->value),
+                    ]),
                 'donations' => fn ($query) => $query
                     ->select(['id', 'athlete_registration_id', 'donor_external_user_id', 'amount_per_round', 'amount_min', 'amount_max', 'comment', 'verified'])
                     ->oldest(),
                 'donations.donorExternalUser' => fn ($query) => $query->withTrashed()->select(['id', 'first_name', 'last_name', 'public_id']),
                 'donations.athleteRegistration:id,rounds_estimated,rounds_done',
             ])
-            ->get(['id', 'donation_event_id', 'external_user_id', 'sport_type_id', 'partner_id', 'rounds_estimated', 'rounds_done', 'comment', 'verified'])
+            ->get(['id', 'donation_event_id', 'external_user_id', 'sport_type_id', 'partner_id', 'event_group_id', 'group_membership_status', 'group_membership_role', 'rounds_estimated', 'rounds_done', 'comment', 'verified'])
             ->sortByDesc('donationEvent.starts_at')
             ->values()
             ->map(function ($registration) use ($athleteShareText, $donationService): array {
@@ -63,6 +70,16 @@ class PortalParticipationsController extends Controller
                     'roundsDone' => (int) $registration->rounds_done,
                     'comment' => $registration->comment,
                     'verified' => (bool) $registration->verified,
+                    'eventEnded' => $registration->donationEvent->hasEnded(),
+                    'group' => $registration->eventGroup === null ? null : [
+                        'id' => (int) $registration->eventGroup->id,
+                        'name' => $registration->eventGroup->name,
+                        'status' => $registration->group_membership_status?->value,
+                        'role' => $registration->group_membership_role?->value,
+                        'acceptedCount' => (int) $registration->eventGroup->accepted_count,
+                        'pendingCount' => (int) $registration->eventGroup->pending_count,
+                    ],
+                    'groupDiscoveryUrl' => route('portal.event-groups.discover', $registration),
                     'welcomeLetterUrl' => route('portal.welcome-letter.download', $registration),
                     'shareTexts' => $registration->verified ? $athleteShareText->templates($registration) : [],
                     'donations' => $donations->all(),

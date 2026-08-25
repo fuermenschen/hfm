@@ -46,6 +46,7 @@ class RequestEventGroupMembershipAction
                 groupName: $eventGroup->name,
                 eventTitle: $eventGroup->donationEvent->title,
                 applicantPrivacyName: $externalUser->privacy_name,
+                eventGroupId: $eventGroup->id,
             ));
         }
     }

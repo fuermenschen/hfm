@@ -3,7 +3,11 @@
         <x-slot:toolbar>
             <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
-                    <flux:input wire:model.live.debounce.300ms="search" :placeholder="$this->roleLabel().' suchen...'" icon="magnifying-glass" />
+                    <flux:input
+                        wire:model.live.debounce.300ms="search"
+                        :placeholder="$this->roleLabel().' suchen...'"
+                        icon="magnifying-glass"
+                    />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
@@ -23,8 +27,14 @@
                                     wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
                                     :disabled="! $this->documentDownloadsEnabled()"
                                 >
-                                    <span wire:loading.remove wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages">Dokumente</span>
-                                    <span wire:loading wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages">Wird erstellt...</span>
+                                    <span
+                                        wire:loading.remove
+                                        wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
+                                    >Dokumente</span>
+                                    <span
+                                        wire:loading
+                                        wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
+                                    >Wird erstellt...</span>
                                 </flux:button>
                                 <flux:menu>
                                     <flux:menu.group heading="Willkommensbrief">
@@ -91,10 +101,15 @@
                             </flux:dropdown>
                             @if (! $this->documentDownloadsEnabled())
                                 <flux:callout icon="information-circle" variant="secondary" class="py-1.5">
-                                    <flux:callout.text>Für Dokumente bitte genau einen Anlass auswählen.</flux:callout.text>
+                                    <flux:callout.text>
+                                        Für Dokumente bitte genau einen Anlass auswählen.</flux:callout.text>
                                 </flux:callout>
                             @endif
-                            <flux:text wire:loading.flex wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages" class="items-center gap-1 text-sm text-zinc-500">
+                            <flux:text
+                                wire:loading.flex
+                                wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
+                                class="items-center gap-1 text-sm text-zinc-500"
+                            >
                                 <flux:icon.arrow-path class="size-4 animate-spin" />
                                 Dokumente werden erstellt...
                             </flux:text>
@@ -148,7 +163,12 @@
                     </flux:table.row>
                     @forelse ($external_users as $row)
                         @php($rowClass = $loop->odd ? 'bg-zinc-50/60 dark:bg-zinc-800/40' : 'bg-white dark:bg-zinc-900')
-                        <flux:table.row wire:key="row-{{ $row->id }}" class="{{ $rowClass }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.row
+                            wire:key="row-{{ $row->id }}"
+                            class="{{ $rowClass }}"
+                            wire:loading.remove
+                            wire:target="{{ $this->tableLoadingTargets() }}"
+                        >
                             <flux:table.cell>
                                 <flux:field variant="inline">
                                     <flux:checkbox value="{{ $row->id }}" />
@@ -166,13 +186,24 @@
                                         </div>
                                     @elseif ($columnKey === 'partner')
                                         {{ $this->selectedAthletePartner($row) }}
+                                    @elseif ($columnKey === 'group')
+                                        {{ $this->selectedAthleteGroup($row) }}
+                                    @elseif ($columnKey === 'confirmed')
+                                        @php($confirmed = $this->selectedAthleteConfirmed($row))
+                                        @if ($confirmed === null)
+                                            -
+                                        @else
+                                            <flux:badge size="sm" :color="$confirmed ? 'zinc' : 'red'">
+                                                {{ $confirmed ? 'OK' : 'NOK' }}
+                                            </flux:badge>
+                                        @endif
                                     @else
                                         {{ $this->displayValue($row, $columnKey) }}
                                     @endif
                                 </flux:table.cell>
                             @endforeach
                             @if ($role === 'athlete')
-                                    <flux:table.cell class="w-28 text-right">
+                                <flux:table.cell class="w-28 text-right">
                                     <flux:dropdown align="end">
                                         <flux:button
                                             variant="subtle"
@@ -183,18 +214,24 @@
                                             wire:target="downloadAthleteDocument"
                                             :disabled="! $this->documentDownloadsEnabled()"
                                         />
-                                         <flux:menu>
-                                             @if ($registration = $this->selectedAthleteRegistration($row))
-                                                 <flux:menu.group heading="Story-Bilder">
-                                                     <flux:menu.item href="{{ route('admin.story-image.download', [$registration, 'light']) }}" icon="arrow-down-tray">
-                                                         Hell herunterladen
-                                                     </flux:menu.item>
-                                                     <flux:menu.item href="{{ route('admin.story-image.download', [$registration, 'dark']) }}" icon="arrow-down-tray">
-                                                         Dunkel herunterladen
-                                                     </flux:menu.item>
-                                                 </flux:menu.group>
-                                             @endif
-                                             <flux:menu.item
+                                        <flux:menu>
+                                            @if ($registration = $this->selectedAthleteRegistration($row))
+                                                <flux:menu.group heading="Story-Bilder">
+                                                    <flux:menu.item
+                                                        href="{{ route('admin.story-image.download', [$registration, 'light']) }}"
+                                                        icon="arrow-down-tray"
+                                                    >
+                                                        Hell herunterladen
+                                                    </flux:menu.item>
+                                                    <flux:menu.item
+                                                        href="{{ route('admin.story-image.download', [$registration, 'dark']) }}"
+                                                        icon="arrow-down-tray"
+                                                    >
+                                                        Dunkel herunterladen
+                                                    </flux:menu.item>
+                                                </flux:menu.group>
+                                            @endif
+                                            <flux:menu.item
                                                 wire:click="downloadAthleteDocument({{ $row->id }}, 'welcome-letter')"
                                                 wire:loading.attr="disabled"
                                                 wire:target="downloadAthleteDocument"
@@ -224,7 +261,8 @@
                                     <flux:icon.magnifying-glass class="size-5 text-zinc-400" />
                                     @if (trim($search) !== '')
                                         <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
-                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')"
+                                            >Suche zurücksetzen</flux:button>
                                     @elseif ($eventSlug !== null && $eventSlug !== '')
                                         <flux:text>Keine {{ $this->roleLabel() }} für diesen Anlass vorhanden.</flux:text>
                                     @else

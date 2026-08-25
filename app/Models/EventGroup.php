@@ -20,6 +20,8 @@ use Illuminate\Support\Str;
  * @property int $donation_event_id
  * @property string $name
  * @property string $normalized_name
+ * @property int $accepted_count
+ * @property int $pending_count
  * @property DonationEvent $donationEvent
  * @property Collection<int, AthleteRegistration> $athleteRegistrations
  */

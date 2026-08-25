@@ -7,6 +7,8 @@ use App\Http\Controllers\DownloadAthleteWelcomeLetterController;
 use App\Http\Controllers\ExternalUserSessionController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\PortalDonationsController;
+use App\Http\Controllers\PortalEventGroupController;
+use App\Http\Controllers\PortalEventGroupDiscoveryController;
 use App\Http\Controllers\PortalParticipationsController;
 use App\Http\Controllers\PortalProfileController;
 use App\Http\Controllers\PreviewAthleteStoryImageController;
@@ -31,6 +33,8 @@ Route::middleware('auth:external')->group(function (): void {
     Route::get('portal', PortalController::class)->name('portal.dashboard');
     Route::get('portal/profil', [PortalProfileController::class, 'show'])->name('portal.profile');
     Route::get('portal/teilnahmen', PortalParticipationsController::class)->name('portal.participations');
+    Route::get('portal/teilnahmen/{athleteRegistration}/gruppen', PortalEventGroupDiscoveryController::class)->name('portal.event-groups.discover');
+    Route::get('portal/gruppen/{eventGroup}', PortalEventGroupController::class)->name('portal.event-groups.show');
     Route::get('portal/spenden', PortalDonationsController::class)->name('portal.donations');
     Route::get('portal/teilnahmen/{athleteRegistration}/willkommensbrief', DownloadAthleteWelcomeLetterController::class)
         ->name('portal.welcome-letter.download');

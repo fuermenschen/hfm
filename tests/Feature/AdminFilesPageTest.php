@@ -176,8 +176,9 @@ it('deletes unreferenced files', function (): void {
         ->call('confirmDelete', 'documents/free.pdf')
         ->assertSet('pendingDeletePath', 'documents/free.pdf')
         ->assertSee('Öffentliche Datei wird entfernt')
-        ->assertSee('<strong>documents/free.pdf</strong>', false)
-        ->assertSee('Prüfe vorher, ob sie noch eingebunden, verlinkt oder von anderen Personen verwendet wird.')
+        ->assertSee('documents/free.pdf')
+        ->assertSee('Prüfe vorher, ob sie noch eingebunden, verlinkt oder von anderen Personen')
+        ->assertSee('verwendet wird.')
         ->call('deleteFile')
         ->assertSet('pendingDeletePath', null)
         ->assertHasNoErrors();

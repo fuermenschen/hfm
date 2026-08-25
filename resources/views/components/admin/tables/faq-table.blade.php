@@ -3,7 +3,11 @@
         <x-slot:toolbar>
             <x-datatable.toolbar-grid>
                 <x-slot:topLeft>
-                    <flux:input wire:model.live.debounce.300ms="search" placeholder="FAQs suchen..." icon="magnifying-glass" />
+                    <flux:input
+                        wire:model.live.debounce.300ms="search"
+                        placeholder="FAQs suchen..."
+                        icon="magnifying-glass"
+                    />
                 </x-slot:topLeft>
 
                 <x-slot:topRight>
@@ -51,7 +55,11 @@
                         </flux:table.cell>
                     </flux:table.row>
                     @forelse ($faqs as $row)
-                        <flux:table.row wire:key="faq-{{ $row->id }}" wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
+                        <flux:table.row
+                            wire:key="faq-{{ $row->id }}"
+                            wire:loading.remove
+                            wire:target="{{ $this->tableLoadingTargets() }}"
+                        >
                             <flux:table.cell>
                                 <flux:field variant="inline">
                                     <flux:checkbox value="{{ $row->id }}" />
@@ -79,7 +87,8 @@
                                     <flux:icon.magnifying-glass class="size-5" />
                                     @if (trim($search) !== '')
                                         <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
-                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')">Suche zurücksetzen</flux:button>
+                                        <flux:button variant="ghost" size="sm" wire:click="$set('search', '')"
+                                            >Suche zurücksetzen</flux:button>
                                     @else
                                         <flux:text>Keine FAQs vorhanden.</flux:text>
                                     @endif

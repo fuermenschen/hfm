@@ -8,45 +8,56 @@
     <nav class="mx-auto flex items-baseline justify-between p-9" aria-label="Global">
         <a href="{{ route("home") }}" wire:navigate>
             <span class="sr-only">Höhenmeter für Menschen</span>
-            <x-logo class="h-10 -mb-1.5 ml-0.5" />
+            <x-logo class="-mb-1.5 ml-0.5 h-10" />
         </a>
-        <div class=" flex lg:hidden items">
+        <div class="items flex lg:hidden">
             <button
-                x-show="!open"
+                x-show="! open"
                 @click="open = true"
                 type="button"
                 class="inline-flex items-center justify-center rounded-md p-2.5"
             >
                 <span class="sr-only">Menü öffnen</span>
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                     aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                <svg
+                    class="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                    />
                 </svg>
             </button>
         </div>
         <div class="hidden lg:flex lg:gap-x-9">
-            @foreach($menuItems as $item)
+            @foreach ($menuItems as $item)
                 <a
                     href="{{ route($item['route']) }}"
                     wire:key="{{ $item['name'] }}"
                     wire:navigate.hover
                     @class([
-                        "text-sm leading-6 grow hover:text-hfm-light",
-                        "text-hfm-dark dark:text-hfm-white font-normal" => !$item['active'],
-                        "text-hfm-red dark:text-hfm-lightred font-medium" => $item['active'],
+                        'text-sm leading-6 grow hover:text-hfm-light',
+                        'text-hfm-dark dark:text-hfm-white font-normal' => ! $item['active'],
+                        'text-hfm-red dark:text-hfm-lightred font-medium' => $item['active'],
                     ])
                 >
                     {{ $item['name'] }}
                 </a>
             @endforeach
             @if ($guest)
-                <a href="{{ route('association') }}" wire:navigate
-                   @class([
-                       'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
-                       'text-hfm-dark dark:text-hfm-white font-normal' => !request()->routeIs('association'),
-                       'text-hfm-red dark:text-hfm-lightred font-medium' => request()->routeIs('association'),
-                   ])
+                <a
+                    href="{{ route('association') }}"
+                    wire:navigate
+                    @class([
+                        'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
+                        'text-hfm-dark dark:text-hfm-white font-normal' => ! request()->routeIs('association'),
+                        'text-hfm-red dark:text-hfm-lightred font-medium' => request()->routeIs('association'),
+                    ])
                 >
                     <span>Vereinsmitglied werden</span>
                 </a>
@@ -55,7 +66,7 @@
                 <a
                     href="{{ route("admin.dashboard") }}"
                     wire:navigate
-                    class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal"
+                    class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white grow text-sm leading-6 font-normal"
                 >
                     Dashboard
                 </a>
@@ -64,20 +75,22 @@
                 <a
                     href="{{ route("portal.dashboard") }}"
                     wire:navigate
-                    class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal"
+                    class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white grow text-sm leading-6 font-normal"
                 >
                     Portal
                 </a>
             @endif
         </div>
-        <div class="hidden lg:flex items">
+        <div class="items hidden lg:flex">
             @if ($guest)
-                <a href="{{ route('login') }}" wire:navigate
-                   @class([
-                       'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
-                       'text-hfm-dark dark:text-hfm-white font-normal' => !request()->routeIs('login'),
-                       'text-hfm-red dark:text-hfm-lightred font-medium' => request()->routeIs('login'),
-                   ])
+                <a
+                    href="{{ route('login') }}"
+                    wire:navigate
+                    @class([
+                        'text-sm leading-6 grow hover:text-hfm-light flex flex-row space-x-2',
+                        'text-hfm-dark dark:text-hfm-white font-normal' => ! request()->routeIs('login'),
+                        'text-hfm-red dark:text-hfm-lightred font-medium' => request()->routeIs('login'),
+                    ])
                 >
                     <span>Anmelden</span>
                 </a>
@@ -87,7 +100,7 @@
                     @csrf
                     <button
                         type="submit"
-                        class="text-sm leading-6 grow hover:text-hfm-light text-hfm-dark dark:text-hfm-white font-normal flex flex-row space-x-2 cursor-pointer"
+                        class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex grow cursor-pointer flex-row space-x-2 text-sm leading-6 font-normal"
                     >
                         Abmelden
                     </button>
@@ -96,11 +109,7 @@
         </div>
     </nav>
     <!-- Mobile menu, show/hide based on menu open state. -->
-    <div
-        x-show="open"
-        class="fixed inset-0 z-10"
-        role="dialog"
-        aria-modal="true">
+    <div x-show="open" class="fixed inset-0 z-10" role="dialog" aria-modal="true">
         <!-- Background backdrop, show/hide based on slide-over state. -->
         <div
             x-show="open"
@@ -110,8 +119,8 @@
             x-transition:leave="transition-opacity ease-in duration-200"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed inset-0 z-10 bg-gray-900/50 backdrop-blur-md">
-        </div>
+            class="fixed inset-0 z-10 bg-gray-900/50 backdrop-blur-md"
+        ></div>
         <div
             x-show="open"
             x-transition:enter="transition ease-out duration-300"
@@ -120,21 +129,24 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="translate-x-full"
-            class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-hfm-white dark:bg-hfm-dark p-9 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+            class="bg-hfm-white dark:bg-hfm-dark fixed inset-y-0 right-0 z-10 w-full overflow-y-auto p-9 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10"
+        >
             <div class="flex items-center justify-between">
                 <a wire:navigate href="/" class="-m-1.5 p-1.5">
                     <span class="sr-only">Höhenmeter für Menschen</span>
-                    <x-logo class="h-10"
-                            alt="" />
+                    <x-logo class="h-10" alt="" />
                 </a>
-                <button
-                    @click="open = false"
-                    type="button"
-                    class="m-2.5 rounded-md text-hfm-dark dark:text-hfm-light"
-                > <!-- TODO: check positions of buttons -->
+                <button @click="open = false" type="button" class="text-hfm-dark dark:text-hfm-light m-2.5 rounded-md">
+                    <!-- TODO: check positions of buttons -->
                     <span class="sr-only">Menü schliessen</span>
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                         aria-hidden="true">
+                    <svg
+                        class="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                    >
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -142,15 +154,15 @@
             <div class="mt-6 flow-root">
                 <div class="-my-6">
                     <div class="space-y-2 py-6">
-                        @foreach($menuItems as $item)
+                        @foreach ($menuItems as $item)
                             <a
                                 href="{{ route($item['route']) }}"
                                 wire:key="{{ $item['name'] }}"
                                 wire:navigate.hover
                                 @class([
-                                    "-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light",
-                                    "text-hfm-red dark:text-hfm-lightred" => $item['active'],
-                                    "text-hfm-dark dark:text-hfm-white" => !$item['active'],
+                                    '-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light',
+                                    'text-hfm-red dark:text-hfm-lightred' => $item['active'],
+                                    'text-hfm-dark dark:text-hfm-white' => ! $item['active'],
                                 ])
                             >
                                 {{ $item['name'] }}
@@ -160,7 +172,7 @@
                             <a
                                 href="{{ route('association') }}"
                                 wire:navigate
-                                class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
+                                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white -mx-3 block rounded-lg px-3 py-2 text-base leading-7 font-medium"
                             >
                                 Vereinsmitglied werden
                             </a>
@@ -169,7 +181,7 @@
                             <a
                                 href="{{ route("admin.dashboard") }}"
                                 wire:navigate
-                                class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
+                                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white -mx-3 block rounded-lg px-3 py-2 text-base leading-7 font-medium"
                             >
                                 Dashboard
                             </a>
@@ -178,7 +190,7 @@
                             <a
                                 href="{{ route("portal.dashboard") }}"
                                 wire:navigate
-                                class="-mx-3 block rounded-lg px-3 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white"
+                                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white -mx-3 block rounded-lg px-3 py-2 text-base leading-7 font-medium"
                             >
                                 Portal
                             </a>
@@ -188,23 +200,25 @@
                         <a
                             href="{{ route("login") }}"
                             wire:navigate
-                            class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex flex-row"
+                            class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white -mx-3 mt-8 flex flex-row rounded-lg px-3 py-2 text-base leading-7 font-medium"
                         >
                             <span>Anmelden</span>
-
                         </a>
                     @endif
                     @if ($adminAuthenticated || $externalAuthenticated)
-                        <form method="POST" action="{{ route($adminAuthenticated ? 'admin.logout' : 'portal.logout') }}">
+                        <form
+                            method="POST"
+                            action="{{ route($adminAuthenticated ? 'admin.logout' : 'portal.logout') }}"
+                        >
                             @csrf
                             <button
                                 type="submit"
-                                class="-mx-3 rounded-lg px-3 mt-8 py-2 text-base font-medium leading-7 hover:text-hfm-light text-hfm-dark dark:text-hfm-white flex flex-row cursor-pointer"
-                            >Abmelden
+                                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white -mx-3 mt-8 flex cursor-pointer flex-row rounded-lg px-3 py-2 text-base leading-7 font-medium"
+                            >
+                                Abmelden
                             </button>
                         </form>
                     @endif
-
                 </div>
             </div>
         </div>

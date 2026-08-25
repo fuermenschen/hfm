@@ -108,7 +108,11 @@ class AdminPersonTable extends AbstractDatatableComponent
     protected function baseQuery(): Builder
     {
         if ($this->role === 'athlete') {
-            $query = $this->athleteService->all()->with(['athleteRegistrations.donationEvent', 'athleteRegistrations.partner']);
+            $query = $this->athleteService->all()->with([
+                'athleteRegistrations.donationEvent',
+                'athleteRegistrations.partner',
+                'athleteRegistrations.eventGroup',
+            ]);
             $partnerQuery = AthleteRegistration::query()
                 ->select('partners.name')
                 ->join('partners', 'partners.id', '=', 'athlete_registrations.partner_id')
@@ -185,6 +189,8 @@ class AdminPersonTable extends AbstractDatatableComponent
         if ($this->role === 'athlete') {
             $columns['public_id_string'] = ['label' => 'Öffentliche ID', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-32', 'export_key' => 'Öffentliche ID'];
             $columns['partner'] = ['label' => 'Benefizpartner:in', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-48', 'export_key' => 'Benefizpartner:in'];
+            $columns['group'] = ['label' => 'Gruppe', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Gruppe'];
+            $columns['confirmed'] = ['label' => 'OK', 'sortable' => false, 'align' => 'center', 'width' => 'w-16 min-w-16', 'export_key' => 'OK'];
         }
 
         $columns['events'] = ['label' => 'Anlässe', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Anlässe'];
@@ -207,7 +213,7 @@ class AdminPersonTable extends AbstractDatatableComponent
         ];
 
         if ($this->role === 'athlete') {
-            array_splice($columns, 5, 0, ['partner']);
+            array_splice($columns, 5, 0, ['partner', 'group', 'confirmed']);
         }
 
         return $columns;
@@ -244,6 +250,20 @@ class AdminPersonTable extends AbstractDatatableComponent
         }
 
         return $registration->partner->name ?? __('app.equal_split_full');
+    }
+
+    public function selectedAthleteGroup(ExternalUser $person): string
+    {
+        $registration = $this->selectedAthleteRegistration($person);
+
+        return $registration->eventGroup->name ?? '-';
+    }
+
+    public function selectedAthleteConfirmed(ExternalUser $person): ?bool
+    {
+        $registration = $this->selectedAthleteRegistration($person);
+
+        return $registration->verified ?? null;
     }
 
     public function selectedAthleteRegistration(ExternalUser $person): ?AthleteRegistration
@@ -522,6 +542,10 @@ class AdminPersonTable extends AbstractDatatableComponent
         if ($this->role === 'athlete' && $row instanceof ExternalUser) {
             $export['Öffentliche ID'] = data_get($row, 'public_id_string');
             $export['Benefizpartner:in'] = $this->selectedAthletePartner($row);
+            $export['Gruppe'] = $this->selectedAthleteGroup($row);
+
+            $confirmed = $this->selectedAthleteConfirmed($row);
+            $export['OK'] = $confirmed === null ? '-' : ($confirmed ? 'OK' : 'NOK');
         }
 
         return $export;

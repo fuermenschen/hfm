@@ -2,12 +2,12 @@
     /** @var \array[] */
     'mainNavigation',
     /** @var \array[] */
-    'secondaryNavigation'
+    'secondaryNavigation',
 ])
 
 <nav {{ $attributes->class(['flex flex-1 flex-col gap-y-7']) }}>
     <ul role="list" class="-mx-2 space-y-1">
-        @foreach($mainNavigation as $nav)
+        @foreach ($mainNavigation as $nav)
             <x-admin.menu-item
                 :route="$nav['route']"
                 :current="$nav['current']"
@@ -18,7 +18,7 @@
         @endforeach
     </ul>
     <ul class="mt-auto">
-        @foreach($secondaryNavigation as $nav)
+        @foreach ($secondaryNavigation as $nav)
             <x-admin.menu-item
                 :route="$nav['route']"
                 :current="$nav['current']"

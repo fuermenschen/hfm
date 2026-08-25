@@ -1,7 +1,9 @@
 <div
     class="mt-8 w-full"
     x-data
-    x-on:donor-registration-wizard-step-changed.window="$nextTick(() => $refs.card.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
+    x-on:donor-registration-wizard-step-changed.window="
+        $nextTick(() => $refs.card.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    "
 >
     <div x-ref="card" class="w-full scroll-mt-6 overflow-hidden border-y border-zinc-200 dark:border-zinc-700">
         <x-honeypot livewire-model="extraFields" />
@@ -10,16 +12,12 @@
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     @if ($displaySteps)
-                        <flux:text size="sm" class="font-medium text-hfm-red dark:text-hfm-lightred">
+                        <flux:text size="sm" class="text-hfm-red dark:text-hfm-lightred font-medium">
                             Schritt {{ $currentDisplayStepNumber }} von {{ count($displaySteps) }}
                         </flux:text>
                     @endif
-                    <flux:heading size="lg" class="mt-1">
-                        {{ $currentStepTitle }}
-                    </flux:heading>
-                    <flux:text class="mt-2 max-w-xl">
-                        {{ $currentStepDescription }}
-                    </flux:text>
+                    <flux:heading size="lg" class="mt-1"> {{ $currentStepTitle }} </flux:heading>
+                    <flux:text class="mt-2 max-w-xl"> {{ $currentStepDescription }} </flux:text>
                 </div>
 
                 <flux:badge color="red" class="w-fit">Spende</flux:badge>
@@ -86,39 +84,84 @@
                         />
                     </div>
 
-                    <flux:callout wire:loading.flex wire:target="next" icon="shield-check" variant="secondary" class="w-full sm:col-span-2">
-                        <flux:callout.heading>Wir prüfen, ob wir deine E-Mail-Adresse bereits im System haben...</flux:callout.heading>
-                        <flux:callout.text>Wir verzögern diese Prüfung absichtlich kurz, damit bestehende Profile besser geschützt sind.</flux:callout.text>
+                    <flux:callout
+                        wire:loading.flex
+                        wire:target="next"
+                        icon="shield-check"
+                        variant="secondary"
+                        class="w-full sm:col-span-2"
+                    >
+                        <flux:callout.heading>
+                            Wir prüfen, ob wir deine E-Mail-Adresse bereits im System haben...</flux:callout.heading>
+                        <flux:callout.text>
+                            Wir verzögern diese Prüfung absichtlich kurz, damit bestehende Profile besser geschützt
+                            sind.</flux:callout.text>
                     </flux:callout>
                 </div>
             @elseif ($currentStep === 'login-link-sent')
                 <div class="grid min-h-80 place-items-center text-center">
                     <div class="max-w-lg space-y-5">
-                        <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred">
+                        <div class="bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred mx-auto flex size-14 items-center justify-center rounded-full">
                             <flux:icon.envelope class="size-8" />
                         </div>
                         <div>
                             <flux:heading size="lg">Login-Link verschickt</flux:heading>
-                            <flux:text class="mt-2">Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser Anmeldung.</flux:text>
+                            <flux:text class="mt-2"
+                                >Wir haben dir einen Link geschickt. Er bringt dich zurück zu dieser
+                                Anmeldung.</flux:text>
                         </div>
-                        <flux:button variant="ghost" wire:click="goTo('start')">Andere E-Mail-Adresse verwenden</flux:button>
+                        <flux:button variant="ghost" wire:click="goTo('start')"
+                            >Andere E-Mail-Adresse verwenden</flux:button>
                     </div>
                 </div>
             @elseif ($currentStep === 'personal')
                 <div class="grid gap-6 sm:grid-cols-2">
-                    <flux:input wire:model.live.blur="first_name" label="Vorname" placeholder="Francesca" icon-trailing="user" autocomplete="given-name" required />
-                    <flux:input wire:model.live.blur="last_name" label="Nachname" placeholder="Arslan" icon-trailing="user" autocomplete="family-name" required />
-                    <flux:input wire:model.live.blur="address" label="Adresse" placeholder="Zelglistrasse 41" icon-trailing="home" autocomplete="street-address" required class="sm:col-span-2" />
+                    <flux:input
+                        wire:model.live.blur="first_name"
+                        label="Vorname"
+                        placeholder="Francesca"
+                        icon-trailing="user"
+                        autocomplete="given-name"
+                        required
+                    />
+                    <flux:input
+                        wire:model.live.blur="last_name"
+                        label="Nachname"
+                        placeholder="Arslan"
+                        icon-trailing="user"
+                        autocomplete="family-name"
+                        required
+                    />
+                    <flux:input
+                        wire:model.live.blur="address"
+                        label="Adresse"
+                        placeholder="Zelglistrasse 41"
+                        icon-trailing="home"
+                        autocomplete="street-address"
+                        required
+                        class="sm:col-span-2"
+                    />
 
                     <flux:field>
                         <flux:label>PLZ / Ort</flux:label>
 
-                        <flux:input.group data-test="zip-city-group" style="display: flex; width: 100%;">
-                            <div data-flux-input style="flex: 0 0 33.333333%;">
-                                <flux:input wire:model.live.blur="zip_code" :mask="$zipCodeMask" :placeholder="$zipCodePlaceholder" autocomplete="postal-code" required />
+                        <flux:input.group style="display: flex; width: 100%">
+                            <div data-flux-input style="flex: 0 0 33.333333%">
+                                <flux:input
+                                    wire:model.live.blur="zip_code"
+                                    :mask="$zipCodeMask"
+                                    :placeholder="$zipCodePlaceholder"
+                                    autocomplete="postal-code"
+                                    required
+                                />
                             </div>
-                            <div data-flux-input style="flex: 0 0 66.666667%;">
-                                <flux:input wire:model.live.blur="city" placeholder="Winterthur" autocomplete="address-level2" required />
+                            <div data-flux-input style="flex: 0 0 66.666667%">
+                                <flux:input
+                                    wire:model.live.blur="city"
+                                    placeholder="Winterthur"
+                                    autocomplete="address-level2"
+                                    required
+                                />
                             </div>
                         </flux:input.group>
 
@@ -135,16 +178,22 @@
                     <flux:field>
                         <flux:label>Telefon</flux:label>
 
-                        <flux:input.group style="display: flex; width: 100%;">
-                            <div style="flex: 0 0 33.333333%;">
+                        <flux:input.group style="display: flex; width: 100%">
+                            <div style="flex: 0 0 33.333333%">
                                 <flux:select wire:model.live="phone_country" aria-label="Ländervorwahl">
                                     <flux:select.option value="CH">Schweiz (+41)</flux:select.option>
                                     <flux:select.option value="DE">Deutschland (+49)</flux:select.option>
                                     <flux:select.option value="AT">Österreich (+43)</flux:select.option>
                                 </flux:select>
                             </div>
-                            <div style="flex: 0 0 66.666667%;">
-                                <flux:input wire:model.live.blur="phone_national" :placeholder="$phonePlaceholder" autocomplete="tel" type="tel" required />
+                            <div style="flex: 0 0 66.666667%">
+                                <flux:input
+                                    wire:model.live.blur="phone_national"
+                                    :placeholder="$phonePlaceholder"
+                                    autocomplete="tel"
+                                    type="tel"
+                                    required
+                                />
                             </div>
                         </flux:input.group>
 
@@ -152,7 +201,15 @@
                         <flux:error name="phone_national" />
                     </flux:field>
 
-                    <flux:input wire:model="email" label="E-Mail" icon-trailing="envelope" autocomplete="email" type="email" readonly description:trailing="E-Mail-Adresse ändern? Anmeldung neu starten." />
+                    <flux:input
+                        wire:model="email"
+                        label="E-Mail"
+                        icon-trailing="envelope"
+                        autocomplete="email"
+                        type="email"
+                        readonly
+                        description:trailing="E-Mail-Adresse ändern? Anmeldung neu starten."
+                    />
                 </div>
             @elseif ($currentStep === 'donation')
                 <div class="space-y-7">
@@ -168,16 +225,28 @@
                     @if ($athleteRegistrations === [])
                         <flux:callout icon="exclamation-triangle" variant="warning">
                             <flux:callout.heading>Keine Sportler:innen verfügbar</flux:callout.heading>
-                            <flux:callout.text>Aktuell sind noch keine Sportler:innen für diesen Anlass angemeldet.</flux:callout.text>
+                            <flux:callout.text>
+                                Aktuell sind noch keine Sportler:innen für diesen Anlass angemeldet.</flux:callout.text>
                         </flux:callout>
                     @else
-                        <flux:select wire:model.live="athlete_registration_id" label="Ich unterstütze" variant="listbox" searchable placeholder="Sportler:in suchen..." empty="Keine Sportler:innen gefunden">
+                        <flux:select
+                            wire:model.live="athlete_registration_id"
+                            label="Ich unterstütze"
+                            variant="listbox"
+                            searchable
+                            placeholder="Sportler:in suchen..."
+                            empty="Keine Sportler:innen gefunden"
+                        >
                             <x-slot name="search">
                                 <flux:select.search class="px-4" placeholder="suchen..." />
                             </x-slot>
 
                             @foreach ($athleteRegistrations as $registration)
-                                <flux:select.option wire:key="athlete-{{ $registration['id'] }}" value="{{ $registration['id'] }}" label="{{ $registration['display_name'] }}" data-test="athlete-option-{{ $registration['id'] }}">
+                                <flux:select.option
+                                    wire:key="athlete-{{ $registration['id'] }}"
+                                    value="{{ $registration['id'] }}"
+                                    label="{{ $registration['display_name'] }}"
+                                >
                                     <span class="font-medium">{{ $registration['privacy_name'] }}</span>
                                     <span class="font-light">&nbsp;({{ $registration['public_id_string'] }})</span>
                                 </flux:select.option>
@@ -186,7 +255,10 @@
 
                         @if ($currentAthleteName)
                             <flux:text>
-                                <strong>{{ $currentAthleteName }}</strong> hat geschätzt, <strong>{{ $currentRounds }}</strong> Runden zu absolvieren, um Spenden für die Organisation <strong>{{ $currentPartner }}</strong> zu sammeln. Die gewählte Sportart ist: <strong>{{ $currentSportType }}</strong>.
+                                <strong>{{ $currentAthleteName }}</strong> hat geschätzt,
+                                <strong>{{ $currentRounds }}</strong> Runden zu absolvieren, um Spenden für die
+                                Organisation <strong>{{ $currentPartner }}</strong> zu sammeln. Die gewählte Sportart
+                                ist: <strong>{{ $currentSportType }}</strong>.
                             </flux:text>
                         @endif
                     @endif
@@ -230,7 +302,10 @@
                     <flux:callout icon="question-mark-circle" variant="secondary">
                         <flux:callout.heading>Wie funktioniert das?</flux:callout.heading>
                         <flux:callout.text>
-                            Der Betrag, den du pro Runde spendest, wird mit der Anzahl Runden multipliziert, die {{ $currentAthleteName ?? 'die Sportler:in' }} absolviert. Falls sehr viele oder sehr wenige Runden absolviert werden, wird der Betrag auf das Minimum oder Maximum angepasst. Nach dem Anlass stellen wir dir eine Rechnung. Der Betrag geht zu <strong>100%</strong> an {{ $currentPartner ?? 'die Benefizpartner:in' }}.
+                            Der Betrag, den du pro Runde spendest, wird mit der Anzahl Runden multipliziert, die {{ $currentAthleteName ?? 'die Sportler:in' }} absolviert.
+                            Falls sehr viele oder sehr wenige Runden absolviert werden, wird der Betrag auf das Minimum
+                            oder Maximum angepasst. Nach dem Anlass stellen wir dir eine Rechnung. Der Betrag geht zu
+                            <strong>100%</strong> an {{ $currentPartner ?? 'die Benefizpartner:in' }}.
                         </flux:callout.text>
                     </flux:callout>
 
@@ -246,7 +321,9 @@
                     <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                         <flux:field variant="inline">
                             <flux:checkbox wire:model.live="privacy_accepted" />
-                            <flux:label>Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses verwendet werden.</flux:label>
+                            <flux:label
+                                >Ich bin damit einverstanden, dass meine Daten für die Organisation des Anlasses
+                                verwendet werden.</flux:label>
                             <flux:error name="privacy_accepted" />
                         </flux:field>
                     </div>
@@ -254,12 +331,14 @@
             @elseif ($currentStep === 'submitted')
                 <div class="grid min-h-80 place-items-center text-center">
                     <div class="max-w-lg space-y-5">
-                        <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred">
+                        <div class="bg-hfm-red/10 text-hfm-red dark:bg-hfm-lightred/10 dark:text-hfm-lightred mx-auto flex size-14 items-center justify-center rounded-full">
                             <flux:icon.check class="size-8" />
                         </div>
                         <div>
                             <flux:heading size="lg">Anmeldung erhalten</flux:heading>
-                            <flux:text class="mt-2">Wir haben dir eine E-Mail geschickt. Öffne dein Portal über den Link und bestätige dort deine Spende.</flux:text>
+                            <flux:text class="mt-2"
+                                >Wir haben dir eine E-Mail geschickt. Öffne dein Portal über den Link und bestätige dort
+                                deine Spende.</flux:text>
                         </div>
                         <flux:button variant="primary" wire:click="restart">
                             Weitere:n Sportler:in unterstützen
@@ -270,21 +349,29 @@
         </div>
 
         @if (! in_array($currentStep, ['submitted', 'login-link-sent'], true))
-            <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 py-5 dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 py-5 sm:flex-row sm:items-center sm:justify-between dark:border-zinc-700">
                 @if ($canGoBack)
-                    <flux:button variant="ghost" icon="arrow-left" wire:click="back">
-                        Zurück
-                    </flux:button>
+                    <flux:button variant="ghost" icon="arrow-left" wire:click="back"> Zurück </flux:button>
                 @else
                     <span></span>
                 @endif
 
                 @if ($isFinalStep)
-                    <flux:button variant="primary" icon:trailing="check" wire:click="submit" class="data-loading:opacity-50">
+                    <flux:button
+                        variant="primary"
+                        icon:trailing="check"
+                        wire:click="submit"
+                        class="data-loading:opacity-50"
+                    >
                         Anmeldung absenden
                     </flux:button>
                 @else
-                    <flux:button variant="primary" icon:trailing="arrow-right" wire:click="next" class="data-loading:opacity-50">
+                    <flux:button
+                        variant="primary"
+                        icon:trailing="arrow-right"
+                        wire:click="next"
+                        class="data-loading:opacity-50"
+                    >
                         Weiter
                     </flux:button>
                 @endif

@@ -25,12 +25,11 @@ it('lets a logged in external user donate and confirm through the email link', f
 
     actingAs($externalUser, 'external');
 
-    $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
-
     visit(route('become-donor'))
         ->assertNoJavaScriptErrors()
         ->click('[data-flux-select-button]')
-        ->click($athleteOption)
+        ->click('ui-option[value="'.$athleteRegistration->id.'"]')
+        ->wait(0.2)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '7.50')
         ->type('[wire\:model\.live\.blur="amount_min"]', '50')
         ->type('[wire\:model\.live\.blur="amount_max"]', '200')
@@ -63,7 +62,8 @@ it('lets a logged in external user donate and confirm through the email link', f
     $page = visit($confirmationUrl)->assertPathIs('/portal');
     $page->script('window.portalSpaMarker = true');
 
-    $page->click('@confirm-donation')
+    $page->click('[wire\\:key="pending-donation-'.$donation->id.'"]:has-text("Spende bestätigen")')
+        ->wait(0.2)
         ->assertSee('Deine Spende ist bestätigt.')
         ->assertSee('Bestätigt')
         ->assertDontSee('Bestätigung ausstehend')
@@ -105,12 +105,11 @@ it('lets a returning guest resume donation through a signed login link', functio
 
     expect($loginUrl)->toBeString()->not()->toBeEmpty();
 
-    $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
-
     $page->navigate($loginUrl)
         ->assertPathIs('/spenderin-werden')
         ->click('[data-flux-select-button]')
-        ->click($athleteOption)
+        ->click('ui-option[value="'.$athleteRegistration->id.'"]')
+        ->wait(0.2)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '5.00')
         ->click('[wire\:model\.live="privacy_accepted"]')
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')
@@ -139,7 +138,8 @@ it('lets a returning guest resume donation through a signed login link', functio
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->click('@confirm-donation')
+        ->click('[wire\\:key="pending-donation-'.$donation->id.'"]:has-text("Spende bestätigen")')
+        ->wait(0.2)
         ->assertSee('Deine Spende ist bestätigt.')
         ->assertNoJavaScriptErrors();
 
@@ -150,8 +150,6 @@ it('lets a new guest donate and confirm through the email link', function (): vo
     Notification::fake();
 
     $athleteRegistration = createDonorWizardOpenEventForBrowserTest();
-
-    $athleteOption = '[data-test="athlete-option-'.$athleteRegistration->id.'"]';
 
     $page = visit(route('become-donor'));
 
@@ -171,7 +169,8 @@ it('lets a new guest donate and confirm through the email link', function (): vo
         ->wait(0.2)
         ->pressAndWaitFor('Weiter', 0.2)
         ->click('[data-flux-select-button]')
-        ->click($athleteOption)
+        ->click('ui-option[value="'.$athleteRegistration->id.'"]')
+        ->wait(0.2)
         ->type('[wire\:model\.live\.blur="amount_per_round"]', '10.00')
         ->click('[wire\:model\.live="privacy_accepted"]')
         ->keys('[wire\:model\.live="privacy_accepted"]', 'Tab')
@@ -201,7 +200,8 @@ it('lets a new guest donate and confirm through the email link', function (): vo
 
     $page->navigate($confirmationUrl)
         ->assertPathIs('/portal')
-        ->click('@confirm-donation')
+        ->click('[wire\\:key="pending-donation-'.$donation->id.'"]:has-text("Spende bestätigen")')
+        ->wait(0.2)
         ->assertSee('Deine Spende ist bestätigt.')
         ->assertNoJavaScriptErrors();
 

@@ -31,7 +31,8 @@
 
             <div class="flex gap-2">
                 <flux:spacer />
-                <flux:button variant="primary" x-on:click="$flux.modal('payment-status-summary').close()">Schliessen</flux:button>
+                <flux:button variant="primary" x-on:click="$flux.modal('payment-status-summary').close()"
+                    >Schliessen</flux:button>
             </div>
         </div>
     </flux:modal>

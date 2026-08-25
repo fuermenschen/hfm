@@ -1,6 +1,4 @@
-<form wire:submit="submit"
-      class="flex flex-col space-y-6 sm:grid sm:grid-cols-2 max-w-full sm:space-y-0 sm:gap-6 mt-6">
-
+<form wire:submit="submit" class="mt-6 flex max-w-full flex-col space-y-6 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
     <flux:input
         icon-trailing="user"
         label="Vorname"
@@ -40,30 +38,30 @@
     />
 
     <span class="flex flex-row space-x-4">
-            <span class="basis-1/3">
-                <flux:input
-                    icon-trailing="home"
-                    label="PLZ"
-                    placeholder="8406"
-                    wire:model.blur="zip_code"
-                    class="basis-1/3"
-                    required
-                    autocomplete="postal-code"
-                    mask="9999"
-                />
-            </span>
-            <span class="grow">
-                <flux:input
-                    icon-trailing="home"
-                    label="Ort"
-                    placeholder="Winterthur"
-                    wire:model.blur="city"
-                    class="grow"
-                    required
-                    autocomplete="address-level2"
-                />
-            </span>
+        <span class="basis-1/3">
+            <flux:input
+                icon-trailing="home"
+                label="PLZ"
+                placeholder="8406"
+                wire:model.blur="zip_code"
+                class="basis-1/3"
+                required
+                autocomplete="postal-code"
+                mask="9999"
+            />
         </span>
+        <span class="grow">
+            <flux:input
+                icon-trailing="home"
+                label="Ort"
+                placeholder="Winterthur"
+                wire:model.blur="city"
+                class="grow"
+                required
+                autocomplete="address-level2"
+            />
+        </span>
+    </span>
 
     <flux:input
         icon-trailing="envelope"
@@ -102,20 +100,13 @@
         label="Kommentar"
         badge="optional"
         placeholder="Super sach! Das Jahr tueni mithelfe und nächst Jahr chumi in Vorstand :-)."
-        wire:model.blur="comment" autocomplete="off" />
+        wire:model.blur="comment"
+        autocomplete="off"
+    />
 
     <span class="sm:col-span-2">
-        <flux:checkbox
-            wire:model.live="statutes_read"
-            label="Ich habe die Statuten gelesen." />
+        <flux:checkbox wire:model.live="statutes_read" label="Ich habe die Statuten gelesen." />
     </span>
 
-
-    <flux:button
-        type="submit"
-        label="Absenden"
-        variant="filled"
-        icon="paper-airplane"
-    >Mitglied werden
-    </flux:button>
+    <flux:button type="submit" label="Absenden" variant="filled" icon="paper-airplane">Mitglied werden </flux:button>
 </form>

@@ -1,3 +1,1 @@
-<div class="flex flex-wrap items-center gap-2 md:justify-end">
-    {{ $slot }}
-</div>
+<div class="flex flex-wrap items-center gap-2 md:justify-end">{{ $slot }}</div>

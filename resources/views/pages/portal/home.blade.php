@@ -30,12 +30,17 @@
                                 <div>
                                     <flux:heading level="3">Teilnahme bestätigen</flux:heading>
                                     <flux:text class="mt-1">
-                                        {{ $participation['event'] }}{{ $participation['eventDate'] ? ' · '.$participation['eventDate'] : '' }}<br>
-                                        {{ $participation['sport'] }} · {{ $participation['roundsEstimated'] }} geschätzte Runden · {{ $participation['partner'] }}
+                                        {{ $participation['event'] }}{{ $participation['eventDate'] ? ' · '.$participation['eventDate'] : '' }}<br />
+                                        {{ $participation['sport'] }} · {{ $participation['roundsEstimated'] }} geschätzte
+                                        Runden · {{ $participation['partner'] }}
                                     </flux:text>
                                 </div>
                             </div>
-                            <livewire:portal-confirmation-button type="athlete" :record-id="$participation['id']" :wire:key="'pending-athlete-'.$participation['id']" />
+                            <livewire:portal-confirmation-button
+                                type="athlete"
+                                :record-id="$participation['id']"
+                                :wire:key="'pending-athlete-'.$participation['id']"
+                            />
                         </div>
                     </flux:card>
                 @endforeach
@@ -50,12 +55,16 @@
                                 <div>
                                     <flux:heading level="3">Spende bestätigen</flux:heading>
                                     <flux:text class="mt-1">
-                                        {{ $donation['event'] }}{{ $donation['eventDate'] ? ' · '.$donation['eventDate'] : '' }} · {{ $donation['athlete'] }}<br>
+                                        {{ $donation['event'] }}{{ $donation['eventDate'] ? ' · '.$donation['eventDate'] : '' }} · {{ $donation['athlete'] }}<br />
                                         Erwartet: Fr. {{ number_format($donation['estimatedAmount'], 2, '.', "'") }} · {{ $donation['amountMax'] !== null ? 'Maximal Fr. '.number_format($donation['amountMax'], 2, '.', "'") : 'Ohne Maximalbetrag' }}
                                     </flux:text>
                                 </div>
                             </div>
-                            <livewire:portal-confirmation-button type="donation" :record-id="$donation['id']" :wire:key="'pending-donation-'.$donation['id']" />
+                            <livewire:portal-confirmation-button
+                                type="donation"
+                                :record-id="$donation['id']"
+                                :wire:key="'pending-donation-'.$donation['id']"
+                            />
                         </div>
                     </flux:card>
                 @endforeach
@@ -96,10 +105,28 @@
                             <flux:text>Was du mit deinen Runden für deine Begünstigte sammelst.</flux:text>
                         </div>
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="user-group" label="Bestätigte Spender:innen" :value="number_format($receivedDonationCount, 0, '.', chr(39))" :detail="$pendingReceivedDonationCount > 0 ? $pendingReceivedDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'" />
-                            <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="calculator" label="Voraussichtlich gesammelt" :value="'Fr. '.number_format($estimatedReceivedAmount, 2, '.', chr(39))" detail="Mit deinen geschätzten Runden" />
+                            <x-portal.summary-card
+                                :href="route('portal.participations', $eventParameters)"
+                                icon="user-group"
+                                label="Bestätigte Spender:innen"
+                                :value="number_format($receivedDonationCount, 0, '.', chr(39))"
+                                :detail="$pendingReceivedDonationCount > 0 ? $pendingReceivedDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'"
+                            />
+                            <x-portal.summary-card
+                                :href="route('portal.participations', $eventParameters)"
+                                icon="calculator"
+                                label="Voraussichtlich gesammelt"
+                                :value="'Fr. '.number_format($estimatedReceivedAmount, 2, '.', chr(39))"
+                                detail="Mit deinen geschätzten Runden"
+                            />
                             @if ($hasCompletedRounds)
-                                <x-portal.summary-card :href="route('portal.participations', $eventParameters)" icon="chart-bar" label="Aktuell gesammelt" :value="'Fr. '.number_format($currentReceivedAmount, 2, '.', chr(39))" detail="Mit deinen absolvierten Runden" />
+                                <x-portal.summary-card
+                                    :href="route('portal.participations', $eventParameters)"
+                                    icon="chart-bar"
+                                    label="Aktuell gesammelt"
+                                    :value="'Fr. '.number_format($currentReceivedAmount, 2, '.', chr(39))"
+                                    detail="Mit deinen absolvierten Runden"
+                                />
                             @endif
                         </div>
                     </section>
@@ -112,10 +139,28 @@
                             <flux:text>Was du mit deinen Spenden an Sportler:innen beiträgst.</flux:text>
                         </div>
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <x-portal.summary-card :href="route('portal.donations', $eventParameters)" icon="heart" label="Bestätigte Spenden" :value="number_format($ownDonationCount, 0, '.', chr(39))" :detail="$pendingOwnDonationCount > 0 ? $pendingOwnDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'" />
-                            <x-portal.summary-card :href="route('portal.donations', $eventParameters)" icon="calculator" label="Voraussichtlicher eigener Beitrag" :value="'Fr. '.number_format($estimatedOwnAmount, 2, '.', chr(39))" detail="Mit geschätzten Runden aller Sportler:innen" />
+                            <x-portal.summary-card
+                                :href="route('portal.donations', $eventParameters)"
+                                icon="heart"
+                                label="Bestätigte Spenden"
+                                :value="number_format($ownDonationCount, 0, '.', chr(39))"
+                                :detail="$pendingOwnDonationCount > 0 ? $pendingOwnDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'"
+                            />
+                            <x-portal.summary-card
+                                :href="route('portal.donations', $eventParameters)"
+                                icon="calculator"
+                                label="Voraussichtlicher eigener Beitrag"
+                                :value="'Fr. '.number_format($estimatedOwnAmount, 2, '.', chr(39))"
+                                detail="Mit geschätzten Runden aller Sportler:innen"
+                            />
                             @if ($hasOwnCompletedRounds)
-                                <x-portal.summary-card :href="route('portal.donations', $eventParameters)" icon="chart-bar" label="Aktueller eigener Beitrag" :value="'Fr. '.number_format($currentOwnAmount, 2, '.', chr(39))" detail="Mit absolvierten Runden der Sportler:innen" />
+                                <x-portal.summary-card
+                                    :href="route('portal.donations', $eventParameters)"
+                                    icon="chart-bar"
+                                    label="Aktueller eigener Beitrag"
+                                    :value="'Fr. '.number_format($currentOwnAmount, 2, '.', chr(39))"
+                                    detail="Mit absolvierten Runden der Sportler:innen"
+                                />
                             @endif
                         </div>
                     </section>
@@ -129,10 +174,12 @@
                     <flux:text class="mx-auto mt-2 max-w-xl">Melde dich beim aktuellen Anlass an oder unterstütze eine:n Sportler:in.</flux:text>
                     <div class="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
                         @if ($athleteRegistrationOpen)
-                            <flux:button href="{{ route('become-athlete') }}" wire:navigate icon="trophy">Als Sportler:in anmelden</flux:button>
+                            <flux:button href="{{ route('become-athlete') }}" wire:navigate icon="trophy"
+                                >Als Sportler:in anmelden</flux:button>
                         @endif
                         @if ($donorRegistrationOpen)
-                            <flux:button href="{{ route('become-donor') }}" wire:navigate icon="heart" variant="primary">Spende anmelden</flux:button>
+                            <flux:button href="{{ route('become-donor') }}" wire:navigate icon="heart" variant="primary"
+                                >Spende anmelden</flux:button>
                         @endif
                     </div>
                 </flux:card>

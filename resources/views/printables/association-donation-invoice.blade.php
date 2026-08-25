@@ -89,7 +89,8 @@
             margin-bottom: 20px;
         }
 
-        table th, table td {
+        table th,
+        table td {
             padding: 8px;
             text-align: left;
             border: none;
@@ -131,16 +132,15 @@
         #qr-bill-amount {
             display: inline-block;
         }
-
     </style>
 
     <!-- Logo and Sender -->
     <div class="logo-and-sender">
         <div>
             <p>
-                Verein für Menschen<br>
-                c/o Felix Moser<br>
-                Mühleweg 8<br>
+                Verein für Menschen<br />
+                c/o Felix Moser<br />
+                Mühleweg 8<br />
                 8413 Neftenbach
             </p>
             <p>info@fuer-menschen.ch</p>
@@ -151,11 +151,12 @@
     <div class="recipient">
         <p class="sender">Verein für Menschen, fuer-menschen.ch</p>
         <p>
-            @if( $company_name )
-                {{ $company_name }}<br>
+            @if ($company_name)
+                {{ $company_name }}<br
+                 />
             @endif
-            {{ $first_name }} {{ $last_name }}<br>
-            {{ $address }}<br>
+            {{ $first_name }} {{ $last_name }}<br />
+            {{ $address }}<br />
             {{ $zip_code }} {{ $city }}
         </p>
     </div>
@@ -172,18 +173,15 @@
 
     <!-- Body -->
     <div class="body">
+        <p>Liebe:r {{ $first_name }}</p>
         <p>
-            Liebe:r {{ $first_name }}
+            Danke, dass du den Verein für Menschen finanziell unterstützen möchtest. Dank Spenden wie deiner können wir
+            Spendenanlässe wie <i>Höhenmeter für Menschen</i> durchführen. Herzlichen Dank.
         </p>
         <p>
-            Danke, dass du den Verein für Menschen finanziell unterstützen möchtest. Dank Spenden wie deiner
-            können wir Spendenanlässe wie <i>Höhenmeter für Menschen</i> durchführen. Herzlichen Dank.
-        </p>
-        <p>
-            Herzliche Grüsse<br>
+            Herzliche Grüsse<br />
             Das Team vom Verein für Menschen
         </p>
-
     </div>
 
     @php
@@ -220,7 +218,7 @@
 
         $qrBill->setUltimateDebtor(
             QrBill\DataGroup\Element\StructuredAddress::createWithStreet(
-                $company_name ? $company_name : $first_name . ' ' . $last_name,
+                $company_name ? $company_name : $first_name.' '.$last_name,
                 $address,
                 null,
                 $zip_code,
@@ -244,14 +242,11 @@
 
         $output = new QrBill\PaymentPart\Output\HtmlOutput\HtmlOutput($qrBill, 'de');
         $output->setQrCodeImageFormat(QrBill\QrCode\QrCode::FILE_FORMAT_PNG);
-        $displayOptions = (new QrBill\PaymentPart\Output\DisplayOptions())
+        $displayOptions = (new QrBill\PaymentPart\Output\DisplayOptions)
             ->setPrintable(false);
 
         $html = $output->setDisplayOptions($displayOptions)->getPaymentPart();
-
     @endphp
-    <div class="qr-bill">
-        {!! $html !!}
-    </div>
+    <div class="qr-bill">{!! $html !!}</div>
 
 @endsection

@@ -4,7 +4,6 @@
 
 @section('body')
     <style>
-
         .name {
             position: absolute;
             width: 4.5cm;
@@ -22,7 +21,6 @@
             font-size: 14px;
             font-weight: bold;
         }
-
     </style>
 
     <div class="name">{{ $athlete->privacy_name.' ('.$athlete->public_id_string.')' }}</div>

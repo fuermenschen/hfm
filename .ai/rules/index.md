@@ -11,3 +11,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Notifications/** | .ai/rules/notifications.md |
 | **/*.php | .ai/rules/php-null-coalescing.md |
 | app/Services/** | .ai/rules/services.md |
+| resources/views/**/*.blade.php | .ai/rules/views.md |

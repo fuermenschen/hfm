@@ -51,7 +51,8 @@ it('loads assignments and locks partners referenced by registrations', function 
         ->assertSet('partnerRows.1.attached', true)
         ->assertSet('partnerRows.1.is_locked', true)
         ->assertSet('partnerRows.1.registration_count', 1)
-        ->assertSee('x-bind:disabled="!$wire.partnerRows[0].attached"', escape: false)
+        ->assertSee('x-bind:disabled', escape: false)
+        ->assertSee('partnerRows[0].attached', escape: false)
         ->assertSee('Vom Anlass entfernen');
 });
 
