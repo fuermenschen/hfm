@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
 
 /** @api */
-class EventGroupMembershipRequested extends Notification
+class EventGroupMemberRemoved extends Notification
 {
     use Queueable;
 
@@ -19,8 +19,6 @@ class EventGroupMembershipRequested extends Notification
         public readonly string $firstName,
         public readonly string $groupName,
         public readonly string $eventTitle,
-        public readonly string $applicantPrivacyName,
-        public readonly ?int $eventGroupId = null,
     ) {}
 
     /**
@@ -33,21 +31,22 @@ class EventGroupMembershipRequested extends Notification
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('Neue Gruppenanfrage')
+            ->subject('Du wurdest aus einer Gruppe entfernt')
             ->greeting('Hallo '.$this->firstName)
-            ->line($this->applicantPrivacyName.' möchte der Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.' beitreten.')
-            ->line('Bitte prüfe die Anfrage im Portal.');
+            ->line('Du wurdest aus der Gruppe "'.$this->groupName.'" beim Anlass '.$this->eventTitle.' entfernt.');
 
-        if ($this->eventGroupId !== null && $notifiable instanceof ExternalUser) {
-            $message->action('Gruppe öffnen', URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
-                'uuid' => $notifiable->uuid,
-                'redirect' => 'group:'.$this->eventGroupId,
+        if (! $notifiable instanceof ExternalUser) {
+            return $message;
+        }
+
+        $uuid = $notifiable->getAttribute('uuid');
+
+        if (is_string($uuid) && $uuid !== '') {
+            $message->action('Zum Portal', URL::temporarySignedRoute('portal.login.uuid', now()->addMinutes(15), [
+                'uuid' => $uuid,
             ]));
         }
 

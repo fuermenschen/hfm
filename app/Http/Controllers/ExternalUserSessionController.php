@@ -20,16 +20,23 @@ class ExternalUserSessionController extends Controller
         // Default request intentional: signed middleware + whereUuid route constraint handle input validation.
         $request->session()->regenerate();
 
-        return to_route($this->redirectRoute($request));
+        return to_route(...$this->redirectRoute($request));
     }
 
-    protected function redirectRoute(Request $request): string
+    /** @return array{string, array<string, int>} */
+    protected function redirectRoute(Request $request): array
     {
-        return match ($request->query('redirect')) {
+        $redirect = $request->query('redirect');
+
+        if (is_string($redirect) && preg_match('/^group:(\d+)$/', $redirect, $matches) === 1) {
+            return ['portal.event-groups.show', ['eventGroup' => (int) $matches[1]]];
+        }
+
+        return [match ($redirect) {
             'become-athlete' => 'become-athlete',
             'become-donor' => 'become-donor',
             default => 'portal.dashboard',
-        };
+        }, []];
     }
 
     public function destroy(Request $request): RedirectResponse

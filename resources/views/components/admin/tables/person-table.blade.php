@@ -186,6 +186,17 @@
                                         </div>
                                     @elseif ($columnKey === 'partner')
                                         {{ $this->selectedAthletePartner($row) }}
+                                    @elseif ($columnKey === 'group')
+                                        {{ $this->selectedAthleteGroup($row) }}
+                                    @elseif ($columnKey === 'confirmed')
+                                        @php($confirmed = $this->selectedAthleteConfirmed($row))
+                                        @if ($confirmed === null)
+                                            -
+                                        @else
+                                            <flux:badge size="sm" :color="$confirmed ? 'zinc' : 'red'">
+                                                {{ $confirmed ? 'OK' : 'NOK' }}
+                                            </flux:badge>
+                                        @endif
                                     @else
                                         {{ $this->displayValue($row, $columnKey) }}
                                     @endif

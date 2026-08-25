@@ -56,6 +56,7 @@ class EventGroupMembershipService
     {
         $registration = $eventGroup->acceptedAdmins()
             ->whereBelongsTo($externalUser)
+            ->where('donation_event_id', $eventGroup->donation_event_id)
             ->lockForUpdate()
             ->first();
 
