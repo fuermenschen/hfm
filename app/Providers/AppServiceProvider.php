@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Services\CurrentDonationEventService;
+use App\Support\Pulse\ResolvesUsers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Foundation\DevCommands;
@@ -19,6 +20,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Pulse\Contracts\ResolvesUsers as PulseResolvesUsersContract;
 use Symfony\Component\Mime\Address;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
         // Scoped binding is required because the service uses once() to memoize
         // current event resolution across repeated view composer resolutions.
         $this->app->scoped(CurrentDonationEventService::class);
+
+        // Pulse user resolution for both admin and external user guards.
+        $this->app->singleton(PulseResolvesUsersContract::class, ResolvesUsers::class);
     }
 
     /**

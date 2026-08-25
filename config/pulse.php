@@ -145,9 +145,10 @@ return [
             ],
             'groups' => [
                 '/^job-exceptions:.*/' => 'job-exceptions:*',
+                '/^livewire-checksum-failures:.*$/' => 'livewire-checksum-failures:*',
                 '/^story-image-base:.*$/' => 'story-image-base:*',
                 '/^story-image:.*$/' => 'story-image:*',
-                '/^lv:.*$/' => 'lv:*',
+                '/^lv:.*$/' => 'Log Viewer [lv:*]',
                 '/^login-link.*$/' => 'login-link:*',
                 '/^athlete-registration-login-link.*$/' => 'athlete-registration-login-link:*',
                 '/^donor-registration-login-link.*$/' => 'donor-registration-login-link:*',
