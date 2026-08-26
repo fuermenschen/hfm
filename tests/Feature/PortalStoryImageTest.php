@@ -210,7 +210,7 @@ it('shows personalized story sharing on athlete participation pages', function (
         ->assertSee(route('portal.story-image.preview', [$registration, 'dark']), false);
 });
 
-it('shows welcome letter downloads for confirmed athlete participations', function (): void {
+it('shows welcome letter downloads as secondary participation documents', function (): void {
     $event = DonationEvent::factory()->year(2036)->create();
     $athlete = ExternalUser::factory()->create();
     $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
@@ -219,6 +219,7 @@ it('shows welcome letter downloads for confirmed athlete participations', functi
 
     get(route('portal.participations'))
         ->assertSuccessful()
+        ->assertSeeText('Dokumente')
         ->assertSeeText('Willkommensbrief herunterladen')
         ->assertSee(route('portal.welcome-letter.download', $registration), false);
 });
@@ -228,14 +229,14 @@ it('shows story image downloads for donors', function (): void {
     $athlete = ExternalUser::factory()->create();
     $donor = ExternalUser::factory()->create();
     $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
-    Donation::factory()->forPair($donor, $registration)->create(['verified' => false]);
+    Donation::factory()->forPair($donor, $registration)->create(['verified' => true]);
 
     actingAs($donor, 'external');
 
     get(route('portal.donations'))
         ->assertSuccessful()
         ->assertSeeText('Weitere Spender:innen für '.$athlete->privacy_name.' ('.$athlete->public_id_string.') finden')
-        ->assertSeeText('Kennst du jemanden, der '.$athlete->privacy_name.' ('.$athlete->public_id_string.') unterstützen möchte? Teile diese persönliche Story auf WhatsApp oder Instagram.')
+        ->assertSeeText('Diese personalisierte Story kannst du direkt weitergeben.')
         ->assertSeeText('Story teilen')
         ->assertDontSeeText('Text kopieren')
         ->assertDontSeeText('Story-Bild hell')

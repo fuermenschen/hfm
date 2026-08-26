@@ -13,7 +13,14 @@
             $chartMetrics = [
                 ['title' => 'Sportler:innen-Registrierungen', 'data' => $chartData['registrations'], 'format' => null],
                 ['title' => 'Spenden', 'data' => $chartData['donations'], 'format' => null],
-                ['title' => 'Erwartete Spendensumme', 'data' => $chartData['expectedAmount'], 'format' => ['style' => 'currency', 'currency' => 'CHF']],
+                [
+                    'title' => 'Erwartete Spendensumme',
+                    'data' => $chartData['expectedAmount'],
+                    'format' => ['style' => 'currency', 'currency' => 'CHF'],
+                    'axisFormat' => [],
+                    'locale' => 'de-CH',
+                    'compactYAxis' => true,
+                ],
             ];
         @endphp
 
@@ -31,7 +38,7 @@
             </flux:field>
         </form>
 
-        <flux:card class="mt-9">
+        <x-expandable-card class="mt-9" :max-height="360" expand-mode="icon-animated">
             <flux:heading size="xl">Entwicklung bis zum Anlass</flux:heading>
             <flux:text class="mt-1"
                 >Kumulative Registrierungen, Spenden und erwartete Spendensumme relativ zum Start des
@@ -55,7 +62,12 @@
                     @foreach ($chartMetrics as $metric)
                         <section>
                             <flux:heading size="lg">{{ $metric['title'] }}</flux:heading>
-                            <flux:chart :value="$metric['data']" class="mt-4">
+                            <flux:chart
+                                :value="$metric['data']"
+                                class="mt-4"
+                                :locale="$metric['locale'] ?? null"
+                                :data-compact-y-axis="$metric['compactYAxis'] ?? null"
+                            >
                                 <flux:chart.viewport class="h-56 sm:h-64">
                                     <flux:chart.svg>
                                         @foreach ($chartEvents as $chartEvent)
@@ -68,8 +80,9 @@
 
                                         @foreach ($chartTodayMarkers as $marker)
                                             @php($position = (($marker['day'] - min($chartTickValues)) / (max($chartTickValues) - min($chartTickValues))) * 100)
+                                            @php($tickIndex = array_search($marker['day'], $chartTickValues, true))
                                             <line
-                                                data-today-marker
+                                                data-today-marker="{{ $tickIndex }}"
                                                 x1="{{ $position }}%"
                                                 x2="{{ $position }}%"
                                                 y1="0"
@@ -94,7 +107,7 @@
                                             <flux:chart.axis.line />
                                         </flux:chart.axis>
 
-                                        <flux:chart.axis axis="y" :format="$metric['format']">
+                                        <flux:chart.axis axis="y" :format="$metric['axisFormat'] ?? $metric['format']">
                                             <flux:chart.axis.grid />
                                             <flux:chart.axis.tick />
                                         </flux:chart.axis>
@@ -131,7 +144,7 @@
                     @endif
                 </flux:text>
             @endif
-        </flux:card>
+        </x-expandable-card>
 
         <!-- Athlete -->
         <x-stats title="Sportler:innen">
@@ -159,6 +172,13 @@
                 route="admin.athletes.index"
                 :route-parameters="$routeParameters"
             />
+        </x-stats>
+
+        <x-stats title="Gruppen">
+            <flux:card class="h-full">
+                <dt><flux:text class="truncate">Registriert</flux:text></dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight tabular-nums">{{ $eventGroupCount }}</dd>
+            </flux:card>
         </x-stats>
 
         <!-- Donation -->

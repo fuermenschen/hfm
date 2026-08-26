@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
+use App\Enums\GroupMembershipStatus;
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
 
 class GetPortalDashboardDataAction
 {
-    public function __construct(public DonationService $donationService) {}
+    public function __construct(
+        public DonationService $donationService,
+        public GetPortalEventGroupDataAction $eventGroupData,
+    ) {}
 
     /**
      * @return array{
@@ -20,18 +26,29 @@ class GetPortalDashboardDataAction
      *     pendingReceivedDonationCount: int,
      *     estimatedReceivedAmount: float,
      *     currentReceivedAmount: float,
-     *     hasCompletedRounds: bool,
      *     ownDonationCount: int,
      *     pendingOwnDonationCount: int,
      *     estimatedOwnAmount: float,
      *     currentOwnAmount: float,
-     *     hasOwnCompletedRounds: bool,
+     *     eventGroup: array{name: string, confirmedDonationCount: int, amount: float, amountLabel: string, url: string}|null,
      *     pendingParticipations: array<int, array{id: int, event: string, eventDate: ?string, sport: string, partner: string, roundsEstimated: int}>,
      *     pendingDonations: array<int, array{id: int, event: string, eventDate: ?string, athlete: string, estimatedAmount: float, amountMax: ?float}>
      * }
      */
     public function __invoke(ExternalUser $externalUser, ?DonationEvent $selectedEvent): array
     {
+        $eventGroup = $selectedEvent instanceof DonationEvent
+            ? AthleteRegistration::query()
+                ->where('external_user_id', $externalUser->id)
+                ->where('donation_event_id', $selectedEvent->id)
+                ->where('verified', true)
+                ->where('group_membership_status', GroupMembershipStatus::Accepted->value)
+                ->with('eventGroup.donationEvent:id,timezone,starts_at,ends_at')
+                ->orderBy('id')
+                ->first(['id', 'event_group_id'])?->eventGroup
+            : null;
+        $eventGroupSummary = $eventGroup instanceof EventGroup ? $this->eventGroupData->summary($eventGroup) : null;
+
         $receivedDonationsQuery = Donation::query()
             ->whereHas('athleteRegistration', function (Builder $query) use ($externalUser, $selectedEvent): void {
                 $query
@@ -105,16 +122,17 @@ class GetPortalDashboardDataAction
             'pendingReceivedDonationCount' => (clone $receivedDonationsQuery)->where('verified', false)->count(),
             'estimatedReceivedAmount' => $this->donationService->calculateEstimatedTotal($receivedDonations),
             'currentReceivedAmount' => $this->donationService->calculateActualTotal($receivedDonations),
-            'hasCompletedRounds' => $receivedDonations->contains(
-                fn (Donation $donation): bool => (int) $donation->athleteRegistration->rounds_done > 0,
-            ),
             'ownDonationCount' => $ownDonations->count(),
             'pendingOwnDonationCount' => (clone $ownDonationsQuery)->where('verified', false)->count(),
             'estimatedOwnAmount' => $this->donationService->calculateEstimatedTotal($ownDonations),
             'currentOwnAmount' => $this->donationService->calculateActualTotal($ownDonations),
-            'hasOwnCompletedRounds' => $ownDonations->contains(
-                fn (Donation $donation): bool => (int) $donation->athleteRegistration->rounds_done > 0,
-            ),
+            'eventGroup' => $eventGroup instanceof EventGroup && is_array($eventGroupSummary) ? [
+                'name' => $eventGroup->name,
+                'confirmedDonationCount' => $eventGroupSummary['confirmedDonationCount'],
+                'amount' => $eventGroupSummary['amount'],
+                'amountLabel' => $eventGroupSummary['amountLabel'],
+                'url' => route('portal.event-groups.show', $eventGroup),
+            ] : null,
             'pendingParticipations' => $pendingParticipations,
             'pendingDonations' => $pendingDonations,
         ];

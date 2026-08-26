@@ -4,7 +4,9 @@ use App\Components\PortalEventGroupActions;
 use App\Enums\GroupMembershipRole;
 use App\Enums\GroupMembershipStatus;
 use App\Models\AthleteRegistration;
+use App\Models\Donation;
 use App\Models\EventGroup;
+use App\Models\ExternalUser;
 use App\Models\SportType;
 use App\Notifications\EventGroupMembershipAccepted;
 use App\Notifications\EventGroupMembershipRequested;
@@ -50,6 +52,12 @@ it('shows only group metadata to confirmed non-members', function (): void {
     $group = EventGroup::factory()->forEvent($event)->create(['name' => 'Team Blau']);
     $member = AthleteRegistration::factory()->acceptedMember($group)->create();
     $viewer = eventGroupTestRegistration($event);
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $member)->create([
+        'amount_per_round' => 2,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
     $member->externalUser->update(['email' => 'secret@example.test', 'phone_number' => '+41790000000']);
 
     actingAs($viewer->externalUser, 'external');
@@ -59,6 +67,8 @@ it('shows only group metadata to confirmed non-members', function (): void {
         ->assertSeeText('Noch nicht Mitglied')
         ->assertSeeText('Team Blau')
         ->assertSee(route('portal.participations', ['anlass' => $event->slug]), false)
+        ->assertDontSeeText('Spenden deiner Gruppe')
+        ->assertDontSeeText('Spenden (geschätzt)')
         ->assertDontSeeText($member->externalUser->privacy_name)
         ->assertDontSee('secret@example.test')
         ->assertDontSee('+41790000000');
@@ -72,6 +82,12 @@ it('renders pending and admin views with only allowed identity fields', function
     $accepted = AthleteRegistration::factory()->acceptedMember($group)->create();
     $sportType = SportType::query()->create(['name' => 'Berglauf']);
     $accepted->update(['sport_type_id' => $sportType->id, 'rounds_estimated' => 42]);
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $accepted)->create([
+        'amount_per_round' => 2,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
     $pending->externalUser->update(['email' => 'pending-secret@example.test', 'address' => 'Secret Street 1']);
     $accepted->externalUser->update(['email' => 'member-secret@example.test', 'address' => 'Secret Street 2']);
 
@@ -91,6 +107,10 @@ it('renders pending and admin views with only allowed identity fields', function
         ->assertSeeText($accepted->externalUser->privacy_name)
         ->assertSeeText('Berglauf')
         ->assertSeeText('Geschätzte Runden')
+        ->assertSeeText('Spenden deiner Gruppe')
+        ->assertSeeText('Bestätigte Spenden')
+        ->assertSeeText('Spenden (tatsächlich)')
+        ->assertSeeText('Spenden (tatsächlich)')
         ->assertSeeText('42')
         ->assertSeeText($pending->externalUser->privacy_name)
         ->assertDontSee('pending-secret@example.test')
@@ -102,7 +122,12 @@ it('renders pending and admin views with only allowed identity fields', function
 
     get(route('portal.event-groups.show', $group))
         ->assertSuccessful()
-        ->assertSeeText('Mitglied');
+        ->assertSeeText('Mitglied')
+        ->assertSeeInOrder([
+            'Mitglieder',
+            $accepted->externalUser->privacy_name,
+            'Gruppe verlassen',
+        ]);
 });
 
 it('allows confirmed athletes to request a group and redirects to its detail page', function (): void {
@@ -266,6 +291,7 @@ it('renders accepted archive members only and no mutations after event end', fun
         ->assertSeeText('Archiv')
         ->assertSeeText('Administrator:in')
         ->assertSeeText($member->externalUser->privacy_name)
+        ->assertSeeText('Spenden (tatsächlich)')
         ->assertDontSeeText($pending->externalUser->privacy_name)
         ->assertDontSeeText('Offene Anfragen')
         ->assertDontSeeText('Gruppe verlassen');

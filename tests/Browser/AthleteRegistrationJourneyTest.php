@@ -69,8 +69,7 @@ it('lets a logged in external user register and confirm through email link', fun
     $page->click('[wire\\:key="pending-athlete-'.$registration->id.'"]:has-text("Anmeldung bestätigen")')
         ->wait(0.2)
         ->assertSee('Deine Registrierung als Sportler:in ist bestätigt.')
-        ->assertSee('Bestätigt')
-        ->assertDontSee('Bestätigung ausstehend')
+        ->assertDontSee('Anmeldung bestätigen')
         ->assertNoJavaScriptErrors();
 
     expect($page->script('window.portalSpaMarker'))->toBeTrue()

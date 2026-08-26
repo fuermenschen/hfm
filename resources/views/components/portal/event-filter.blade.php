@@ -1,9 +1,9 @@
-@props(['events', 'selectedEventSlug'])
+@props(['events', 'selectedEventSlug', 'label' => 'Anlass'])
 
-<form method="GET" action="{{ url()->current() }}" class="w-full sm:w-80">
+<form method="GET" action="{{ url()->current() }}" class="w-full min-w-0">
     <flux:select
         name="anlass"
-        label="Anlass"
+        :label="$label"
         onchange="Livewire.navigate(this.form.action + '?' + new URLSearchParams(new FormData(this.form)))"
     >
         <flux:select.option value="" :selected="$selectedEventSlug === null">Alle Anlässe</flux:select.option>

@@ -65,8 +65,7 @@ it('lets a logged in external user donate and confirm through the email link', f
     $page->click('[wire\\:key="pending-donation-'.$donation->id.'"]:has-text("Spende bestätigen")')
         ->wait(0.2)
         ->assertSee('Deine Spende ist bestätigt.')
-        ->assertSee('Bestätigt')
-        ->assertDontSee('Bestätigung ausstehend')
+        ->assertDontSee('Spende bestätigen')
         ->assertNoJavaScriptErrors();
 
     expect($page->script('window.portalSpaMarker'))->toBeTrue()

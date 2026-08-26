@@ -20,7 +20,7 @@
         @endphp
         <flux:button
             wire:click="confirm"
-            :variant="in_array($action, ['deny', 'remove', 'delete'], true) ? 'danger' : 'outline'"
+            :variant="in_array($action, ['deny', 'leave', 'remove', 'delete'], true) ? 'danger' : 'outline'"
             size="sm"
         >
             {{ $labels[$action] }}
@@ -41,7 +41,7 @@
                 <flux:button
                     wire:click="submit"
                     wire:target="submit"
-                    :variant="in_array($action, ['deny', 'remove', 'delete'], true) ? 'danger' : 'primary'"
+                    :variant="in_array($action, ['deny', 'leave', 'remove', 'delete'], true) ? 'danger' : 'primary'"
                 >
                     <span wire:loading.remove wire:target="submit">{{ $labels[$action] }}</span>
                     <span wire:loading wire:target="submit">Wird gespeichert ...</span>

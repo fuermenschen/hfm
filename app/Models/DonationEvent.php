@@ -149,6 +149,11 @@ class DonationEvent extends Model
         return Date::now($this->timezone)->greaterThanOrEqualTo($this->ends_at);
     }
 
+    public function hasStarted(): bool
+    {
+        return Date::now($this->timezone)->greaterThanOrEqualTo($this->starts_at);
+    }
+
     protected function casts(): array
     {
         return [

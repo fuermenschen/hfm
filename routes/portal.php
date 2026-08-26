@@ -34,7 +34,7 @@ Route::middleware('auth:external')->group(function (): void {
     Route::get('portal/profil', [PortalProfileController::class, 'show'])->name('portal.profile');
     Route::get('portal/teilnahmen', PortalParticipationsController::class)->name('portal.participations');
     Route::get('portal/teilnahmen/{athleteRegistration}/gruppen', PortalEventGroupDiscoveryController::class)->name('portal.event-groups.discover');
-    Route::get('portal/gruppen/{eventGroup}', PortalEventGroupController::class)->name('portal.event-groups.show');
+    Route::get('portal/gruppen/{eventGroup}', [PortalEventGroupController::class, 'show'])->name('portal.event-groups.show');
     Route::get('portal/spenden', PortalDonationsController::class)->name('portal.donations');
     Route::get('portal/teilnahmen/{athleteRegistration}/willkommensbrief', DownloadAthleteWelcomeLetterController::class)
         ->name('portal.welcome-letter.download');

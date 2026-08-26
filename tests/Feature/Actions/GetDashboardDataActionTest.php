@@ -66,6 +66,7 @@ it('builds dashboard data with expected aggregates', function (): void {
             'athleteCount',
             'donorCount',
             'donationCount',
+            'eventGroupCount',
             'verifiedAthleteCount',
             'verifiedDonationCount',
             'meanNumberOfDonations',
@@ -82,6 +83,7 @@ it('builds dashboard data with expected aggregates', function (): void {
         ->and($data['athleteCount'])->toBe(2)
         ->and($data['donorCount'])->toBe(2)
         ->and($data['donationCount'])->toBe(2)
+        ->and($data['eventGroupCount'])->toBe(0)
         ->and($data['verifiedAthleteCount'])->toBe(1)
         ->and($data['verifiedDonationCount'])->toBe(1)
         ->and($data['meanNumberOfDonations'])->toBe(1.0)

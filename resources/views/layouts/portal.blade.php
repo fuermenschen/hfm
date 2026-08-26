@@ -4,7 +4,7 @@
     <flux:sidebar
         sticky
         collapsible="mobile"
-        class="border-hfm-light/40 bg-hfm-white border-r dark:border-slate-700 dark:bg-slate-900"
+        class="border-hfm-light/40 bg-hfm-white overflow-x-hidden border-r dark:border-slate-700 dark:bg-slate-900"
     >
         <flux:sidebar.header>
             <flux:sidebar.brand
@@ -87,6 +87,14 @@
                 Zur Website
             </flux:sidebar.item>
         </flux:sidebar.nav>
+
+        <div class="px-3">
+            <x-portal.event-filter
+                :events="$events"
+                :selected-event-slug="$selectedEventSlug"
+                label="Anlass wechseln"
+            />
+        </div>
 
         <flux:separator variant="subtle" class="my-3" />
 
