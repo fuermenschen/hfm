@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
 
 class PortalEventGroupController extends Controller
 {
-    public function __invoke(
+    public function show(
         Request $request,
         EventGroup $eventGroup,
         GetPortalContextAction $portalContext,
