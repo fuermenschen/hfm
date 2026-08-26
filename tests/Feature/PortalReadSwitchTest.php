@@ -90,7 +90,9 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertSeeText('Deine Gruppe')
         ->assertSeeText('Team Aktuell')
         ->assertSeeText('Bestätigte Spenden')
-        ->assertSeeText('Geldsumme bestätigter Spenden')
+        ->assertSeeText('Mit geschätzten Runden der Gruppe')
+        ->assertDontSeeText('Anzahl bestätigter Spenden')
+        ->assertDontSeeText('Geldsumme bestätigter Spenden')
         ->assertSee(route('portal.event-groups.show', $eventGroup), false)
         ->assertSeeText('Spenden (geschätzt)')
         ->assertDontSeeText('Spenden (tatsächlich)')
@@ -141,6 +143,12 @@ it('shows actual donation amount when selected event starts', function (): void 
         'rounds_estimated' => 10,
         'rounds_done' => 0,
     ]);
+    $eventGroup = EventGroup::factory()->forEvent($event)->create();
+    $registration->update([
+        'event_group_id' => $eventGroup->id,
+        'group_membership_status' => GroupMembershipStatus::Accepted,
+        'group_membership_role' => GroupMembershipRole::Admin,
+    ]);
     Donation::factory()->forPair(ExternalUser::factory()->create(), $registration)->create([
         'amount_per_round' => 5,
         'amount_min' => null,
@@ -163,7 +171,9 @@ it('shows actual donation amount when selected event starts', function (): void 
     get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText('Spenden (tatsächlich)')
+        ->assertSeeText('Mit absolvierten Runden der Gruppe')
         ->assertSeeText('Fr. 0.00')
+        ->assertDontSeeText('Geldsumme bestätigter Spenden')
         ->assertDontSeeText('Spenden (geschätzt)');
 
     get(route('portal.donations'))

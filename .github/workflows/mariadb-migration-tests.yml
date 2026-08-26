@@ -87,7 +87,8 @@ jobs:
 
       - name: Run Basic Database Tests
         run: |
-          ./vendor/bin/pest --parallel --filter="Migration|Database|Model" --exclude-testsuite=Browser --stop-on-failure
+          # TODO: Restore --parallel when Pest issue #1774 is fixed.
+          ./vendor/bin/pest --filter="Migration|Database|Model" --exclude-testsuite=Browser --stop-on-failure
         timeout-minutes: 3
         env:
           DB_CONNECTION: mariadb

@@ -1,4 +1,4 @@
-@props(['href', 'icon', 'label', 'value', 'detail'])
+@props(['href', 'icon', 'label', 'value', 'detail' => null])
 
 <a
     href="{{ $href }}"
@@ -11,6 +11,8 @@
             <flux:text>{{ $label }}</flux:text>
             <flux:heading size="xl" class="mt-1 tabular-nums">{{ $value }}</flux:heading>
         </div>
-        <flux:text>{{ $detail }}</flux:text>
+        @if ($detail !== null)
+            <flux:text>{{ $detail }}</flux:text>
+        @endif
     </flux:card>
 </a>

@@ -194,14 +194,13 @@
                                 icon="user-group"
                                 label="Bestätigte Spenden"
                                 :value="number_format($eventGroup['confirmedDonationCount'], 0, '.', chr(39))"
-                                detail="Anzahl bestätigter Spenden"
                             />
                             <x-portal.summary-card
                                 :href="$eventGroup['url']"
                                 icon="chart-bar"
                                 :label="$eventGroup['amountLabel']"
                                 :value="'Fr. '.number_format($eventGroup['amount'], 2, '.', chr(39))"
-                                detail="Geldsumme bestätigter Spenden"
+                                :detail="$selectedEvent->hasStarted() ? 'Mit absolvierten Runden der Gruppe' : 'Mit geschätzten Runden der Gruppe'"
                             />
                         </div>
                     </section>
