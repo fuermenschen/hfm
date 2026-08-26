@@ -4,8 +4,10 @@
 
 @section('content')
     @php
+        $eventEnded = $eventGroup->donationEvent->hasEnded();
+        $memberDonationLabel = $eventEnded ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)';
         $membershipStatus = $registration->event_group_id === $eventGroup->id
-            && ($registration->group_membership_status?->value === 'accepted' || ! $eventGroup->donationEvent->hasEnded())
+            && ($registration->group_membership_status?->value === 'accepted' || ! $eventEnded)
             ? $registration->group_membership_status?->value
             : null;
         $membershipRole = $registration->event_group_id === $eventGroup->id ? $registration->group_membership_role?->value : null;
@@ -32,9 +34,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <flux:heading size="xl" level="1">{{ $eventGroup->name }}</flux:heading>
-                    <flux:text class="mt-2"
-                        >{{ $eventGroup->donationEvent->title }} · {{ $accepted->count() }} bestätigte
-                        Mitglieder</flux:text>
+                    <flux:text class="mt-2">{{ $eventGroup->donationEvent->title }} · {{ $acceptedCount }} bestätigte Mitglieder</flux:text>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <flux:badge :color="$membershipColor">{{ $membershipLabel }}</flux:badge>
@@ -46,6 +46,26 @@
         </header>
 
         <x-portal.success-message />
+
+        @if ($isAcceptedMember)
+            <section class="space-y-4">
+                <flux:heading size="lg" level="2">Spenden deiner Gruppe</flux:heading>
+                <flux:card class="border-hfm-light/40 grid gap-4 rounded-xl bg-white sm:grid-cols-2 dark:border-slate-700 dark:bg-slate-900">
+                    <div>
+                        <flux:text>Bestätigte Spenden</flux:text>
+                        <flux:heading
+                            size="xl"
+                            class="mt-1 tabular-nums"
+                        >{{ number_format($groupSummary['confirmedDonationCount'], 0, '.', "'") }}</flux:heading>
+                    </div>
+                    <div>
+                        <flux:text>{{ $groupSummary['amountLabel'] }}</flux:text>
+                        <flux:heading size="xl" class="mt-1 tabular-nums"
+                            >Fr. {{ number_format($groupSummary['amount'], 2, '.', "'") }}</flux:heading>
+                    </div>
+                </flux:card>
+            </section>
+        @endif
 
         @if ($eventGroup->donationEvent->hasEnded())
             <flux:callout icon="archive-box" variant="secondary">
@@ -66,14 +86,6 @@
                     />
                 </x-slot>
             </flux:callout>
-        @elseif ($registration->event_group_id === $eventGroup->id && $registration->group_membership_status->value === 'accepted' && ($registration->group_membership_role->value !== 'admin' || $accepted->where('group_membership_role', \App\Enums\GroupMembershipRole::Admin)->count() > 1))
-            <livewire:portal-event-group-actions
-                :registration-id="$registration->id"
-                action="leave"
-                :group-id="$eventGroup->id"
-                :group-name="$eventGroup->name"
-                :wire:key="'group-leave-'.$registration->id"
-            />
         @elseif ($registration->event_group_id === $eventGroup->id && $registration->group_membership_status->value === 'accepted' && $registration->group_membership_role->value === 'admin')
             <flux:callout icon="information-circle" variant="secondary">
                 <flux:callout.text>
@@ -82,7 +94,7 @@
             </flux:callout>
         @endif
 
-        @if ($registration->event_group_id === $eventGroup->id && $registration->group_membership_status->value === 'accepted')
+        @if ($isAcceptedMember)
             <section class="space-y-4">
                 <flux:heading size="lg" level="2">Mitglieder</flux:heading>
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -102,6 +114,18 @@
                                 <div>
                                     <dt class="text-sm text-zinc-500 dark:text-zinc-400">Geschätzte Runden</dt>
                                     <dd class="mt-1 font-medium tabular-nums">{{ $member->rounds_estimated }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm text-zinc-500 dark:text-zinc-400">Bestätigte Spenden</dt>
+                                    <dd class="mt-1 font-medium tabular-nums">
+                                        {{ $member->confirmed_donation_count }}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm text-zinc-500 dark:text-zinc-400">{{ $memberDonationLabel }}</dt>
+                                    <dd class="mt-1 font-medium tabular-nums">
+                                        Fr. {{ number_format($eventEnded ? $member->actual_donation_amount : $member->estimated_donation_amount, 2, '.', "'") }}
+                                    </dd>
                                 </div>
                             </dl>
                             @if ($isAdmin && ! $eventGroup->donationEvent->hasEnded() && ! $member->is($registration))
@@ -184,6 +208,18 @@
                     :wire:key="'group-delete-'.$eventGroup->id"
                 />
             @endif
+        @endif
+
+        @if ($canLeave)
+            <div class="border-t border-zinc-200 pt-6 dark:border-slate-700">
+                <livewire:portal-event-group-actions
+                    :registration-id="$registration->id"
+                    action="leave"
+                    :group-id="$eventGroup->id"
+                    :group-name="$eventGroup->name"
+                    :wire:key="'group-leave-'.$registration->id"
+                />
+            </div>
         @endif
     </div>
 @endsection

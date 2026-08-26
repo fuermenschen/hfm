@@ -2,6 +2,7 @@
 
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
@@ -124,6 +125,22 @@ it('filters the dashboard by another event or all events', function (): void {
         ->assertSuccessful()
         ->assertSee('value="" selected', false)
         ->assertSee(route('admin.donors.index').'?anlass=', false);
+});
+
+it('shows the selected event group count', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $otherEvent = DonationEvent::factory()->year(2025)->create();
+    EventGroup::factory()->count(2)->forEvent($event)->create();
+    EventGroup::factory()->forEvent($otherEvent)->create();
+
+    actingAs(User::factory()->create());
+
+    get(route('admin.dashboard', ['anlass' => $event->slug]))
+        ->assertSuccessful()
+        ->assertViewHas('eventGroupCount', 2)
+        ->assertSeeText('Gruppen')
+        ->assertSeeText('Registriert')
+        ->assertSeeText('2');
 });
 
 it('rejects invalid dashboard event filters', function (string $eventSlug): void {

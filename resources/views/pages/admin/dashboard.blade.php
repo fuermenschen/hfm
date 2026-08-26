@@ -174,6 +174,13 @@
             />
         </x-stats>
 
+        <x-stats title="Gruppen">
+            <flux:card class="h-full">
+                <dt><flux:text class="truncate">Registriert</flux:text></dt>
+                <dd class="mt-1 text-3xl font-semibold tracking-tight tabular-nums">{{ $eventGroupCount }}</dd>
+            </flux:card>
+        </x-stats>
+
         <!-- Donation -->
         <x-stats title="Spenden">
             <x-admin.stat-card

@@ -44,14 +44,14 @@
 
                 <dl class="grid gap-3 sm:grid-cols-2">
                     <div class="bg-hfm-light/15 rounded-xl p-4 dark:bg-slate-800">
-                        <dt class="text-hfm-dark dark:text-hfm-light text-sm">Voraussichtlicher eigener Beitrag</dt>
+                        <dt class="text-hfm-dark dark:text-hfm-light text-sm">Spenden (geschätzt)</dt>
                         <dd class="mt-1 text-2xl font-semibold tabular-nums">
                             <span class="text-base font-medium">Fr.</span>
                             {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}
                         </dd>
                     </div>
                     <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
-                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">Aktueller eigener Beitrag</dt>
+                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">Spenden (tatsächlich)</dt>
                         @if ($donation['hasCompletedRounds'])
                             <dd class="mt-1 text-2xl font-semibold tabular-nums">
                                 <span class="text-base font-medium">Fr.</span>

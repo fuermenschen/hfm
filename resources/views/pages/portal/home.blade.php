@@ -115,7 +115,7 @@
                             <x-portal.summary-card
                                 :href="route('portal.participations', $eventParameters)"
                                 icon="calculator"
-                                label="Voraussichtlich gesammelt"
+                                label="Spenden (geschätzt)"
                                 :value="'Fr. '.number_format($estimatedReceivedAmount, 2, '.', chr(39))"
                                 detail="Mit deinen geschätzten Runden"
                             />
@@ -123,7 +123,7 @@
                                 <x-portal.summary-card
                                     :href="route('portal.participations', $eventParameters)"
                                     icon="chart-bar"
-                                    label="Aktuell gesammelt"
+                                    label="Spenden (tatsächlich)"
                                     :value="'Fr. '.number_format($currentReceivedAmount, 2, '.', chr(39))"
                                     detail="Mit deinen absolvierten Runden"
                                 />
@@ -149,7 +149,7 @@
                             <x-portal.summary-card
                                 :href="route('portal.donations', $eventParameters)"
                                 icon="calculator"
-                                label="Voraussichtlicher eigener Beitrag"
+                                label="Spenden (geschätzt)"
                                 :value="'Fr. '.number_format($estimatedOwnAmount, 2, '.', chr(39))"
                                 detail="Mit geschätzten Runden aller Sportler:innen"
                             />
@@ -157,11 +157,29 @@
                                 <x-portal.summary-card
                                     :href="route('portal.donations', $eventParameters)"
                                     icon="chart-bar"
-                                    label="Aktueller eigener Beitrag"
+                                    label="Spenden (tatsächlich)"
                                     :value="'Fr. '.number_format($currentOwnAmount, 2, '.', chr(39))"
                                     detail="Mit absolvierten Runden der Sportler:innen"
                                 />
                             @endif
+                        </div>
+                    </section>
+                @endif
+
+                @if ($eventGroup !== null)
+                    <section class="space-y-3" aria-labelledby="group-summary">
+                        <div>
+                            <flux:heading id="group-summary" level="3">Deine Gruppe</flux:heading>
+                            <flux:text>{{ $eventGroup['name'] }}</flux:text>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <x-portal.summary-card
+                                :href="$eventGroup['url']"
+                                icon="user-group"
+                                label="Bestätigte Spenden"
+                                :value="number_format($eventGroup['confirmedDonationCount'], 0, '.', chr(39))"
+                                :detail="$eventGroup['amountLabel'].': Fr. '.number_format($eventGroup['amount'], 2, '.', chr(39))"
+                            />
                         </div>
                     </section>
                 @endif

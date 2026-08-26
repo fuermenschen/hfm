@@ -7,6 +7,7 @@ namespace App\Actions;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Services\AthleteService;
@@ -33,6 +34,7 @@ class GetDashboardDataAction
      *     athleteCount: int,
      *     donorCount: int,
      *     donationCount: int,
+     *     eventGroupCount: int,
      *     verifiedAthleteCount: int,
      *     verifiedDonationCount: int,
      *     meanNumberOfDonations: float,
@@ -69,6 +71,9 @@ class GetDashboardDataAction
             ? (int) $this->donorService->forEvent($event)->count()
             : $this->donorService->count();
         $donationCount = (int) $this->donationsQuery($event)->count();
+        $eventGroupCount = (int) EventGroup::query()
+            ->when($event instanceof DonationEvent, fn (Builder $query): Builder => $query->where('donation_event_id', $event->id))
+            ->count();
 
         $verifiedAthleteCount = $event instanceof DonationEvent
             ? (int) $this->registrationsQuery($event)
@@ -119,6 +124,7 @@ class GetDashboardDataAction
             'athleteCount',
             'donorCount',
             'donationCount',
+            'eventGroupCount',
             'verifiedAthleteCount',
             'verifiedDonationCount',
             'meanNumberOfDonations',

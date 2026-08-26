@@ -1,8 +1,11 @@
 <?php
 
+use App\Enums\GroupMembershipRole;
+use App\Enums\GroupMembershipStatus;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
@@ -23,6 +26,12 @@ it('defaults home to current event and shows owned summary with global confirmat
     $currentRegistration = AthleteRegistration::factory()->forVerifiedEventUser($currentEvent, $externalUser)->create([
         'rounds_estimated' => 10,
         'rounds_done' => 4,
+    ]);
+    $eventGroup = EventGroup::factory()->forEvent($currentEvent)->create(['name' => 'Team Aktuell']);
+    $currentRegistration->update([
+        'event_group_id' => $eventGroup->id,
+        'group_membership_status' => GroupMembershipStatus::Accepted,
+        'group_membership_role' => GroupMembershipRole::Admin,
     ]);
     AthleteRegistration::factory()->forEvent($previousEvent)->forExternalUser($externalUser)->create([
         'sport_type_id' => $sportType->id,
@@ -79,9 +88,13 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertViewHas('hasOwnCompletedRounds', true)
         ->assertSeeText('Deine Teilnahme')
         ->assertSeeText('Deine Unterstützung')
-        ->assertSeeText('Voraussichtlich gesammelt')
-        ->assertSeeText('Voraussichtlicher eigener Beitrag')
-        ->assertSeeText('Aktuell gesammelt')
+        ->assertSeeText('Deine Gruppe')
+        ->assertSeeText('Team Aktuell')
+        ->assertSeeText('Bestätigte Spenden')
+        ->assertSeeText('Spenden (geschätzt): Fr. 50.00')
+        ->assertSee(route('portal.event-groups.show', $eventGroup), false)
+        ->assertSeeText('Spenden (geschätzt)')
+        ->assertSeeText('Spenden (tatsächlich)')
         ->assertSeeText('Offene Bestätigungen aus allen Anlässen.')
         ->assertSeeText('Anmeldung bestätigen')
         ->assertSeeText('Previous Event')
@@ -182,10 +195,9 @@ it('shows donor-only users only their relevant dashboard summary', function (): 
     get(route('portal.dashboard'))
         ->assertSuccessful()
         ->assertSeeText('Deine Unterstützung')
-        ->assertSeeText('Voraussichtlicher eigener Beitrag')
+        ->assertSeeText('Spenden (geschätzt)')
         ->assertDontSeeText('Eingegangene Spenden')
         ->assertDontSeeText('Deine Teilnahme')
-        ->assertDontSeeText('Voraussichtlich gesammelt')
         ->assertDontSee(route('portal.participations'));
 });
 
