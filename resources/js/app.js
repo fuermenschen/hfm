@@ -250,15 +250,117 @@ function initExpandableComments(scope = document) {
     });
 }
 
+function syncChartTodayMarkers(chart) {
+    const svg = chart.querySelector("svg");
+    if (!svg) {
+        return;
+    }
+
+    const gridLines = Array.from(svg.querySelectorAll('[data-grid-line][data-axis="x"]'));
+    chart.querySelectorAll("[data-today-marker]").forEach((marker) => {
+        const tickIndex = Number.parseInt(marker.dataset.todayMarker, 10);
+        const gridLine = gridLines[tickIndex];
+        if (!gridLine) {
+            return;
+        }
+
+        ["x1", "x2", "y1", "y2"].forEach((attribute) => {
+            const value = gridLine.getAttribute(attribute);
+            if (value !== null) {
+                marker.setAttribute(attribute, value);
+            }
+        });
+    });
+
+    syncCompactChartYAxisLabels(chart);
+}
+
+function syncCompactChartYAxisLabels(chart) {
+    if (!chart.hasAttribute("data-compact-y-axis")) {
+        return;
+    }
+
+    const locale = chart.getAttribute("locale") || navigator.language || "en-US";
+    const localeParts = new Intl.NumberFormat(locale).formatToParts(12345.6);
+    const groupSeparator = localeParts.find((part) => part.type === "group")?.value || ",";
+    const decimalSeparator = localeParts.find((part) => part.type === "decimal")?.value || ".";
+    const compactFormatter = new Intl.NumberFormat("en-US", {
+        notation: "compact",
+        compactDisplay: "short",
+        maximumFractionDigits: 0,
+    });
+
+    chart.querySelectorAll('[data-tick-label][data-axis="y"] text').forEach((label) => {
+        const text = label.textContent.trim();
+        if (text.toLowerCase().endsWith("k")) {
+            return;
+        }
+
+        const normalized = text
+            .split(groupSeparator)
+            .join("")
+            .replace(decimalSeparator, ".")
+            .replace(/[^\d.-]/g, "");
+        const value = Number(normalized);
+        if (!Number.isFinite(value)) {
+            return;
+        }
+
+        const compactLabel = compactFormatter.format(value).toLowerCase();
+        if (label.textContent !== compactLabel) {
+            label.textContent = compactLabel;
+        }
+    });
+}
+
+function initChartTodayMarkers(scope = document) {
+    scope.querySelectorAll("ui-chart").forEach((chart) => {
+        if (chart.dataset.todayMarkersInitialized === "1") {
+            return;
+        }
+
+        chart.dataset.todayMarkersInitialized = "1";
+        let frame = null;
+        let mutationObserver;
+        let resizeObserver;
+        const scheduleSync = () => {
+            if (!chart.isConnected) {
+                mutationObserver.disconnect();
+                resizeObserver.disconnect();
+                return;
+            }
+
+            if (frame !== null) {
+                cancelAnimationFrame(frame);
+            }
+
+            frame = requestAnimationFrame(() => {
+                frame = null;
+                syncChartTodayMarkers(chart);
+            });
+        };
+
+        mutationObserver = new MutationObserver(scheduleSync);
+        mutationObserver.observe(chart, { childList: true, subtree: true });
+
+        resizeObserver = new ResizeObserver(scheduleSync);
+        resizeObserver.observe(chart);
+
+        syncChartTodayMarkers(chart);
+    });
+}
+
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
         initHeroLqip();
         initStoryShare();
         initShareTexts();
         initExpandableComments();
+        initChartTodayMarkers();
     });
 } else {
     initHeroLqip();
+    initChartTodayMarkers();
 }
 
 document.addEventListener("click", (event) => {
@@ -292,6 +394,7 @@ document.addEventListener("livewire:navigated", () => {
     initStoryShare();
     initShareTexts();
     initExpandableComments();
+    initChartTodayMarkers();
     const hash = window.location.hash;
     if (hash) {
         let hashId = "";
