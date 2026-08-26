@@ -5,7 +5,8 @@
 @section('content')
     @php
         $eventEnded = $eventGroup->donationEvent->hasEnded();
-        $memberDonationLabel = $eventEnded ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)';
+        $eventStarted = $eventGroup->donationEvent->hasStarted();
+        $memberDonationLabel = $eventStarted ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)';
         $membershipStatus = $registration->event_group_id === $eventGroup->id
             && ($registration->group_membership_status?->value === 'accepted' || ! $eventEnded)
             ? $registration->group_membership_status?->value
@@ -124,7 +125,7 @@
                                 <div>
                                     <dt class="text-sm text-zinc-500 dark:text-zinc-400">{{ $memberDonationLabel }}</dt>
                                     <dd class="mt-1 font-medium tabular-nums">
-                                        Fr. {{ number_format($eventEnded ? $member->actual_donation_amount : $member->estimated_donation_amount, 2, '.', "'") }}
+                                        Fr. {{ number_format($eventStarted ? $member->actual_donation_amount : $member->estimated_donation_amount, 2, '.', "'") }}
                                     </dd>
                                 </div>
                             </dl>

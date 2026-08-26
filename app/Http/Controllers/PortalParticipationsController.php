@@ -49,16 +49,20 @@ class PortalParticipationsController extends Controller
             ->sortByDesc('donationEvent.starts_at')
             ->values()
             ->map(function ($registration) use ($athleteShareText, $donationService): array {
-                $donations = $registration->donations->map(fn (Donation $donation): array => [
-                    'donor' => sprintf('%s (%s)', $donation->donorExternalUser->privacy_name, $donation->donorExternalUser->public_id_string),
-                    'amountPerRound' => (float) $donation->amount_per_round,
-                    'amountMin' => $donation->amount_min !== null ? (float) $donation->amount_min : null,
-                    'amountMax' => $donation->amount_max !== null ? (float) $donation->amount_max : null,
-                    'estimatedAmount' => $donationService->calculateEstimatedAmount($donation),
-                    'currentAmount' => $donationService->calculateActualAmount($donation),
-                    'comment' => $donation->comment,
-                    'verified' => (bool) $donation->verified,
-                ]);
+                $eventStarted = $registration->donationEvent->hasStarted();
+                $donations = $registration->donations->map(function (Donation $donation) use ($donationService, $eventStarted): array {
+                    return [
+                        'donor' => sprintf('%s (%s)', $donation->donorExternalUser->privacy_name, $donation->donorExternalUser->public_id_string),
+                        'amountPerRound' => (float) $donation->amount_per_round,
+                        'amountMin' => $donation->amount_min !== null ? (float) $donation->amount_min : null,
+                        'amountMax' => $donation->amount_max !== null ? (float) $donation->amount_max : null,
+                        'amount' => $eventStarted
+                            ? $donationService->calculateActualAmount($donation)
+                            : $donationService->calculateEstimatedAmount($donation),
+                        'comment' => $donation->comment,
+                        'verified' => (bool) $donation->verified,
+                    ];
+                });
 
                 return [
                     'id' => (int) $registration->id,
@@ -71,6 +75,7 @@ class PortalParticipationsController extends Controller
                     'comment' => $registration->comment,
                     'verified' => (bool) $registration->verified,
                     'eventEnded' => $registration->donationEvent->hasEnded(),
+                    'eventStarted' => $eventStarted,
                     'group' => $registration->eventGroup === null ? null : [
                         'id' => (int) $registration->eventGroup->id,
                         'name' => $registration->eventGroup->name,
@@ -85,7 +90,7 @@ class PortalParticipationsController extends Controller
                     'donations' => $donations->all(),
                     'donationCount' => $donations->count(),
                     'pendingDonationCount' => $donations->where('verified', false)->count(),
-                    'estimatedDonationAmount' => $donations->sum('estimatedAmount'),
+                    'donationAmount' => $donations->sum('amount'),
                 ];
             });
 

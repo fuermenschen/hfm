@@ -112,14 +112,22 @@
                                 :value="number_format($receivedDonationCount, 0, '.', chr(39))"
                                 :detail="$pendingReceivedDonationCount > 0 ? $pendingReceivedDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'"
                             />
-                            <x-portal.summary-card
-                                :href="route('portal.participations', $eventParameters)"
-                                icon="calculator"
-                                label="Spenden (geschätzt)"
-                                :value="'Fr. '.number_format($estimatedReceivedAmount, 2, '.', chr(39))"
-                                detail="Mit deinen geschätzten Runden"
-                            />
-                            @if ($hasCompletedRounds)
+                            @if ($selectedEvent !== null)
+                                <x-portal.summary-card
+                                    :href="route('portal.participations', $eventParameters)"
+                                    :icon="$selectedEvent->hasStarted() ? 'chart-bar' : 'calculator'"
+                                    :label="$selectedEvent->hasStarted() ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)'"
+                                    :value="'Fr. '.number_format($selectedEvent->hasStarted() ? $currentReceivedAmount : $estimatedReceivedAmount, 2, '.', chr(39))"
+                                    :detail="$selectedEvent->hasStarted() ? 'Mit deinen absolvierten Runden' : 'Mit deinen geschätzten Runden'"
+                                />
+                            @else
+                                <x-portal.summary-card
+                                    :href="route('portal.participations', $eventParameters)"
+                                    icon="calculator"
+                                    label="Spenden (geschätzt)"
+                                    :value="'Fr. '.number_format($estimatedReceivedAmount, 2, '.', chr(39))"
+                                    detail="Mit deinen geschätzten Runden"
+                                />
                                 <x-portal.summary-card
                                     :href="route('portal.participations', $eventParameters)"
                                     icon="chart-bar"
@@ -146,14 +154,22 @@
                                 :value="number_format($ownDonationCount, 0, '.', chr(39))"
                                 :detail="$pendingOwnDonationCount > 0 ? $pendingOwnDonationCount.' noch nicht bestätigt' : 'Keine offenen Bestätigungen'"
                             />
-                            <x-portal.summary-card
-                                :href="route('portal.donations', $eventParameters)"
-                                icon="calculator"
-                                label="Spenden (geschätzt)"
-                                :value="'Fr. '.number_format($estimatedOwnAmount, 2, '.', chr(39))"
-                                detail="Mit geschätzten Runden aller Sportler:innen"
-                            />
-                            @if ($hasOwnCompletedRounds)
+                            @if ($selectedEvent !== null)
+                                <x-portal.summary-card
+                                    :href="route('portal.donations', $eventParameters)"
+                                    :icon="$selectedEvent->hasStarted() ? 'chart-bar' : 'calculator'"
+                                    :label="$selectedEvent->hasStarted() ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)'"
+                                    :value="'Fr. '.number_format($selectedEvent->hasStarted() ? $currentOwnAmount : $estimatedOwnAmount, 2, '.', chr(39))"
+                                    :detail="$selectedEvent->hasStarted() ? 'Mit absolvierten Runden der Sportler:innen' : 'Mit geschätzten Runden aller Sportler:innen'"
+                                />
+                            @else
+                                <x-portal.summary-card
+                                    :href="route('portal.donations', $eventParameters)"
+                                    icon="calculator"
+                                    label="Spenden (geschätzt)"
+                                    :value="'Fr. '.number_format($estimatedOwnAmount, 2, '.', chr(39))"
+                                    detail="Mit geschätzten Runden aller Sportler:innen"
+                                />
                                 <x-portal.summary-card
                                     :href="route('portal.donations', $eventParameters)"
                                     icon="chart-bar"
@@ -178,7 +194,14 @@
                                 icon="user-group"
                                 label="Bestätigte Spenden"
                                 :value="number_format($eventGroup['confirmedDonationCount'], 0, '.', chr(39))"
-                                :detail="$eventGroup['amountLabel'].': Fr. '.number_format($eventGroup['amount'], 2, '.', chr(39))"
+                                detail="Anzahl bestätigter Spenden"
+                            />
+                            <x-portal.summary-card
+                                :href="$eventGroup['url']"
+                                icon="chart-bar"
+                                :label="$eventGroup['amountLabel']"
+                                :value="'Fr. '.number_format($eventGroup['amount'], 2, '.', chr(39))"
+                                detail="Geldsumme bestätigter Spenden"
                             />
                         </div>
                     </section>

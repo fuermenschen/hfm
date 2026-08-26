@@ -10,6 +10,7 @@ use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\SportType;
 use App\Settings\EventSettings;
+use Carbon\Carbon;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -81,20 +82,18 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertViewHas('pendingReceivedDonationCount', 1)
         ->assertViewHas('estimatedReceivedAmount', 50.0)
         ->assertViewHas('currentReceivedAmount', 20.0)
-        ->assertViewHas('hasCompletedRounds', true)
         ->assertViewHas('ownDonationCount', 1)
         ->assertViewHas('estimatedOwnAmount', 30.0)
         ->assertViewHas('currentOwnAmount', 6.0)
-        ->assertViewHas('hasOwnCompletedRounds', true)
         ->assertSeeText('Deine Teilnahme')
         ->assertSeeText('Deine Unterstützung')
         ->assertSeeText('Deine Gruppe')
         ->assertSeeText('Team Aktuell')
         ->assertSeeText('Bestätigte Spenden')
-        ->assertSeeText('Spenden (geschätzt): Fr. 50.00')
+        ->assertSeeText('Geldsumme bestätigter Spenden')
         ->assertSee(route('portal.event-groups.show', $eventGroup), false)
         ->assertSeeText('Spenden (geschätzt)')
-        ->assertSeeText('Spenden (tatsächlich)')
+        ->assertDontSeeText('Spenden (tatsächlich)')
         ->assertSeeText('Offene Bestätigungen aus allen Anlässen.')
         ->assertSeeText('Anmeldung bestätigen')
         ->assertSeeText('Previous Event')
@@ -106,9 +105,15 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertDontSeeText('Anzeigen')
         ->assertSeeText('Current Event')
         ->assertDontSeeText('Unrelated Event');
+
+    get(route('portal.dashboard', ['anlass' => '']))
+        ->assertSuccessful()
+        ->assertViewHas('selectedEventSlug', null)
+        ->assertSeeText('Spenden (geschätzt)')
+        ->assertSeeText('Spenden (tatsächlich)');
 });
 
-it('hides effective donation amount until rounds are completed', function (): void {
+it('shows estimated donation amount until selected event starts', function (): void {
     $event = DonationEvent::factory()->year(2036)->create();
     setPortalCurrentEvent($event);
 
@@ -122,9 +127,58 @@ it('hides effective donation amount until rounds are completed', function (): vo
 
     get(route('portal.dashboard'))
         ->assertSuccessful()
-        ->assertViewHas('hasCompletedRounds', false)
-        ->assertDontSeeText('Effektiver Spendenbetrag')
-        ->assertDontSeeText('Aktueller Spendenbetrag');
+        ->assertSeeText('Spenden (geschätzt)')
+        ->assertDontSeeText('Spenden (tatsächlich)');
+});
+
+it('shows actual donation amount when selected event starts', function (): void {
+    Carbon::setTestNow('2036-09-12 11:00:00 Europe/Zurich');
+    $event = DonationEvent::factory()->year(2036)->create();
+    setPortalCurrentEvent($event);
+
+    $externalUser = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $externalUser)->create([
+        'rounds_estimated' => 10,
+        'rounds_done' => 0,
+    ]);
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $registration)->create([
+        'amount_per_round' => 5,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
+    $otherRegistration = AthleteRegistration::factory()->forEvent($event)->verified()->create([
+        'rounds_estimated' => 10,
+        'rounds_done' => 0,
+    ]);
+    Donation::factory()->forPair($externalUser, $otherRegistration)->create([
+        'amount_per_round' => 5,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
+
+    actingAs($externalUser, 'external');
+
+    get(route('portal.dashboard'))
+        ->assertSuccessful()
+        ->assertSeeText('Spenden (tatsächlich)')
+        ->assertSeeText('Fr. 0.00')
+        ->assertDontSeeText('Spenden (geschätzt)');
+
+    get(route('portal.donations'))
+        ->assertSuccessful()
+        ->assertSeeText('Spenden (tatsächlich)')
+        ->assertDontSeeText('Spenden (geschätzt)')
+        ->assertDontSeeText('Noch nicht final');
+
+    get(route('portal.participations'))
+        ->assertSuccessful()
+        ->assertSeeText('Tatsächlicher Betrag')
+        ->assertDontSeeText('Erwarteter Betrag')
+        ->assertDontSeeText('Noch nicht final');
+
+    Carbon::setTestNow();
 });
 
 it('filters participations and never exposes donor private identity', function (): void {
@@ -287,7 +341,8 @@ it('filters donations and only exposes athlete privacy name with public id', fun
         ->assertSeeText('Sam P. (XYZ-678)')
         ->assertSeeText('CURRENT-DONATION-COMMENT')
         ->assertSeeText('Bestätigung ausstehend')
-        ->assertSeeText('Noch nicht final')
+        ->assertSeeText('Spenden (geschätzt)')
+        ->assertDontSeeText('Noch nicht final')
         ->assertDontSeeText('PREVIOUS-DONATION-COMMENT')
         ->assertDontSeeText('PRIVATE-ATHLETE-4Q')
         ->assertDontSee('athlete-secret@example.test')

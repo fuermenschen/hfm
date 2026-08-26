@@ -45,8 +45,8 @@ it('aggregates confirmed donations for accepted group members', function (): voi
     Carbon::setTestNow();
 });
 
-it('uses completed rounds after group event ends', function (): void {
-    Carbon::setTestNow('2036-09-13 12:00:00');
+it('uses completed rounds when group event starts', function (): void {
+    Carbon::setTestNow('2036-09-12 11:00:00 Europe/Zurich');
     $event = DonationEvent::factory()->year(2036)->create();
     $group = EventGroup::factory()->forEvent($event)->create();
     $member = AthleteRegistration::factory()->acceptedMember($group)->create(['rounds_estimated' => 10, 'rounds_done' => 4]);

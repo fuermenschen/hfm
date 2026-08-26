@@ -42,24 +42,13 @@
                     </flux:callout>
                 @endunless
 
-                <dl class="grid gap-3 sm:grid-cols-2">
-                    <div class="bg-hfm-light/15 rounded-xl p-4 dark:bg-slate-800">
-                        <dt class="text-hfm-dark dark:text-hfm-light text-sm">Spenden (geschätzt)</dt>
+                <dl>
+                    <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
+                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">{{ $donation['amountLabel'] }}</dt>
                         <dd class="mt-1 text-2xl font-semibold tabular-nums">
                             <span class="text-base font-medium">Fr.</span>
-                            {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}
+                            {{ number_format($donation['amount'], 2, '.', "'") }}
                         </dd>
-                    </div>
-                    <div class="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/40">
-                        <dt class="text-sm text-emerald-700 dark:text-emerald-300">Spenden (tatsächlich)</dt>
-                        @if ($donation['hasCompletedRounds'])
-                            <dd class="mt-1 text-2xl font-semibold tabular-nums">
-                                <span class="text-base font-medium">Fr.</span>
-                                {{ number_format($donation['currentAmount'], 2, '.', "'") }}
-                            </dd>
-                        @else
-                            <dd class="mt-2 font-medium text-zinc-500 dark:text-zinc-400">Noch nicht final</dd>
-                        @endif
                     </div>
                 </dl>
 

@@ -26,12 +26,10 @@ class GetPortalDashboardDataAction
      *     pendingReceivedDonationCount: int,
      *     estimatedReceivedAmount: float,
      *     currentReceivedAmount: float,
-     *     hasCompletedRounds: bool,
      *     ownDonationCount: int,
      *     pendingOwnDonationCount: int,
      *     estimatedOwnAmount: float,
      *     currentOwnAmount: float,
-     *     hasOwnCompletedRounds: bool,
      *     eventGroup: array{name: string, confirmedDonationCount: int, amount: float, amountLabel: string, url: string}|null,
      *     pendingParticipations: array<int, array{id: int, event: string, eventDate: ?string, sport: string, partner: string, roundsEstimated: int}>,
      *     pendingDonations: array<int, array{id: int, event: string, eventDate: ?string, athlete: string, estimatedAmount: float, amountMax: ?float}>
@@ -45,7 +43,7 @@ class GetPortalDashboardDataAction
                 ->where('donation_event_id', $selectedEvent->id)
                 ->where('verified', true)
                 ->where('group_membership_status', GroupMembershipStatus::Accepted->value)
-                ->with('eventGroup.donationEvent:id,timezone,ends_at')
+                ->with('eventGroup.donationEvent:id,timezone,starts_at,ends_at')
                 ->orderBy('id')
                 ->first(['id', 'event_group_id'])?->eventGroup
             : null;
@@ -124,16 +122,10 @@ class GetPortalDashboardDataAction
             'pendingReceivedDonationCount' => (clone $receivedDonationsQuery)->where('verified', false)->count(),
             'estimatedReceivedAmount' => $this->donationService->calculateEstimatedTotal($receivedDonations),
             'currentReceivedAmount' => $this->donationService->calculateActualTotal($receivedDonations),
-            'hasCompletedRounds' => $receivedDonations->contains(
-                fn (Donation $donation): bool => (int) $donation->athleteRegistration->rounds_done > 0,
-            ),
             'ownDonationCount' => $ownDonations->count(),
             'pendingOwnDonationCount' => (clone $ownDonationsQuery)->where('verified', false)->count(),
             'estimatedOwnAmount' => $this->donationService->calculateEstimatedTotal($ownDonations),
             'currentOwnAmount' => $this->donationService->calculateActualTotal($ownDonations),
-            'hasOwnCompletedRounds' => $ownDonations->contains(
-                fn (Donation $donation): bool => (int) $donation->athleteRegistration->rounds_done > 0,
-            ),
             'eventGroup' => $eventGroup instanceof EventGroup && is_array($eventGroupSummary) ? [
                 'name' => $eventGroup->name,
                 'confirmedDonationCount' => $eventGroupSummary['confirmedDonationCount'],

@@ -31,7 +31,7 @@ class GetPortalEventGroupDataAction
      */
     public function __invoke(EventGroup $eventGroup, ExternalUser $externalUser): array
     {
-        $eventGroup->loadMissing('donationEvent:id,slug,title,timezone,ends_at,is_published');
+        $eventGroup->loadMissing('donationEvent:id,slug,title,timezone,starts_at,ends_at,is_published');
         abort_unless($eventGroup->donationEvent->is_published, 404);
 
         $registration = AthleteRegistration::query()
@@ -109,7 +109,7 @@ class GetPortalEventGroupDataAction
      */
     public function summary(EventGroup $eventGroup): array
     {
-        $eventGroup->loadMissing('donationEvent:id,timezone,ends_at');
+        $eventGroup->loadMissing('donationEvent:id,timezone,starts_at,ends_at');
 
         $donations = Donation::query()
             ->where('verified', true)
@@ -132,14 +132,14 @@ class GetPortalEventGroupDataAction
         $donations = collect($donations);
         $estimatedAmount = $this->donationService->calculateEstimatedTotal($donations);
         $actualAmount = $this->donationService->calculateActualTotal($donations);
-        $hasEnded = $eventGroup->donationEvent->hasEnded();
+        $hasStarted = $eventGroup->donationEvent->hasStarted();
 
         return [
             'confirmedDonationCount' => $donations->count(),
             'estimatedAmount' => $estimatedAmount,
             'actualAmount' => $actualAmount,
-            'amount' => $hasEnded ? $actualAmount : $estimatedAmount,
-            'amountLabel' => $hasEnded ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)',
+            'amount' => $hasStarted ? $actualAmount : $estimatedAmount,
+            'amountLabel' => $hasStarted ? 'Spenden (tatsächlich)' : 'Spenden (geschätzt)',
         ];
     }
 }

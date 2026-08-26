@@ -201,7 +201,7 @@
                     <flux:accordion>
                         <flux:accordion.item>
                             <flux:accordion.heading>
-                                Spender:innen ({{ $registration['donationCount'] }}) · Fr. {{ number_format($registration['estimatedDonationAmount'], 2, '.', "'") }} erwartet{{ $registration['pendingDonationCount'] > 0 ? ' · '.$registration['pendingDonationCount'].' offen' : '' }}
+                                Spender:innen ({{ $registration['donationCount'] }}) · Fr. {{ number_format($registration['donationAmount'], 2, '.', "'") }} {{ $registration['eventStarted'] ? 'tatsächlich' : 'erwartet' }}{{ $registration['pendingDonationCount'] > 0 ? ' · '.$registration['pendingDonationCount'].' offen' : '' }}
                             </flux:accordion.heading>
                             <flux:accordion.content class="space-y-4">
                                 @foreach ($registration['donations'] as $donation)
@@ -213,30 +213,15 @@
                                             </flux:badge>
                                         </div>
 
-                                        <dl class="grid gap-3 sm:grid-cols-2">
+                                        <dl>
                                             <div class="rounded-xl bg-white p-3 dark:bg-slate-900/70">
                                                 <dt class="text-sm text-zinc-500 dark:text-zinc-400">
-                                                    Erwarteter Betrag
+                                                    {{ $registration['eventStarted'] ? 'Tatsächlicher Betrag' : 'Erwarteter Betrag' }}
                                                 </dt>
                                                 <dd class="mt-1 text-xl font-semibold tabular-nums">
                                                     <span class="text-sm font-medium">Fr.</span>
-                                                    {{ number_format($donation['estimatedAmount'], 2, '.', "'") }}
+                                                    {{ number_format($donation['amount'], 2, '.', "'") }}
                                                 </dd>
-                                            </div>
-                                            <div class="rounded-xl bg-white p-3 dark:bg-slate-900/70">
-                                                <dt class="text-sm text-zinc-500 dark:text-zinc-400">
-                                                    Effektiver Betrag
-                                                </dt>
-                                                @if ($registration['roundsDone'] > 0)
-                                                    <dd class="mt-1 text-xl font-semibold tabular-nums">
-                                                        <span class="text-sm font-medium">Fr.</span>
-                                                        {{ number_format($donation['currentAmount'], 2, '.', "'") }}
-                                                    </dd>
-                                                @else
-                                                    <dd class="mt-1 font-medium text-zinc-500 dark:text-zinc-400">
-                                                        Noch nicht final
-                                                    </dd>
-                                                @endif
                                             </div>
                                             <div>
                                                 <dt class="text-sm text-zinc-500 dark:text-zinc-400">Pro Runde</dt>
