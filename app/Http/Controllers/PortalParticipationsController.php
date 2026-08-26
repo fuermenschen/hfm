@@ -63,9 +63,11 @@ class PortalParticipationsController extends Controller
                         'verified' => (bool) $donation->verified,
                     ];
                 });
+                $confirmedDonations = $donations->where('verified', true);
 
                 return [
                     'id' => (int) $registration->id,
+                    'eventId' => (int) $registration->donationEvent->id,
                     'event' => $registration->donationEvent->title,
                     'date' => $registration->donationEvent->starts_at?->format('d.m.Y'),
                     'sport' => $registration->sportType->name,
@@ -89,8 +91,7 @@ class PortalParticipationsController extends Controller
                     'shareTexts' => $registration->verified ? $athleteShareText->templates($registration) : [],
                     'donations' => $donations->all(),
                     'donationCount' => $donations->count(),
-                    'pendingDonationCount' => $donations->where('verified', false)->count(),
-                    'donationAmount' => $donations->sum('amount'),
+                    'confirmedDonationAmount' => $confirmedDonations->sum('amount'),
                 ];
             });
 

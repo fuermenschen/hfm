@@ -42,6 +42,7 @@ class PortalDonationsController extends Controller
 
                 return [
                     'id' => (int) $donation->id,
+                    'eventId' => (int) $donation->athleteRegistration->donationEvent->id,
                     'event' => $donation->athleteRegistration->donationEvent->title,
                     'date' => $donation->athleteRegistration->donationEvent->starts_at?->format('d.m.Y'),
                     'athlete' => sprintf(

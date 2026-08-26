@@ -94,16 +94,19 @@
         <section class="space-y-6">
             <div>
                 <flux:heading size="lg" level="2">Dein Engagement</flux:heading>
-                <flux:text>Geldsummen berücksichtigen nur bestätigte Einträge.</flux:text>
+                <flux:text>
+                    @if ($hasAthleteRegistrations)
+                        Was du mit deinen Runden für deine Begünstigte sammelst. Geldsummen berücksichtigen nur
+                        bestätigte Einträge.
+                    @else
+                        Geldsummen berücksichtigen nur bestätigte Einträge.
+                    @endif
+                </flux:text>
             </div>
 
             @if ($hasAthleteRegistrations || $hasOwnDonations)
                 @if ($hasAthleteRegistrations)
-                    <section class="space-y-3" aria-labelledby="participation-summary">
-                        <div>
-                            <flux:heading id="participation-summary" level="3">Deine Teilnahme</flux:heading>
-                            <flux:text>Was du mit deinen Runden für deine Begünstigte sammelst.</flux:text>
-                        </div>
+                    <section class="space-y-3" aria-label="Deine Teilnahme">
                         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             <x-portal.summary-card
                                 :href="route('portal.participations', $eventParameters)"
@@ -136,6 +139,30 @@
                                     detail="Mit deinen absolvierten Runden"
                                 />
                             @endif
+                        </div>
+                    </section>
+                @endif
+
+                @if ($eventGroup !== null)
+                    <section class="space-y-3" aria-labelledby="group-summary">
+                        <div>
+                            <flux:heading id="group-summary" level="3">Deine Gruppe</flux:heading>
+                            <flux:text>{{ $eventGroup['name'] }}</flux:text>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <x-portal.summary-card
+                                :href="$eventGroup['url']"
+                                icon="user-group"
+                                label="Bestätigte Spenden"
+                                :value="number_format($eventGroup['confirmedDonationCount'], 0, '.', chr(39))"
+                            />
+                            <x-portal.summary-card
+                                :href="$eventGroup['url']"
+                                icon="chart-bar"
+                                :label="$eventGroup['amountLabel']"
+                                :value="'Fr. '.number_format($eventGroup['amount'], 2, '.', chr(39))"
+                                :detail="$selectedEvent->hasStarted() ? 'Mit absolvierten Runden der Gruppe' : 'Mit geschätzten Runden der Gruppe'"
+                            />
                         </div>
                     </section>
                 @endif
@@ -178,30 +205,6 @@
                                     detail="Mit absolvierten Runden der Sportler:innen"
                                 />
                             @endif
-                        </div>
-                    </section>
-                @endif
-
-                @if ($eventGroup !== null)
-                    <section class="space-y-3" aria-labelledby="group-summary">
-                        <div>
-                            <flux:heading id="group-summary" level="3">Deine Gruppe</flux:heading>
-                            <flux:text>{{ $eventGroup['name'] }}</flux:text>
-                        </div>
-                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            <x-portal.summary-card
-                                :href="$eventGroup['url']"
-                                icon="user-group"
-                                label="Bestätigte Spenden"
-                                :value="number_format($eventGroup['confirmedDonationCount'], 0, '.', chr(39))"
-                            />
-                            <x-portal.summary-card
-                                :href="$eventGroup['url']"
-                                icon="chart-bar"
-                                :label="$eventGroup['amountLabel']"
-                                :value="'Fr. '.number_format($eventGroup['amount'], 2, '.', chr(39))"
-                                :detail="$selectedEvent->hasStarted() ? 'Mit absolvierten Runden der Gruppe' : 'Mit geschätzten Runden der Gruppe'"
-                            />
                         </div>
                     </section>
                 @endif

@@ -85,7 +85,7 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertViewHas('ownDonationCount', 1)
         ->assertViewHas('estimatedOwnAmount', 30.0)
         ->assertViewHas('currentOwnAmount', 6.0)
-        ->assertSeeText('Deine Teilnahme')
+        ->assertSeeText('Was du mit deinen Runden für deine Begünstigte sammelst.')
         ->assertSeeText('Deine Unterstützung')
         ->assertSeeText('Deine Gruppe')
         ->assertSeeText('Team Aktuell')
@@ -103,7 +103,11 @@ it('defaults home to current event and shows owned summary with global confirmat
         ->assertSee('wire:click="confirm"', false)
         ->assertSeeText('Erwartet: Fr. 30.00 · Maximal Fr. 30.00')
         ->assertSee('onchange="Livewire.navigate(', false)
+        ->assertSee('class="w-full min-w-0"', false)
+        ->assertDontSee('sm:w-80', false)
+        ->assertSee('overflow-x-hidden', false)
         ->assertSeeText('Current Event · 2036')
+        ->assertSeeText('Anlass wechseln')
         ->assertDontSeeText('Anzeigen')
         ->assertSeeText('Current Event')
         ->assertDontSeeText('Unrelated Event');
@@ -131,6 +135,41 @@ it('shows estimated donation amount until selected event starts', function (): v
         ->assertSuccessful()
         ->assertSeeText('Spenden (geschätzt)')
         ->assertDontSeeText('Spenden (tatsächlich)');
+});
+
+it('shows only confirmed pledges in participation amount summary', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create(['title' => 'Participation Event']);
+    setPortalCurrentEvent($event);
+
+    $externalUser = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $externalUser)->create([
+        'rounds_estimated' => 10,
+        'rounds_done' => 2,
+    ]);
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $registration)->create([
+        'amount_per_round' => 5,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
+    Donation::factory()->forPair(ExternalUser::factory()->create(), $registration)->create([
+        'amount_per_round' => 7,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => false,
+    ]);
+
+    actingAs($externalUser, 'external');
+
+    get(route('portal.participations'))
+        ->assertSuccessful()
+        ->assertSeeText('Spenden (geschätzt, nur bestätigt)')
+        ->assertSeeText('50.00')
+        ->assertSeeText('Spender:innen (2)')
+        ->assertDontSeeText('120.00')
+        ->assertDontSee('bg-hfm-light/15', false)
+        ->assertDontSee('bg-emerald-50', false)
+        ->assertDontSeeText('Participation Event · '.$event->starts_at->format('d.m.Y'));
 });
 
 it('shows actual donation amount when selected event starts', function (): void {
@@ -237,6 +276,7 @@ it('filters participations and never exposes donor private identity', function (
         ->assertDontSeeText('PREVIOUS-PARTICIPATION-COMMENT')
         ->assertSeeText('Pat P. (ABC-234)')
         ->assertSeeText('Ausstehend')
+        ->assertDontSeeText('Bestätigt')
         ->assertSeeText('Viel Erfolg')
         ->assertDontSeeText('PRIVATE-SURNAME-9X')
         ->assertDontSee('leak-check@example.test')
@@ -349,8 +389,8 @@ it('filters donations and only exposes athlete privacy name with public id', fun
         ->assertSee('onchange="Livewire.navigate(', false)
         ->assertDontSeeText('Anzeigen')
         ->assertSeeText('Sam P. (XYZ-678)')
-        ->assertSeeText('CURRENT-DONATION-COMMENT')
-        ->assertSeeText('Bestätigung ausstehend')
+        ->assertDontSeeText('CURRENT-DONATION-COMMENT')
+        ->assertSeeText('Spende an Sam P. (XYZ-678) bestätigen')
         ->assertSeeText('Spenden (geschätzt)')
         ->assertDontSeeText('Noch nicht final')
         ->assertDontSeeText('PREVIOUS-DONATION-COMMENT')
@@ -361,15 +401,15 @@ it('filters donations and only exposes athlete privacy name with public id', fun
 });
 
 it('supports all relevant events and rejects unrelated event filters', function (): void {
-    $currentEvent = DonationEvent::factory()->year(2036)->create();
-    $previousEvent = DonationEvent::factory()->year(2035)->create();
+    $currentEvent = DonationEvent::factory()->year(2036)->create(['title' => 'Current Event']);
+    $previousEvent = DonationEvent::factory()->year(2035)->create(['title' => 'Previous Event']);
     $unrelatedEvent = DonationEvent::factory()->year(2034)->create();
     $unpublishedEvent = DonationEvent::factory()->year(2033)->create(['is_published' => false]);
     setPortalCurrentEvent($currentEvent);
 
     $externalUser = ExternalUser::factory()->create();
-    AthleteRegistration::factory()->forEvent($currentEvent)->forExternalUser($externalUser)->create(['comment' => 'CURRENT-RECORD']);
-    AthleteRegistration::factory()->forEvent($previousEvent)->forExternalUser($externalUser)->create(['comment' => 'PREVIOUS-RECORD']);
+    AthleteRegistration::factory()->forEvent($currentEvent)->forExternalUser($externalUser)->verified()->create(['comment' => 'CURRENT-RECORD']);
+    AthleteRegistration::factory()->forEvent($previousEvent)->forExternalUser($externalUser)->verified()->create(['comment' => 'PREVIOUS-RECORD']);
     AthleteRegistration::factory()->forEvent($unpublishedEvent)->forExternalUser($externalUser)->create(['comment' => 'UNPUBLISHED-RECORD']);
 
     actingAs($externalUser, 'external');
@@ -377,9 +417,8 @@ it('supports all relevant events and rejects unrelated event filters', function 
     get(route('portal.participations', ['anlass' => '']))
         ->assertSuccessful()
         ->assertViewHas('selectedEventSlug', null)
-        ->assertSeeText('CURRENT-RECORD')
-        ->assertSeeText('PREVIOUS-RECORD')
-        ->assertDontSeeText('UNPUBLISHED-RECORD');
+        ->assertSeeText('Current Event')
+        ->assertSeeText('Previous Event');
 
     get(route('portal.participations', ['anlass' => $unrelatedEvent->slug]))->assertNotFound();
     get(route('portal.participations', ['anlass' => 'unknown-event']))->assertNotFound();

@@ -1,12 +1,19 @@
-@props(['title', 'subtitle', 'events', 'selectedEventSlug'])
+@props(['title', 'subtitle' => null, 'events', 'selectedEventSlug', 'showEvent' => true])
 
-<header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+@php($selectedEvent = $events->firstWhere('slug', $selectedEventSlug))
+
+<header>
     <div class="space-y-3">
         <div>
             <flux:heading size="xl" level="1">{{ $title }}</flux:heading>
-            <flux:text class="mt-2 text-base">{{ $subtitle }}</flux:text>
+            @if ($subtitle)
+                <flux:text class="mt-2 text-base">{{ $subtitle }}</flux:text>
+            @endif
+            @if ($showEvent)
+                <flux:text class="mt-2 text-base">
+                    {{ $selectedEvent ? $selectedEvent->title.' · '.$selectedEvent->starts_at?->format('d.m.Y') : 'Alle Anlässe' }}
+                </flux:text>
+            @endif
         </div>
     </div>
-
-    <x-portal.event-filter :events="$events" :selected-event-slug="$selectedEventSlug" />
 </header>
