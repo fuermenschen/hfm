@@ -88,6 +88,7 @@
             'route' => 'pulse',
             'icon' => 'signal',
             'current' => $thisRoute === 'pulse',
+            'target' => '_blank',
         ],
         [
             'label' => 'Logs',
