@@ -25,6 +25,11 @@ it('renders the admin dashboard for authenticated users', function () {
         ->assertSee('Sportler:innen')
         ->assertSee('Entwicklung bis zum Anlass')
         ->assertSee('Für diesen Zeitraum sind noch keine Daten vorhanden.')
+        ->assertSee('Mehr anzeigen')
+        ->assertSee('mt-9', false)
+        ->assertSee('height: 270px', false)
+        ->assertSee('motion-safe:animate-bounce', false)
+        ->assertSee('dark:from-zinc-800', false)
         ->assertSee('Spenden (tatsächlich)')
         ->assertSee('Letzte Aktivitäten');
 });

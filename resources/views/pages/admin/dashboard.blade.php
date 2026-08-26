@@ -31,7 +31,7 @@
             </flux:field>
         </form>
 
-        <flux:card class="mt-9">
+        <x-expandable-card class="mt-9" :max-height="360" expand-mode="icon-animated">
             <flux:heading size="xl">Entwicklung bis zum Anlass</flux:heading>
             <flux:text class="mt-1"
                 >Kumulative Registrierungen, Spenden und erwartete Spendensumme relativ zum Start des
@@ -131,7 +131,7 @@
                     @endif
                 </flux:text>
             @endif
-        </flux:card>
+        </x-expandable-card>
 
         <!-- Athlete -->
         <x-stats title="Sportler:innen">
