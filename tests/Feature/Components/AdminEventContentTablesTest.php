@@ -1,5 +1,6 @@
 <?php
 
+use App\Components\AdminFaqEditor;
 use App\Components\AdminFaqTable;
 use App\Components\AdminPartnerEditor;
 use App\Components\AdminPartnerTable;
@@ -13,6 +14,7 @@ use App\Models\Partner;
 use App\Models\Sponsor;
 use App\Models\User;
 use App\Support\Datatable\DatatableValueFormatter;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -490,7 +492,7 @@ it('rejects unauthenticated exports', function (): void {
         ->assertForbidden();
 });
 
-it('renders faqs in admin table and includes donation event assignment count', function (): void {
+it('renders faqs in admin table with assigned event pills', function (): void {
     $events = DonationEvent::factory()->count(2)->create();
 
     $assignedFaq = Faq::query()->create([
@@ -508,11 +510,13 @@ it('renders faqs in admin table and includes donation event assignment count', f
 
     Livewire::test(AdminFaqTable::class)
         ->assertSee('Wann und wo findet der Anlass statt?')
+        ->assertSee($events[0]->slug)
+        ->assertSee($events[1]->slug)
         ->tap(function ($component) use ($assignedFaq, $unassignedFaq): void {
-            $rows = $component->viewData('faqs')->getCollection();
+            $table = $component->instance();
 
-            expect($rows->firstWhere('id', $assignedFaq->id)?->donation_events_count)->toBe(2);
-            expect($rows->firstWhere('id', $unassignedFaq->id)?->donation_events_count)->toBe(0);
+            expect($table->linkedEvents($assignedFaq)->count())->toBe(2)
+                ->and($table->linkedEvents($unassignedFaq)->count())->toBe(0);
         });
 });
 
@@ -548,4 +552,120 @@ it('applies configured truncation for tooltip columns in event content tables', 
 
     Livewire::test(AdminFaqTable::class)
         ->assertSee($formatter->truncate($longFaqContent, 60));
+});
+
+it('edits faqs from admin table modal state after confirming changes', function (): void {
+    $logSpy = Log::spy();
+
+    $faq = Faq::query()->create([
+        'title' => 'Alte Frage',
+        'content_md' => 'Alte Antwort',
+    ]);
+
+    Livewire::test(AdminFaqEditor::class)
+        ->call('open', $faq->id)
+        ->assertSet('faqId', $faq->id)
+        ->assertSet('modalOpen', true)
+        ->assertSet('title', 'Alte Frage')
+        ->assertSet('contentMd', 'Alte Antwort')
+        ->set('title', 'Neue Frage')
+        ->set('contentMd', 'Neue Antwort')
+        ->call('save')
+        ->assertSet('confirmingSave', true)
+        ->assertHasNoErrors()
+        ->call('confirmSave')
+        ->assertSet('modalOpen', false)
+        ->assertHasNoErrors();
+
+    $faq->refresh();
+
+    expect($faq->title)->toBe('Neue Frage')
+        ->and($faq->content_md)->toBe('Neue Antwort');
+
+    $logSpy->shouldHaveReceived('info')
+        ->with('Admin editor save confirmed.', [
+            'editor' => 'AdminFaqEditor',
+            'fields' => ['title', 'contentMd'],
+            'faq_id' => $faq->id,
+        ])
+        ->once();
+});
+
+it('creates and deletes faqs from admin table modal state', function (): void {
+    Livewire::test(AdminFaqEditor::class)
+        ->call('open')
+        ->assertSet('modalOpen', true)
+        ->set('title', 'Neue FAQ')
+        ->set('contentMd', 'Neue Antwort')
+        ->call('save')
+        ->assertSet('confirmingSave', true)
+        ->assertHasNoErrors()
+        ->call('confirmSave')
+        ->assertSet('modalOpen', false)
+        ->assertHasNoErrors();
+
+    $faq = Faq::query()->where('title', 'Neue FAQ')->firstOrFail();
+
+    expect($faq->content_md)->toBe('Neue Antwort');
+
+    Livewire::test(AdminFaqTable::class)
+        ->call('confirmDeleteRow', $faq->id)
+        ->assertSet('deletingId', $faq->id)
+        ->assertSet('deletingLabel', 'Neue FAQ')
+        ->call('deleteRow')
+        ->assertSet('deletingId', null);
+
+    expect(Faq::query()->whereKey($faq->id)->exists())->toBeFalse();
+});
+
+it('renders a markdown preview like the public page', function (): void {
+    Livewire::test(AdminFaqEditor::class)
+        ->set('title', 'Was ist Markdown?')
+        ->set('contentMd', "**Fett** und *kursiv*\n\n[Link](https://example.org)")
+        ->assertSeeHtml('<strong>Fett</strong>')
+        ->assertSeeHtml('<em>kursiv</em>')
+        ->assertSeeHtml('<a href="https://example.org">Link</a>');
+});
+
+it('validates faq fields in German', function (): void {
+    Livewire::test(AdminFaqEditor::class)
+        ->set('title', 'Frage')
+        ->set('title', '')
+        ->assertHasErrors(['title' => 'required'])
+        ->assertSee('Bitte gib eine Frage ein.');
+});
+
+it('rejects whitespace-only faq answers', function (): void {
+    Livewire::test(AdminFaqEditor::class)
+        ->call('open')
+        ->set('title', '  Nur Leerzeichen  ')
+        ->set('contentMd', '   ')
+        ->call('save')
+        ->assertHasErrors(['contentMd' => 'required']);
+});
+
+it('does not delete faqs assigned to events', function (): void {
+    $faq = Faq::query()->create([
+        'title' => 'Zugeordnete FAQ',
+        'content_md' => 'Antwort',
+    ]);
+    $event = DonationEvent::factory()->create();
+    $faq->donationEvents()->attach($event->id, ['group' => 'general', 'sort_order' => 10, 'is_published' => true]);
+
+    Livewire::test(AdminFaqTable::class)
+        ->call('confirmDeleteRow', $faq->id)
+        ->call('deleteRow')
+        ->assertSet('deletingId', $faq->id)
+        ->assertHasErrors('deletingId');
+
+    expect(Faq::query()->whereKey($faq->id)->exists())->toBeTrue()
+        ->and($event->faqs()->whereKey($faq->id)->exists())->toBeTrue();
+});
+
+it('rejects unauthenticated faq mutations', function (): void {
+    auth()->logout();
+
+    Livewire::test(AdminFaqEditor::class)
+        ->call('open')
+        ->assertForbidden();
 });

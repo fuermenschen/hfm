@@ -25,6 +25,7 @@ class Faq extends Model
     /** @use HasFactory<FaqFactory> */
     use HasFactory;
 
+    /** @return BelongsToMany<DonationEvent, $this, Pivot, 'pivot'> */
     public function donationEvents(): BelongsToMany
     {
         return $this->belongsToMany(DonationEvent::class, 'donation_event_faq')

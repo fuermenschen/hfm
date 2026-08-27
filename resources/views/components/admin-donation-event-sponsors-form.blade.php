@@ -53,7 +53,7 @@
                         />
                         <flux:callout
                             x-cloak
-                            x-show="! $wire.sponsorRows[{{ $index }}].attached"
+                            x-show="! ($wire.sponsorRows.find(row => row.id == {{ $sponsorRow['id'] }})?.attached ?? true)"
                             variant="warning"
                             icon="exclamation-triangle"
                             heading="Vom Anlass entfernen"
