@@ -40,6 +40,13 @@ use Illuminate\Support\Str;
 ])]
 #[Hidden([
     'remember_token',
+    'email',
+    'address',
+    'zip_code',
+    'city',
+    'country_of_residence',
+    'phone_number',
+    'full_name',
 ])]
 class ExternalUser extends Authenticatable
 {
