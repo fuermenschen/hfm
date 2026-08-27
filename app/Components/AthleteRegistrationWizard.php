@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Components;
 
 use App\Actions\CreateAthleteRegistrationAction;
+use App\Actions\CreateDonationAction;
 use App\Models\AthleteRegistration;
 use App\Models\ExternalUser;
 use App\Models\Partner;
@@ -593,7 +594,7 @@ class AthleteRegistrationWizard extends Component
                 'zip_code' => (string) $this->zip_code,
                 'city' => (string) $this->city,
                 'country_of_residence' => 'CH',
-                'phone_number' => (string) $this->phone_number,
+                'phone_number' => CreateDonationAction::formatPhoneNumber((string) $this->phone_number, 'CH'),
                 'email' => $email,
             ]);
         } catch (ValidationException $validationException) {

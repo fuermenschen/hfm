@@ -115,6 +115,7 @@ it('creates external user registration and sends confirmation for new participan
     expect($externalUser->first_name)->toBe('Francesca')
         ->and($externalUser->email)->toBe('francesca@example.com')
         ->and($externalUser->country_of_residence)->toBe('CH')
+        ->and($externalUser->phone_number)->toBe('+41 79 123 45 67')
         ->and($registration->verified)->toBeFalse()
         ->and($registration->adult)->toBeFalse()
         ->and($registration->partner_id)->toBeNull();

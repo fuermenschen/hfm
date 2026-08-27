@@ -89,29 +89,14 @@
             </flux:field>
 
             <flux:field class="sm:col-span-2">
-                <flux:label>Telefon</flux:label>
-
-                <flux:input.group style="display: flex; width: 100%">
-                    <div data-flux-input style="flex: 0 0 33.333333%">
-                        <flux:input
-                            :value="match (auth('external')->user()?->country_of_residence) { 'DE' => '+49', 'AT' => '+43', default => '+41' }"
-                            aria-label="Ländervorwahl"
-                            variant="filled"
-                            readonly
-                        />
-                    </div>
-                    <div data-flux-input style="flex: 0 0 66.666667%">
-                        <flux:input
-                            wire:model.live.blur="phone_national"
-                            :placeholder="match (auth('external')->user()?->country_of_residence) { 'DE' => '151 23456789', 'AT' => '650 1234567', default => '79 123 45 67' }"
-                            autocomplete="tel-national"
-                            type="tel"
-                            required
-                        />
-                    </div>
-                </flux:input.group>
-
-                <flux:error name="phone_national" />
+                <flux:input
+                    label="Telefon"
+                    wire:model.live.blur="phone_number"
+                    placeholder="+41 79 123 45 67"
+                    autocomplete="tel"
+                    type="tel"
+                    required
+                />
             </flux:field>
         </div>
 

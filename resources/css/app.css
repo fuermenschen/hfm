@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Flux hardcodes modal backdrop at rgba(0,0,0,.10) — darken it.
+   See vendor/livewire/flux/dist/flux.css [data-flux-modal] > dialog::backdrop */
+[data-flux-modal] > dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.4);
+    backdrop-filter: blur(4px);
+}
+
 @theme {
     /* Re-assign Flux's base scale (zinc) to slate. */
     --color-zinc-50: var(--color-slate-50);

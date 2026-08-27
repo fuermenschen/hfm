@@ -150,6 +150,7 @@
                     @if ($role === 'athlete')
                         <flux:table.column class="w-28 text-right">Dokumente</flux:table.column>
                     @endif
+                    <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -253,6 +254,28 @@
                                     </flux:dropdown>
                                 </flux:table.cell>
                             @endif
+                            <flux:table.cell class="w-1 whitespace-nowrap">
+                                <div class="flex justify-end gap-1">
+                                    <flux:button
+                                        size="xs"
+                                        variant="ghost"
+                                        icon="pencil-square"
+                                        square
+                                        tooltip="Person bearbeiten"
+                                        wire:click="$dispatchTo('admin-external-user-editor', 'open-external-user-editor', { externalUserId: {{ $row->id }} })"
+                                    />
+                                    @if ($role === 'athlete' && ($registration = $this->selectedAthleteRegistration($row)))
+                                        <flux:button
+                                            size="xs"
+                                            variant="ghost"
+                                            icon="clipboard-document"
+                                            square
+                                            tooltip="Anmeldung bearbeiten"
+                                            wire:click="$dispatchTo('admin-athlete-registration-editor', 'open-athlete-registration-editor', { athleteRegistrationId: {{ $registration->id }} })"
+                                        />
+                                    @endif
+                                </div>
+                            </flux:table.cell>
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
@@ -282,4 +305,9 @@
             <flux:pagination :paginator="$external_users" />
         </x-slot:footer>
     </x-datatable>
+
+    <livewire:admin-external-user-editor @external-user-saved="$refresh" />
+    @if ($role === 'athlete')
+        <livewire:admin-athlete-registration-editor @athlete-registration-saved="$refresh" />
+    @endif
 </div>

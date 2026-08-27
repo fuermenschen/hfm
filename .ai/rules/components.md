@@ -28,3 +28,6 @@ Validate before state-changing component actions. Keep rules near component; use
 
 ## Keep admin table forms out of datatables
 Admin datatable components own listing concerns: query, filters, sorting, selection, exports, and simple row actions. Resource editor components own create/edit form state, validation, authorization, persistence, and modal/route presentation. Use explicit resource editors; do not add generic model-driven CRUD editors. Use modals for small forms and routes for complex editors.
+
+## Admin editors confirm changed fields before saving
+Admin resource editors must prevent accidental writes: use the ConfirmsAdminEdits trait (app/Components/Concerns/ConfirmsAdminEdits.php). It snapshots form data on open(), blocks no-change saves, shows a confirmation modal listing German field labels of changed fields, and writes one audit Log::info entry with editor, record id, and changed field keys only — never values. Editors implement formData() (normalized), fieldLabels(), persist(), logContext(), call captureEditorSnapshot() in open(), and add a warning callout + confirm modal to the Blade view. In tests assert the log entry docs-style: Log::spy() + shouldHaveReceived('info')->with('Admin editor save confirmed.', [exact context])->once(); keep factory fixtures explicit so the changed-fields list is deterministic.
