@@ -49,6 +49,15 @@ trait ConfirmsAdminEdits
      */
     abstract protected function logContext(): array;
 
+    /**
+     * Flux modal name of the editor modal; also the base name of the confirm modal.
+     */
+    abstract public function modalName(): string;
+
+    abstract public function close(): void;
+
+    abstract protected function ensureAuthenticated(): void;
+
     protected function captureEditorSnapshot(): void
     {
         $this->editorSnapshot = $this->formData();

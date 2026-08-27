@@ -12,7 +12,8 @@
 
         <div class="grid gap-4 sm:grid-cols-2">
             <flux:field class="sm:col-span-2">
-                <flux:input label="Name" wire:model.live.blur="name" />
+                <flux:label>Name</flux:label>
+                <flux:input wire:model.live.blur="name" />
                 <flux:error name="name" />
             </flux:field>
 

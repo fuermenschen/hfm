@@ -6,7 +6,7 @@ use App\Models\User;
 
 use function Pest\Laravel\actingAs;
 
-it('hides the detach warning after saving a removed faq assignment', function (): void {
+it('hides the detach warning and keeps remaining row controls enabled after saving a removed faq assignment', function (): void {
     actingAs(User::factory()->create());
 
     $event = DonationEvent::factory()->create();
@@ -46,4 +46,27 @@ it('hides the detach warning after saving a removed faq assignment', function ()
     $page->press('FAQs speichern')->wait(2);
 
     expect($page->script($visibleWarnings))->toBe([]);
+
+    $attachedSwitchStates = <<<'JS'
+        (() => ["Alpha FAQ", "Beta FAQ", "Gamma FAQ"].map((title) => {
+          const row = Array.from(document.querySelectorAll("[role=switch]"))
+            .map((s) => {
+              let el = s;
+              while (el && !(typeof el.className === "string" && el.className.includes("border-t") && el.className.includes("grid"))) el = el.parentElement;
+              return el;
+            })
+            .find((row) => row && row.textContent.includes(title));
+          if (! row) return title + ": UNASSIGNED";
+          const switches = Array.from(row.querySelectorAll("[role=switch]"));
+          if (switches.length === 0) return title + ": NO SWITCHES";
+          const anyDisabled = switches.some((s) => s.hasAttribute("disabled"));
+          return title + ": " + (anyDisabled ? "ANY_DISABLED" : "ALL_ENABLED");
+        }))()
+        JS;
+
+    expect($page->script($attachedSwitchStates))->toBe([
+        'Alpha FAQ: UNASSIGNED',
+        'Beta FAQ: ALL_ENABLED',
+        'Gamma FAQ: ALL_ENABLED',
+    ]);
 });

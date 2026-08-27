@@ -77,7 +77,7 @@
                 <div class="grid items-start gap-4 sm:grid-cols-2">
                     <flux:switch
                         wire:model="faqRows.{{ $index }}.is_published"
-                        x-bind:disabled="! $wire.faqRows[{{ $index }}].attached"
+                        x-bind:disabled="! ($wire.faqRows.find(row => row.id == {{ $faqRow['id'] }})?.attached ?? true)"
                         label="Veröffentlicht"
                         description="Zeigt die FAQ auf der Fragen-und-Antworten-Seite."
                     />
@@ -86,7 +86,7 @@
                         <flux:label badge="Pflichtfeld">Gruppe</flux:label>
                         <flux:select
                             wire:model="faqRows.{{ $index }}.group"
-                            x-bind:disabled="! $wire.faqRows[{{ $index }}].attached"
+                            x-bind:disabled="! ($wire.faqRows.find(row => row.id == {{ $faqRow['id'] }})?.attached ?? true)"
                             required
                         >
                             @foreach ($this->groupOptions() as $groupValue => $groupLabel)
@@ -109,7 +109,7 @@
                             min="0"
                             step="1"
                             wire:model="faqRows.{{ $index }}.sort_order"
-                            x-bind:disabled="! $wire.faqRows[{{ $index }}].attached"
+                            x-bind:disabled="! ($wire.faqRows.find(row => row.id == {{ $faqRow['id'] }})?.attached ?? true)"
                             required
                         />
                         <flux:error name="faqRows.{{ $index }}.sort_order" />

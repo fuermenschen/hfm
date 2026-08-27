@@ -195,7 +195,10 @@ class AdminDonationEventFaqsForm extends Component
      */
     public static function excerpt(string $contentMd): string
     {
-        return str(strip_tags((string) Str::markdown($contentMd)))
+        return str(strip_tags((string) Str::markdown($contentMd, [
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+        ])))
             ->squish()
             ->limit(120)
             ->toString();
