@@ -23,6 +23,15 @@ class LivewireComponentUsageProvider implements MemberUsageProvider
     // are included in static analysis or wire:* references are parsed structurally.
 
     /**
+     * @var array<string, true>
+     */
+    private const VALIDATION_CALLBACKS = [
+        'rules' => true,
+        'messages' => true,
+        'validationattributes' => true,
+    ];
+
+    /**
      * @return list<ClassMethodUsage|ClassPropertyUsage>
      */
     public function getUsages(Node $node, Scope $scope): array
@@ -46,10 +55,6 @@ class LivewireComponentUsageProvider implements MemberUsageProvider
                 continue;
             }
 
-            if (! $method->isPublic()) {
-                continue;
-            }
-
             if ($method->isStatic()) {
                 continue;
             }
@@ -58,8 +63,19 @@ class LivewireComponentUsageProvider implements MemberUsageProvider
                 continue;
             }
 
+            $isValidationCallback = $method->isProtected()
+                && isset(self::VALIDATION_CALLBACKS[strtolower($method->getName())]);
+
+            if (! $method->isPublic() && ! $isValidationCallback) {
+                continue;
+            }
+
             $usages[] = new ClassMethodUsage(
-                UsageOrigin::createVirtual($this, VirtualUsageData::withNote('Livewire public component method can be called from template/lifecycle; Blade views are excluded from static analysis')),
+                UsageOrigin::createVirtual($this, VirtualUsageData::withNote(
+                    $isValidationCallback
+                        ? 'Livewire invokes protected validation callback'
+                        : 'Livewire public component method can be called from template/lifecycle; Blade views are excluded from static analysis',
+                )),
                 new ClassMethodRef($className, $method->getName(), possibleDescendant: false),
             );
         }

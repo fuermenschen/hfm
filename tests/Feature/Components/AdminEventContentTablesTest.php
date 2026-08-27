@@ -1,8 +1,10 @@
 <?php
 
 use App\Components\AdminFaqTable;
+use App\Components\AdminPartnerEditor;
 use App\Components\AdminPartnerTable;
 use App\Components\AdminPersonTable;
+use App\Components\AdminSponsorEditor;
 use App\Components\AdminSponsorTable;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
@@ -71,21 +73,21 @@ it('edits partners from admin table modal state', function (): void {
         'url' => 'https://old.example.test',
     ]);
 
-    Livewire::test(AdminPartnerTable::class)
-        ->call('openEdit', $partner->id)
-        ->assertSet('editingId', $partner->id)
-        ->assertSet('editModalOpen', true)
-        ->assertSet('editForm.name', 'Old Partner')
-        ->assertSet('editForm.logo_light_filename', 'old-light.svg')
-        ->assertSet('editForm.logo_dark_filename', 'nested/old-dark.svg')
-        ->set('editForm.name', 'New Partner')
-        ->set('editForm.logo_light_filename', 'new-light.svg')
-        ->set('editForm.logo_dark_filename', 'new-dark.svg')
-        ->set('editForm.beneficiary_blurb', 'New text')
-        ->set('editForm.url', 'https://new.example.test')
-        ->call('saveEdit')
-        ->assertSet('editingId', null)
-        ->assertSet('editModalOpen', false);
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open', $partner->id)
+        ->assertSet('partnerId', $partner->id)
+        ->assertSet('modalOpen', true)
+        ->assertSet('name', 'Old Partner')
+        ->assertSet('logoLightFilename', 'old-light.svg')
+        ->assertSet('logoDarkFilename', 'nested/old-dark.svg')
+        ->set('name', 'New Partner')
+        ->set('logoLightFilename', 'new-light.svg')
+        ->set('logoDarkFilename', 'new-dark.svg')
+        ->set('beneficiaryBlurb', 'New text')
+        ->set('url', 'https://new.example.test')
+        ->call('save')
+        ->assertSet('partnerId', null)
+        ->assertSet('modalOpen', false);
 
     $partner->refresh();
 
@@ -101,16 +103,16 @@ it('creates and deletes partners from admin table modal state', function (): voi
     Storage::disk('public')->put('partners/light.svg', 'svg');
     Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    Livewire::test(AdminPartnerTable::class)
-        ->call('openCreate')
-        ->assertSet('createModalOpen', true)
-        ->set('createForm.name', 'Created Partner')
-        ->set('createForm.logo_light_filename', 'light.svg')
-        ->set('createForm.logo_dark_filename', 'dark.svg')
-        ->set('createForm.beneficiary_blurb', 'Created text')
-        ->set('createForm.url', 'https://created.example.test')
-        ->call('saveCreate')
-        ->assertSet('createModalOpen', false)
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open')
+        ->assertSet('modalOpen', true)
+        ->set('name', 'Created Partner')
+        ->set('logoLightFilename', 'light.svg')
+        ->set('logoDarkFilename', 'dark.svg')
+        ->set('beneficiaryBlurb', 'Created text')
+        ->set('url', 'https://created.example.test')
+        ->call('save')
+        ->assertSet('modalOpen', false)
         ->assertHasNoErrors();
 
     $partner = Partner::query()->where('name', 'Created Partner')->firstOrFail();
@@ -130,25 +132,51 @@ it('creates and deletes partners from admin table modal state', function (): voi
     expect(Partner::query()->whereKey($partner->id)->exists())->toBeFalse();
 });
 
+it('validates trimmed partner names for uniqueness', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('partners/light.svg', 'svg');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
+    Partner::factory()->create(['name' => 'Existing Partner']);
+
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open')
+        ->set('name', ' Existing Partner ')
+        ->set('logoLightFilename', 'light.svg')
+        ->set('logoDarkFilename', 'dark.svg')
+        ->set('beneficiaryBlurb', 'Text')
+        ->set('url', 'https://partner.example.test')
+        ->call('save')
+        ->assertHasErrors(['name' => 'unique'])
+        ->assertSee('Dieser Name wird bereits verwendet.');
+});
+
+it('validates partner fields in German on update', function (): void {
+    Livewire::test(AdminPartnerEditor::class)
+        ->set('name', 'Partner')
+        ->set('name', '')
+        ->assertHasErrors(['name' => 'required'])
+        ->assertSee('Bitte gib einen Namen ein.');
+});
+
 it('requires partner public content when creating', function (string $field): void {
     Storage::fake('public');
     Storage::disk('public')->put('partners/light.svg', 'svg');
     Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    Livewire::test(AdminPartnerTable::class)
-        ->call('openCreate')
-        ->set('createForm.name', 'Required Partner')
-        ->set('createForm.logo_light_filename', 'light.svg')
-        ->set('createForm.logo_dark_filename', 'dark.svg')
-        ->set('createForm.beneficiary_blurb', 'Required text')
-        ->set('createForm.url', 'https://required.example.test')
-        ->set('createForm.'.$field, '')
-        ->call('saveCreate')
-        ->assertHasErrors(['createForm.'.$field => 'required']);
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open')
+        ->set('name', 'Required Partner')
+        ->set('logoLightFilename', 'light.svg')
+        ->set('logoDarkFilename', 'dark.svg')
+        ->set('beneficiaryBlurb', 'Required text')
+        ->set('url', 'https://required.example.test')
+        ->set($field, '')
+        ->call('save')
+        ->assertHasErrors([$field => 'required']);
 })->with([
-    'light logo' => 'logo_light_filename',
-    'dark logo' => 'logo_dark_filename',
-    'short text' => 'beneficiary_blurb',
+    'light logo' => 'logoLightFilename',
+    'dark logo' => 'logoDarkFilename',
+    'short text' => 'beneficiaryBlurb',
     'URL' => 'url',
 ]);
 
@@ -162,28 +190,33 @@ it('requires partner public content when editing', function (string $field): voi
         'logo_dark_filename' => 'dark.svg',
     ]);
 
-    Livewire::test(AdminPartnerTable::class)
-        ->call('openEdit', $partner->id)
-        ->set('editForm.'.$field, '')
-        ->call('saveEdit')
-        ->assertHasErrors(['editForm.'.$field => 'required']);
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open', $partner->id)
+        ->set($field, '')
+        ->call('save')
+        ->assertHasErrors([$field => 'required']);
 })->with([
-    'light logo' => 'logo_light_filename',
-    'dark logo' => 'logo_dark_filename',
-    'short text' => 'beneficiary_blurb',
+    'light logo' => 'logoLightFilename',
+    'dark logo' => 'logoDarkFilename',
+    'short text' => 'beneficiaryBlurb',
     'URL' => 'url',
 ]);
 
 it('rejects non-image partner logos', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('partners/document.pdf', 'pdf');
+    Storage::disk('public')->put('partners/dark.svg', 'svg');
 
-    Livewire::test(AdminPartnerTable::class)
-        ->call('openCreate')
-        ->set('createForm.name', 'Invalid Logo Partner')
-        ->set('createForm.logo_light_filename', 'document.pdf')
-        ->call('saveCreate')
-        ->assertHasErrors('createForm.logo_light_filename');
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open')
+        ->set('name', 'Invalid Logo Partner')
+        ->set('logoLightFilename', 'document.pdf')
+        ->set('logoDarkFilename', 'dark.svg')
+        ->set('beneficiaryBlurb', 'Text')
+        ->set('url', 'https://partner.example.test')
+        ->call('save')
+        ->assertHasErrors('logoLightFilename')
+        ->assertSee('Bitte wähle ein verfügbares helles Logo aus.');
 
     expect(Partner::query()->where('name', 'Invalid Logo Partner')->exists())->toBeFalse();
 });
@@ -236,8 +269,8 @@ it('does not delete partners selected by athlete registrations', function (): vo
 it('rejects unauthenticated table mutations', function (): void {
     auth()->logout();
 
-    Livewire::test(AdminPartnerTable::class)
-        ->call('openCreate')
+    Livewire::test(AdminPartnerEditor::class)
+        ->call('open')
         ->assertForbidden();
 });
 
@@ -293,19 +326,19 @@ it('edits sponsors from admin table modal state', function (): void {
         'url' => 'https://old.example.test',
     ]);
 
-    Livewire::test(AdminSponsorTable::class)
-        ->call('openEdit', $sponsor->id)
-        ->assertSet('editingId', $sponsor->id)
-        ->assertSet('editModalOpen', true)
-        ->assertSet('editForm.name', 'Old Sponsor')
-        ->assertSet('editForm.logo_filename', 'old-logo.svg')
-        ->set('editForm.name', 'New Sponsor')
-        ->set('editForm.description', 'New description')
-        ->set('editForm.logo_filename', 'nested/new-logo.svg')
-        ->set('editForm.url', 'https://new.example.test')
-        ->call('saveEdit')
-        ->assertSet('editingId', null)
-        ->assertSet('editModalOpen', false);
+    Livewire::test(AdminSponsorEditor::class)
+        ->call('open', $sponsor->id)
+        ->assertSet('sponsorId', $sponsor->id)
+        ->assertSet('modalOpen', true)
+        ->assertSet('name', 'Old Sponsor')
+        ->assertSet('logoFilename', 'old-logo.svg')
+        ->set('name', 'New Sponsor')
+        ->set('description', 'New description')
+        ->set('logoFilename', 'nested/new-logo.svg')
+        ->set('url', 'https://new.example.test')
+        ->call('save')
+        ->assertSet('sponsorId', null)
+        ->assertSet('modalOpen', false);
 
     $sponsor->refresh();
 
@@ -319,15 +352,15 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
     Storage::fake('public');
     Storage::disk('public')->put('sponsors/logo.svg', 'svg');
 
-    Livewire::test(AdminSponsorTable::class)
-        ->call('openCreate')
-        ->assertSet('createModalOpen', true)
-        ->set('createForm.name', 'Created Sponsor')
-        ->set('createForm.description', 'Created description')
-        ->set('createForm.logo_filename', 'logo.svg')
-        ->set('createForm.url', 'https://created-sponsor.example.test')
-        ->call('saveCreate')
-        ->assertSet('createModalOpen', false)
+    Livewire::test(AdminSponsorEditor::class)
+        ->call('open')
+        ->assertSet('modalOpen', true)
+        ->set('name', 'Created Sponsor')
+        ->set('description', 'Created description')
+        ->set('logoFilename', 'logo.svg')
+        ->set('url', 'https://created-sponsor.example.test')
+        ->call('save')
+        ->assertSet('modalOpen', false)
         ->assertHasNoErrors();
 
     $sponsor = Sponsor::query()->where('name', 'Created Sponsor')->firstOrFail();
@@ -346,22 +379,46 @@ it('creates and deletes sponsors from admin table modal state', function (): voi
     expect(Sponsor::query()->whereKey($sponsor->id)->exists())->toBeFalse();
 });
 
+it('validates trimmed sponsor names for uniqueness', function (): void {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsors/logo.svg', 'svg');
+    Sponsor::factory()->create(['name' => 'Existing Sponsor']);
+
+    Livewire::test(AdminSponsorEditor::class)
+        ->call('open')
+        ->set('name', ' Existing Sponsor ')
+        ->set('description', 'Description')
+        ->set('logoFilename', 'logo.svg')
+        ->set('url', 'https://sponsor.example.test')
+        ->call('save')
+        ->assertHasErrors(['name' => 'unique'])
+        ->assertSee('Dieser Name wird bereits verwendet.');
+});
+
+it('validates sponsor fields in German on update', function (): void {
+    Livewire::test(AdminSponsorEditor::class)
+        ->set('name', 'Sponsor')
+        ->set('name', '')
+        ->assertHasErrors(['name' => 'required'])
+        ->assertSee('Bitte gib einen Namen ein.');
+});
+
 it('requires sponsor public content when creating', function (string $field): void {
     Storage::fake('public');
     Storage::disk('public')->put('sponsors/logo.svg', 'svg');
 
-    Livewire::test(AdminSponsorTable::class)
-        ->call('openCreate')
-        ->set('createForm.name', 'Required Sponsor')
-        ->set('createForm.description', 'Required description')
-        ->set('createForm.logo_filename', 'logo.svg')
-        ->set('createForm.url', 'https://required.example.test')
-        ->set('createForm.'.$field, '')
-        ->call('saveCreate')
-        ->assertHasErrors(['createForm.'.$field => 'required']);
+    Livewire::test(AdminSponsorEditor::class)
+        ->call('open')
+        ->set('name', 'Required Sponsor')
+        ->set('description', 'Required description')
+        ->set('logoFilename', 'logo.svg')
+        ->set('url', 'https://required.example.test')
+        ->set($field, '')
+        ->call('save')
+        ->assertHasErrors([$field => 'required']);
 })->with([
     'description' => 'description',
-    'logo' => 'logo_filename',
+    'logo' => 'logoFilename',
     'URL' => 'url',
 ]);
 
@@ -371,14 +428,14 @@ it('requires sponsor public content when editing', function (string $field): voi
 
     $sponsor = Sponsor::factory()->create(['logo_filename' => 'logo.svg']);
 
-    Livewire::test(AdminSponsorTable::class)
-        ->call('openEdit', $sponsor->id)
-        ->set('editForm.'.$field, '')
-        ->call('saveEdit')
-        ->assertHasErrors(['editForm.'.$field => 'required']);
+    Livewire::test(AdminSponsorEditor::class)
+        ->call('open', $sponsor->id)
+        ->set($field, '')
+        ->call('save')
+        ->assertHasErrors([$field => 'required']);
 })->with([
     'description' => 'description',
-    'logo' => 'logo_filename',
+    'logo' => 'logoFilename',
     'URL' => 'url',
 ]);
 
@@ -386,12 +443,15 @@ it('rejects non-image sponsor logos', function (): void {
     Storage::fake('public');
     Storage::disk('public')->put('sponsors/document.pdf', 'pdf');
 
-    Livewire::test(AdminSponsorTable::class)
-        ->call('openCreate')
-        ->set('createForm.name', 'Invalid Logo Sponsor')
-        ->set('createForm.logo_filename', 'document.pdf')
-        ->call('saveCreate')
-        ->assertHasErrors('createForm.logo_filename');
+    Livewire::test(AdminSponsorEditor::class)
+        ->call('open')
+        ->set('name', 'Invalid Logo Sponsor')
+        ->set('description', 'Description')
+        ->set('logoFilename', 'document.pdf')
+        ->set('url', 'https://sponsor.example.test')
+        ->call('save')
+        ->assertHasErrors('logoFilename')
+        ->assertSee('Bitte wähle ein verfügbares Logo aus.');
 
     expect(Sponsor::query()->where('name', 'Invalid Logo Sponsor')->exists())->toBeFalse();
 });

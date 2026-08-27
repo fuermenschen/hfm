@@ -6,10 +6,8 @@ namespace App\Components;
 
 use App\Actions\DeleteSponsorAction;
 use App\Models\Sponsor;
-use App\Support\AdminFiles\AdminFileStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminSponsorTable extends AbstractDatatableComponent
@@ -92,133 +90,9 @@ class AdminSponsorTable extends AbstractDatatableComponent
         ];
     }
 
-    public function canEditRows(): bool
-    {
-        return true;
-    }
-
-    public function canCreateRows(): bool
-    {
-        return true;
-    }
-
     public function canDeleteRows(): bool
     {
         return true;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function defaultCreateForm(): array
-    {
-        return [
-            'name' => '',
-            'description' => '',
-            'logo_filename' => '',
-            'url' => '',
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function createRules(): array
-    {
-        $logoPaths = $this->sponsorLogoPaths();
-
-        return [
-            'createForm.name' => ['required', 'string', 'max:255', Rule::unique('sponsors', 'name')],
-            'createForm.description' => ['required', 'string'],
-            'createForm.logo_filename' => ['required', 'string', 'max:255', Rule::in($logoPaths)],
-            'createForm.url' => ['required', 'url', 'max:255'],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function createValidationAttributes(): array
-    {
-        return [
-            'createForm.name' => 'Name',
-            'createForm.description' => 'Beschreibung',
-            'createForm.logo_filename' => 'Logo',
-            'createForm.url' => 'URL',
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    protected function createRecord(array $data): Model
-    {
-        return Sponsor::query()->create([
-            'name' => $data['name'],
-            'description' => trim((string) $data['description']),
-            'logo_filename' => trim((string) $data['logo_filename']),
-            'url' => trim((string) $data['url']),
-        ]);
-    }
-
-    protected function editableRecord(int $id): Model
-    {
-        return Sponsor::query()->findOrFail($id);
-    }
-
-    protected function fillEditForm(Model $record): void
-    {
-        throw_unless($record instanceof Sponsor, \LogicException::class, 'Expected sponsor record.');
-
-        $this->editForm = [
-            'name' => $record->name,
-            'description' => $record->description,
-            'logo_filename' => $record->logo_filename,
-            'url' => $record->url,
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function editRules(): array
-    {
-        $logoPaths = $this->sponsorLogoPaths();
-
-        return [
-            'editForm.name' => ['required', 'string', 'max:255', Rule::unique('sponsors', 'name')->ignore($this->editingId)],
-            'editForm.description' => ['required', 'string'],
-            'editForm.logo_filename' => ['required', 'string', 'max:255', Rule::in($this->allowedSponsorLogoPaths($logoPaths))],
-            'editForm.url' => ['required', 'url', 'max:255'],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function editValidationAttributes(): array
-    {
-        return [
-            'editForm.name' => 'Name',
-            'editForm.description' => 'Beschreibung',
-            'editForm.logo_filename' => 'Logo',
-            'editForm.url' => 'URL',
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    protected function saveEditedRecord(Model $record, array $data): void
-    {
-        throw_unless($record instanceof Sponsor, \LogicException::class, 'Expected sponsor record.');
-
-        $record->fill([
-            'name' => $data['name'],
-            'description' => trim((string) $data['description']),
-            'logo_filename' => trim((string) $data['logo_filename']),
-            'url' => trim((string) $data['url']),
-        ])->save();
     }
 
     protected function deleteRecord(Model $record): void
@@ -226,30 +100,6 @@ class AdminSponsorTable extends AbstractDatatableComponent
         throw_unless($record instanceof Sponsor, \LogicException::class, 'Expected sponsor record.');
 
         resolve(DeleteSponsorAction::class)->handle($record);
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    protected function sponsorLogoPaths(): array
-    {
-        return collect(resolve(AdminFileStorage::class)->files('sponsors', recursive: true, extensions: ['svg', 'png', 'jpg', 'jpeg', 'webp']))
-            ->pluck('path')
-            ->map(fn (string $path): string => str($path)->after('sponsors/')->toString())
-            ->all();
-    }
-
-    /**
-     * @param  array<int, string>  $logoPaths
-     * @return array<int, string>
-     */
-    protected function allowedSponsorLogoPaths(array $logoPaths): array
-    {
-        $currentPath = $this->editingId === null
-            ? null
-            : Sponsor::query()->whereKey($this->editingId)->value('logo_filename');
-
-        return array_values(array_unique(is_string($currentPath) ? [...$logoPaths, $currentPath] : $logoPaths));
     }
 
     public function displayValue(mixed $row, string $column): string
