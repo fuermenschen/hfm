@@ -70,6 +70,7 @@ it('edits athlete registrations after confirming changed fields while preserving
         ->with('Admin editor save confirmed.', [
             'editor' => 'AdminAthleteRegistrationEditor',
             'fields' => ['adult', 'roundsEstimated', 'roundsDone', 'comment', 'notifyPreviousDonors', 'verified'],
+            'admin' => auth()->user()->name,
             'athlete_registration_id' => $registration->id,
         ])
         ->once();
