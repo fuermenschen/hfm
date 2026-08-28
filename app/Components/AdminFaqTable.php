@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Actions\DeleteFaqAction;
+use App\Models\DonationEvent;
 use App\Models\Faq;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminFaqTable extends AbstractDatatableComponent
@@ -35,7 +39,15 @@ class AdminFaqTable extends AbstractDatatableComponent
 
     protected function baseQuery(): Builder
     {
-        return Faq::query()->withCount('donationEvents');
+        return Faq::query()->with('donationEvents');
+    }
+
+    /**
+     * @return Collection<int, DonationEvent>
+     */
+    public function linkedEvents(Faq $faq): Collection
+    {
+        return $faq->donationEvents->sortByDesc('starts_at')->values();
     }
 
     protected function defaultSortColumn(): string
@@ -50,7 +62,6 @@ class AdminFaqTable extends AbstractDatatableComponent
     {
         return [
             'title' => 'faqs.title',
-            'donation_events_count' => 'donation_events_count',
             'created_at' => 'faqs.created_at',
             'id' => 'faqs.id',
         ];
@@ -65,7 +76,7 @@ class AdminFaqTable extends AbstractDatatableComponent
             'id' => ['label' => 'ID', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'ID'],
             'title' => ['label' => 'Titel', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Titel'],
             'content_md' => ['label' => 'Inhalt', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-64', 'export_key' => 'Inhalt', 'tooltip' => true, 'truncate' => 60],
-            'donation_events_count' => ['label' => 'Anlässe', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-28', 'export_key' => 'Anlässe'],
+            'events' => ['label' => 'Anlässe', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Anlässe'],
             'created_at' => ['label' => 'Erstellt am', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Erstellt am', 'formatter' => 'date'],
             'updated_at' => ['label' => 'Aktualisiert am', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Aktualisiert am', 'formatter' => 'date'],
         ];
@@ -79,9 +90,28 @@ class AdminFaqTable extends AbstractDatatableComponent
         return [
             'title',
             'content_md',
-            'donation_events_count',
+            'events',
             'created_at',
         ];
+    }
+
+    public function canDeleteRows(): bool
+    {
+        return true;
+    }
+
+    protected function deleteRecord(Model $record): void
+    {
+        throw_unless($record instanceof Faq, \LogicException::class, 'Expected faq record.');
+
+        resolve(DeleteFaqAction::class)->handle($record);
+    }
+
+    protected function deleteLabel(Model $record): string
+    {
+        return $record instanceof Faq && filled($record->title)
+            ? $record->title
+            : '#'.$record->getKey();
     }
 
     public function displayValue(mixed $row, string $column): string
@@ -147,7 +177,7 @@ class AdminFaqTable extends AbstractDatatableComponent
             'ID' => data_get($row, 'id'),
             'Titel' => data_get($row, 'title'),
             'Inhalt' => data_get($row, 'content_md'),
-            'Anlässe' => data_get($row, 'donation_events_count'),
+            'Anlässe' => $row instanceof Faq ? $this->linkedEvents($row)->pluck('slug')->implode(', ') : '',
             'Erstellt am' => $this->formatDateOrNull(data_get($row, 'created_at')),
             'Aktualisiert am' => $this->formatDateOrNull(data_get($row, 'updated_at')),
         ];

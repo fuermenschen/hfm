@@ -16,6 +16,12 @@
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
+                        <flux:button
+                            variant="ghost"
+                            size="sm"
+                            icon="plus"
+                            wire:click="$dispatchTo('admin-faq-editor', 'open-faq-editor', { faqId: null })"
+                        >Neu</flux:button>
                         <x-datatable.export-dropdown />
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
@@ -43,6 +49,7 @@
                             @endif
                         </flux:table.column>
                     @endforeach
+                    <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -70,7 +77,13 @@
                                 @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
                                 @php($value = $this->displayValue($row, $columnKey))
                                 <flux:table.cell class="{{ $cellClass }}">
-                                    @if ($columnDefinition['tooltip'])
+                                    @if ($columnKey === 'events')
+                                        <div class="flex flex-wrap gap-1">
+                                            @foreach ($this->linkedEvents($row) as $event)
+                                                <flux:badge size="sm" color="zinc">{{ $event->slug }}</flux:badge>
+                                            @endforeach
+                                        </div>
+                                    @elseif ($columnDefinition['tooltip'])
                                         <flux:tooltip content="{{ $value }}">
                                             <span class="block max-w-60 truncate">{{ $this->truncateText($value, (int) ($columnDefinition['truncate'] ?? 48)) }}</span>
                                         </flux:tooltip>
@@ -79,6 +92,28 @@
                                     @endif
                                 </flux:table.cell>
                             @endforeach
+                            <flux:table.cell class="w-1 whitespace-nowrap">
+                                <div class="flex justify-end gap-1">
+                                    <flux:button
+                                        size="xs"
+                                        variant="ghost"
+                                        icon="pencil-square"
+                                        square
+                                        tooltip="Bearbeiten"
+                                        wire:click="$dispatchTo('admin-faq-editor', 'open-faq-editor', { faqId: {{ $row->id }} })"
+                                    />
+                                    @if ($this->canDeleteRows())
+                                        <flux:button
+                                            size="xs"
+                                            variant="danger"
+                                            icon="trash"
+                                            square
+                                            tooltip="Löschen"
+                                            wire:click="confirmDeleteRow({{ $row->id }})"
+                                        />
+                                    @endif
+                                </div>
+                            </flux:table.cell>
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
@@ -106,4 +141,27 @@
             <flux:pagination :paginator="$faqs" />
         </x-slot:footer>
     </x-datatable>
+
+    <flux:modal name="{{ $this->deleteModalName() }}" class="min-w-[22rem]" wire:close="cancelDeleteRow">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">FAQ löschen?</flux:heading>
+                <flux:text class="mt-2">{{ $deletingLabel }} wird gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</flux:text>
+            </div>
+
+            <div class="flex gap-2">
+                <flux:spacer />
+                <flux:button type="button" variant="ghost" wire:click="cancelDeleteRow">Abbrechen</flux:button>
+                <flux:button
+                    type="button"
+                    variant="danger"
+                    wire:click="deleteRow"
+                    wire:target="deleteRow"
+                    wire:loading.attr="disabled"
+                >Löschen</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <livewire:admin-faq-editor @faq-saved="$refresh" />
 </div>

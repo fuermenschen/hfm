@@ -69,7 +69,7 @@
                     @if ($partnerRow['was_attached'] && ! $partnerRow['is_locked'])
                         <flux:callout
                             x-cloak
-                            x-show="! $wire.partnerRows[{{ $index }}].attached"
+                            x-show="! ($wire.partnerRows.find(row => row.id == {{ $partnerRow['id'] }})?.attached ?? true)"
                             variant="warning"
                             icon="exclamation-triangle"
                             heading="Vom Anlass entfernen"

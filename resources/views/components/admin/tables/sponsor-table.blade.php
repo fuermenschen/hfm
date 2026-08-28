@@ -16,9 +16,12 @@
 
                 <x-slot:bottomLeft>
                     <div class="flex flex-wrap items-center gap-2">
-                        @if ($this->canCreateRows())
-                            <flux:button variant="ghost" size="sm" icon="plus" wire:click="openCreate">Neu</flux:button>
-                        @endif
+                        <flux:button
+                            variant="ghost"
+                            size="sm"
+                            icon="plus"
+                            wire:click="$dispatchTo('admin-sponsor-editor', 'open-sponsor-editor', { sponsorId: null })"
+                        >Neu</flux:button>
                         <x-datatable.export-dropdown />
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
@@ -46,9 +49,7 @@
                             @endif
                         </flux:table.column>
                     @endforeach
-                    @if ($this->canEditRows())
-                        <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
-                    @endif
+                    <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -85,30 +86,28 @@
                                     @endif
                                 </flux:table.cell>
                             @endforeach
-                            @if ($this->canEditRows())
-                                <flux:table.cell class="w-1 whitespace-nowrap">
-                                    <div class="flex justify-end gap-1">
+                            <flux:table.cell class="w-1 whitespace-nowrap">
+                                <div class="flex justify-end gap-1">
+                                    <flux:button
+                                        size="xs"
+                                        variant="ghost"
+                                        icon="pencil-square"
+                                        square
+                                        tooltip="Bearbeiten"
+                                        wire:click="$dispatchTo('admin-sponsor-editor', 'open-sponsor-editor', { sponsorId: {{ $row->id }} })"
+                                    />
+                                    @if ($this->canDeleteRows())
                                         <flux:button
                                             size="xs"
-                                            variant="ghost"
-                                            icon="pencil-square"
+                                            variant="danger"
+                                            icon="trash"
                                             square
-                                            tooltip="Bearbeiten"
-                                            wire:click="openEdit({{ $row->id }})"
+                                            tooltip="Löschen"
+                                            wire:click="confirmDeleteRow({{ $row->id }})"
                                         />
-                                        @if ($this->canDeleteRows())
-                                            <flux:button
-                                                size="xs"
-                                                variant="danger"
-                                                icon="trash"
-                                                square
-                                                tooltip="Löschen"
-                                                wire:click="confirmDeleteRow({{ $row->id }})"
-                                            />
-                                        @endif
-                                    </div>
-                                </flux:table.cell>
-                            @endif
+                                    @endif
+                                </div>
+                            </flux:table.cell>
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
@@ -137,134 +136,6 @@
         </x-slot:footer>
     </x-datatable>
 
-    <flux:modal
-        name="{{ $this->createModalName() }}"
-        wire:model.self="createModalOpen"
-        class="md:w-xl"
-        wire:close="cancelCreate"
-    >
-        <form wire:submit="saveCreate" class="space-y-6">
-            <div>
-                <flux:heading size="lg">Sponsor:in erstellen</flux:heading>
-                <flux:text class="mt-2">Neuen Sponsor:innen-Eintrag speichern.</flux:text>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:field class="sm:col-span-2">
-                    <flux:input label="Name" wire:model="createForm.name" />
-                    <flux:error name="createForm.name" />
-                </flux:field>
-
-                <flux:field class="sm:col-span-2">
-                    <div class="flex items-center gap-1">
-                        <flux:label>Beschreibung</flux:label>
-                        <x-admin.field-info
-                            label="Beschreibung"
-                            text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst."
-                        />
-                    </div>
-                    <flux:textarea wire:model="createForm.description" />
-                    <flux:error name="createForm.description" />
-                </flux:field>
-
-                <x-admin.file-select
-                    directory="sponsors"
-                    extensions="svg,png,jpg,jpeg,webp"
-                    recursive
-                    label="Logo"
-                    help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt."
-                    wire:model="createForm.logo_filename"
-                    :selected="$createForm['logo_filename'] ?? null"
-                />
-
-                <flux:field>
-                    <div class="flex items-center gap-1">
-                        <flux:label>URL</flux:label>
-                        <x-admin.field-info
-                            label="URL"
-                            text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet."
-                        />
-                    </div>
-                    <flux:input wire:model="createForm.url" />
-                    <flux:error name="createForm.url" />
-                </flux:field>
-            </div>
-
-            <div class="flex gap-2">
-                <flux:spacer />
-                <flux:button type="button" variant="ghost" wire:click="cancelCreate">Abbrechen</flux:button>
-                <flux:button type="submit" variant="primary" wire:target="saveCreate" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="saveCreate">Speichern</span>
-                    <span wire:loading wire:target="saveCreate">Speichert...</span>
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
-
-    <flux:modal
-        name="{{ $this->editModalName() }}"
-        wire:model.self="editModalOpen"
-        class="md:w-xl"
-        wire:close="cancelEdit"
-    >
-        <form wire:submit="saveEdit" class="space-y-6">
-            <div>
-                <flux:heading size="lg">Sponsor:in bearbeiten</flux:heading>
-                <flux:text class="mt-2">Änderungen am Sponsor:innen-Eintrag speichern.</flux:text>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <flux:field class="sm:col-span-2">
-                    <flux:input label="Name" wire:model="editForm.name" />
-                    <flux:error name="editForm.name" />
-                </flux:field>
-
-                <flux:field class="sm:col-span-2">
-                    <div class="flex items-center gap-1">
-                        <flux:label>Beschreibung</flux:label>
-                        <x-admin.field-info
-                            label="Beschreibung"
-                            text="Diese allgemeine Beschreibung stellt die Sponsororganisation vor und erscheint im Detailfenster der Sponsorenkarte. Anlassspezifische Leistungen werden separat beim jeweiligen Anlass erfasst."
-                        />
-                    </div>
-                    <flux:textarea wire:model="editForm.description" />
-                    <flux:error name="editForm.description" />
-                </flux:field>
-
-                <x-admin.file-select
-                    directory="sponsors"
-                    extensions="svg,png,jpg,jpeg,webp"
-                    recursive
-                    label="Logo"
-                    help="Dieses Logo wird auf der öffentlichen Startseite als Sponsorenkarte angezeigt."
-                    wire:model="editForm.logo_filename"
-                    :selected="$editForm['logo_filename'] ?? null"
-                />
-
-                <flux:field>
-                    <div class="flex items-center gap-1">
-                        <flux:label>URL</flux:label>
-                        <x-admin.field-info
-                            label="URL"
-                            text="Diese Adresse wird über die Schaltfläche «Zur Website» im Detailfenster der Sponsorenkarte geöffnet."
-                        />
-                    </div>
-                    <flux:input wire:model="editForm.url" />
-                    <flux:error name="editForm.url" />
-                </flux:field>
-            </div>
-
-            <div class="flex gap-2">
-                <flux:spacer />
-                <flux:button type="button" variant="ghost" wire:click="cancelEdit">Abbrechen</flux:button>
-                <flux:button type="submit" variant="primary" wire:target="saveEdit" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="saveEdit">Speichern</span>
-                    <span wire:loading wire:target="saveEdit">Speichert...</span>
-                </flux:button>
-            </div>
-        </form>
-    </flux:modal>
-
     <flux:modal name="{{ $this->deleteModalName() }}" class="min-w-[22rem]" wire:close="cancelDeleteRow">
         <div class="space-y-6">
             <div>
@@ -285,4 +156,6 @@
             </div>
         </div>
     </flux:modal>
+
+    <livewire:admin-sponsor-editor @sponsor-saved="$refresh" />
 </div>

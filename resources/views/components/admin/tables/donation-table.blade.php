@@ -50,6 +50,7 @@
                             @endif
                         </flux:table.column>
                     @endforeach
+                    <flux:table.column class="w-1 text-right whitespace-nowrap">Aktion</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
@@ -118,6 +119,16 @@
                                     @endswitch
                                 </flux:table.cell>
                             @endforeach
+                            <flux:table.cell class="w-1 whitespace-nowrap">
+                                <flux:button
+                                    size="xs"
+                                    variant="ghost"
+                                    icon="pencil-square"
+                                    square
+                                    tooltip="Spende bearbeiten"
+                                    wire:click="$dispatchTo('admin-donation-editor', 'open-donation-editor', { donationId: {{ $donation->id }} })"
+                                />
+                            </flux:table.cell>
                         </flux:table.row>
                     @empty
                         <flux:table.row wire:loading.remove wire:target="{{ $this->tableLoadingTargets() }}">
@@ -147,4 +158,6 @@
             <flux:pagination :paginator="$donations" />
         </x-slot:footer>
     </x-datatable>
+
+    <livewire:admin-donation-editor @donation-saved="$refresh" />
 </div>

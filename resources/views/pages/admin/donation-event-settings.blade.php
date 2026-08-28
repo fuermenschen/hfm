@@ -45,6 +45,7 @@
                         <flux:tab name="event">Anlass</flux:tab>
                         <flux:tab name="partners">Partner:innen</flux:tab>
                         <flux:tab name="sponsors">Sponsor:innen</flux:tab>
+                        <flux:tab name="faqs">FAQs</flux:tab>
                     </flux:tabs>
 
                     <flux:tab.panel name="event" class="pt-6">
@@ -57,6 +58,10 @@
 
                     <flux:tab.panel name="sponsors" class="pt-6">
                         @livewire('admin-donation-event-sponsors-form', ['donationEvent' => $donationEvent])
+                    </flux:tab.panel>
+
+                    <flux:tab.panel name="faqs" class="pt-6">
+                        @livewire('admin-donation-event-faqs-form', ['donationEvent' => $donationEvent])
                     </flux:tab.panel>
                 </flux:tab.group>
             @endif
