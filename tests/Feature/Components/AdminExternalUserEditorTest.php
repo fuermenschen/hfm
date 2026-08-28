@@ -38,6 +38,10 @@ it('edits external users after confirming changed fields while preserving system
         ->call('save')
         ->assertSet('confirmingSave', true)
         ->assertHasNoErrors()
+        ->assertSee('bei Alt Name')
+        ->assertSee('Vorname:')
+        ->assertSee('Alt')
+        ->assertSee('Neu')
         ->call('confirmSave')
         ->assertSet('modalOpen', false)
         ->assertHasNoErrors();
@@ -55,6 +59,7 @@ it('edits external users after confirming changed fields while preserving system
         ->with('Admin editor save confirmed.', [
             'editor' => 'AdminExternalUserEditor',
             'fields' => ['firstName', 'address', 'zipCode', 'city', 'phoneNumber', 'email'],
+            'admin' => auth()->user()->name,
             'external_user_id' => $externalUser->id,
         ])
         ->once();

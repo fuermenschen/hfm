@@ -586,6 +586,7 @@ it('edits faqs from admin table modal state after confirming changes', function 
         ->with('Admin editor save confirmed.', [
             'editor' => 'AdminFaqEditor',
             'fields' => ['title', 'contentMd'],
+            'admin' => auth()->user()->name,
             'faq_id' => $faq->id,
         ])
         ->once();

@@ -67,12 +67,16 @@
         <div class="space-y-6">
             <div>
                 <flux:heading size="lg">Änderungen bestätigen</flux:heading>
-                <flux:text class="mt-2">Folgende Angaben werden bei dieser Spende geändert:</flux:text>
+                <flux:text class="mt-2">Folgende Angaben werden bei {{ $this->confirmSubject() }} geändert:</flux:text>
             </div>
 
-            <div class="flex flex-wrap gap-2">
-                @foreach ($this->changedFieldLabels() as $label)
-                    <flux:badge variant="warning" size="sm">{{ $label }}</flux:badge>
+            <div class="space-y-1.5">
+                @foreach ($this->changedFields() as $change)
+                    <p class="text-sm">
+                        <span class="font-medium">{{ $change['label'] }}:</span>
+                        <span class="text-zinc-500 line-through">{{ $change['before'] }}</span>
+                        → {{ $change['after'] }}
+                    </p>
                 @endforeach
             </div>
 

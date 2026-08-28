@@ -54,6 +54,7 @@ it('edits donations after confirming changed fields while preserving donor and a
         ->with('Admin editor save confirmed.', [
             'editor' => 'AdminDonationEditor',
             'fields' => ['amountPerRound', 'amountMin', 'amountMax', 'comment', 'verified'],
+            'admin' => auth()->user()->name,
             'donation_id' => $donation->id,
         ])
         ->once();

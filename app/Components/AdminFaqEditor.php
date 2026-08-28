@@ -143,6 +143,11 @@ class AdminFaqEditor extends Component
         return ['faq_id' => $this->faqId];
     }
 
+    public function confirmSubject(): string
+    {
+        return filled($this->title) ? "der FAQ «{$this->title}»" : 'einer neuen FAQ';
+    }
+
     protected function fillFromFaq(Faq $faq): void
     {
         $this->title = $faq->title;
