@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\EventState;
 use App\Enums\GroupMembershipRole;
 use App\Enums\GroupMembershipStatus;
 use App\Models\AthleteRegistration;
@@ -35,6 +36,7 @@ class AthleteRegistrationFactory extends Factory
             'adult' => fake()->boolean(80),
             'rounds_estimated' => fake()->numberBetween(1, 10),
             'rounds_done' => fake()->numberBetween(0, 15),
+            'event_state' => EventState::NotStarted->value,
             'comment' => fake()->optional()->text(2000),
             'verified' => fake()->boolean(80),
         ];
@@ -44,6 +46,27 @@ class AthleteRegistrationFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'verified' => true,
+        ]);
+    }
+
+    public function withStartNumber(int $startNumber): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'start_number' => $startNumber,
+        ]);
+    }
+
+    public function running(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'event_state' => EventState::Running->value,
+        ]);
+    }
+
+    public function finished(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'event_state' => EventState::Finished->value,
         ]);
     }
 

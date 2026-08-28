@@ -8,7 +8,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/**/*.php | .ai/rules/app.md |
 | tests/Browser/** | .ai/rules/browser.md |
 | app/{Components,Actions}/** | .ai/rules/components-actions.md |
-| app/Components/** | .ai/rules/components.md |
+| app/Components/**, app/Components/Results.php | .ai/rules/components.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Support/DeadCode/** | .ai/rules/dead-code.md |
 | app/Actions/*EventGroup*.php | .ai/rules/event-group-actions.md |

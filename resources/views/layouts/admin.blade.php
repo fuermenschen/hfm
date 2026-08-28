@@ -44,6 +44,12 @@
             'current' => $thisRoute === 'admin.athletes.index',
         ],
         [
+            'label' => 'Rundenbüro',
+            'route' => 'admin.event-management',
+            'icon' => 'flag',
+            'current' => $thisRoute === 'admin.event-management',
+        ],
+        [
             'label' => 'Spender:innen',
             'route' => 'admin.donors.index',
             'icon' => 'heart',

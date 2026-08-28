@@ -1,6 +1,7 @@
 ---
 paths:
   - 'app/Components/**'
+  - app/Components/Results.php
 ---
 
 # Components
@@ -31,3 +32,6 @@ Admin datatable components own listing concerns: query, filters, sorting, select
 
 ## Admin editors confirm changed fields before saving
 Admin resource editors must prevent accidental writes: use the ConfirmsAdminEdits trait (app/Components/Concerns/ConfirmsAdminEdits.php). It snapshots form data on open(), blocks no-change saves, shows a confirmation modal listing German field labels of changed fields, and writes one audit Log::info entry with editor, record id, and changed field keys only — never values. Editors implement formData() (normalized), fieldLabels(), persist(), logContext(), call captureEditorSnapshot() in open(), and add a warning callout + confirm modal to the Blade view. In tests assert the log entry docs-style: Log::spy() + shouldHaveReceived('info')->with('Admin editor save confirmed.', [exact context])->once(); keep factory fixtures explicit so the changed-fields list is deterministic.
+
+## Keep Results totals cache-free
+The /resultate page recomputes its totals on every render (wire:poll.30s on the TV screen). Do NOT reintroduce a cache keyed on max(updated_at): timestamps have second precision, so updates within the same second (rapid round taps) leave the version unchanged and silently freeze the live tally. Data is small; per-render compute is the intended design.

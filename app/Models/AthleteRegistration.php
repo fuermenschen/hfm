@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\EventState;
 use App\Enums\GroupMembershipRole;
 use App\Enums\GroupMembershipStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $event_group_id
  * @property GroupMembershipStatus|null $group_membership_status
  * @property GroupMembershipRole|null $group_membership_role
+ * @property int|null $start_number
+ * @property EventState $event_state
+ * @property array<array-key, mixed>|null $event_metadata
  * @property SportType $sportType
  * @property Partner|null $partner
  * @property Collection<int, Donation> $donations
@@ -37,6 +41,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'adult',
     'rounds_estimated',
     'rounds_done',
+    'start_number',
+    'event_state',
+    'event_metadata',
     'comment',
     'notify_previous_donors',
     'verified',
@@ -101,6 +108,9 @@ class AthleteRegistration extends Model
         return [
             'rounds_estimated' => 'integer',
             'rounds_done' => 'integer',
+            'start_number' => 'integer',
+            'event_state' => EventState::class,
+            'event_metadata' => 'array',
             'adult' => 'boolean',
             'notify_previous_donors' => 'boolean',
             'verified' => 'boolean',
