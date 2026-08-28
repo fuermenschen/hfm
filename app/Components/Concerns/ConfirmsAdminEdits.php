@@ -109,7 +109,7 @@ trait ConfirmsAdminEdits
             ->all();
     }
 
-// Value formatting for the confirmation modal. Override in the editor when a field needs custom formatting.
+    // Value formatting for the confirmation modal. Override in the editor when a field needs custom formatting.
     protected function formatEditorValue(mixed $value): string
     {
         return match (true) {
