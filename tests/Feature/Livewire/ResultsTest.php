@@ -78,6 +78,23 @@ it('renders successfully and shows per-partner section', function () {
         ->assertDontSee('Einzelresultate');
 });
 
+it('ignores registrations of soft-deleted athletes on the public page', function (): void {
+    $event = resultsTestEvent();
+
+    $user = ExternalUser::factory()->asAthlete()->create();
+    $registration = resultsTestRegistration($event, 7);
+    $registration->update(['external_user_id' => $user->id]);
+    resultsTestDonation($registration, 10.0);
+    $user->delete();
+
+    get(route('results'))->assertSuccessful();
+
+    Livewire::test(Results::class)
+        ->assertSet('totals.athletes', 0)
+        ->assertSet('totals.rounds', 0)
+        ->assertSet('totals.athlete_ranking', []);
+});
+
 it('ignores data from other events', function (): void {
     $event = resultsTestEvent();
     $oldEvent = DonationEvent::factory()->create();

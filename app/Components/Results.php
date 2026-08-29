@@ -49,6 +49,9 @@ class Results extends Component
 
         $registrations = AthleteRegistration::query()
             ->whereBelongsTo($event)
+            // Excludes soft-deleted external users; their rows would 500 the
+            // ranking (null privacy_name) and skew the totals.
+            ->whereHas('externalUser')
             ->with(['partner:id,name', 'eventGroup:id,name', 'externalUser:id,first_name,last_name', 'donations'])
             ->get();
 

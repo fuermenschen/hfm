@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::table('athlete_registrations', function (Blueprint $table) {
             $table->unsignedSmallInteger('start_number')->nullable()->after('rounds_done');
             $table->string('event_state')->default('not_started')->after('start_number');
-            $table->json('event_metadata')->nullable()->after('event_state');
             $table->unique(['donation_event_id', 'start_number']);
         });
     }
@@ -23,7 +22,7 @@ return new class extends Migration
     {
         Schema::table('athlete_registrations', function (Blueprint $table) {
             $table->dropUnique(['donation_event_id', 'start_number']);
-            $table->dropColumn(['start_number', 'event_state', 'event_metadata']);
+            $table->dropColumn(['start_number', 'event_state']);
         });
     }
 };

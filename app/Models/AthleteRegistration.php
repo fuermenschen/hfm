@@ -25,7 +25,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property GroupMembershipRole|null $group_membership_role
  * @property int|null $start_number
  * @property EventState $event_state
- * @property array<array-key, mixed>|null $event_metadata
  * @property SportType $sportType
  * @property Partner|null $partner
  * @property Collection<int, Donation> $donations
@@ -43,7 +42,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'rounds_done',
     'start_number',
     'event_state',
-    'event_metadata',
     'comment',
     'notify_previous_donors',
     'verified',
@@ -110,7 +108,6 @@ class AthleteRegistration extends Model
             'rounds_done' => 'integer',
             'start_number' => 'integer',
             'event_state' => EventState::class,
-            'event_metadata' => 'array',
             'adult' => 'boolean',
             'notify_previous_donors' => 'boolean',
             'verified' => 'boolean',
