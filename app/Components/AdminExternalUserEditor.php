@@ -106,6 +106,11 @@ class AdminExternalUserEditor extends Component
         Flux::toast(heading: 'Gespeichert', text: 'Person wurde aktualisiert.', variant: 'success');
     }
 
+    public function confirmSubject(): string
+    {
+        return ExternalUser::query()->find($this->externalUserId)->full_name ?? 'dieser Person';
+    }
+
     public function modalName(): string
     {
         return 'admin-external-user-editor';

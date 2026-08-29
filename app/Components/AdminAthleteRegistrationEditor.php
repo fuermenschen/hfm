@@ -135,6 +135,13 @@ class AdminAthleteRegistrationEditor extends Component
         return ['athlete_registration_id' => $this->athleteRegistrationId];
     }
 
+    public function confirmSubject(): string
+    {
+        $athleteName = AthleteRegistration::query()->find($this->athleteRegistrationId)?->externalUser?->full_name;
+
+        return $athleteName === null ? 'dieser Anmeldung' : "der Anmeldung von {$athleteName}";
+    }
+
     protected function fillFromRegistration(AthleteRegistration $athleteRegistration): void
     {
         $this->adult = $athleteRegistration->adult;

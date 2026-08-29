@@ -132,6 +132,13 @@ class AdminDonationEditor extends Component
         return ['donation_id' => $this->donationId];
     }
 
+    public function confirmSubject(): string
+    {
+        $donorName = Donation::query()->find($this->donationId)?->donorExternalUser?->full_name;
+
+        return $donorName === null ? 'dieser Spende' : "der Spende von {$donorName}";
+    }
+
     protected function fillFromDonation(Donation $donation): void
     {
         $this->amountPerRound = $donation->amount_per_round;

@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Components\Concerns;
 
 use Flux;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Guards admin editor saves behind an explicit confirmation of the changed fields.
  *
  * Editors provide normalized form data, German field labels, the persist routine,
- * and log context. The trait diffs the data against a snapshot taken on open(),
- * shows a confirmation modal, and writes one audit log entry per confirmed save.
+ * a subject phrase for the confirmation sentence, and log context. The trait diffs
+ * the data against a snapshot taken on open(), shows a confirmation modal with the
+ * before/after values, and writes one audit log entry per confirmed save.
  */
 trait ConfirmsAdminEdits
 {
@@ -39,6 +41,12 @@ trait ConfirmsAdminEdits
      * @return array<string, string>
      */
     abstract protected function fieldLabels(): array;
+
+    /**
+     * Dative phrase naming the edited record for the confirmation sentence, e.g. "Max Muster"
+     * or "der Spende von Max Muster". Rendered as "Folgende Angaben werden bei … geändert:".
+     */
+    abstract public function confirmSubject(): string;
 
     abstract protected function persist(): void;
 
@@ -84,13 +92,31 @@ trait ConfirmsAdminEdits
     }
 
     /**
-     * @return array<int, string>
+     * Changed fields with German labels and before/after values for the confirmation modal.
+     *
+     * @return array<int, array{label: string, before: string, after: string}>
      */
-    public function changedFieldLabels(): array
+    public function changedFields(): array
     {
+        $current = $this->formData();
+
         return collect($this->changedFieldKeys())
-            ->map(fn (string $field): string => $this->fieldLabels()[$field])
+            ->map(fn (string $field): array => [
+                'label' => $this->fieldLabels()[$field],
+                'before' => $this->formatEditorValue($this->editorSnapshot[$field] ?? null),
+                'after' => $this->formatEditorValue($current[$field] ?? null),
+            ])
             ->all();
+    }
+
+    // Value formatting for the confirmation modal. Override in the editor when a field needs custom formatting.
+    protected function formatEditorValue(mixed $value): string
+    {
+        return match (true) {
+            is_bool($value) => $value ? 'Ja' : 'Nein',
+            $value === null => '—',
+            default => (string) $value,
+        };
     }
 
     public function save(): void
@@ -131,6 +157,7 @@ trait ConfirmsAdminEdits
         Log::info('Admin editor save confirmed.', [
             'editor' => class_basename(static::class),
             'fields' => $changedFieldKeys,
+            'admin' => Auth::guard('web')->user()?->name,
             ...$this->logContext(),
         ]);
 
