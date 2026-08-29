@@ -16,6 +16,7 @@ use App\Services\CurrentDonationEventService;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Validate;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -92,7 +93,18 @@ class AdminStartNumbers extends AbstractDatatableComponent
 
         if ($property === 'eventSlug') {
             $this->firstNumber = $this->nextFreeNumber();
+            $this->dispatch('anlass-changed', slug: $this->eventSlug ?? '');
         }
+    }
+
+    #[On('anlass-changed')]
+    public function syncEventSlug(string $slug): void
+    {
+        if ($this->eventSlug === $slug) {
+            return;
+        }
+
+        $this->eventSlug = $slug;
     }
 
     protected function tableView(): string

@@ -1,7 +1,6 @@
 ---
 paths:
   - 'app/Components/**'
-  - app/Components/Results.php
 ---
 
 # Components

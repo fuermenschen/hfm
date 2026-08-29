@@ -185,7 +185,7 @@ it('ignores unknown batch keys', function (): void {
         ->assertSet('confirmingBatch', '');
 });
 
-it('resets rounds and status of an athlete', function (): void {
+it('resets rounds and status of an athlete after confirmation', function (): void {
     $event = DonationEvent::factory()->create();
     $registration = roundCounterTestRegistration($event, 'Ada', 'Albright', [
         'rounds_done' => 5,
@@ -193,10 +193,32 @@ it('resets rounds and status of an athlete', function (): void {
     ]);
 
     Livewire::test(AdminRoundCounter::class, ['eventSlug' => $event->slug])
-        ->call('resetAthlete', $registration->id);
+        ->call('confirmReset', $registration->id)
+        ->assertSet('confirmingResetId', $registration->id)
+        ->call('resetAthlete')
+        ->assertSet('confirmingResetId', null);
 
     expect($registration->refresh()->rounds_done)->toBe(0)
         ->and($registration->event_state)->toBe(EventState::NotStarted);
+});
+
+it('follows the event selected in the start numbers tab', function (): void {
+    $event = DonationEvent::factory()->create();
+
+    Livewire::test(AdminRoundCounter::class, ['eventSlug' => $event->slug])
+        ->dispatch('anlass-changed', slug: 'other-event')
+        ->assertSet('eventSlug', 'other-event');
+});
+
+it('excludes soft-deleted athletes from counts and total rounds', function (): void {
+    $event = DonationEvent::factory()->create();
+    roundCounterTestRegistration($event, 'Ada', 'Albright', ['rounds_done' => 3]);
+    $ghosted = roundCounterTestRegistration($event, 'Zora', 'Zimmermann', ['rounds_done' => 9]);
+    $ghosted->externalUser->delete();
+
+    Livewire::test(AdminRoundCounter::class, ['eventSlug' => $event->slug])
+        ->assertSee('(1)')
+        ->assertSet('totalRounds', 3);
 });
 
 it('searches by name and start number', function (): void {

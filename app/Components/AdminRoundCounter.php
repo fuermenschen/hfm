@@ -8,6 +8,7 @@ use App\Actions\FinishAllAthletesAction;
 use App\Actions\RecordAthleteRoundAction;
 use App\Actions\ResetAllAthletesAction;
 use App\Actions\SetAthleteEventStateAction;
+use App\Actions\SetAthleteRoundsAction;
 use App\Actions\StartAllAthletesAction;
 use App\Enums\EventState;
 use App\Models\AthleteRegistration;
@@ -17,6 +18,7 @@ use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -33,13 +35,19 @@ class AdminRoundCounter extends Component
 
     public ?int $confirmingFinishId = null;
 
+    public ?int $confirmingResetId = null;
+
     public string $confirmingBatch = '';
+
+    public int $totalRounds = 0;
 
     protected CurrentDonationEventService $currentDonationEventService;
 
     protected RecordAthleteRoundAction $recordAthleteRoundAction;
 
     protected SetAthleteEventStateAction $setAthleteEventStateAction;
+
+    protected SetAthleteRoundsAction $setAthleteRoundsAction;
 
     protected StartAllAthletesAction $startAllAthletesAction;
 
@@ -51,6 +59,7 @@ class AdminRoundCounter extends Component
         CurrentDonationEventService $currentDonationEventService,
         RecordAthleteRoundAction $recordAthleteRoundAction,
         SetAthleteEventStateAction $setAthleteEventStateAction,
+        SetAthleteRoundsAction $setAthleteRoundsAction,
         StartAllAthletesAction $startAllAthletesAction,
         FinishAllAthletesAction $finishAllAthletesAction,
         ResetAllAthletesAction $resetAllAthletesAction,
@@ -58,6 +67,7 @@ class AdminRoundCounter extends Component
         $this->currentDonationEventService = $currentDonationEventService;
         $this->recordAthleteRoundAction = $recordAthleteRoundAction;
         $this->setAthleteEventStateAction = $setAthleteEventStateAction;
+        $this->setAthleteRoundsAction = $setAthleteRoundsAction;
         $this->startAllAthletesAction = $startAllAthletesAction;
         $this->finishAllAthletesAction = $finishAllAthletesAction;
         $this->resetAllAthletesAction = $resetAllAthletesAction;
@@ -75,12 +85,12 @@ class AdminRoundCounter extends Component
     {
         $event = $this->selectedEvent();
         $counts = $this->stateCounts($event);
+        $this->totalRounds = ! $event instanceof DonationEvent ? 0 : (int) AthleteRegistration::query()->whereBelongsTo($event)->whereHas('externalUser')->sum('rounds_done');
 
         return view('components.admin.round-counter', [
             'events' => DonationEvent::query()->latest('starts_at')->get(['id', 'title', 'slug', 'is_published']),
             'registrations' => $this->filteredRegistrations($event)->get(),
             'counts' => $counts,
-            'totalRounds' => ! $event instanceof DonationEvent ? 0 : (int) AthleteRegistration::query()->whereBelongsTo($event)->sum('rounds_done'),
         ]);
     }
 
@@ -213,19 +223,35 @@ class AdminRoundCounter extends Component
         ($this->recordAthleteRoundAction)($registration, -1);
     }
 
-    public function resetAthlete(int $registrationId): void
+    public function confirmReset(int $registrationId): void
     {
         $this->ensureAuthenticated();
 
-        $registration = $this->findRegistration($registrationId);
-
-        if (! $registration instanceof AthleteRegistration) {
+        if (! $this->findRegistration($registrationId) instanceof AthleteRegistration) {
             return;
         }
 
-        $registration->rounds_done = 0;
-        $registration->event_state = EventState::NotStarted;
-        $registration->save();
+        $this->confirmingResetId = $registrationId;
+        Flux::modal('round-counter-confirm-reset')->show();
+    }
+
+    public function resetAthlete(): void
+    {
+        $this->ensureAuthenticated();
+
+        if ($this->confirmingResetId === null) {
+            return;
+        }
+
+        $registration = $this->findRegistration($this->confirmingResetId);
+
+        if ($registration instanceof AthleteRegistration) {
+            ($this->setAthleteRoundsAction)($registration, 0);
+            ($this->setAthleteEventStateAction)($registration, EventState::NotStarted);
+        }
+
+        $this->confirmingResetId = null;
+        Flux::modal('round-counter-confirm-reset')->close();
 
         Flux::toast(heading: 'Zurückgesetzt', text: 'Runden und Status wurden zurückgesetzt.', variant: 'success');
     }
@@ -287,6 +313,7 @@ class AdminRoundCounter extends Component
 
         $counts = AthleteRegistration::query()
             ->whereBelongsTo($event)
+            ->whereHas('externalUser')
             ->selectRaw('event_state, count(*) as aggregate')
             ->groupBy('event_state')
             ->pluck('aggregate', 'event_state');
@@ -302,6 +329,21 @@ class AdminRoundCounter extends Component
             'finished' => $finished,
             'all' => $notStarted + $running + $finished,
         ];
+    }
+
+    public function updatedEventSlug(): void
+    {
+        $this->dispatch('anlass-changed', slug: $this->eventSlug ?? '');
+    }
+
+    #[On('anlass-changed')]
+    public function syncEventSlug(string $slug): void
+    {
+        if ($this->eventSlug === $slug) {
+            return;
+        }
+
+        $this->eventSlug = $slug;
     }
 
     public function selectedEvent(): ?DonationEvent

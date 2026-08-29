@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Actions\GetEventRankingsAction;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\Partner;
+use App\Services\CurrentDonationEventService;
 use App\Services\DonationService;
 use Illuminate\Contracts\View\View as ViewContract;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class Results extends Component
 {
+    private const int METERS_PER_ROUND = 50;
+
     /**
      * Public state passed to the view.
      *
@@ -22,169 +26,139 @@ class Results extends Component
      */
     public array $totals = [];
 
-    public function mount(DonationService $donationService): void
-    {
-        // Compute a version string based on the latest updated_at timestamps
-        $row = DB::selectOne('
-            select
-              (select max(updated_at) from athlete_registrations)  as a,
-              (select max(updated_at) from donations) as d
-        ');
-        $version = hash('sha256', ($row->a ?? '0').($row->d ?? '0'));
-        $cacheKey = 'components.results.data.'.$version;
-
-        $data = Cache::remember($cacheKey, now()->addHour(), function () use ($donationService): array {
-            return $this->collectData($donationService);
-        });
-
-        $this->totals = $data['totals'];
-    }
-
     public function render(): ViewContract
     {
-        // Properties are already prepared in mount() (and cached).
+        // Recomputed on every render so wire:poll picks up new rounds and
+        // donations. The dataset is a single event; caching here caused
+        // same-second staleness that breaks live updates.
+        $this->totals = $this->computeTotals();
+
         return view('components.results');
     }
 
     /**
-     * Collect and prepare all data for the component.
-     * Ensures a single initial athlete-registrations query including relations.
-     *
-     * @return array{totals: array<string, mixed>}
+     * @return array<string, mixed>
      */
-    protected function collectData(DonationService $donationService): array
+    protected function computeTotals(): array
     {
-        // One initial query for ALL athlete registrations with needed relations
-        $allAthletes = AthleteRegistration::query()
-            ->with(['partner:id,name', 'donationEvent:id,has_equal_split_option', 'donations'])
-            ->get();
+        $event = resolve(CurrentDonationEventService::class)->current();
 
-        // Totals (prefer in-memory where possible)
-        $athletesCount = $allAthletes->count();
-        $donorsCount = $allAthletes->flatMap->donations
-            ->pluck('donor_external_user_id')->filter()->unique()->count();
-        $roundsTotal = (int) ($allAthletes->sum('rounds_done') ?? 0);
-        $elevationTotal = $roundsTotal * 50; // meters
-
-        // Build donations list from already loaded athletes to avoid extra queries
-        $donations = $allAthletes->flatMap(function (AthleteRegistration $athleteRegistration) {
-            return collect($athleteRegistration->donations)->map(function (Donation $donation) use ($athleteRegistration): Donation {
-                // Ensure donation has athlete-registration relation set to avoid extra reads later
-                $donation->setRelation('athleteRegistration', $athleteRegistration);
-
-                return $donation;
-            });
-        });
-        $donationsTotal = $donationService->calculateActualTotal($donations);
-
-        // Donations per partner (name => amount)
-        $perPartnerRaw = $donationService->calculateActualTotalPerPartner($donations); // [partner_id => amount]
-        // Build partner id => name map from already eager-loaded athletes to avoid extra query
-        $partners = $allAthletes
-            ->pluck('partner')
-            ->filter()
-            ->keyBy('id')
-            ->map(function (Partner $partner) {
-                return $partner->name;
-            });
-        $perPartner = collect($perPartnerRaw)
-            ->mapWithKeys(function (float $amount, int $partnerId) use ($partners): array {
-                return [($partners[$partnerId] ?? ('Partner #'.$partnerId)) => $amount];
-            })
-            ->sortKeys();
-
-        // Legacy special rule: If there's a partner named 'alle zu gleichen Teilen', split evenly among others.
-        $equalShareName = 'alle zu gleichen Teilen';
-        if ($perPartner->has($equalShareName)) {
-            $amountToSplit = (float) $perPartner->get($equalShareName, 0.0);
-            $others = $perPartner->except($equalShareName);
-            $count = $others->count();
-            if ($count > 0) {
-                $share = $amountToSplit / $count;
-                $perPartner = $others->map(function (float $amount) use ($share): float {
-                    return $amount + $share;
-                });
-            } else {
-                // No other partners to split into; remove the special partner.
-                $perPartner = collect();
-            }
+        if (! $event instanceof DonationEvent) {
+            return ['has_event' => false];
         }
 
-        // New rule: for each event with equal split enabled, distribute those donations
-        // only among the partners active in that event (i.e. athletes with a partner in that event).
-        // This prevents cross-event bleed when multiple events have different partner sets.
-        $allAthletes
-            ->groupBy('donation_event_id')
-            ->each(function ($eventAthletes, mixed $eventId) use (&$perPartner, $donations, $donationService, $partners): void {
-                if (! $eventId) {
-                    return;
-                }
+        $registrations = AthleteRegistration::query()
+            ->whereBelongsTo($event)
+            ->with(['partner:id,name', 'eventGroup:id,name', 'externalUser:id,first_name,last_name', 'donations'])
+            ->get();
 
-                $event = $eventAthletes->first()?->donationEvent;
-                if ($event === null || ! (bool) $event->has_equal_split_option) {
-                    return;
-                }
+        // Backfill the inverse relation so DonationService never queries
+        // per donation (public page, renders every 15 seconds).
+        $donations = $registrations->flatMap(function (AthleteRegistration $registration): Collection {
+            $registration->donations->each(
+                fn (Donation $donation): Donation => $donation->setRelation('athleteRegistration', $registration),
+            );
 
-                // Athletes in this event who selected "equal split" (no partner assigned)
-                $equalSplitAthleteIds = array_flip(
-                    $eventAthletes
-                        ->whereNull('partner_id')
-                        ->pluck('id')
-                        ->map(fn (mixed $id): int => (int) $id)
-                        ->all()
-                );
+            return $registration->donations;
+        });
+        $donationService = resolve(DonationService::class);
 
-                if ($equalSplitAthleteIds === []) {
-                    return;
-                }
-
-                $eventEqualAmount = $donations
-                    ->filter(fn (Donation $d): bool => isset($equalSplitAthleteIds[(int) $d->athlete_registration_id]))
-                    ->sum(fn (Donation $d): float => $donationService->calculateActualAmount($d));
-
-                if ($eventEqualAmount <= 0.0) {
-                    return;
-                }
-
-                // Only distribute to partners that appear in this event's athlete registrations
-                $eventPartnerNameSet = array_flip(
-                    $eventAthletes
-                        ->pluck('partner_id')
-                        ->filter()
-                        ->unique()
-                        ->map(fn (mixed $id): string => (string) ($partners->get((int) $id) ?? ''))
-                        ->filter(fn (string $name): bool => $name !== '')
-                        ->values()
-                        ->all()
-                );
-
-                $targetCount = count($eventPartnerNameSet);
-                if ($targetCount <= 0) {
-                    return;
-                }
-
-                // Ensure every target partner has an entry so the share is never dropped.
-                foreach (array_keys($eventPartnerNameSet) as $name) {
-                    if (! $perPartner->has($name)) {
-                        $perPartner->put($name, 0.0);
-                    }
-                }
-
-                $share = $eventEqualAmount / $targetCount;
-                $perPartner = $perPartner->map(function (float $amount, string $partnerName) use ($share, $eventPartnerNameSet): float {
-                    return isset($eventPartnerNameSet[$partnerName]) ? $amount + $share : $amount;
-                });
-            });
+        $roundsTotal = (int) $registrations->sum('rounds_done');
+        $rankings = resolve(GetEventRankingsAction::class)($registrations);
 
         return [
-            'totals' => [
-                'athletes' => $athletesCount,
-                'donors' => $donorsCount,
-                'rounds' => $roundsTotal,
-                'elevation_m' => $elevationTotal,
-                'donations_total' => $donationsTotal,
-                'per_partner' => $perPartner->all(),
-            ],
+            'has_event' => true,
+            'event_title' => $event->title,
+            'athletes' => $registrations->count(),
+            'donors' => $donations->pluck('donor_external_user_id')->filter()->unique()->count(),
+            'rounds' => $roundsTotal,
+            'elevation_m' => $roundsTotal * self::METERS_PER_ROUND,
+            'donations_total' => $donationService->calculateActualTotal($donations),
+            'per_partner' => $this->perPartnerAmounts($event, $registrations, $donations, $donationService),
+            'athlete_ranking' => $rankings['athletes'],
+            'group_ranking' => $rankings['groups'],
         ];
+    }
+
+    /**
+     * Actual donation amounts per partner of the current event. Donations of
+     * athletes without an own partner are distributed evenly when the event
+     * has the equal-split option, and the legacy 'alle zu gleichen Teilen'
+     * partner splits evenly among all other partners.
+     *
+     * @param  Collection<int, AthleteRegistration>  $registrations
+     * @param  Collection<int, Donation>  $donations
+     * @return array<string, float>
+     */
+    protected function perPartnerAmounts(
+        DonationEvent $event,
+        Collection $registrations,
+        Collection $donations,
+        DonationService $donationService,
+    ): array {
+        $partners = $registrations
+            ->pluck('partner')
+            ->filter()
+            ->unique('id')
+            ->mapWithKeys(fn (Partner $partner): array => [$partner->id => $partner->name]);
+
+        $perPartner = collect($donationService->calculateActualTotalPerPartner($donations))
+            ->mapWithKeys(fn (float $amount, int $partnerId): array => [($partners[$partnerId] ?? ('Partner #'.$partnerId)) => $amount]);
+
+        $perPartner = $this->applyLegacyEqualShareRule($perPartner);
+        $perPartner = $this->applyEqualSplitOption($event, $registrations, $perPartner, $donationService);
+
+        return $perPartner->sortKeys()->all();
+    }
+
+    /**
+     * @param  Collection<string, float>  $perPartner
+     * @return Collection<string, float>
+     */
+    protected function applyLegacyEqualShareRule(Collection $perPartner): Collection
+    {
+        $equalShareName = 'alle zu gleichen Teilen';
+
+        if (! $perPartner->has($equalShareName)) {
+            return $perPartner;
+        }
+
+        $amountToSplit = (float) $perPartner->pull($equalShareName);
+        $targetCount = $perPartner->count();
+
+        if ($amountToSplit <= 0.0 || $targetCount === 0) {
+            return $targetCount === 0 ? collect() : $perPartner;
+        }
+
+        $share = $amountToSplit / $targetCount;
+
+        return $perPartner->map(fn (float $amount): float => $amount + $share);
+    }
+
+    /**
+     * @param  Collection<int, AthleteRegistration>  $registrations
+     * @param  Collection<string, float>  $perPartner
+     * @return Collection<string, float>
+     */
+    protected function applyEqualSplitOption(
+        DonationEvent $event,
+        Collection $registrations,
+        Collection $perPartner,
+        DonationService $donationService,
+    ): Collection {
+        if (! (bool) $event->has_equal_split_option || $perPartner->isEmpty()) {
+            return $perPartner;
+        }
+
+        $equalSplitDonations = $registrations->whereNull('partner_id')->flatMap->donations;
+        $equalSplitAmount = $donationService->calculateActualTotal($equalSplitDonations);
+
+        if ($equalSplitAmount <= 0.0) {
+            return $perPartner;
+        }
+
+        $share = $equalSplitAmount / $perPartner->count();
+
+        return $perPartner->map(fn (float $amount): float => $amount + $share);
     }
 }

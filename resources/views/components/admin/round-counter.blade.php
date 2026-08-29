@@ -185,7 +185,7 @@
                                     </flux:menu.item>
                                     <flux:menu.item
                                         icon="arrow-path"
-                                        wire:click="resetAthlete({{ $registration->id }})"
+                                        wire:click="confirmReset({{ $registration->id }})"
                                     >
                                         Runden und Status zurücksetzen
                                     </flux:menu.item>
@@ -197,6 +197,29 @@
             @endforeach
         </div>
     @endif
+
+    <flux:modal name="round-counter-confirm-reset">
+        <div class="space-y-4">
+            <flux:heading size="lg">Runden und Status zurücksetzen?</flux:heading>
+            <flux:text>
+                Alle erfassten Runden dieser Sportler:in werden auf 0 gesetzt und der Status auf «Nicht gestartet»
+                zurückgesetzt.
+            </flux:text>
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Abbrechen</flux:button>
+                </flux:modal.close>
+                <flux:button
+                    variant="primary"
+                    wire:click="resetAthlete"
+                    wire:loading.attr="disabled"
+                    wire:target="resetAthlete"
+                >
+                    Zurücksetzen
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
 
     <flux:modal name="round-counter-confirm-batch">
         <div class="space-y-4">

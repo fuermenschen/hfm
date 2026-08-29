@@ -27,6 +27,9 @@ class AssignStartNumbersAction
 
         $query = AthleteRegistration::query()
             ->whereBelongsTo($donationEvent)
+            // Not an existence check: excludes soft-deleted users, which the
+            // raw join below would otherwise include (joins bypass the
+            // SoftDeletes global scope).
             ->whereHas('externalUser')
             ->join('external_users', 'external_users.id', '=', 'athlete_registrations.external_user_id')
             ->orderBy('external_users.first_name')

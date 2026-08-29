@@ -17,8 +17,11 @@ class RecordAthleteRoundAction
         throw_unless(in_array($delta, [1, -1], true), \InvalidArgumentException::class, 'Die Rundenänderung muss +1 oder -1 sein.');
 
         if ($delta === 1) {
+            // Guarded in SQL, not in memory: the column is unsignedTinyInteger
+            // and strict MariaDB would reject values past 255 with a 500.
             AthleteRegistration::query()
                 ->whereKey($athleteRegistration->getKey())
+                ->where('rounds_done', '<', SetAthleteRoundsAction::MAX_ROUNDS)
                 ->increment('rounds_done');
         } else {
             // Guarded in SQL, not in memory: two concurrent decrements must

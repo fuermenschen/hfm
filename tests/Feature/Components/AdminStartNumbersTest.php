@@ -228,6 +228,15 @@ it('clears all start numbers of the event after confirmation', function (): void
     expect($numbered->refresh()->start_number)->toBeNull();
 });
 
+it('announces event changes so the round counter tab follows', function (): void {
+    $event = DonationEvent::factory()->create();
+    startNumbersTestRegistration($event, 'Ada', 'Albright');
+
+    Livewire::test(AdminStartNumbers::class, ['eventSlug' => $event->slug])
+        ->set('eventSlug', 'other-event')
+        ->assertDispatched('anlass-changed', slug: 'other-event');
+});
+
 it('always shows all columns regardless of stale visibility sessions', function (): void {
     $event = DonationEvent::factory()->create();
     startNumbersTestRegistration($event, 'Ada', 'Albright', 1);
