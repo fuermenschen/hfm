@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <div class="mt-4 min-h-0 flex-1 overflow-y-auto sm:mt-6">
+        <div class="[&::-webkit-scrollbar]:hidden mt-4 min-h-0 flex-1 [scrollbar-width:none] overflow-y-auto sm:mt-6">
             <div class="lg:hidden">
                 <flux:carousel autoplay autoplay:interval="10000" wrap="rewind">
                     <flux:carousel.slide class="w-full">
@@ -64,19 +64,22 @@
 
         <div class="mt-4 shrink-0 sm:mt-6">
             @if (count($totals['per_partner']) > 0)
-                <div class="rounded-2xl bg-zinc-100 p-3 sm:p-6 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500 sm:text-sm dark:text-zinc-400">Spenden pro Benefizpartner:in</p>
-                    <ul class="mt-2 grid max-h-[25vh] gap-x-10 gap-y-2 overflow-y-auto sm:mt-4 sm:grid-cols-2 sm:gap-y-3 lg:grid-cols-3">
-                        @foreach ($totals['per_partner'] as $partnerName => $amount)
-                            <li class="flex items-baseline justify-between gap-4 border-b border-zinc-200 pb-1.5 sm:pb-2 dark:border-zinc-800">
-                                <span class="truncate text-base sm:text-lg">{{ $partnerName }}</span>
-                                <span class="text-base font-semibold tabular-nums sm:text-lg">
-                                    Fr. {{ number_format($amount, 0, '.', "'") }}
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
+                <p class="text-xs text-zinc-500 sm:text-sm dark:text-zinc-400">Spenden pro Benefizpartner:in</p>
+                <ul class="[&::-webkit-scrollbar]:hidden mt-2 grid max-h-[25vh] [scrollbar-width:none] grid-cols-2 gap-3 overflow-y-auto sm:mt-3 sm:grid-cols-3">
+                    @foreach ($totals['per_partner'] as $partnerName => $amount)
+                        <li class="rounded-2xl bg-zinc-100 p-3 sm:p-4 dark:bg-zinc-900">
+                            <p
+                                class="truncate text-xs text-zinc-500 sm:text-sm dark:text-zinc-400"
+                                title="{{ $partnerName }}"
+                            >
+                                {{ $partnerName }}
+                            </p>
+                            <p class="mt-1 truncate text-lg font-bold tabular-nums sm:text-xl">
+                                Fr. {{ number_format($amount, 0, '.', "'") }}
+                            </p>
+                        </li>
+                    @endforeach
+                </ul>
             @endif
 
             <footer class="mt-3 text-xs text-zinc-500 sm:mt-4 dark:text-zinc-400">

@@ -110,92 +110,92 @@
                 >
                     <span class="{{ $stripClass }} absolute inset-y-0 left-0 w-1.5"></span>
 
-                    <div class="flex w-full flex-col items-center gap-1 py-2 pr-2 pl-4">
-                        <span class="font-mono text-lg leading-none font-bold tabular-nums">
-                            {{ $registration->start_number !== null ? '#'.$registration->start_number : '–' }}
-                        </span>
+                    @php($tapAction = match ($registration->event_state->value) {
+                        'not_started' => 'start',
+                        'running' => 'addRound',
+                        default => null,
+                    })
 
-                        <span
-                            class="w-full truncate text-center text-xs text-zinc-500"
-                            title="{{ $registration->externalUser->privacy_name }}"
+                    @if ($tapAction !== null)
+                        <button
+                            type="button"
+                            wire:click="{{ $tapAction }}({{ $registration->id }})"
+                            class="flex w-full cursor-pointer flex-col items-center gap-1 py-3 pr-2 pl-4 hover:bg-zinc-50 active:bg-zinc-100 dark:hover:bg-zinc-800"
                         >
-                            {{ $registration->externalUser->privacy_name }}
-                        </span>
+                    @else
+                        <div class="flex w-full flex-col items-center gap-1 py-3 pr-2 pl-4">
+                    @endif
+                    <span class="font-mono text-2xl leading-none font-bold tabular-nums">
+                        {{ $registration->start_number !== null ? '#'.$registration->start_number : '–' }}
+                    </span>
 
-                        <span class="flex items-baseline gap-0.5">
-                            <span class="text-3xl leading-none font-bold tabular-nums">{{ $registration->rounds_done }}</span>
-                            <span class="text-sm font-medium text-zinc-400 tabular-nums">/{{ $registration->rounds_estimated }}</span>
-                        </span>
+                    <span
+                        class="w-full truncate text-center text-xs text-zinc-500"
+                        title="{{ $registration->externalUser->privacy_name }}"
+                    >
+                        {{ $registration->externalUser->privacy_name }}
+                    </span>
 
-                        <div class="mt-1 flex w-full items-center gap-1">
-                            @if ($registration->event_state->value === 'not_started')
-                                <flux:button
-                                    variant="subtle"
-                                    icon="play"
-                                    size="sm"
-                                    class="h-9 w-full"
-                                    wire:click="start({{ $registration->id }})"
-                                >
-                                    Start
-                                </flux:button>
-                            @else
-                                <flux:button
-                                    variant="primary"
-                                    size="sm"
-                                    class="h-9 flex-1 text-base font-semibold"
-                                    wire:click="addRound({{ $registration->id }})"
-                                    :disabled="$registration->event_state->value === 'finished'"
-                                >
-                                    +1
-                                </flux:button>
-                                @if ($registration->event_state->value === 'finished')
-                                    <flux:button
-                                        variant="subtle"
-                                        icon="arrow-path"
-                                        square
-                                        size="sm"
-                                        class="h-9 w-9"
-                                        tooltip="Erneut starten"
-                                        wire:click="reactivate({{ $registration->id }})"
-                                    />
-                                @else
-                                    <flux:button
-                                        variant="subtle"
-                                        icon="flag"
-                                        square
-                                        size="sm"
-                                        class="h-9 w-9"
-                                        tooltip="Fertig markieren"
-                                        wire:click="confirmFinish({{ $registration->id }})"
-                                    />
-                                @endif
-                            @endif
-                            <flux:dropdown align="end">
-                                <flux:button
-                                    variant="ghost"
-                                    icon="ellipsis-horizontal"
-                                    square
-                                    size="sm"
-                                    class="h-9 w-9"
-                                    aria-label="Weitere Aktionen"
-                                />
-                                <flux:menu>
-                                    <flux:menu.item icon="minus" wire:click="removeRound({{ $registration->id }})">
-                                        Runde entfernen
-                                    </flux:menu.item>
-                                    <flux:menu.item
-                                        icon="arrow-path"
-                                        wire:click="confirmReset({{ $registration->id }})"
-                                    >
-                                        Runden und Status zurücksetzen
-                                    </flux:menu.item>
-                                </flux:menu>
-                            </flux:dropdown>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+                    <span class="flex items-baseline gap-0.5">
+                        <span class="text-3xl leading-none font-bold tabular-nums">{{ $registration->rounds_done }}</span>
+                        <span class="text-sm font-medium text-zinc-400 tabular-nums">/{{ $registration->rounds_estimated }}</span>
+                    </span>
+
+                    @if ($tapAction === 'addRound')
+                        <span class="text-[10px] text-zinc-400">Tippen für +1 Runde</span>
+                    @elseif ($tapAction === 'start')
+                        <span class="text-[10px] text-zinc-400">Tippen zum Starten</span>
+                    @endif
+                    @if ($tapAction !== null)
+                    </button>
+
+    @else
         </div>
+    @endif
+
+    <div class="flex w-full items-center justify-end gap-1 px-2 pb-2">
+        @if ($registration->event_state->value === 'finished')
+            <flux:button
+                variant="subtle"
+                icon="arrow-path"
+                square
+                size="sm"
+                class="h-11 w-11"
+                tooltip="Erneut starten"
+                wire:click="reactivate({{ $registration->id }})"
+            />
+        @elseif ($registration->event_state->value === 'running')
+            <flux:button
+                variant="subtle"
+                icon="flag"
+                square
+                size="sm"
+                class="h-11 w-11"
+                tooltip="Fertig markieren"
+                wire:click="confirmFinish({{ $registration->id }})"
+            />
+        @endif
+        <flux:dropdown align="end">
+            <flux:button
+                variant="ghost"
+                icon="ellipsis-horizontal"
+                square
+                size="sm"
+                class="h-11 w-11"
+                aria-label="Weitere Aktionen" />
+            <flux:menu>
+                <flux:menu.item icon="minus" wire:click="removeRound({{ $registration->id }})">
+                    Runde entfernen
+                    </flux:menu.item>
+                    <flux:menu.item icon="arrow-path" wire:click="confirmReset({{ $registration->id }})">
+                        Runden und Status zurücksetzen
+                    </flux:menu.item>
+                    </flux:menu>
+                    </flux:dropdown>
+                    </div>
+                    </div>
+                    @endforeach
+    </div>
     @endif
 
     <flux:modal name="round-counter-confirm-reset">
