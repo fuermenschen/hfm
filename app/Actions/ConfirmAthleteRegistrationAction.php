@@ -31,6 +31,7 @@ class ConfirmAthleteRegistrationAction
             $this->previousDonors($athleteRegistration)
                 ->each(function (ExternalUser $donor) use ($athleteRegistration): void {
                     $donor->notify(new PreviousDonorAthleteRegistered(
+                        firstName: $donor->first_name,
                         athletePrivacyName: $athleteRegistration->externalUser->privacy_name,
                         donationEventTitle: $athleteRegistration->donationEvent->title,
                     ));
