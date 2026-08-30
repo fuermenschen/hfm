@@ -28,6 +28,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AdminPersonTable extends AbstractDatatableComponent
 {
+    #[Url]
     public string $sortField = 'first_name';
 
     #[Locked]

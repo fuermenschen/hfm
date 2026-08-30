@@ -16,6 +16,7 @@ Route::middleware('auth:web')->group(function (): void {
     Route::view('admin/sponsoren', 'pages.admin.sponsors')->name('admin.sponsors.index');
     Route::view('admin/faqs', 'pages.admin.faqs')->name('admin.faqs.index');
     Route::view('admin/sportlerinnen', 'pages.admin.people', ['title' => 'Sportler:innen', 'role' => 'athlete'])->name('admin.athletes.index');
+    Route::view('admin/anlass-verwaltung', 'pages.admin.event-management')->name('admin.event-management');
     Route::get('admin/sportlerinnen/{athleteRegistration}/story/{variant}', DownloadAthleteStoryImageController::class)
         ->whereIn('variant', ['light', 'dark'])
         ->name('admin.story-image.download');

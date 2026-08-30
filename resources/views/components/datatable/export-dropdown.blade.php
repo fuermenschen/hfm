@@ -1,5 +1,7 @@
+@props(['label' => 'Export'])
+
 <flux:dropdown>
-    <flux:button variant="ghost" size="sm" icon="arrow-down-tray">Export</flux:button>
+    <flux:button variant="ghost" size="sm" icon="arrow-down-tray">{{ $label }}</flux:button>
     <flux:menu>
         <flux:menu.group heading="Kompletter Datensatz">
             <flux:menu.item wire:click="exportAll('xlsx')" icon="document-text">Excel</flux:menu.item>

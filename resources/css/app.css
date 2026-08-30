@@ -58,6 +58,24 @@
     }
 }
 
+@layer components {
+    .admin-shell {
+        --color-accent: var(--hfm-dark);
+        --color-accent-content: var(--hfm-dark);
+        --color-accent-foreground: var(--color-white);
+    }
+
+    .dark .admin-shell {
+        --color-accent: var(--hfm-light);
+        --color-accent-content: var(--hfm-light);
+        --color-accent-foreground: var(--hfm-dark);
+    }
+
+    .admin-shell [data-flux-sidebar] {
+        --color-accent-content: var(--hfm-light);
+    }
+}
+
 @layer base {
     button:not(:disabled) {
         cursor: pointer;
@@ -328,6 +346,7 @@ select:invalid {
         /* Tailwind theme colors (see tailwind.config.js colors.hfm) */
         --hfm-white: #f8fafc;
         --hfm-dark: #1b2e47;
+        --hfm-light: #97c9e6;
     }
 }
 

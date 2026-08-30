@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\DeadCode;
 
+use App\Enums\EventState;
 use App\Models\DonationEvent;
 use App\Models\Partner;
 use App\Models\Sponsor;
@@ -23,6 +24,7 @@ class BladeViewUsageProvider implements MemberUsageProvider
      */
     private const METHODS = [
         DonationEvent::class => ['contentInlineMarkdown', 'contentPlainText'],
+        EventState::class => ['label'],
         Partner::class => ['logoLightUrl', 'logoDarkUrl'],
         Sponsor::class => ['logoUrl'],
     ];
