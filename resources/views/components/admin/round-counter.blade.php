@@ -97,7 +97,7 @@
             </flux:callout.text>
         </flux:callout>
     @else
-        <div class="flex flex-wrap gap-2">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-2">
             @foreach ($registrations as $registration)
                 @php($stripClass = match ($registration->event_state->value) {
                     'running' => 'animate-pulse bg-green-500',
@@ -106,7 +106,7 @@
                 })
                 <div
                     wire:key="athlete-{{ $registration->id }}"
-                    class="relative flex h-fit w-40 flex-col items-center overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 {{ $registration->event_state->value === 'finished' ? 'opacity-60' : '' }}"
+                    class="relative flex h-fit flex-col items-center overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 {{ $registration->event_state->value === 'finished' ? 'opacity-60' : '' }}"
                 >
                     <span class="{{ $stripClass }} absolute inset-y-0 left-0 w-1.5"></span>
 
