@@ -120,7 +120,9 @@
                         <button
                             type="button"
                             wire:click="{{ $tapAction }}({{ $registration->id }})"
-                            class="flex w-full cursor-pointer flex-col items-center gap-1 py-3 pr-2 pl-4 hover:bg-zinc-50 active:bg-zinc-100 dark:hover:bg-zinc-800"
+                            wire:loading.attr="disabled"
+                            wire:target="{{ $tapAction }}({{ $registration->id }})"
+                            class="flex w-full cursor-pointer flex-col items-center gap-1 py-3 pr-2 pl-4 hover:bg-zinc-50 active:bg-zinc-100 disabled:cursor-wait disabled:opacity-60 dark:hover:bg-zinc-800"
                         >
                     @else
                         <div class="flex w-full flex-col items-center gap-1 py-3 pr-2 pl-4">
@@ -141,11 +143,21 @@
                         <span class="text-sm font-medium text-zinc-400 tabular-nums">/{{ $registration->rounds_estimated }}</span>
                     </span>
 
-                    @if ($tapAction === 'addRound')
-                        <span class="text-[10px] text-zinc-400">Tippen für +1 Runde</span>
-                    @elseif ($tapAction === 'start')
-                        <span class="text-[10px] text-zinc-400">Tippen zum Starten</span>
-                    @endif
+                    <span
+                        wire:loading.remove
+                        wire:target="{{ $tapAction }}({{ $registration->id }})"
+                        class="text-[10px] text-zinc-400"
+                    >
+                        {{ $tapAction === 'addRound' ? 'Tippen für +1 Runde' : 'Tippen zum Starten' }}
+                    </span>
+                    <span
+                        wire:loading.inline-flex
+                        wire:target="{{ $tapAction }}({{ $registration->id }})"
+                        class="items-center gap-1 text-[10px] text-zinc-400"
+                    >
+                        <flux:icon.arrow-path class="size-3 animate-spin" />
+                        Wird gespeichert …
+                    </span>
                     @if ($tapAction !== null)
                     </button>
 

@@ -15,6 +15,17 @@ it('adds and removes rounds and stops at zero', function (): void {
         ->and($registration->refresh()->rounds_done)->toBe(0);
 });
 
+it('preserves increments from independently loaded counter sessions', function (): void {
+    $registration = AthleteRegistration::factory()->create(['rounds_done' => 2]);
+    $otherSessionRegistration = AthleteRegistration::query()->findOrFail($registration->id);
+    $action = resolve(RecordAthleteRoundAction::class);
+
+    $action($registration, 1);
+    $action($otherSessionRegistration, 1);
+
+    expect($registration->refresh()->rounds_done)->toBe(4);
+});
+
 it('rejects deltas other than plus and minus one', function (): void {
     $registration = AthleteRegistration::factory()->create(['rounds_done' => 2]);
 
