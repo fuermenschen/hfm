@@ -24,3 +24,6 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Settings/** | .ai/rules/settings.md |
 | resources/views/**/*.blade.php | .ai/rules/views.md |
 | app/Services/Webling/** | .ai/rules/webling.md |
+| app/**/*.php | .ai/rules/storage.md |
+| config/filesystems.php | .ai/rules/storage.md |
+| tests/**/*.php | .ai/rules/storage.md |

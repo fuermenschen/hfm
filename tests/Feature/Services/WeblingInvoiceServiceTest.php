@@ -282,3 +282,25 @@ it('finds only full Debitors with an exact comment marker', function (): void {
 
     expect($service->findInvoiceIdsByCommentMarker($marker))->toBe([45]);
 });
+
+it('finds exact markers in Webling direct-list responses', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $response = Mockery::mock(Response::class);
+    $marker = 'HFM-DONOR-INVOICE:123';
+
+    $api->shouldReceive('get')->once()->andReturn($response);
+    $response->shouldReceive('json')->once()->andReturn([
+        ['id' => 45, 'properties' => ['comment' => $marker]],
+        ['id' => 46, 'properties' => []],
+        ['id' => 47, 'properties' => ['comment' => 'HFM-DONOR-INVOICE:1234']],
+    ]);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    expect($service->findInvoiceIdsByCommentMarker($marker))->toBe([45]);
+});

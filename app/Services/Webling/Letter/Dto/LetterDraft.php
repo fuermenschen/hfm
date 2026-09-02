@@ -40,12 +40,14 @@ readonly class LetterDraft
         $qr = $letter['qr_invoice'] ?? [];
         $options = $letter['options'] ?? [];
         $date = $letter['date'] ?? null;
+        $dueDate = $letter['due_date'] ?? null;
 
         return new self(
             headerText: (string) ($letter['header_text'] ?? ''),
             bodyIntro: (string) ($letter['body_intro'] ?? ''),
             bodyOutro: (string) ($letter['body_outro'] ?? ''),
             date: $date !== null ? Date::parse((string) $date) : null,
+            dueDate: $dueDate !== null ? Date::parse((string) $dueDate) : null,
             qr: is_array($qr) ? $qr : [],
             options: is_array($options) ? $options : [],
         );

@@ -1,34 +1,84 @@
 <?php
 
 use App\Actions\CollectDonorInvoiceDataAction;
+use App\Models\AthleteRegistration;
+use App\Models\Donation;
+use App\Models\DonationEvent;
+use App\Models\DonorEventInvoice;
+use App\Models\ExternalUser;
+use App\Models\Partner;
 
-it('keeps invoice line collection behavior documented for donor_event_invoices rebuild', function (): void {
-    // Arrange:
-    // - Create external user donor identity.
-    // - Create donation event and athlete registrations.
-    // - Seed event-scoped donations with min/max boundary cases.
+it('collects confirmed and unconfirmed donations in integer cents', function (): void {
+    $donor = ExternalUser::factory()->create();
+    $event = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'ACME']);
+    $athlete = ExternalUser::factory()->create(['first_name' => 'Alice', 'last_name' => 'Doe']);
+    $registration = AthleteRegistration::factory()
+        ->forEvent($event)
+        ->forExternalUser($athlete)
+        ->withPartner($partner)
+        ->create(['rounds_done' => 3]);
+    $secondRegistration = AthleteRegistration::factory()
+        ->forEvent($event)
+        ->forExternalUser(ExternalUser::factory()->create())
+        ->withPartner($partner)
+        ->create(['rounds_done' => 3]);
+    $invoice = DonorEventInvoice::factory()->forExternalUser($donor)->forEvent($event)->create();
 
-    // Act:
-    // - Invoke CollectDonorInvoiceDataAction for event-scoped donor invoice aggregate.
+    Donation::factory()->forPair($donor, $registration)->create([
+        'amount_per_round' => 2.50,
+        'amount_min' => 10.00,
+        'amount_max' => null,
+        'verified' => true,
+    ]);
+    Donation::factory()->forPair($donor, $secondRegistration)->create([
+        'amount_per_round' => 20.00,
+        'amount_min' => null,
+        'amount_max' => 50.00,
+        'verified' => false,
+    ]);
 
-    // Assert:
-    // - One normalized line per donation.
-    // - Min/max caps applied exactly.
-    // - Athlete/partner display fields resolved from new graph.
+    $lines = app(CollectDonorInvoiceDataAction::class)($invoice);
 
-    expect(app(CollectDonorInvoiceDataAction::class))->toBeInstanceOf(CollectDonorInvoiceDataAction::class);
-})->skip('TODO(refactor-external-user): rewrite on donor_event_invoices (GH-134), separate from association donation invoices.');
+    expect($lines)->toHaveCount(2)
+        ->and($lines[0])->toMatchArray([
+            'athlete' => 'Alice D.',
+            'partner' => 'ACME',
+            'rounds' => 3,
+            'amount_per_round_cents' => 250,
+            'subtotal_cents' => 750,
+            'min_cents' => 1000,
+            'max_cents' => null,
+            'total_cents' => 1000,
+        ])
+        ->and($lines[1])->toMatchArray([
+            'subtotal_cents' => 6000,
+            'max_cents' => 5000,
+            'total_cents' => 5000,
+        ]);
+});
 
-it('keeps multi-donation aggregation behavior documented for donor_event_invoices rebuild', function (): void {
-    // Arrange:
-    // - Seed two or more event-scoped donations for same external user.
+it('does not collect donations from another event', function (): void {
+    $donor = ExternalUser::factory()->create();
+    $event = DonationEvent::factory()->create();
+    $otherEvent = DonationEvent::factory()->create();
+    $invoice = DonorEventInvoice::factory()->forExternalUser($donor)->forEvent($event)->create();
+    $registration = AthleteRegistration::factory()->forEvent($event)->create(['rounds_done' => 2]);
+    $otherRegistration = AthleteRegistration::factory()->forEvent($otherEvent)->create(['rounds_done' => 9]);
 
-    // Act:
-    // - Invoke CollectDonorInvoiceDataAction.
+    Donation::factory()->forPair($donor, $registration)->create([
+        'amount_per_round' => 3,
+        'amount_min' => null,
+        'amount_max' => null,
+    ]);
+    Donation::factory()->forPair($donor, $otherRegistration)->create([
+        'amount_per_round' => 8,
+        'amount_min' => null,
+        'amount_max' => null,
+    ]);
 
-    // Assert:
-    // - Line count matches seeded donations.
-    // - Totals match deterministic expected values.
+    $lines = app(CollectDonorInvoiceDataAction::class)($invoice);
 
-    expect(app(CollectDonorInvoiceDataAction::class))->toBeInstanceOf(CollectDonorInvoiceDataAction::class);
-})->skip('TODO(refactor-external-user): rewrite on donor_event_invoices (GH-134), separate from association donation invoices.');
+    expect($lines)->toHaveCount(1)
+        ->and($lines[0]['total_cents'])->toBe(600);
+});

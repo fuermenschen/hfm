@@ -134,8 +134,6 @@ class WeblingInvoiceService
      *
      * @param  InvoiceCreateData|array<string,mixed>  $data
      */
-    // TODO(dead-code): Remove ignore when event-scoped donor invoice creation is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function createInvoiceWithMarker(int $localInvoiceId, InvoiceCreateData|array $data): Response
     {
         $marker = $this->commentMarker($localInvoiceId);
@@ -159,18 +157,18 @@ class WeblingInvoiceService
      *
      * @return list<int>
      */
-    // TODO(dead-code): Remove ignore when marker recovery is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function findInvoiceIdsByCommentMarker(string $marker): array
     {
         $filter = rawurlencode('`comment`='.$this->formatValue($marker));
         $response = $this->api->get('debitor?format=full&filter='.$filter);
         $payload = $response->json();
-        $objects = is_array($payload) ? ($payload['objects'] ?? []) : [];
-
-        if (! is_array($objects)) {
-            return [];
-        }
+        $objects = match (true) {
+            ! is_array($payload) => [],
+            isset($payload['objects']) && is_array($payload['objects']) => $payload['objects'],
+            array_is_list($payload) => $payload,
+            isset($payload['id']) => [$payload],
+            default => [],
+        };
 
         $ids = [];
         foreach ($objects as $key => $object) {
@@ -185,7 +183,7 @@ class WeblingInvoiceService
             }
 
             $comment = $object['properties']['comment'] ?? null;
-            if ($comment !== null && $comment !== $marker) {
+            if ($comment !== $marker) {
                 continue;
             }
 
