@@ -52,8 +52,8 @@ it('builds payload and posts to debitor using DTO', function (): void {
         addressLines: ['John Doe', 'Street 1', '8000 Zurich'],
         periodId: 123,
         invoiceLines: [
-            ['amount' => 150.0, 'title' => 'Line A'],
-            ['amount' => 120.0, 'title' => 'Line B'],
+            ['amount_cents' => 15000, 'title' => 'Line A'],
+            ['amount_cents' => 12000, 'title' => 'Line B'],
         ],
         accountingPeriodId: 321,
         debitAccountId: 777,
@@ -90,7 +90,7 @@ it('accepts array input as well', function (): void {
         'duedate' => '2025-09-08',
         'address_lines' => ['A'],
         'period_id' => 1,
-        'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
+        'invoice_lines' => [['amount_cents' => 1000, 'title' => 'x']],
         // leave out accounting ids to test defaulting as well as explicit ones
     ]);
 });
@@ -122,7 +122,7 @@ it('uses centrally stored settings by default but allows overrides', function ()
         'duedate' => '2025-09-08',
         'address_lines' => ['A'],
         'period_id' => 10,
-        'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
+        'invoice_lines' => [['amount_cents' => 1000, 'title' => 'x']],
     ]);
 
     // 2) Overrides when provided
@@ -132,7 +132,7 @@ it('uses centrally stored settings by default but allows overrides', function ()
         'duedate' => '2025-09-08',
         'address_lines' => ['A'],
         'period_id' => 10,
-        'invoice_lines' => [['amount' => 10.0, 'title' => 'x']],
+        'invoice_lines' => [['amount_cents' => 1000, 'title' => 'x']],
         'accounting_period_id' => 888,
         'debit_account_id' => 333,
         'credit_account_id' => 444,
@@ -220,4 +220,65 @@ it('builds filter from triplet conditions', function (): void {
     $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
 
     $service->index($conditions);
+});
+
+it('writes a stable marker when creating an invoice for a local invoice', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+        'accounting_period_id' => 321,
+        'debit_account_id' => 777,
+        'credit_account_id' => 555,
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $response = Mockery::mock(Response::class);
+    $marker = 'HFM-DONOR-INVOICE:123';
+
+    $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload) use ($marker): bool {
+        expect($path)->toBe('debitor')
+            ->and($payload['properties']['comment'])->toBe($marker);
+
+        return true;
+    })->andReturn($response);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    $service->createInvoiceWithMarker(123, [
+        'title' => 'Invoice',
+        'date' => '2025-09-01',
+        'duedate' => '2025-09-08',
+        'address_lines' => ['A'],
+        'period_id' => 1,
+        'invoice_lines' => [['amount_cents' => 1000, 'title' => 'Line']],
+    ]);
+
+    expect($service->commentMarker(123))->toBe($marker);
+});
+
+it('finds only full Debitors with an exact comment marker', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $response = Mockery::mock(Response::class);
+    $marker = 'HFM-DONOR-INVOICE:123';
+    $filter = rawurlencode('`comment`="'.$marker.'"');
+
+    $api->shouldReceive('get')
+        ->once()
+        ->with('debitor?format=full&filter='.$filter)
+        ->andReturn($response);
+    $response->shouldReceive('json')->once()->andReturn([
+        'objects' => [
+            ['id' => 45, 'properties' => ['comment' => $marker]],
+            ['id' => 46, 'properties' => ['comment' => 'HFM-DONOR-INVOICE:1234']],
+        ],
+    ]);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    expect($service->findInvoiceIdsByCommentMarker($marker))->toBe([45]);
 });

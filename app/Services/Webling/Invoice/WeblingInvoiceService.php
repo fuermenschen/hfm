@@ -18,6 +18,8 @@ use Illuminate\Http\Client\Response;
  */
 class WeblingInvoiceService
 {
+    public const string DonorInvoiceMarkerPrefix = 'HFM-DONOR-INVOICE:';
+
     public function __construct(public WeblingApiService $api, public WeblingApiSettings $settings) {}
 
     /**
@@ -55,7 +57,7 @@ class WeblingInvoiceService
     /**
      * Convenience helper to create an invoice from discrete arguments.
      *
-     * @param  array<int,array{amount: float, title: string}>  $invoiceLines
+     * @param  array<int,array{amount_cents:int, title:string}>  $invoiceLines
      */
     public function createInvoiceFromParams(
         string $title,
@@ -95,7 +97,7 @@ class WeblingInvoiceService
      * - duedate: Carbon|string (Y-m-d)
      * - address_lines: string[]
      * - period_id: int
-     * - invoice_lines: array<int, array{amount: float, title: string}>
+     * - invoice_lines: array<int, array{amount_cents: int, title: string}>
      * - accounting_period_id: int (defaults to settings)
      * - debit_account_id: int (defaults to settings)
      * - credit_account_id: int (defaults to settings)
@@ -125,6 +127,75 @@ class WeblingInvoiceService
         }
 
         return $this->api->post('debitor', $dto->toWeblingPayload());
+    }
+
+    /**
+     * Create an invoice with the stable local invoice marker.
+     *
+     * @param  InvoiceCreateData|array<string,mixed>  $data
+     */
+    // TODO(dead-code): Remove ignore when event-scoped donor invoice creation is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function createInvoiceWithMarker(int $localInvoiceId, InvoiceCreateData|array $data): Response
+    {
+        $marker = $this->commentMarker($localInvoiceId);
+
+        if (is_array($data)) {
+            $data['comment'] = $marker;
+        } else {
+            $data->comment = $marker;
+        }
+
+        return $this->createInvoice($data);
+    }
+
+    public function commentMarker(int $localInvoiceId): string
+    {
+        return self::DonorInvoiceMarkerPrefix.$localInvoiceId;
+    }
+
+    /**
+     * Find full Debitor records whose comment exactly matches the marker.
+     *
+     * @return list<int>
+     */
+    // TODO(dead-code): Remove ignore when marker recovery is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function findInvoiceIdsByCommentMarker(string $marker): array
+    {
+        $filter = rawurlencode('`comment`='.$this->formatValue($marker));
+        $response = $this->api->get('debitor?format=full&filter='.$filter);
+        $payload = $response->json();
+        $objects = is_array($payload) ? ($payload['objects'] ?? []) : [];
+
+        if (! is_array($objects)) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($objects as $key => $object) {
+            if (is_int($object) || (is_string($object) && ctype_digit($object))) {
+                $ids[] = (int) $object;
+
+                continue;
+            }
+
+            if (! is_array($object)) {
+                continue;
+            }
+
+            $comment = $object['properties']['comment'] ?? null;
+            if ($comment !== null && $comment !== $marker) {
+                continue;
+            }
+
+            $id = $object['id'] ?? (is_int($key) ? null : $key);
+            if (is_int($id) || (is_string($id) && ctype_digit($id))) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**
