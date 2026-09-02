@@ -32,7 +32,7 @@ class InvoicePaid extends Notification implements ShouldQueue
 Same race condition as events — call `afterCommit()` to delay dispatch until the transaction commits.
 
 ```php
-$user->notify((new InvoicePaid($invoice))->afterCommit());
+$user->notify(new InvoicePaid($invoice)->afterCommit());
 ```
 
 ## Route Notification Channels to Dedicated Queues
@@ -44,7 +44,7 @@ Mail and database notifications have different priorities. Use `viaQueues()` to 
 Avoid creating dummy models to send notifications to arbitrary addresses.
 
 ```php
-Notification::route('mail', 'admin@example.com')->notify(new SystemAlert());
+Notification::route("mail", "admin@example.com")->notify(new SystemAlert());
 ```
 
 ## Implement `HasLocalePreference` on Notifiable Models

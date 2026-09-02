@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/Services/Webling/**'
+    - "app/Services/Webling/**"
 ---
 
 # Webling

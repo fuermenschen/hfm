@@ -4,3 +4,7 @@ node_modules
 resources/sass
 storage/framework
 artisan
+vendor
+*.php
+package-lock.json
+composer.lock

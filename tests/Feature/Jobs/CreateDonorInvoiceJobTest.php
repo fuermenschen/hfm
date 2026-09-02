@@ -13,7 +13,10 @@ use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Services\Webling\Letter\LetterService;
 use App\Settings\InvoiceSettings;
 use App\Settings\WeblingApiSettings;
+use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -146,6 +149,97 @@ it('does not create a debitor without billable lines', function (): void {
     expect($invoice->refresh()->source_snapshot)->toBeNull();
 });
 
+it('does no remote work and keeps the cached pdf when it runs again', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $letter = Mockery::mock(LetterService::class);
+    $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+    $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(successfulResponse(4321));
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-first'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    $invoice->refresh();
+    $path = $invoice->pdf_path;
+    $pdf = Storage::disk('local')->get($path);
+
+    $idleWebling = Mockery::mock(WeblingInvoiceService::class);
+    $idleWebling->shouldNotReceive('commentMarker');
+    $idleWebling->shouldNotReceive('findInvoiceIdsByCommentMarker');
+    $idleWebling->shouldNotReceive('createInvoiceWithMarker');
+    $idleLetter = Mockery::mock(LetterService::class);
+    $idleLetter->shouldNotReceive('createFromSnapshot');
+
+    runInvoiceJob($invoice, $idleWebling, $idleLetter);
+
+    expect($invoice->refresh()->pdf_path)->toBe($path)
+        ->and(Storage::disk('local')->get($path))->toBe($pdf);
+});
+
+it('recovers through the marker when debitor creation ends ambiguously', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+
+    $webling->shouldReceive('commentMarker')->twice()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->twice()->andReturn([], [777]);
+    $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(failedResponse());
+
+    $failedLetter = Mockery::mock(LetterService::class);
+    $failedLetter->shouldNotReceive('createFromSnapshot');
+
+    expect(fn () => runInvoiceJob($invoice, $webling, $failedLetter))
+        ->toThrow(RuntimeException::class, 'Webling Debitor creation failed');
+    expect($invoice->refresh()->webling_debitor_id)->toBeNull();
+
+    $letter = Mockery::mock(LetterService::class);
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-recovered'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    expect($invoice->refresh()->webling_debitor_id)->toBe(777);
+});
+
+it('creates the invoice behind a lock keyed by the local invoice id', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $letter = Mockery::mock(LetterService::class);
+    $webling->shouldReceive('commentMarker')->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->andReturn([]);
+    $webling->shouldReceive('createInvoiceWithMarker')->andReturn(successfulResponse(4321));
+    $letter->shouldReceive('createFromSnapshot')->andReturn(successfulResponse('%PDF-locked'));
+
+    $lock = Mockery::mock();
+    $lock->shouldReceive('block')->once()->with(10, Mockery::type('Closure'))->andReturnUsing(fn (int $seconds, Closure $callback) => $callback());
+    $lockCalls = [];
+    Cache::swap(lockManager($lock, function (array $parameters) use (&$lockCalls): void {
+        $lockCalls[] = $parameters;
+    }));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    expect($lockCalls)->toBe([['donor-invoice-creation:'.$invoice->id, 120]])
+        ->and($invoice->refresh()->webling_debitor_id)->toBe(4321);
+});
+
+it('fails without side effects when the creation lock is unavailable', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldNotReceive('commentMarker');
+    $webling->shouldNotReceive('findInvoiceIdsByCommentMarker');
+    $webling->shouldNotReceive('createInvoiceWithMarker');
+
+    $lock = Mockery::mock();
+    $lock->shouldReceive('block')->once()->andThrow(LockTimeoutException::class);
+    Cache::swap(lockManager($lock));
+
+    expect(fn () => runInvoiceJob($invoice, $webling, Mockery::mock(LetterService::class)))
+        ->toThrow(LockTimeoutException::class);
+    expect($invoice->refresh()->source_snapshot)->toBeNull()
+        ->and($invoice->webling_debitor_id)->toBeNull()
+        ->and(Storage::disk('local')->allFiles())->toBe([]);
+});
+
 function donorInvoiceWithDonation(): DonorEventInvoice
 {
     $donor = ExternalUser::factory()->create([
@@ -194,4 +288,28 @@ function runInvoiceJob(DonorEventInvoice $invoice, WeblingInvoiceService $weblin
         app(InvoiceSettings::class),
         app(WeblingApiSettings::class),
     );
+}
+
+function lockManager(mixed $lock, ?Closure $onLock = null): CacheManager
+{
+    return new class(app(), $lock, $onLock) extends CacheManager
+    {
+        public function __construct($app, private readonly mixed $lock, private readonly ?Closure $onLock)
+        {
+            parent::__construct($app);
+        }
+
+        public function __call($method, $parameters)
+        {
+            if ($method === 'lock') {
+                if ($this->onLock !== null) {
+                    ($this->onLock)($parameters);
+                }
+
+                return $this->lock;
+            }
+
+            return parent::__call($method, $parameters);
+        }
+    };
 }

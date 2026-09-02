@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'app/Notifications/**'
+    - "app/Notifications/**"
 ---
 
 # Notification Delivery

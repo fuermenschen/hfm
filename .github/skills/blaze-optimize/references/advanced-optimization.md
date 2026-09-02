@@ -37,6 +37,7 @@ For each slow component identified in the trace data:
 3. When applying folding, ALWAYS evaluate every prop, slot, and attribute for safe/unsafe. Never apply bare `@blaze(fold: true)` without checking.
 
 **Memoization** — the MOST effective optimization for high-volume components. Use when:
+
 - Has no slots
 - Has no global state access
 - Is rendered many times with the same props (icons, avatars, badges)
@@ -46,9 +47,7 @@ IMPORTANT: If a high-volume component has a simple slot that only outputs text (
 Apply via service provider (preferred for entire directories like `icons/`):
 
 ```php
-Blaze::optimize()
-    ->in(resource_path('views/components'))
-    ->in(resource_path('views/components/icons'), memo: true);
+Blaze::optimize()->in(resource_path("views/components"))->in(resource_path("views/components/icons"), memo: true);
 ```
 
 Or via directive (individual components):
@@ -58,6 +57,7 @@ Or via directive (individual components):
 ```
 
 **Folding** — use when the component:
+
 - Has no global state access (or state is isolated with `@unblaze`)
 - Is rendered frequently, especially in loops
 
@@ -67,8 +67,8 @@ For each folding candidate:
 
 1. Check for global state patterns — if ANY are found inside the component, do NOT fold. See [folding-safety.md](folding-safety.md) for the complete list.
 2. Classify EVERY `@props` value individually:
-   - Pass-through (output directly in HTML, class strings, attributes) → mark `safe`
-   - Used in logic (match, if/else, switch, ternary with multiple branches) → leave as default (auto-abort when dynamic)
+    - Pass-through (output directly in HTML, class strings, attributes) → mark `safe`
+    - Used in logic (match, if/else, switch, ternary with multiple branches) → leave as default (auto-abort when dynamic)
 3. Check if slots are inspected (`$slot->hasActualContent()`, `$slot->isEmpty()`, `$slot->isNotEmpty()`) → mark as `unsafe`. If slots are just output (`{{ $slot }}`), they are pass-through and need no annotation.
 4. Check if `$attributes->get()` is used in logic → mark `attributes` as `unsafe`
 5. Add the directive with the CORRECT safe/unsafe parameters

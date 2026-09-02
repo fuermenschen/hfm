@@ -1,6 +1,6 @@
 ---
 paths:
-  - '**/*.php'
+    - "**/*.php"
 ---
 
 # PHP Null Coalescing
@@ -12,7 +12,7 @@ paths:
 - Keep conditionals when `false`, `0`, or `''` should fall back, or when non-null value needs transformation.
 
 ```php
-$username = $_GET['user'] ?? 'nobody';
-$username = isset($_GET['user']) ? $_GET['user'] : 'nobody';
-$username = $_GET['user'] ?? $_POST['user'] ?? 'nobody';
+$username = $_GET["user"] ?? "nobody";
+$username = isset($_GET["user"]) ? $_GET["user"] : "nobody";
+$username = $_GET["user"] ?? ($_POST["user"] ?? "nobody");
 ```
