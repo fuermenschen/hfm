@@ -14,17 +14,18 @@ class GetEventRankingsAction
 {
     private const int LIMIT = 10;
 
+    private const int METERS_PER_ROUND = 50;
+
     public function __construct(private DonationService $donationService) {}
 
     /**
-     * Ranks athletes and groups of an event by actual donation amounts.
-     * Amounts include unverified donations, matching the results page totals
-     * and their disclaimer. Only entries with donations are ranked.
+     * Ranks athletes and groups by donations, rounds, and elevation. Donation
+     * amounts include unverified donations, matching the results disclaimer.
      *
      * Registrations must have externalUser, eventGroup and donations loaded.
      *
      * @param  Collection<int, AthleteRegistration>  $registrations
-     * @return array{athletes: list<array{name: string, amount: float}>, groups: list<array{name: string, amount: float}>}
+     * @return array{athletes: array{donations: list<array{name: string, value: float|int}>, rounds: list<array{name: string, value: float|int}>, elevation_m: list<array{name: string, value: float|int}>}, groups: array{donations: list<array{name: string, value: float|int}>, rounds: list<array{name: string, value: float|int}>, elevation_m: list<array{name: string, value: float|int}>}}
      */
     public function __invoke(Collection $registrations): array
     {
@@ -39,13 +40,10 @@ class GetEventRankingsAction
         $athletes = $registrations
             ->map(fn (AthleteRegistration $registration): array => [
                 'name' => $registration->externalUser->privacy_name,
-                'amount' => $this->donationService->calculateActualTotal($registration->donations),
-            ])
-            ->filter(fn (array $entry): bool => $entry['amount'] > 0.0)
-            ->sortByDesc('amount')
-            ->take(self::LIMIT)
-            ->values()
-            ->all();
+                'donations' => $this->donationService->calculateActualTotal($registration->donations),
+                'rounds' => (int) $registration->rounds_done,
+                'elevation_m' => (int) $registration->rounds_done * self::METERS_PER_ROUND,
+            ]);
 
         $groups = $registrations
             ->filter(fn (AthleteRegistration $registration): bool => $registration->event_group_id !== null
@@ -53,14 +51,32 @@ class GetEventRankingsAction
             ->groupBy(fn (AthleteRegistration $registration): string => $registration->eventGroup->name)
             ->map(fn (Collection $members): array => [
                 'name' => $members->first()->eventGroup->name,
-                'amount' => $this->donationService->calculateActualTotal($members->flatMap->donations),
+                'donations' => $this->donationService->calculateActualTotal($members->flatMap->donations),
+                'rounds' => (int) $members->sum('rounds_done'),
+                'elevation_m' => (int) $members->sum('rounds_done') * self::METERS_PER_ROUND,
             ])
-            ->filter(fn (array $entry): bool => $entry['amount'] > 0.0)
-            ->sortByDesc('amount')
-            ->take(self::LIMIT)
-            ->values()
-            ->all();
+            ->values();
 
-        return ['athletes' => $athletes, 'groups' => $groups];
+        return [
+            'athletes' => $this->rankings($athletes),
+            'groups' => $this->rankings($groups),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, array{name: string, donations: float, rounds: int, elevation_m: int}>  $entries
+     * @return array{donations: list<array{name: string, value: float|int}>, rounds: list<array{name: string, value: float|int}>, elevation_m: list<array{name: string, value: float|int}>}
+     */
+    protected function rankings(Collection $entries): array
+    {
+        return collect(['donations', 'rounds', 'elevation_m'])
+            ->mapWithKeys(fn (string $metric): array => [$metric => $entries
+                ->filter(fn (array $entry): bool => $entry[$metric] > 0)
+                ->sortByDesc($metric)
+                ->take(self::LIMIT)
+                ->map(fn (array $entry): array => ['name' => $entry['name'], 'value' => $entry[$metric]])
+                ->values()
+                ->all()])
+            ->all();
     }
 }
