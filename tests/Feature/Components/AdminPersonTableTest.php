@@ -524,7 +524,7 @@ it('explains why invoice actions require one selected event', function (): void 
         ->set('eventSlug', '')
         ->assertSee('Für Rechnungen bitte genau einen Anlass auswählen.')
         ->assertSee('Rechnungen')
-        ->assertSee('Status aktualisieren')
+        ->assertSee('Status aus Webling laden')
         ->assertSee('Zahlungsstatus');
 });
 

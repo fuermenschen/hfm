@@ -52,7 +52,9 @@ it('queues the reminder for an overdue open invoice and stamps the time', functi
     expect($invoice->invoice_reminder_sent_at)->not->toBeNull();
     Mail::assertQueued(DonorInvoiceMail::class, function (DonorInvoiceMail $mail): bool {
         expect($mail->hasTo('donor@example.com'))->toBeTrue()
-            ->and($mail->subject)->toBe('Erinnerung: Rechnung Höhenmeter für Menschen');
+            ->and($mail->subject)->toBe('Erinnerung: Rechnung Höhenmeter für Menschen')
+            ->and($mail->body)->toContain('Herzlichen Dank für deine Unterstützung')
+            ->and($mail->body)->toContain('kannst du diese Erinnerung ignorieren');
 
         return true;
     });

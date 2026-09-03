@@ -49,7 +49,7 @@
     wire:target="refreshInvoiceStatuses"
     :disabled="! $this->invoiceActionsEnabled()"
 >
-    Status aktualisieren
+    Status aus Webling laden
 </flux:button>
 <flux:button
     variant="ghost"

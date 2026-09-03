@@ -22,7 +22,7 @@ class SendDonorInvoiceAction
         $invoice->loadMissing(['externalUser', 'donationEvent']);
 
         throw_if($invoice->remote_deleted_at !== null, DonorInvoiceGuardException::class, 'Die Rechnung wurde in Webling gelöscht und kann nicht gesendet werden.');
-        throw_if(! $invoice->donationEvent->hasEnded(), DonorInvoiceGuardException::class, 'Rechnungen können erst nach Anlassende versendet werden.');
+        throw_if(! $invoice->donationEvent->hasEnded(), DonorInvoiceGuardException::class, 'Der Anlass "'.$invoice->donationEvent->title.'" ist noch nicht beendet. Rechnungen können erst danach versendet werden.');
         throw_if($invoice->webling_debitor_id === null, DonorInvoiceGuardException::class, 'Die Rechnung wurde noch nicht in Webling erstellt.');
         throw_if($this->donorInvoices->status($invoice) === DonorInvoiceStatus::Unknown, DonorInvoiceGuardException::class, 'Der Webling-Status der Rechnung ist unbekannt.');
         throw_if(in_array($this->donorInvoices->status($invoice), [DonorInvoiceStatus::Paid, DonorInvoiceStatus::Writeoff], true), DonorInvoiceGuardException::class, 'Bezahlte oder abgeschriebene Rechnungen können nicht gesendet werden.');
@@ -40,9 +40,10 @@ class SendDonorInvoiceAction
         $dueDateText = is_string($dueDate) && $dueDate !== '' ? Date::parse($dueDate)->format('d.m.Y') : null;
 
         $body = 'Liebe:r '.$invoice->externalUser->first_name."\n\n"
-            .'Im Anhang findest du deine Rechnung über Fr. '.$amount." für den Höhenmeter für Menschen.\n"
-            .($dueDateText !== null ? 'Die Zahlung ist fällig bis am '.$dueDateText.".\n" : '')
-            ."\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
+            .'Herzlichen Dank für deine Unterstützung von Höhenmeter für Menschen.\n\n'
+            .'Im Anhang findest du deine Rechnung über Fr. '.$amount.'. '
+            .($dueDateText !== null ? 'Bitte überweise den Betrag bis am '.$dueDateText.'.' : 'Bitte überweise den offenen Betrag.')
+            ."\n\nVielen Dank und herzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
         Mail::to(trim($email))->queue(new DonorInvoiceMail(
             subject: 'Rechnung Höhenmeter für Menschen',

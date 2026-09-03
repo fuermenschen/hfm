@@ -40,6 +40,8 @@ it('queues the invoice mail and stamps the sent time', function (): void {
     Mail::assertQueued(DonorInvoiceMail::class, function (DonorInvoiceMail $mail) use ($invoice): bool {
         expect($mail->hasTo('donor@example.com'))->toBeTrue()
             ->and($mail->subject)->toBe('Rechnung Höhenmeter für Menschen')
+            ->and($mail->body)->toContain('Herzlichen Dank für deine Unterstützung')
+            ->and($mail->body)->toContain('Bitte überweise den offenen Betrag')
             ->and($mail->storageAttachments[0]['disk'])->toBe('local')
             ->and($mail->storageAttachments[0]['path'])->toBe($invoice->pdf_path)
             ->and($mail->storageAttachments[0]['mime'])->toBe('application/pdf');
@@ -66,7 +68,7 @@ it('blocks sending before the event has ended', function (): void {
     $invoice->forceFill(['donation_event_id' => $event->id])->save();
 
     expect(fn () => app(SendDonorInvoiceAction::class)($invoice))
-        ->toThrow(DonorInvoiceGuardException::class, 'Rechnungen können erst nach Anlassende versendet werden.');
+        ->toThrow(DonorInvoiceGuardException::class, 'ist noch nicht beendet');
     Mail::assertNothingQueued();
     expect($invoice->refresh()->invoice_sent_at)->toBeNull();
 });

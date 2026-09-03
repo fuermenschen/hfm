@@ -657,8 +657,10 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         if ($this->bulkEligibleCount === 0) {
             Flux::toast(
-                heading: 'Nichts zu senden',
-                text: 'Keine der ausgewählten Rechnungen kann gesendet werden.',
+                heading: 'Rechnungen nicht versendet',
+                text: ! $event->hasEnded()
+                    ? 'Der Anlass ist noch nicht beendet. Rechnungen können erst danach versendet werden.'
+                    : 'Keine der ausgewählten Rechnungen kann gesendet werden.',
                 variant: 'info',
             );
 
@@ -1102,7 +1104,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             report($throwable);
 
             Flux::toast(
-                heading: 'Fehler',
+                heading: 'Rechnung nicht erstellt',
                 text: 'Die Rechnung für '.$person->privacy_name.' konnte nicht erstellt werden.',
                 variant: 'danger',
             );
@@ -1133,13 +1135,13 @@ class AdminPersonTable extends AbstractDatatableComponent
             ($this->sendDonorInvoice)($invoice);
 
             Flux::toast(
-                heading: 'Rechnung gesendet',
-                text: 'Die Rechnung wurde an '.$person->email.' gesendet.',
+                heading: 'Rechnung zum Versand eingeplant',
+                text: 'Die Rechnung wird an '.$person->email.' gesendet.',
                 variant: 'success',
             );
         } catch (DonorInvoiceGuardException $guardException) {
             Flux::toast(
-                heading: 'Nicht gesendet',
+                heading: 'Rechnung nicht versendet',
                 text: $guardException->getMessage(),
                 variant: 'warning',
             );
@@ -1147,7 +1149,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             report($throwable);
 
             Flux::toast(
-                heading: 'Fehler',
+                heading: 'Rechnung nicht versendet',
                 text: 'Die Rechnung konnte nicht gesendet werden.',
                 variant: 'danger',
             );
@@ -1178,13 +1180,13 @@ class AdminPersonTable extends AbstractDatatableComponent
             ($this->sendDonorInvoiceReminder)($invoice);
 
             Flux::toast(
-                heading: 'Zahlungserinnerung gesendet',
-                text: 'Die Zahlungserinnerung wurde an '.$person->email.' gesendet.',
+                heading: 'Zahlungserinnerung zum Versand eingeplant',
+                text: 'Die Zahlungserinnerung wird an '.$person->email.' gesendet.',
                 variant: 'success',
             );
         } catch (DonorInvoiceGuardException $guardException) {
             Flux::toast(
-                heading: 'Nicht gesendet',
+                heading: 'Zahlungserinnerung nicht versendet',
                 text: $guardException->getMessage(),
                 variant: 'warning',
             );
@@ -1192,7 +1194,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             report($throwable);
 
             Flux::toast(
-                heading: 'Fehler',
+                heading: 'Zahlungserinnerung nicht versendet',
                 text: 'Die Zahlungserinnerung konnte nicht gesendet werden.',
                 variant: 'danger',
             );
@@ -1229,7 +1231,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             );
         } catch (DonorInvoiceGuardException $guardException) {
             Flux::toast(
-                heading: 'Nicht gelöscht',
+                heading: 'Rechnung nicht gelöscht',
                 text: $guardException->getMessage(),
                 variant: 'warning',
             );
@@ -1237,7 +1239,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             report($throwable);
 
             Flux::toast(
-                heading: 'Fehler',
+                heading: 'Rechnung nicht gelöscht',
                 text: 'Die Rechnung konnte nicht gelöscht werden.',
                 variant: 'danger',
             );
