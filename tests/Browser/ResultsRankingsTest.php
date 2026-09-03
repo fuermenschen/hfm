@@ -8,6 +8,7 @@ use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Settings\EventSettings;
+use Pest\Browser\Playwright\Playwright;
 
 it('shows side-by-side rankings on large screens and cycles rankings on small screens', function (): void {
     $event = DonationEvent::factory()->create(['is_published' => true, 'title' => 'HoFi 2026']);
@@ -62,6 +63,12 @@ it('shows side-by-side rankings on large screens and cycles rankings on small sc
     $page->resize(390, 844)
         ->assertSee('Anna Z.');
 
-    $page->wait(10)
-        ->assertSee('Team Blau');
+    $timeout = Playwright::timeout();
+    Playwright::setTimeout(15_000);
+
+    try {
+        $page->assertSee('Team Blau');
+    } finally {
+        Playwright::setTimeout($timeout);
+    }
 });

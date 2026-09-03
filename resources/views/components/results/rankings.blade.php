@@ -12,11 +12,12 @@
     x-data="{
         desktopMetric: 0,
         mobileView: 0,
+        metricCount: {{ count($metrics) }},
         timer: null,
         init() {
             this.timer = setInterval(() => {
-                this.desktopMetric = (this.desktopMetric + 1) % 3;
-                this.mobileView = (this.mobileView + 1) % 6;
+                this.desktopMetric = (this.desktopMetric + 1) % this.metricCount;
+                this.mobileView = (this.mobileView + 1) % (this.metricCount * 2);
             }, 10000);
         },
         destroy() {
@@ -30,12 +31,14 @@
             <div x-cloak x-show="desktopMetric === {{ $loop->index }}" class="grid h-full grid-cols-2 gap-5">
                 <x-results.ranking-panel
                     title="Rangliste Sportler:innen"
-                    :metric="$label"
+                    :metric="$key"
+                    :label="$label"
                     :entries="$rankings['athletes'][$key]"
                 />
                 <x-results.ranking-panel
                     title="Rangliste Gruppen"
-                    :metric="$label"
+                    :metric="$key"
+                    :label="$label"
                     :entries="$rankings['groups'][$key]"
                 />
             </div>
@@ -47,14 +50,16 @@
             <div x-cloak x-show="mobileView === {{ $loop->index * 2 }}" class="h-full">
                 <x-results.ranking-panel
                     title="Rangliste Sportler:innen"
-                    :metric="$label"
+                    :metric="$key"
+                    :label="$label"
                     :entries="$rankings['athletes'][$key]"
                 />
             </div>
             <div x-cloak x-show="mobileView === {{ $loop->index * 2 + 1 }}" class="h-full">
                 <x-results.ranking-panel
                     title="Rangliste Gruppen"
-                    :metric="$label"
+                    :metric="$key"
+                    :label="$label"
                     :entries="$rankings['groups'][$key]"
                 />
             </div>

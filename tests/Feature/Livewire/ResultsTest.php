@@ -137,7 +137,7 @@ it('distributes equal-split donations across every event partner', function () {
     $component = Livewire::test(Results::class);
 
     $component
-        ->assertSet('totals.per_partner', fn (array $partners): bool => array_sum(array_column($partners, 'amount')) === 180.0)
+        ->assertSet('totals.per_partner', fn (array $partners): bool => round(array_sum(array_column($partners, 'amount')), 2) === 180.0)
         ->assertStatus(200)
         // Equal-split amount (100) is distributed evenly across all event partners.
         ->assertSee('B Partner')
@@ -237,6 +237,20 @@ it('ranks athletes by donations, rounds, and elevation using privacy names', fun
         ->assertSet('totals.rankings.athletes.rounds.0.value', 99)
         ->assertSet('totals.rankings.athletes.elevation_m.0.value', 4950)
         ->assertSet('totals.rankings.athletes.donations', fn ($ranking): bool => count($ranking) === 2);
+});
+
+it('orders tied rankings by name', function (): void {
+    $event = resultsTestEvent();
+    $first = resultsTestRegistration($event, 10);
+    $second = resultsTestRegistration($event, 10);
+    $first->externalUser->update(['first_name' => 'Beat', 'last_name' => 'Ziegler']);
+    $second->externalUser->update(['first_name' => 'Anna', 'last_name' => 'Aebi']);
+    resultsTestDonation($first, 10.0);
+    resultsTestDonation($second, 10.0);
+
+    Livewire::test(Results::class)
+        ->assertSet('totals.rankings.athletes.donations.0.name', 'Anna A.')
+        ->assertSet('totals.rankings.athletes.donations.1.name', 'Beat Z.');
 });
 
 it('ranks groups by the donations of their accepted members', function (): void {

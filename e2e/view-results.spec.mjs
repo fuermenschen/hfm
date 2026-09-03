@@ -25,11 +25,7 @@ test.describe("Results page", () => {
         // at a time through all athlete/group and metric combinations.
         await expect(page.getByText("Rangliste Sportler:innen").filter({ visible: true }).first()).toBeVisible();
 
-        if (page.viewportSize().width < 1024) {
-            await page.waitForTimeout(10_000);
-        }
-
-        await expect(page.getByText("Rangliste Gruppen").filter({ visible: true }).first()).toBeVisible();
+        await expect(page.getByText("Rangliste Gruppen").filter({ visible: true }).first()).toBeVisible({ timeout: 15_000 });
         await expect(page.getByText("Spenden", { exact: true }).filter({ visible: true }).first()).toBeVisible();
 
         // Partner totals have no section heading; disclaimer is pinned to bottom.

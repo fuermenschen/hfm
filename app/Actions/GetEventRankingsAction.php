@@ -72,7 +72,7 @@ class GetEventRankingsAction
         return collect(['donations', 'rounds', 'elevation_m'])
             ->mapWithKeys(fn (string $metric): array => [$metric => $entries
                 ->filter(fn (array $entry): bool => $entry[$metric] > 0)
-                ->sortByDesc($metric)
+                ->sort(fn (array $left, array $right): int => $right[$metric] <=> $left[$metric] ?: $left['name'] <=> $right['name'])
                 ->take(self::LIMIT)
                 ->map(fn (array $entry): array => ['name' => $entry['name'], 'value' => $entry[$metric]])
                 ->values()
