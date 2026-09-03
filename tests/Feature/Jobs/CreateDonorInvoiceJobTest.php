@@ -149,6 +149,23 @@ it('does not create a debitor without billable lines', function (): void {
     expect($invoice->refresh()->source_snapshot)->toBeNull();
 });
 
+it('clears remote_deleted_at when persisting the debitor id', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $invoice->forceFill(['remote_deleted_at' => now()])->save();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $letter = Mockery::mock(LetterService::class);
+
+    $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+    $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(successfulResponse(4321));
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-recreated'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    expect($invoice->refresh()->webling_debitor_id)->toBe(4321)
+        ->and($invoice->remote_deleted_at)->toBeNull();
+});
+
 it('does no remote work and keeps the cached pdf when it runs again', function (): void {
     $invoice = donorInvoiceWithDonation();
     $webling = Mockery::mock(WeblingInvoiceService::class);

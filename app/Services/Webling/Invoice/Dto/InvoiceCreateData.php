@@ -143,7 +143,7 @@ class InvoiceCreateData
         ];
     }
 
-    protected static function decimalToCents(mixed $amount): int
+    public static function decimalToCents(mixed $amount): int
     {
         return is_numeric($amount) ? (int) round((float) $amount * 100) : 0;
     }

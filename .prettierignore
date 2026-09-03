@@ -2,7 +2,10 @@ bootstrap
 public
 node_modules
 resources/sass
+storage/app
+storage/debugbar
 storage/framework
+storage/logs
 artisan
 vendor
 *.php

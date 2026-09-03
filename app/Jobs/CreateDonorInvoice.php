@@ -65,7 +65,11 @@ class CreateDonorInvoice implements ShouldQueue
 
                 $debitorId = $matchingIds[0] ?? $this->createDebitor($weblingInvoices, $invoice->id, $snapshot);
 
-                $invoice->forceFill(['webling_debitor_id' => $debitorId])->save();
+                $invoice->forceFill([
+                    'webling_debitor_id' => $debitorId,
+                    // Same-row recreation after remote deletion: this row is live again.
+                    'remote_deleted_at' => null,
+                ])->save();
             }
 
             if ($invoice->pdf_disk !== null && $invoice->pdf_path !== null) {

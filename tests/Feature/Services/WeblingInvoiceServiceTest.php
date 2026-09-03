@@ -304,3 +304,26 @@ it('finds exact markers in Webling direct-list responses', function (): void {
 
     expect($service->findInvoiceIdsByCommentMarker($marker))->toBe([45]);
 });
+
+it('rejects an invoice response without a Webling state', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $response = Mockery::mock(Response::class);
+    $api->shouldReceive('get')->once()->with('debitor/42')->andReturn($response);
+    $response->shouldReceive('json')->once()->andReturn([
+        'properties' => [
+            'duedate' => '2026-01-31',
+            'totalamount' => 15,
+            'remainingamount' => 15,
+        ],
+    ]);
+
+    $service = new WeblingInvoiceService($api, app(WeblingApiSettings::class));
+
+    expect(fn () => $service->invoiceDetails(42))
+        ->toThrow(RuntimeException::class, 'no Debitor state');
+});

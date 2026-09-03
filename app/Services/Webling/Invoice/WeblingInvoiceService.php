@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Webling\Invoice;
 
+use App\Exceptions\Webling\WeblingApiException;
 use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
 use App\Services\Webling\WeblingApiService;
 use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use RuntimeException;
 
 /**
  * Service for working with invoices ("debitor") via Webling API.
@@ -153,6 +156,22 @@ class WeblingInvoiceService
     }
 
     /**
+     * Derive the Webling web UI URL for a Debitor (verified against demo1.webling.ch).
+     */
+    // Used by the admin invoice UI reintroduced in the upcoming UI commit.
+    // TODO(dead-code): Remove ignore when the Webling link rendering is reintroduced.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function debitorUrl(int $debitorId): string
+    {
+        return sprintf(
+            '%s/admin#/accounting/%d/debitor/:debitor/view/%d',
+            rtrim($this->settings->api_url, '/'),
+            $this->settings->accounting_period_id,
+            $debitorId,
+        );
+    }
+
+    /**
      * Find full Debitor records whose comment exactly matches the marker.
      *
      * @return list<int>
@@ -198,13 +217,42 @@ class WeblingInvoiceService
 
     /**
      * Retrieve an invoice by ID.
+     *
+     * @throws WeblingApiException
+     * @throws ConnectionException
      */
-    // Temporarily unused in active flows; kept for upcoming Webling sync operations.
-    // TODO(dead-code): Remove ignore when get-by-id flow is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function getInvoice(int $id): Response
     {
         return $this->api->get('debitor/'.$id);
+    }
+
+    /**
+     * Read and normalize the current live details of a Debitor from Webling.
+     *
+     * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int}
+     *
+     * @throws WeblingApiException
+     * @throws ConnectionException
+     * @throws RuntimeException
+     */
+    public function invoiceDetails(int $debitorId): array
+    {
+        $payload = $this->getInvoice($debitorId)->json();
+        $properties = is_array($payload) ? ($payload['properties'] ?? null) : null;
+        throw_unless(is_array($properties), RuntimeException::class, 'Webling returned an unreadable Debitor payload for ID '.$debitorId.'.');
+
+        $state = $properties['state'] ?? null;
+        throw_unless(is_string($state) && $state !== '', RuntimeException::class, 'Webling returned no Debitor state for ID '.$debitorId.'.');
+
+        $dueDate = $properties['duedate'] ?? null;
+
+        return [
+            'state' => $state,
+            'due_date' => is_string($dueDate) && $dueDate !== '' ? $dueDate : null,
+            'invoice_number' => is_numeric($properties['debitorid'] ?? null) ? (string) (int) $properties['debitorid'] : null,
+            'total_cents' => InvoiceCreateData::decimalToCents($properties['totalamount'] ?? null),
+            'remaining_cents' => InvoiceCreateData::decimalToCents($properties['remainingamount'] ?? null),
+        ];
     }
 
     /**
@@ -222,6 +270,9 @@ class WeblingInvoiceService
 
     /**
      * Delete an invoice by ID.
+     *
+     * @throws WeblingApiException
+     * @throws ConnectionException
      */
     public function deleteInvoice(int $id): Response
     {
