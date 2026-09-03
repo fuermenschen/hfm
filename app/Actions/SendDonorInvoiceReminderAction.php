@@ -53,9 +53,9 @@ class SendDonorInvoiceReminderAction
         $dueDateText = Date::parse($details['due_date'])->format('d.m.Y');
 
         $body = 'Liebe:r '.$invoice->externalUser->first_name."\n\n"
-            .'Herzlichen Dank für deine Unterstützung von Höhenmeter für Menschen.\n\n'
+            ."Herzlichen Dank für deine Unterstützung von Höhenmeter für Menschen.\n\n"
             .'Unsere Rechnung über Fr. '.$amount.' ist seit dem '.$dueDateText." fällig.\n"
-            .'Falls du den Betrag bereits überwiesen hast, kannst du diese Erinnerung ignorieren.\n\n'
+            ."Falls du den Betrag bereits überwiesen hast, kannst du diese Erinnerung ignorieren.\n\n"
             ."Vielen Dank und herzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
         Mail::to(trim($email))->queue(new DonorInvoiceMail(

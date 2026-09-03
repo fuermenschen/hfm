@@ -479,7 +479,9 @@ class AdminPersonTable extends AbstractDatatableComponent
     {
         $status = $this->invoiceStatus($person);
 
-        return $status === DonorInvoiceStatus::NotCreated || $status === DonorInvoiceStatus::RemoteDeleted;
+        return $status === DonorInvoiceStatus::NotCreated
+            || $status === DonorInvoiceStatus::RemoteDeleted
+            || ($status === DonorInvoiceStatus::Created && $this->donorInvoice($person)?->pdf_path === null);
     }
 
     public function canDownloadInvoiceForRow(ExternalUser $person): bool
@@ -616,16 +618,19 @@ class AdminPersonTable extends AbstractDatatableComponent
             return;
         }
 
+        $eventDonorIds = $this->donorService->forEvent($event)->pluck('id')->all();
+        $selectedIds = array_values(array_intersect($this->selectedIds(), $eventDonorIds));
         $rows = $this->selectedEventInvoiceRows($event);
+        $this->bulkEligibleCount = 0;
 
-        foreach ($this->selectedIds() as $userId) {
+        foreach ($selectedIds as $userId) {
             $row = $rows->get($userId);
             if ($row === null || $row->remote_deleted_at !== null || $row->webling_debitor_id === null || $row->pdf_path === null) {
                 $this->bulkEligibleCount++;
-            } else {
-                $this->bulkSkippedCount++;
             }
         }
+
+        $this->bulkSkippedCount = $this->selectedCount() - $this->bulkEligibleCount;
 
         if ($this->bulkEligibleCount === 0) {
             Flux::toast(

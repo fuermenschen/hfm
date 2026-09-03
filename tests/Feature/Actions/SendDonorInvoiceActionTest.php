@@ -41,6 +41,7 @@ it('queues the invoice mail and stamps the sent time', function (): void {
         expect($mail->hasTo('donor@example.com'))->toBeTrue()
             ->and($mail->subject)->toBe('Rechnung Höhenmeter für Menschen')
             ->and($mail->body)->toContain('Herzlichen Dank für deine Unterstützung')
+            ->and($mail->body)->toContain("Menschen.\n\nIm Anhang")
             ->and($mail->body)->toContain('Bitte überweise den offenen Betrag')
             ->and($mail->storageAttachments[0]['disk'])->toBe('local')
             ->and($mail->storageAttachments[0]['path'])->toBe($invoice->pdf_path)

@@ -40,7 +40,7 @@ class SendDonorInvoiceAction
         $dueDateText = is_string($dueDate) && $dueDate !== '' ? Date::parse($dueDate)->format('d.m.Y') : null;
 
         $body = 'Liebe:r '.$invoice->externalUser->first_name."\n\n"
-            .'Herzlichen Dank für deine Unterstützung von Höhenmeter für Menschen.\n\n'
+            ."Herzlichen Dank für deine Unterstützung von Höhenmeter für Menschen.\n\n"
             .'Im Anhang findest du deine Rechnung über Fr. '.$amount.'. '
             .($dueDateText !== null ? 'Bitte überweise den Betrag bis am '.$dueDateText.'.' : 'Bitte überweise den offenen Betrag.')
             ."\n\nVielen Dank und herzliche Grüsse\nDas Team von Höhenmeter für Menschen";

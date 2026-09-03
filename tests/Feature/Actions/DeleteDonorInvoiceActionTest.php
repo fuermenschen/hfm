@@ -5,7 +5,10 @@ use App\Exceptions\DonorInvoiceGuardException;
 use App\Exceptions\Webling\WeblingApiException;
 use App\Models\DonorEventInvoice;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
+use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -51,6 +54,36 @@ it('cleans up locally without a remote request when no debitor exists', function
         ->and($invoice->source_snapshot)->toBeNull()
         ->and($invoice->invoice_sent_at)->toBeNull();
     Storage::disk('local')->assertMissing($invoice->getOriginal('pdf_path'));
+});
+
+it('uses the creation lock when deleting a local invoice', function (): void {
+    $invoice = deleteInvoiceFixture(['webling_debitor_id' => null]);
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldNotReceive('invoiceDetails');
+    $lock = Mockery::mock();
+    $lock->shouldReceive('block')->once()->with(10, Mockery::type('Closure'))->andReturnUsing(fn (int $seconds, Closure $callback) => $callback());
+    $lockCalls = [];
+    Cache::swap(deleteLockManager($lock, function (array $parameters) use (&$lockCalls): void {
+        $lockCalls[] = $parameters;
+    }));
+
+    app(DeleteDonorInvoiceAction::class, ['weblingInvoices' => $webling])($invoice);
+
+    expect($lockCalls)->toBe([['donor-invoice-creation:'.$invoice->id, 120]])
+        ->and($invoice->refresh()->remote_deleted_at)->not->toBeNull();
+});
+
+it('does not delete when the creation lock is unavailable', function (): void {
+    $invoice = deleteInvoiceFixture(['webling_debitor_id' => null]);
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldNotReceive('invoiceDetails');
+    $lock = Mockery::mock();
+    $lock->shouldReceive('block')->once()->andThrow(LockTimeoutException::class);
+    Cache::swap(deleteLockManager($lock));
+
+    expect(fn () => app(DeleteDonorInvoiceAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(LockTimeoutException::class);
+    expect($invoice->refresh()->remote_deleted_at)->toBeNull();
 });
 
 it('deletes an open unsettled invoice in webling and locally', function (): void {
@@ -148,3 +181,27 @@ it('skips deletion of an already remotely deleted invoice', function (): void {
     expect(fn () => app(DeleteDonorInvoiceAction::class, ['weblingInvoices' => $webling])($invoice))
         ->toThrow(DonorInvoiceGuardException::class, 'bereits gelöscht');
 });
+
+function deleteLockManager(mixed $lock, ?Closure $onLock = null): CacheManager
+{
+    return new class(app(), $lock, $onLock) extends CacheManager
+    {
+        public function __construct($app, private readonly mixed $lock, private readonly ?Closure $onLock)
+        {
+            parent::__construct($app);
+        }
+
+        public function __call($method, $parameters)
+        {
+            if ($method === 'lock') {
+                if ($this->onLock !== null) {
+                    ($this->onLock)($parameters);
+                }
+
+                return $this->lock;
+            }
+
+            return parent::__call($method, $parameters);
+        }
+    };
+}

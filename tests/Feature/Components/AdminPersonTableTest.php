@@ -598,6 +598,21 @@ it('reuses the same row when recreating a deleted invoice', function (): void {
     expect(DonorEventInvoice::query()->sole()->id)->toBe($invoice->id);
 });
 
+it('recreates a missing PDF for an existing debitor', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = donorInvoicePdfFixture($event, $donor);
+    $invoice->forceFill(['pdf_disk' => null, 'pdf_path' => null])->save();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmCreateInvoice', $donor->id);
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+});
+
 it('sends donor invoices and confirms resends', function (): void {
     Mail::fake();
     $event = endedDonorInvoiceEvent();
@@ -762,6 +777,25 @@ it('bulk creates invoices for selected donors with preflight counts', function (
         ->assertSet('confirmingInvoiceAction', 'bulk_create')
         ->call('runConfirmedInvoiceAction')
         ->assertSet('checkboxValues', []);
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+});
+
+it('counts donors outside the selected event as skipped when creating invoices in bulk', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $otherEvent = endedDonorInvoiceEvent();
+    $eventDonor = ExternalUser::factory()->asDonor($event)->create();
+    $otherEventDonor = ExternalUser::factory()->asDonor($otherEvent)->create();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$eventDonor->id, $otherEventDonor->id])
+        ->call('confirmBulkCreateInvoices')
+        ->assertSet('bulkEligibleCount', 1)
+        ->assertSet('bulkSkippedCount', 1)
+        ->call('runConfirmedInvoiceAction');
 
     Bus::assertDispatched(CreateDonorInvoice::class, 1);
 });

@@ -54,6 +54,7 @@ it('queues the reminder for an overdue open invoice and stamps the time', functi
         expect($mail->hasTo('donor@example.com'))->toBeTrue()
             ->and($mail->subject)->toBe('Erinnerung: Rechnung Höhenmeter für Menschen')
             ->and($mail->body)->toContain('Herzlichen Dank für deine Unterstützung')
+            ->and($mail->body)->toContain("Menschen.\n\nUnsere Rechnung")
             ->and($mail->body)->toContain('kannst du diese Erinnerung ignorieren');
 
         return true;
