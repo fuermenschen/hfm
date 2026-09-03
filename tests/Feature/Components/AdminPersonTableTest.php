@@ -2,7 +2,7 @@
 
 use App\Components\AdminPersonTable;
 use App\Jobs\CreateDonorInvoice;
-use App\Mail\GenericMailMessage;
+use App\Mail\DonorInvoiceMail;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
@@ -610,7 +610,7 @@ it('sends donor invoices and confirms resends', function (): void {
         ->call('sendInvoice', $donor->id)
         ->assertSet('confirmingInvoiceAction', null);
 
-    Mail::assertQueued(GenericMailMessage::class, 1);
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
     expect($invoice->refresh()->invoice_sent_at)->not->toBeNull();
 
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
@@ -618,7 +618,7 @@ it('sends donor invoices and confirms resends', function (): void {
         ->call('sendInvoice', $donor->id)
         ->assertSet('confirmingInvoiceAction', 'send');
 
-    Mail::assertQueued(GenericMailMessage::class, 1);
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
 
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
         ->set('eventSlug', $event->slug)
@@ -626,7 +626,7 @@ it('sends donor invoices and confirms resends', function (): void {
         ->set('confirmingInvoiceUserId', $donor->id)
         ->call('runConfirmedInvoiceAction');
 
-    Mail::assertQueued(GenericMailMessage::class, 2);
+    Mail::assertQueued(DonorInvoiceMail::class, 2);
 });
 
 it('sends reminders after live webling check', function (): void {
@@ -648,7 +648,7 @@ it('sends reminders after live webling check', function (): void {
         ->call('sendInvoiceReminder', $donor->id)
         ->assertSet('confirmingInvoiceAction', null);
 
-    Mail::assertQueued(GenericMailMessage::class, 1);
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
     expect($invoice->refresh()->invoice_reminder_sent_at)->not->toBeNull();
 
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
@@ -657,7 +657,7 @@ it('sends reminders after live webling check', function (): void {
         ->set('confirmingInvoiceUserId', $donor->id)
         ->call('runConfirmedInvoiceAction');
 
-    Mail::assertQueued(GenericMailMessage::class, 2);
+    Mail::assertQueued(DonorInvoiceMail::class, 2);
 });
 
 it('deletes unsettled invoices after confirmation', function (): void {
@@ -737,11 +737,6 @@ it('hides delete action for paid invoices', function (): void {
 });
 
 it('links invoices to webling', function (): void {
-    WeblingApiSettings::fake([
-        'api_url' => 'https://demo.webling.ch',
-        'api_key' => 'fake-key',
-        'accounting_period_id' => 321,
-    ]);
     $event = DonationEvent::factory()->create();
     [$donor] = donorInvoiceFixture($event, ['webling_debitor_id' => 55]);
 
@@ -791,7 +786,7 @@ it('bulk sends invoices only for eligible donors', function (): void {
         ->call('runConfirmedInvoiceAction')
         ->assertSet('checkboxValues', []);
 
-    Mail::assertQueued(GenericMailMessage::class, 1);
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
     expect($unsentInvoice->refresh()->invoice_sent_at)->not->toBeNull()
         ->and($sentInvoice->refresh()->invoice_sent_at)->not->toBeNull();
 });

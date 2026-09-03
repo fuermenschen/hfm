@@ -6,7 +6,7 @@ namespace App\Actions;
 
 use App\Exceptions\DonorInvoiceGuardException;
 use App\Exceptions\Webling\WeblingApiException;
-use App\Mail\GenericMailMessage;
+use App\Mail\DonorInvoiceMail;
 use App\Models\DonorEventInvoice;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Support\Facades\Date;
@@ -57,10 +57,10 @@ class SendDonorInvoiceReminderAction
             .'Die Zahlung ist seit dem '.$dueDateText." fällig.\n"
             ."\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
-        Mail::to(trim($email))->queue(new GenericMailMessage(
-            'Erinnerung: Rechnung Höhenmeter für Menschen',
-            $body,
-            [[
+        Mail::to(trim($email))->queue(new DonorInvoiceMail(
+            subject: 'Erinnerung: Rechnung Höhenmeter für Menschen',
+            body: $body,
+            storageAttachments: [[
                 'disk' => $invoice->pdf_disk,
                 'path' => $invoice->pdf_path,
                 'name' => sprintf('invoice_DON-%d-%d.pdf', $invoice->donation_event_id, $invoice->external_user_id),

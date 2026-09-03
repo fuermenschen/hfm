@@ -2,7 +2,7 @@
 
 use App\Actions\SendDonorInvoiceAction;
 use App\Exceptions\DonorInvoiceGuardException;
-use App\Mail\GenericMailMessage;
+use App\Mail\DonorInvoiceMail;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Models\ExternalUser;
@@ -37,7 +37,7 @@ it('queues the invoice mail and stamps the sent time', function (): void {
 
     $invoice->refresh();
     expect($invoice->invoice_sent_at)->not->toBeNull();
-    Mail::assertQueued(GenericMailMessage::class, function (GenericMailMessage $mail) use ($invoice): bool {
+    Mail::assertQueued(DonorInvoiceMail::class, function (DonorInvoiceMail $mail) use ($invoice): bool {
         expect($mail->hasTo('donor@example.com'))->toBeTrue()
             ->and($mail->subject)->toBe('Rechnung Höhenmeter für Menschen')
             ->and($mail->storageAttachments[0]['disk'])->toBe('local')

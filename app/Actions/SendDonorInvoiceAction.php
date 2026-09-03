@@ -6,7 +6,7 @@ namespace App\Actions;
 
 use App\Enums\DonorInvoiceStatus;
 use App\Exceptions\DonorInvoiceGuardException;
-use App\Mail\GenericMailMessage;
+use App\Mail\DonorInvoiceMail;
 use App\Models\DonorEventInvoice;
 use App\Services\DonorInvoiceService;
 use Illuminate\Support\Facades\Date;
@@ -44,10 +44,10 @@ class SendDonorInvoiceAction
             .($dueDateText !== null ? 'Die Zahlung ist fällig bis am '.$dueDateText.".\n" : '')
             ."\nHerzliche Grüsse\nDas Team von Höhenmeter für Menschen";
 
-        Mail::to(trim($email))->queue(new GenericMailMessage(
-            'Rechnung Höhenmeter für Menschen',
-            $body,
-            [[
+        Mail::to(trim($email))->queue(new DonorInvoiceMail(
+            subject: 'Rechnung Höhenmeter für Menschen',
+            body: $body,
+            storageAttachments: [[
                 'disk' => $invoice->pdf_disk,
                 'path' => $invoice->pdf_path,
                 'name' => sprintf('invoice_DON-%d-%d.pdf', $invoice->donation_event_id, $invoice->external_user_id),

@@ -3,7 +3,7 @@
 use App\Actions\SendDonorInvoiceReminderAction;
 use App\Exceptions\DonorInvoiceGuardException;
 use App\Exceptions\Webling\WeblingApiException;
-use App\Mail\GenericMailMessage;
+use App\Mail\DonorInvoiceMail;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Models\ExternalUser;
@@ -50,7 +50,7 @@ it('queues the reminder for an overdue open invoice and stamps the time', functi
 
     $invoice->refresh();
     expect($invoice->invoice_reminder_sent_at)->not->toBeNull();
-    Mail::assertQueued(GenericMailMessage::class, function (GenericMailMessage $mail): bool {
+    Mail::assertQueued(DonorInvoiceMail::class, function (DonorInvoiceMail $mail): bool {
         expect($mail->hasTo('donor@example.com'))->toBeTrue()
             ->and($mail->subject)->toBe('Erinnerung: Rechnung Höhenmeter für Menschen');
 

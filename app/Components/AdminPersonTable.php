@@ -339,13 +339,7 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     public function selectedAthletePartner(ExternalUser $person): string
     {
-        if ($this->role !== 'athlete' || $this->eventSlug === null || $this->eventSlug === '') {
-            return '-';
-        }
-
-        $registration = $person->athleteRegistrations->first(
-            fn (AthleteRegistration $registration): bool => $registration->donationEvent->slug === $this->eventSlug,
-        );
+        $registration = $this->selectedAthleteRegistration($person);
 
         if (! $registration instanceof AthleteRegistration) {
             return '-';
@@ -616,11 +610,12 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     public function confirmBulkCreateInvoices(): void
     {
-        if (! $this->requireInvoiceSelection() instanceof DonationEvent) {
+        $event = $this->requireInvoiceSelection();
+
+        if (! $event instanceof DonationEvent) {
             return;
         }
 
-        $event = $this->selectedEvent();
         $rows = $this->selectedEventInvoiceRows($event);
 
         foreach ($this->selectedIds() as $userId) {
@@ -647,11 +642,12 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     public function confirmBulkSendInvoices(): void
     {
-        if (! $this->requireInvoiceSelection() instanceof DonationEvent) {
+        $event = $this->requireInvoiceSelection();
+
+        if (! $event instanceof DonationEvent) {
             return;
         }
 
-        $event = $this->selectedEvent();
         $eligible = $this->selectedEventInvoices($event)->filter(
             fn (DonorEventInvoice $invoice): bool => $invoice->invoice_sent_at === null && $this->canSendInvoice($invoice, $event, $invoice->externalUser),
         );
@@ -674,11 +670,12 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     public function confirmBulkSendInvoiceReminders(): void
     {
-        if (! $this->requireInvoiceSelection() instanceof DonationEvent) {
+        $event = $this->requireInvoiceSelection();
+
+        if (! $event instanceof DonationEvent) {
             return;
         }
 
-        $event = $this->selectedEvent();
         $eligible = $this->selectedEventInvoices($event)->filter(
             fn (DonorEventInvoice $invoice): bool => $invoice->invoice_sent_at !== null
                 && $invoice->invoice_reminder_sent_at === null
@@ -820,9 +817,9 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         match ($action) {
             'create' => $this->createInvoiceForEventDonor((int) $userId, $event),
-            'send' => $this->runSendInvoice($this->eventInvoicePerson((int) $userId, $event)),
-            'reminder' => $this->runReminderInvoice($this->eventInvoicePerson((int) $userId, $event)),
-            'delete' => $this->runDeleteInvoice($this->eventInvoicePerson((int) $userId, $event)),
+            'send' => $this->runSendInvoice($this->eventInvoicePerson((int) $userId)),
+            'reminder' => $this->runReminderInvoice($this->eventInvoicePerson((int) $userId)),
+            'delete' => $this->runDeleteInvoice($this->eventInvoicePerson((int) $userId)),
             'bulk_create' => $this->runBulkCreateInvoices($event),
             'bulk_send' => $this->runBulkSendInvoices($event),
             'bulk_reminder' => $this->runBulkSendInvoiceReminders($event),
@@ -994,7 +991,7 @@ class AdminPersonTable extends AbstractDatatableComponent
         return $invoice;
     }
 
-    protected function eventInvoicePerson(int $externalUserId, DonationEvent $event): ExternalUser
+    protected function eventInvoicePerson(int $externalUserId): ExternalUser
     {
         return ExternalUser::query()->findOrFail($externalUserId);
     }
@@ -1046,10 +1043,7 @@ class AdminPersonTable extends AbstractDatatableComponent
      */
     protected function selectedEventInvoices(DonationEvent $event): Collection
     {
-        return DonorEventInvoice::query()
-            ->where('donation_event_id', $event->id)
-            ->whereIn('external_user_id', $this->selectedIds())
-            ->whereHas('externalUser')
+        return $this->selectedEventInvoiceQuery($event)
             ->with(['externalUser', 'donationEvent'])
             ->get();
     }
@@ -1059,12 +1053,18 @@ class AdminPersonTable extends AbstractDatatableComponent
      */
     protected function selectedEventInvoiceRows(DonationEvent $event): Collection
     {
+        return $this->selectedEventInvoiceQuery($event)
+            ->get()
+            ->keyBy('external_user_id');
+    }
+
+    /** @return Builder<DonorEventInvoice> */
+    protected function selectedEventInvoiceQuery(DonationEvent $event): Builder
+    {
         return DonorEventInvoice::query()
             ->where('donation_event_id', $event->id)
             ->whereIn('external_user_id', $this->selectedIds())
-            ->whereHas('externalUser')
-            ->get()
-            ->keyBy('external_user_id');
+            ->whereHas('externalUser');
     }
 
     protected function openInvoiceConfirm(string $action, ?int $externalUserId): void
@@ -1341,30 +1341,6 @@ class AdminPersonTable extends AbstractDatatableComponent
         return [
             'events' => DonationEvent::query()->latest('starts_at')->get(['id', 'title', 'slug', 'is_published']),
         ];
-    }
-
-    public function displayValue(mixed $row, string $column): string
-    {
-        $definition = $this->columnDefinitions()[$column] ?? [];
-        $formatter = (string) ($definition['formatter'] ?? 'text');
-        $value = data_get($row, $column);
-
-        return match ($formatter) {
-            'money' => $this->formatMoney($this->toNumeric($value)),
-            'date' => $this->formatDate($value),
-            'date_time' => $this->formatDateTime($value),
-            'yes_no' => is_bool($value) ? ($value ? 'Ja' : 'Nein') : '-',
-            default => $this->fallbackText(is_scalar($value) ? (string) $value : null),
-        };
-    }
-
-    protected function toNumeric(mixed $value): float|int|string|null
-    {
-        if (is_numeric($value) || $value === null) {
-            return $value;
-        }
-
-        return null;
     }
 
     public function exportAll(string $format): ?HttpResponse

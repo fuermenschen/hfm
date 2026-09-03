@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Components;
 
 use App\Actions\CreateAssociationDonationInvoiceAction;
-use App\Notifications\AssociationDonationMessage;
+use App\Notifications\AssociationDonationInvoice;
 use Exception;
 use Flux;
 use Illuminate\Contracts\View\Factory;
@@ -113,10 +113,9 @@ class AssociationDonationForm extends Component
                 amount: $this->amount,
             );
 
-            // send contact form message
-            $notification = new AssociationDonationMessage(
-                name: $this->first_name,
-                pdf: base64_encode($invoice['pdf']->output()),
+            $notification = new AssociationDonationInvoice(
+                firstName: $this->first_name,
+                pdfBase64: base64_encode($invoice['pdf']->output()),
                 filename: $invoice['filename'],
             );
 

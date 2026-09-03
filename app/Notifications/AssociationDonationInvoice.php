@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AssociationDonationMessage extends Notification implements ShouldQueue
+class AssociationDonationInvoice extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -17,8 +17,8 @@ class AssociationDonationMessage extends Notification implements ShouldQueue
      * Create a new notification instance.
      */
     public function __construct(
-        public readonly string $name,
-        public readonly string $pdf,
+        public readonly string $firstName,
+        public readonly string $pdfBase64,
         public readonly string $filename,
     ) {
         //
@@ -41,10 +41,10 @@ class AssociationDonationMessage extends Notification implements ShouldQueue
     {
         $message = new MailMessage;
         $message->subject('Deine Spendenrechnung')
-            ->greeting('Hallo '.$this->name.',')
+            ->greeting('Hallo '.$this->firstName.',')
             ->line('Danke, dass du den Verein für Menschen finanziell unterstützen möchtest. Dank Spenden wie deiner können wir die Organisation von Spendenanlässen finanzieren. Herzlichen Dank.')
-            ->line('Im Anhang findest du eine Spendenrechung.')
-            ->attachData(base64_decode($this->pdf), $this->filename)
+            ->line('Im Anhang findest du eine Spendenrechnung.')
+            ->attachData(base64_decode($this->pdfBase64), $this->filename, ['mime' => 'application/pdf'])
             ->bcc(config('mail.from.address'));
 
         return $message;
