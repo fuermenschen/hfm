@@ -6,8 +6,10 @@ namespace App\Services;
 
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
+use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
+use Illuminate\Support\Collection;
 use LogicException;
 
 /**
@@ -142,6 +144,30 @@ class DonationService
     }
 
     /**
+     * Calculate estimated totals for event partners, including donations from
+     * registrations that selected equal split.
+     *
+     * @param  Collection<int, Partner>  $partners
+     * @return array<int, float>
+     */
+    public function calculateEstimatedTotalPerEventPartner(DonationEvent $event, Collection $partners, iterable $donations): array
+    {
+        return $this->calculateTotalPerEventPartner($event, $partners, $donations, false);
+    }
+
+    /**
+     * Calculate actual totals for event partners, including donations from
+     * registrations that selected equal split.
+     *
+     * @param  Collection<int, Partner>  $partners
+     * @return array<int, float>
+     */
+    public function calculateActualTotalPerEventPartner(DonationEvent $event, Collection $partners, iterable $donations): array
+    {
+        return $this->calculateTotalPerEventPartner($event, $partners, $donations, true);
+    }
+
+    /**
      * Apply min and max caps to an amount.
      */
     protected function applyMinMax(float $amount, ?float $min, ?float $max): float
@@ -155,6 +181,67 @@ class DonationService
         }
 
         return $amount;
+    }
+
+    /**
+     * @param  Collection<int, Partner>  $partners
+     * @return array<int, float>
+     */
+    protected function calculateTotalPerEventPartner(DonationEvent $event, Collection $partners, iterable $donations, bool $actual): array
+    {
+        $donations = collect($donations);
+        $totals = $partners->mapWithKeys(
+            fn (Partner $partner): array => [$partner->id => 0],
+        );
+        $equalSplitAmount = 0;
+
+        foreach ($donations as $donation) {
+            $registration = $this->requireAthleteRegistration($donation);
+            $amount = $actual
+                ? $this->calculateActualAmount($donation)
+                : $this->calculateEstimatedAmount($donation);
+            $amountInCents = (int) round($amount * 100);
+
+            if ($registration->partner_id === null) {
+                $equalSplitAmount += $amountInCents;
+
+                continue;
+            }
+
+            if ($totals->has($registration->partner_id)) {
+                $totals[$registration->partner_id] += $amountInCents;
+            }
+        }
+
+        $legacyPartnerIds = $partners->where('name', 'alle zu gleichen Teilen')->pluck('id');
+        $legacyAmount = $legacyPartnerIds->sum(fn (int $partnerId): int => $totals->pull($partnerId, 0));
+        $totals = $this->distributeCents($totals, $legacyAmount);
+
+        if ($event->has_equal_split_option) {
+            $totals = $this->distributeCents($totals, $equalSplitAmount);
+        }
+
+        return $totals
+            ->map(fn (int $amount): float => $amount / 100)
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, int>  $totals
+     * @return Collection<int, int>
+     */
+    protected function distributeCents(Collection $totals, int $amount): Collection
+    {
+        if ($amount <= 0 || $totals->isEmpty()) {
+            return $totals;
+        }
+
+        $share = intdiv($amount, $totals->count());
+        $remainder = $amount % $totals->count();
+
+        return $totals->map(function (int $total) use (&$remainder, $share): int {
+            return $total + $share + ($remainder-- > 0 ? 1 : 0);
+        });
     }
 
     protected function roundsEstimated(Donation $donation): int
