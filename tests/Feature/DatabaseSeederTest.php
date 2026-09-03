@@ -10,22 +10,23 @@ use Illuminate\Support\Collection;
 
 use function Pest\Laravel\seed;
 
-it('seeds official address defaults without overwriting configured values', function (): void {
+it('seeds invoice settings defaults unconditionally', function (): void {
     $settings = app(InvoiceSettings::class);
     $settings->creditor_name = 'Existing Organisation';
-    $settings->creditor_city = 'Existing City';
+    $settings->qr_iban = 'CH1234567890123456789';
     $settings->save();
 
     seed(DatabaseSeeder::class);
 
     $settings = app(InvoiceSettings::class);
 
-    expect($settings->creditor_name)->toBe('Existing Organisation')
+    expect($settings->qr_iban)->toBe('CH2030700114903053924')
+        ->and($settings->creditor_name)->toBe('Verein für Menschen')
         ->and($settings->creditor_care_of)->toBe('Kai Frehner')
         ->and($settings->creditor_street)->toBe('Rössligasse')
         ->and($settings->creditor_building_number)->toBe('6')
         ->and($settings->creditor_postal_code)->toBe('8400')
-        ->and($settings->creditor_city)->toBe('Existing City');
+        ->and($settings->creditor_city)->toBe('Winterthur');
 });
 
 it('chooses a portal smoke donation without an existing donor pair', function (): void {

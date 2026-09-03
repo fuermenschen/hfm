@@ -17,8 +17,12 @@ it('renders athlete and donor admin pages for authenticated users', function ():
     get('/admin/sportlerinnen')
         ->assertSuccessful()
         ->assertSee('Sportler:innen')
-        ->assertSee('data-flux-icon', false);
-    get('/admin/spenderinnen')->assertSuccessful()->assertSee('Spender:innen');
+        ->assertSee('data-flux-icon', false)
+        ->assertDontSee('Zahlungsstatus');
+    get('/admin/spenderinnen')
+        ->assertSuccessful()
+        ->assertSee('Spender:innen')
+        ->assertSee('Zahlungsstatus');
     get('/admin/externe-personen')->assertNotFound();
 
     Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])->assertStatus(200);

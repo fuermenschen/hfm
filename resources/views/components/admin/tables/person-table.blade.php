@@ -114,6 +114,78 @@
                                 Dokumente werden erstellt...
                             </flux:text>
                         @endif
+                        @if ($role === 'donor')
+                            <flux:dropdown>
+                                <flux:button
+                                    variant="ghost"
+                                    size="sm"
+                                    icon="document-text"
+                                    wire:loading.attr="disabled"
+                                    wire:target="confirmBulkCreateInvoices,confirmBulkSendInvoices,confirmBulkSendInvoiceReminders,downloadSelectedInvoiceArchive,refreshInvoiceStatuses,paymentStatusSummary"
+                                    :disabled="! $this->invoiceActionsEnabled()"
+                                >
+                                    Rechnungen
+                                </flux:button>
+                                <flux:menu>
+                                    <flux:menu.item
+                                        wire:click="confirmBulkCreateInvoices"
+                                        icon="document-plus"
+                                        :disabled="! $this->invoiceActionsEnabled() || $this->selectedCount() === 0"
+                                    >
+                                        Für Auswahl erstellen
+                                    </flux:menu.item>
+                                    <flux:menu.item
+                                        wire:click="confirmBulkSendInvoices"
+                                        icon="paper-airplane"
+                                        :disabled="! $this->invoiceActionsEnabled() || $this->selectedCount() === 0"
+                                    >
+                                        Für Auswahl senden
+                                    </flux:menu.item>
+                                    <flux:menu.item
+                                        wire:click="confirmBulkSendInvoiceReminders"
+                                        icon="bell-alert"
+                                        :disabled="! $this->invoiceActionsEnabled() || $this->selectedCount() === 0"
+                                    >
+                                        Zahlungserinnerung für Auswahl
+                                    </flux:menu.item>
+                                    <flux:menu.item
+                                        wire:click="downloadSelectedInvoiceArchive"
+                                        icon="document-arrow-down"
+                                        :disabled="! $this->invoiceActionsEnabled() || $this->selectedCount() === 0"
+                                    >
+                                        PDFs herunterladen (ZIP)
+                                    </flux:menu.item>
+                                </flux:menu>
+                            </flux:dropdown>
+                            <flux:button
+                                variant="ghost"
+                                size="sm"
+                                icon="arrow-path"
+                                wire:click="refreshInvoiceStatuses"
+                                wire:loading.attr="disabled"
+                                wire:target="refreshInvoiceStatuses"
+                                :disabled="! $this->invoiceActionsEnabled()"
+                            >
+                                Status aktualisieren
+                            </flux:button>
+                            <flux:button
+                                variant="ghost"
+                                size="sm"
+                                icon="chart-bar"
+                                wire:click="paymentStatusSummary"
+                                wire:loading.attr="disabled"
+                                wire:target="paymentStatusSummary"
+                                :disabled="! $this->invoiceActionsEnabled()"
+                            >
+                                Zahlungsstatus
+                            </flux:button>
+                            @if (! $this->invoiceActionsEnabled())
+                                <flux:callout icon="information-circle" variant="secondary" class="py-1.5">
+                                    <flux:callout.text>
+                                        Für Rechnungen bitte genau einen Anlass auswählen.</flux:callout.text>
+                                </flux:callout>
+                            @endif
+                        @endif
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
                 </x-slot:bottomLeft>
@@ -185,6 +257,27 @@
                                                 <flux:badge size="sm" color="zinc">{{ $event->slug }}</flux:badge>
                                             @endforeach
                                         </div>
+                                    @elseif ($columnKey === 'invoice_status')
+                                        @php($invoiceStatus = $this->invoiceStatus($row))
+                                        @if ($invoiceStatus !== null)
+                                            <flux:badge size="sm" :color="$this->invoiceStatusColor($invoiceStatus)">
+                                                {{ $invoiceStatus->label() }}
+                                            </flux:badge>
+                                        @else
+                                            -
+                                        @endif
+                                    @elseif ($columnKey === 'invoice_number')
+                                        {{ $this->invoiceNumber($row) }}
+                                    @elseif ($columnKey === 'invoice_total')
+                                        {{ $this->invoiceTotal($row) }}
+                                    @elseif ($columnKey === 'invoice_remaining')
+                                        {{ $this->invoiceRemaining($row) }}
+                                    @elseif ($columnKey === 'invoice_sent_at')
+                                        {{ $this->invoiceSentAt($row) }}
+                                    @elseif ($columnKey === 'invoice_reminder_sent_at')
+                                        {{ $this->invoiceReminderSentAt($row) }}
+                                    @elseif ($columnKey === 'invoice_synced_at')
+                                        {{ $this->invoiceSyncedAt($row) }}
                                     @elseif ($columnKey === 'partner')
                                         {{ $this->selectedAthletePartner($row) }}
                                     @elseif ($columnKey === 'group')
@@ -256,6 +349,71 @@
                             @endif
                             <flux:table.cell class="w-1 whitespace-nowrap">
                                 <div class="flex justify-end gap-1">
+                                    @if ($role === 'donor' && $this->invoiceActionsEnabled())
+                                        <flux:dropdown align="end">
+                                            <flux:button
+                                                variant="subtle"
+                                                size="xs"
+                                                icon="ellipsis-horizontal"
+                                                square
+                                                aria-label="Rechnungsaktionen"
+                                            />
+                                            <flux:menu>
+                                                @if ($this->canCreateInvoiceForRow($row))
+                                                    <flux:menu.item
+                                                        wire:click="confirmCreateInvoice({{ $row->id }})"
+                                                        icon="document-plus"
+                                                    >
+                                                        Rechnung erstellen
+                                                    </flux:menu.item>
+                                                @endif
+                                                @if ($this->canDownloadInvoiceForRow($row))
+                                                    <flux:menu.item
+                                                        wire:click="downloadInvoicePdf({{ $row->id }})"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="downloadInvoicePdf"
+                                                        icon="document-arrow-down"
+                                                    >
+                                                        Rechnung herunterladen
+                                                    </flux:menu.item>
+                                                @endif
+                                                @if ($this->canSendInvoiceForRow($row))
+                                                    <flux:menu.item
+                                                        wire:click="sendInvoice({{ $row->id }})"
+                                                        icon="paper-airplane"
+                                                    >
+                                                        Rechnung senden
+                                                    </flux:menu.item>
+                                                @endif
+                                                @if ($this->canRemindInvoiceForRow($row))
+                                                    <flux:menu.item
+                                                        wire:click="sendInvoiceReminder({{ $row->id }})"
+                                                        icon="bell-alert"
+                                                    >
+                                                        Zahlungserinnerung senden
+                                                    </flux:menu.item>
+                                                @endif
+                                                @if (($weblingUrl = $this->invoiceWeblingUrl($row)) !== null)
+                                                    <flux:menu.item
+                                                        href="{{ $weblingUrl }}"
+                                                        target="_blank"
+                                                        icon="arrow-top-right-on-square"
+                                                    >
+                                                        Rechnung in Webling öffnen
+                                                    </flux:menu.item>
+                                                @endif
+                                                @if ($this->canDeleteInvoiceForRow($row))
+                                                    <flux:menu.item
+                                                        wire:click="confirmDeleteInvoice({{ $row->id }})"
+                                                        icon="trash"
+                                                        variant="danger"
+                                                    >
+                                                        Rechnung löschen
+                                                    </flux:menu.item>
+                                                @endif
+                                            </flux:menu>
+                                        </flux:dropdown>
+                                    @endif
                                     <flux:button
                                         size="xs"
                                         variant="ghost"
@@ -309,5 +467,31 @@
     <livewire:admin-external-user-editor @external-user-saved="$refresh" />
     @if ($role === 'athlete')
         <livewire:admin-athlete-registration-editor @athlete-registration-saved="$refresh" />
+    @endif
+
+    @if ($role === 'donor')
+        <flux:modal name="admin-person-invoice-confirm" class="min-w-[22rem]" wire:close="cancelInvoiceConfirm">
+            <div class="space-y-4">
+                <flux:heading size="lg">{{ $this->invoiceConfirmHeading() }}</flux:heading>
+                <flux:text>{{ $this->invoiceConfirmText() }}</flux:text>
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="ghost" wire:click="cancelInvoiceConfirm">Abbrechen</flux:button>
+                    </flux:modal.close>
+                    <flux:button
+                        :variant="$this->confirmingInvoiceIsDestructive() ? 'danger' : 'primary'"
+                        wire:click="runConfirmedInvoiceAction"
+                        wire:loading.attr="disabled"
+                        wire:target="runConfirmedInvoiceAction"
+                    >
+                        <span
+                            wire:loading.remove
+                            wire:target="runConfirmedInvoiceAction"
+                        >{{ $this->invoiceConfirmButtonLabel() }}</span>
+                        <span wire:loading wire:target="runConfirmedInvoiceAction">Wird ausgeführt...</span>
+                    </flux:button>
+                </div>
+            </div>
+        </flux:modal>
     @endif
 </div>

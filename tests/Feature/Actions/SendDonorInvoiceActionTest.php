@@ -118,6 +118,15 @@ it('blocks sending an invoice with unknown webling state', function (): void {
         ->toThrow(DonorInvoiceGuardException::class, 'unbekannt');
 });
 
+it('blocks sending paid and written-off invoices', function (string $state): void {
+    Mail::fake();
+    $invoice = sendInvoiceFixture(['webling_state' => $state]);
+
+    expect(fn () => app(SendDonorInvoiceAction::class)($invoice))
+        ->toThrow(DonorInvoiceGuardException::class, 'können nicht gesendet werden');
+    Mail::assertNothingQueued();
+})->with(['paid', 'writeoff']);
+
 it('does not stamp the sent time when mail dispatch fails', function (): void {
     $invoice = sendInvoiceFixture();
 

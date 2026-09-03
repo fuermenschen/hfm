@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\DonorInvoiceStatus;
 use Carbon\Carbon;
 use Database\Factories\DonorEventInvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -71,50 +70,6 @@ class DonorEventInvoice extends Model
      * Raw Webling states considered unpaid.
      */
     public const array UnpaidStates = ['open', 'partially paid'];
-
-    public function displayStatus(): DonorInvoiceStatus
-    {
-        if ($this->remote_deleted_at !== null) {
-            return DonorInvoiceStatus::RemoteDeleted;
-        }
-
-        if ($this->webling_state === 'paid') {
-            return DonorInvoiceStatus::Paid;
-        }
-
-        if ($this->webling_state === 'writeoff') {
-            return DonorInvoiceStatus::Writeoff;
-        }
-
-        if ($this->webling_state !== null && ! in_array($this->webling_state, self::UnpaidStates, true)) {
-            return DonorInvoiceStatus::Unknown;
-        }
-
-        if ($this->isOverdue()) {
-            return DonorInvoiceStatus::Overdue;
-        }
-
-        if ($this->webling_state === 'partially paid') {
-            return DonorInvoiceStatus::PartiallyPaid;
-        }
-
-        if ($this->invoice_sent_at !== null) {
-            return DonorInvoiceStatus::Sent;
-        }
-
-        if ($this->webling_debitor_id !== null) {
-            return DonorInvoiceStatus::Created;
-        }
-
-        return DonorInvoiceStatus::NotCreated;
-    }
-
-    public function isOverdue(): bool
-    {
-        return in_array($this->webling_state, self::UnpaidStates, true)
-            && $this->webling_due_date !== null
-            && $this->webling_due_date->toDateString() < Date::now($this->donationEvent->timezone)->toDateString();
-    }
 
     /**
      * Mark the invoice as remotely deleted: delete the local PDF and clear

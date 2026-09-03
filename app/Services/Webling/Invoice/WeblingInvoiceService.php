@@ -158,9 +158,6 @@ class WeblingInvoiceService
     /**
      * Derive the Webling web UI URL for a Debitor (verified against demo1.webling.ch).
      */
-    // Used by the admin invoice UI reintroduced in the upcoming UI commit.
-    // TODO(dead-code): Remove ignore when the Webling link rendering is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function debitorUrl(int $debitorId): string
     {
         return sprintf(

@@ -3,21 +3,32 @@
 use App\Enums\DonorInvoiceStatus;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
+use App\Services\DonorInvoiceService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
 
+function statusOf(DonorEventInvoice $invoice): DonorInvoiceStatus
+{
+    return app(DonorInvoiceService::class)->status($invoice);
+}
+
+function overdueOf(DonorEventInvoice $invoice): bool
+{
+    return app(DonorInvoiceService::class)->isOverdue($invoice);
+}
+
 it('derives NotCreated for a fresh invoice row', function (): void {
     $invoice = DonorEventInvoice::factory()->create();
 
-    expect($invoice->displayStatus())->toBe(DonorInvoiceStatus::NotCreated)
-        ->and($invoice->isOverdue())->toBeFalse();
+    expect(statusOf($invoice))->toBe(DonorInvoiceStatus::NotCreated)
+        ->and(overdueOf($invoice))->toBeFalse();
 });
 
 it('derives Created for an invoice with a debitor', function (): void {
     $invoice = DonorEventInvoice::factory()->create(['webling_debitor_id' => 42]);
 
-    expect($invoice->displayStatus())->toBe(DonorInvoiceStatus::Created);
+    expect(statusOf($invoice))->toBe(DonorInvoiceStatus::Created);
 });
 
 it('derives Sent for a sent invoice in open state', function (): void {
@@ -27,7 +38,7 @@ it('derives Sent for a sent invoice in open state', function (): void {
         'invoice_sent_at' => now(),
     ]);
 
-    expect($invoice->displayStatus())->toBe(DonorInvoiceStatus::Sent);
+    expect(statusOf($invoice))->toBe(DonorInvoiceStatus::Sent);
 });
 
 it('derives PartiallyPaid for a not yet due partially paid invoice', function (): void {
@@ -36,9 +47,10 @@ it('derives PartiallyPaid for a not yet due partially paid invoice', function ()
         'webling_state' => 'partially paid',
         'webling_due_date' => today()->addWeek(),
     ]);
+    $invoice->load('donationEvent');
 
-    expect($invoice->displayStatus())->toBe(DonorInvoiceStatus::PartiallyPaid)
-        ->and($invoice->isOverdue())->toBeFalse();
+    expect(statusOf($invoice))->toBe(DonorInvoiceStatus::PartiallyPaid)
+        ->and(overdueOf($invoice))->toBeFalse();
 });
 
 it('derives Overdue for open and partially paid invoices past due', function (): void {
@@ -53,11 +65,13 @@ it('derives Overdue for open and partially paid invoices past due', function ():
         'webling_state' => 'partially paid',
         'webling_due_date' => today()->subDay(),
     ]);
+    $open->load('donationEvent');
+    $partial->load('donationEvent');
 
-    expect($open->displayStatus())->toBe(DonorInvoiceStatus::Overdue)
-        ->and($open->isOverdue())->toBeTrue()
-        ->and($partial->displayStatus())->toBe(DonorInvoiceStatus::Overdue)
-        ->and($partial->isOverdue())->toBeTrue();
+    expect(statusOf($open))->toBe(DonorInvoiceStatus::Overdue)
+        ->and(overdueOf($open))->toBeTrue()
+        ->and(statusOf($partial))->toBe(DonorInvoiceStatus::Overdue)
+        ->and(overdueOf($partial))->toBeTrue();
 });
 
 it('derives Paid and Writeoff regardless of other fields', function (): void {
@@ -73,9 +87,9 @@ it('derives Paid and Writeoff regardless of other fields', function (): void {
         'webling_due_date' => today()->subWeek(),
     ]);
 
-    expect($paid->displayStatus())->toBe(DonorInvoiceStatus::Paid)
-        ->and($writeoff->displayStatus())->toBe(DonorInvoiceStatus::Writeoff)
-        ->and($paid->isOverdue())->toBeFalse();
+    expect(statusOf($paid))->toBe(DonorInvoiceStatus::Paid)
+        ->and(statusOf($writeoff))->toBe(DonorInvoiceStatus::Writeoff)
+        ->and(overdueOf($paid))->toBeFalse();
 });
 
 it('derives RemoteDeleted with the highest precedence', function (): void {
@@ -85,7 +99,7 @@ it('derives RemoteDeleted with the highest precedence', function (): void {
         'remote_deleted_at' => now(),
     ]);
 
-    expect($invoice->displayStatus())->toBe(DonorInvoiceStatus::RemoteDeleted);
+    expect(statusOf($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
 });
 
 it('derives Unknown for unrecognized Webling states', function (): void {
@@ -94,8 +108,8 @@ it('derives Unknown for unrecognized Webling states', function (): void {
         'webling_state' => 'shredded',
     ]);
 
-    expect($invoice->displayStatus())->toBe(DonorInvoiceStatus::Unknown)
-        ->and($invoice->isOverdue())->toBeFalse();
+    expect(statusOf($invoice))->toBe(DonorInvoiceStatus::Unknown)
+        ->and(overdueOf($invoice))->toBeFalse();
 });
 
 it('treats a due date of today as not overdue', function (): void {
@@ -104,9 +118,10 @@ it('treats a due date of today as not overdue', function (): void {
         'webling_state' => 'open',
         'webling_due_date' => today(),
     ]);
+    $invoice->load('donationEvent');
 
-    expect($invoice->isOverdue())->toBeFalse()
-        ->and($invoice->displayStatus())->toBe(DonorInvoiceStatus::Created);
+    expect(overdueOf($invoice))->toBeFalse()
+        ->and(statusOf($invoice))->toBe(DonorInvoiceStatus::Created);
 });
 
 it('uses the invoice event timezone to determine whether a date is overdue', function (): void {
@@ -119,8 +134,9 @@ it('uses the invoice event timezone to determine whether a date is overdue', fun
             'webling_state' => 'open',
             'webling_due_date' => '2025-12-31',
         ]);
+        $invoice->setRelation('donationEvent', $event);
 
-        expect($invoice->isOverdue())->toBeFalse();
+        expect(overdueOf($invoice))->toBeFalse();
     } finally {
         Date::setTestNow();
     }
@@ -162,6 +178,6 @@ it('deletes the pdf and clears lifecycle fields when marked remotely deleted', f
         ->and($invoice->invoice_reminder_sent_at)->toBeNull()
         ->and($invoice->source_snapshot)->toBeNull()
         ->and($invoice->source_total_cents)->toBeNull()
-        ->and($invoice->displayStatus())->toBe(DonorInvoiceStatus::RemoteDeleted);
+        ->and(statusOf($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
     Storage::disk('local')->assertMissing($path);
 });

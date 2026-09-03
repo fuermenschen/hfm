@@ -8,12 +8,15 @@ use App\Enums\DonorInvoiceStatus;
 use App\Exceptions\DonorInvoiceGuardException;
 use App\Mail\GenericMailMessage;
 use App\Models\DonorEventInvoice;
+use App\Services\DonorInvoiceService;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class SendDonorInvoiceAction
 {
+    public function __construct(private DonorInvoiceService $donorInvoices) {}
+
     public function __invoke(DonorEventInvoice $invoice): void
     {
         $invoice->loadMissing(['externalUser', 'donationEvent']);
@@ -21,7 +24,8 @@ class SendDonorInvoiceAction
         throw_if($invoice->remote_deleted_at !== null, DonorInvoiceGuardException::class, 'Die Rechnung wurde in Webling gelöscht und kann nicht gesendet werden.');
         throw_if(! $invoice->donationEvent->hasEnded(), DonorInvoiceGuardException::class, 'Rechnungen können erst nach Anlassende versendet werden.');
         throw_if($invoice->webling_debitor_id === null, DonorInvoiceGuardException::class, 'Die Rechnung wurde noch nicht in Webling erstellt.');
-        throw_if($invoice->displayStatus() === DonorInvoiceStatus::Unknown, DonorInvoiceGuardException::class, 'Der Webling-Status der Rechnung ist unbekannt.');
+        throw_if($this->donorInvoices->status($invoice) === DonorInvoiceStatus::Unknown, DonorInvoiceGuardException::class, 'Der Webling-Status der Rechnung ist unbekannt.');
+        throw_if(in_array($this->donorInvoices->status($invoice), [DonorInvoiceStatus::Paid, DonorInvoiceStatus::Writeoff], true), DonorInvoiceGuardException::class, 'Bezahlte oder abgeschriebene Rechnungen können nicht gesendet werden.');
 
         $email = $invoice->externalUser->email;
         throw_if(trim($email) === '', DonorInvoiceGuardException::class, 'Der Spender hat keine gültige E-Mail-Adresse hinterlegt.');

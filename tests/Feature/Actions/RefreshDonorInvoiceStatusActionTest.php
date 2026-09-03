@@ -6,6 +6,7 @@ use App\Exceptions\DonorInvoiceGuardException;
 use App\Exceptions\Webling\WeblingApiException;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
+use App\Services\DonorInvoiceService;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Storage;
@@ -48,14 +49,14 @@ it('updates raw state, amounts, invoice number, and sync time from webling', fun
 
     app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
 
-    $invoice->refresh();
+    $invoice->refresh()->load('donationEvent');
     expect($invoice->webling_state)->toBe('partially paid')
         ->and($invoice->webling_due_date->toDateString())->toBe('2099-01-31')
         ->and($invoice->webling_invoice_number)->toBe('1542')
         ->and($invoice->webling_total_cents)->toBe(1500)
         ->and($invoice->webling_remaining_cents)->toBe(500)
         ->and($invoice->webling_synced_at)->not->toBeNull()
-        ->and($invoice->displayStatus())->toBe(DonorInvoiceStatus::PartiallyPaid);
+        ->and(app(DonorInvoiceService::class)->status($invoice))->toBe(DonorInvoiceStatus::PartiallyPaid);
 });
 
 it('marks the invoice remotely deleted on a confirmed 404', function (): void {
@@ -71,7 +72,7 @@ it('marks the invoice remotely deleted on a confirmed 404', function (): void {
     expect($invoice->remote_deleted_at)->not->toBeNull()
         ->and($invoice->webling_debitor_id)->toBeNull()
         ->and($invoice->pdf_path)->toBeNull()
-        ->and($invoice->displayStatus())->toBe(DonorInvoiceStatus::RemoteDeleted);
+        ->and(app(DonorInvoiceService::class)->status($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
     Storage::disk('local')->assertMissing($invoice->getOriginal('pdf_path'));
 });
 
