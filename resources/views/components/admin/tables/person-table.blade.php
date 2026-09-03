@@ -198,6 +198,8 @@
                                                 {{ $confirmed ? 'OK' : 'NOK' }}
                                             </flux:badge>
                                         @endif
+                                    @elseif ($columnKey === 'registration_time')
+                                        {{ $this->formatDateTime($this->selectedRegistrationCreatedAt($row)) }}
                                     @else
                                         {{ $this->displayValue($row, $columnKey) }}
                                     @endif

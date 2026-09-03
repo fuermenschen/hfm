@@ -401,3 +401,63 @@ it('downloads story images for admins and blocks external users', function (): v
     get(route('admin.story-image.download', [$registration, 'light']))
         ->assertRedirect();
 });
+
+it('shows registration time for athletes in the selected event', function (): void {
+    $event = DonationEvent::factory()->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Timely Athlete']);
+    $registration = AthleteRegistration::query()
+        ->where('external_user_id', $athlete->id)
+        ->where('donation_event_id', $event->id)
+        ->firstOrFail();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee('Anmeldedatum')
+        ->assertSee($registration->created_at->format('d.m.Y'));
+});
+
+it('shows registration time directly after the athlete name columns', function (): void {
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->assertSet('visibleColumns', [
+            'first_name',
+            'last_name',
+            'registration_time',
+            'email',
+            'phone_number',
+            'city',
+            'partner',
+            'group',
+            'confirmed',
+            'events',
+        ]);
+});
+
+it('keeps registration time preselected after visiting the donor table', function (): void {
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->assertSet('visibleColumns', fn (array $columns): bool => in_array('registration_time', $columns, true));
+});
+
+it('sorts athletes by registration time', function (): void {
+    $event = DonationEvent::factory()->create();
+    $earlyAthlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Early']);
+    $lateAthlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Late']);
+
+    AthleteRegistration::where('external_user_id', $earlyAthlete->id)
+        ->where('donation_event_id', $event->id)
+        ->update(['created_at' => now()->subDay()]);
+    AthleteRegistration::where('external_user_id', $lateAthlete->id)
+        ->where('donation_event_id', $event->id)
+        ->update(['created_at' => now()]);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->call('sortByColumn', 'registration_time')
+        ->assertSeeInOrder(['Early', 'Late']);
+});
+
+it('does not show registration time for donors', function (): void {
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->assertDontSee('Anmeldedatum');
+});
