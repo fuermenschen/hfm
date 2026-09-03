@@ -124,7 +124,16 @@ class AdminPersonTable extends AbstractDatatableComponent
                 $partnerQuery->whereHas('donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
             }
 
-            return $query->addSelect(['selected_partner_name' => $partnerQuery]);
+            $registrationQuery = AthleteRegistration::query()
+                ->select('athlete_registrations.created_at')
+                ->whereColumn('athlete_registrations.external_user_id', 'external_users.id')
+                ->limit(1);
+
+            if ($this->eventSlug !== null && $this->eventSlug !== '') {
+                $registrationQuery->whereHas('donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
+            }
+
+            return $query->addSelect(['selected_partner_name' => $partnerQuery, 'selected_registration_created_at' => $registrationQuery]);
         }
 
         return $this->donorService->all()->with('donationsAsDonor.athleteRegistration.donationEvent');
@@ -168,6 +177,7 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         if ($this->role === 'athlete') {
             $columns['partner'] = 'selected_partner_name';
+            $columns['registration_time'] = 'selected_registration_created_at';
         }
 
         return $columns;
@@ -181,6 +191,13 @@ class AdminPersonTable extends AbstractDatatableComponent
         $columns = [
             'first_name' => ['label' => 'Vorname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Vorname'],
             'last_name' => ['label' => 'Nachname', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Nachname'],
+        ];
+
+        if ($this->role === 'athlete') {
+            $columns['registration_time'] = ['label' => 'Anmeldedatum', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anmeldedatum', 'formatter' => 'date_time'];
+        }
+
+        $columns += [
             'email' => ['label' => 'E-Mail', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-56', 'export_key' => 'E-Mail', 'tooltip' => true, 'truncate' => 52],
             'phone_number' => ['label' => 'Telefon', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Telefon'],
             'city' => ['label' => 'Ort', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-40', 'export_key' => 'Ort'],
@@ -214,10 +231,16 @@ class AdminPersonTable extends AbstractDatatableComponent
         ];
 
         if ($this->role === 'athlete') {
-            array_splice($columns, 5, 0, ['partner', 'group', 'confirmed']);
+            array_splice($columns, 2, 0, ['registration_time']);
+            array_splice($columns, 6, 0, ['partner', 'group', 'confirmed']);
         }
 
         return $columns;
+    }
+
+    protected function visibleColumnsSessionKey(): string
+    {
+        return parent::visibleColumnsSessionKey().'.'.$this->role;
     }
 
     /**
@@ -265,6 +288,13 @@ class AdminPersonTable extends AbstractDatatableComponent
         $registration = $this->selectedAthleteRegistration($person);
 
         return $registration->verified ?? null;
+    }
+
+    public function selectedRegistrationCreatedAt(ExternalUser $person): ?string
+    {
+        $registration = $this->selectedAthleteRegistration($person);
+
+        return $registration?->created_at?->format('Y-m-d H:i:s');
     }
 
     public function selectedAthleteRegistration(ExternalUser $person): ?AthleteRegistration
@@ -547,6 +577,7 @@ class AdminPersonTable extends AbstractDatatableComponent
 
             $confirmed = $this->selectedAthleteConfirmed($row);
             $export['OK'] = $confirmed === null ? '-' : ($confirmed ? 'OK' : 'NOK');
+            $export['Anmeldedatum'] = $this->selectedRegistrationCreatedAt($row) ?? '-';
         }
 
         return $export;
