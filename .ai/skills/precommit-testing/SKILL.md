@@ -57,4 +57,19 @@ command during development, then run `composer precommit:ai` once near the end.
   first.
 - Treat `precommit:ai` as a release-quality gate, not an edit-loop command.
 
+## Output discipline
+
+Always limit precommit command output to its final 50 lines with `tail`. Preserve the command's exit code with Bash's
+`PIPESTATUS`, so truncated output never hides failure:
+
+```bash
+set -o pipefail
+composer precommit:ai 2>&1 | tail -n 50
+status=${PIPESTATUS[0]}
+printf 'EXIT_CODE=%s\n' "$status"
+exit "$status"
+```
+
+Apply the same pattern to individual precommit commands.
+
 If a human specifically needs verbose output, the `:ai` suffix can be omitted.
