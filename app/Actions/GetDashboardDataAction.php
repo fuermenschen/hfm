@@ -39,6 +39,8 @@ class GetDashboardDataAction
      *     verifiedDonationCount: int,
      *     meanNumberOfDonations: float,
      *     meanNumberOfRounds: float|int|null,
+     *     totalEstimatedRounds: int,
+     *     totalActualRounds: int,
      *     meanNumberOfDonationsDonor: float,
      *     meanDonationAmount: float,
      *     expectedDonationAmount: float,
@@ -85,6 +87,8 @@ class GetDashboardDataAction
 
         $meanNumberOfDonations = $athleteCount > 0 ? (float) ($donationCount / $athleteCount) : 0.0;
         $meanNumberOfRounds = $this->meanNumberOfRounds($event);
+        $totalEstimatedRounds = $this->totalEstimatedRounds($event);
+        $totalActualRounds = $this->totalActualRounds($event);
         $meanNumberOfDonationsDonor = $donorCount > 0 ? (float) ($donationCount / $donorCount) : 0.0;
         $meanDonationAmount = (float) ($this->donationsQuery($event)->avg('amount_per_round') ?? 0.0);
 
@@ -133,6 +137,8 @@ class GetDashboardDataAction
             'verifiedDonationCount',
             'meanNumberOfDonations',
             'meanNumberOfRounds',
+            'totalEstimatedRounds',
+            'totalActualRounds',
             'meanNumberOfDonationsDonor',
             'meanDonationAmount',
             'expectedDonationAmount',
@@ -365,6 +371,16 @@ class GetDashboardDataAction
         $mean = $this->registrationsQuery($event)->avg('rounds_estimated');
 
         return (float) ($mean ?? 0.0);
+    }
+
+    protected function totalEstimatedRounds(?DonationEvent $event): int
+    {
+        return (int) $this->registrationsQuery($event)->sum('rounds_estimated');
+    }
+
+    protected function totalActualRounds(?DonationEvent $event): int
+    {
+        return (int) $this->registrationsQuery($event)->sum('rounds_done');
     }
 
     /** @return Builder<AthleteRegistration> */

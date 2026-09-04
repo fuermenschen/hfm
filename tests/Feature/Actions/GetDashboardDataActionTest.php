@@ -71,6 +71,8 @@ it('builds dashboard data with expected aggregates', function (): void {
             'verifiedDonationCount',
             'meanNumberOfDonations',
             'meanNumberOfRounds',
+            'totalEstimatedRounds',
+            'totalActualRounds',
             'meanNumberOfDonationsDonor',
             'meanDonationAmount',
             'expectedDonationAmount',
@@ -88,6 +90,8 @@ it('builds dashboard data with expected aggregates', function (): void {
         ->and($data['verifiedDonationCount'])->toBe(1)
         ->and($data['meanNumberOfDonations'])->toBe(1.0)
         ->and($data['meanNumberOfRounds'])->toBe(7.5)
+        ->and($data['totalEstimatedRounds'])->toBe(15)
+        ->and($data['totalActualRounds'])->toBe(15)
         ->and($data['meanNumberOfDonationsDonor'])->toBe(1.0)
         ->and($data['meanDonationAmount'])->toBe(1.5)
         ->and($data['expectedDonationAmount'])->toBe(30.0)
@@ -146,6 +150,8 @@ it('scopes dashboard data and activities to an event', function (): void {
         ->and($data['verifiedDonationCount'])->toBe(1)
         ->and($data['meanNumberOfDonations'])->toBe(1.0)
         ->and($data['meanNumberOfRounds'])->toBe(10.0)
+        ->and($data['totalEstimatedRounds'])->toBe(10)
+        ->and($data['totalActualRounds'])->toBe(12)
         ->and($data['meanNumberOfDonationsDonor'])->toBe(1.0)
         ->and($data['meanDonationAmount'])->toBe(2.0)
         ->and($data['expectedDonationAmount'])->toBe(20.0)

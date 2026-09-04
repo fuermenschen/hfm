@@ -35,6 +35,32 @@ it('renders the admin dashboard for authenticated users', function () {
         ->assertSee('Letzte Aktivitäten');
 });
 
+it('shows the total number of estimated and actual laps for the selected event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $sportType = SportType::query()->create(['name' => 'Run']);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'rounds_estimated' => 10,
+        'rounds_done' => 8,
+    ]);
+    AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'rounds_estimated' => 5,
+        'rounds_done' => 3,
+    ]);
+
+    actingAs(User::factory()->create());
+
+    get(route('admin.dashboard', ['anlass' => $event->slug]))
+        ->assertSuccessful()
+        ->assertSee('Erwartete Runden')
+        ->assertSee('Tatsächliche Runden')
+        ->assertSeeText('15')
+        ->assertSeeText('11');
+});
+
 it('renders partner cards even when partner totals are missing', function () {
     $user = User::factory()->create();
     Partner::factory()->create(['name' => 'Test Partner']);

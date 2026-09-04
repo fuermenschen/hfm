@@ -147,7 +147,7 @@
         </x-expandable-card>
 
         <!-- Athlete -->
-        <x-stats title="Sportler:innen">
+        <x-stats title="Sportler:innen" :columns="6">
             <x-admin.stat-card
                 title="Registriert"
                 :value="$athleteCount"
@@ -163,6 +163,18 @@
             <x-admin.stat-card
                 title="Durchschn. Runden"
                 :value="round($meanNumberOfRounds, 0)"
+                route="admin.athletes.index"
+                :route-parameters="$routeParameters"
+            />
+            <x-admin.stat-card
+                title="Erwartete Runden"
+                :value="$totalEstimatedRounds"
+                route="admin.athletes.index"
+                :route-parameters="$routeParameters"
+            />
+            <x-admin.stat-card
+                title="Tatsächliche Runden"
+                :value="$totalActualRounds"
                 route="admin.athletes.index"
                 :route-parameters="$routeParameters"
             />
