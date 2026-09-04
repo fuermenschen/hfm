@@ -6,11 +6,13 @@ namespace App\Components;
 
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class PublicFooter extends Component
 {
-    public $footerItems = [
+    #[Locked]
+    public array $footerItems = [
         [
             'name' => 'Kontakt',
             'route' => 'contact',

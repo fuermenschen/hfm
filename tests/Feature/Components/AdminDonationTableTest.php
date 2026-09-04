@@ -88,3 +88,41 @@ it('shows all donations again when the event filter is cleared', function (): vo
         ->set('eventSlug', null)
         ->assertSee($athlete->first_name);
 });
+
+it('does not show athlete registration time for donations', function (): void {
+    Livewire::test(AdminDonationTable::class)
+        ->assertDontSee('Anmeldedatum');
+});
+
+it('sorts donations by athlete name', function (): void {
+    $event = DonationEvent::factory()->create();
+    $alphaAthlete = ExternalUser::factory()->create(['first_name' => 'Alpha', 'last_name' => 'Athlete']);
+    $betaAthlete = ExternalUser::factory()->create(['first_name' => 'Beta', 'last_name' => 'Athlete']);
+    $donor = ExternalUser::factory()->create();
+
+    $registrationAlpha = AthleteRegistration::factory()->forEvent($event)->forExternalUser($alphaAthlete)->create();
+    $registrationBeta = AthleteRegistration::factory()->forEvent($event)->forExternalUser($betaAthlete)->create();
+
+    Donation::factory()->forDonorExternalUser($donor)->forAthleteRegistration($registrationAlpha)->create();
+    Donation::factory()->forDonorExternalUser($donor)->forAthleteRegistration($registrationBeta)->create();
+
+    Livewire::test(AdminDonationTable::class)
+        ->call('sortByColumn', 'athlete')
+        ->assertSeeInOrder(['Alpha A.', 'Beta A.']);
+});
+
+it('sorts donations by donor name', function (): void {
+    $event = DonationEvent::factory()->create();
+    $athlete = ExternalUser::factory()->create();
+    $alphaDonor = ExternalUser::factory()->create(['first_name' => 'Alpha', 'last_name' => 'Donor']);
+    $betaDonor = ExternalUser::factory()->create(['first_name' => 'Beta', 'last_name' => 'Donor']);
+
+    $registration = AthleteRegistration::factory()->forEvent($event)->forExternalUser($athlete)->create();
+
+    Donation::factory()->forDonorExternalUser($alphaDonor)->forAthleteRegistration($registration)->create();
+    Donation::factory()->forDonorExternalUser($betaDonor)->forAthleteRegistration($registration)->create();
+
+    Livewire::test(AdminDonationTable::class)
+        ->call('sortByColumn', 'donor')
+        ->assertSeeInOrder(['Alpha D.', 'Beta D.']);
+});

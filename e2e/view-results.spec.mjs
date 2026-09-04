@@ -19,16 +19,18 @@ test.describe("Results page", () => {
         // Key totals
         await expect(page.getByText("Total Spenden", { exact: true })).toBeVisible();
         await expect(page.getByText("Absolvierte Runden", { exact: true })).toBeVisible();
-        await expect(page.getByText("Höhenmeter", { exact: true })).toBeVisible();
+        await expect(page.getByText("Höhenmeter", { exact: true }).first()).toBeVisible();
 
-        // Rankings (carousel on small screens, side-by-side on large ones);
-        // each title exists twice in the DOM (carousel + grid), so filter to
-        // whichever instance is visible at the current viewport.
+        // Desktop shows both rankings for one metric; mobile cycles one ranking
+        // at a time through all athlete/group and metric combinations.
         await expect(page.getByText("Rangliste Sportler:innen").filter({ visible: true }).first()).toBeVisible();
-        await expect(page.getByText("Rangliste Gruppen").filter({ visible: true }).first()).toBeVisible();
 
-        // Partner totals and disclaimer pinned to the bottom
-        await expect(page.getByText("Spenden pro Benefizpartner:in")).toBeVisible();
+        await expect(page.getByText("Rangliste Gruppen").filter({ visible: true }).first()).toBeVisible({
+            timeout: 15_000,
+        });
+        await expect(page.getByText("Spenden", { exact: true }).filter({ visible: true }).first()).toBeVisible();
+
+        // Partner totals have no section heading; disclaimer is pinned to bottom.
         await expect(page.getByText("Spendenangaben basieren auf der Annahme")).toBeVisible();
 
         // The old public chrome must stay out of the standalone page.

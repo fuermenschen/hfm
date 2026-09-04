@@ -95,8 +95,12 @@ class GetDashboardDataAction
         $expectedDonationAmount = $this->donationService->calculateEstimatedTotal($donations);
         $actualTotalAmount = $this->donationService->calculateActualTotal($donations);
 
-        $estimatedAmounts = $this->donationService->calculateEstimatedTotalPerPartner($donations);
-        $actualAmounts = $this->donationService->calculateActualTotalPerPartner($donations);
+        $estimatedAmounts = $event instanceof DonationEvent
+            ? $this->donationService->calculateEstimatedTotalPerEventPartner($event, $partners, $donations)
+            : $this->donationService->calculateEstimatedTotalPerPartner($donations);
+        $actualAmounts = $event instanceof DonationEvent
+            ? $this->donationService->calculateActualTotalPerEventPartner($event, $partners, $donations)
+            : $this->donationService->calculateActualTotalPerPartner($donations);
         $chartDonationEvents = $event instanceof DonationEvent ? collect([$event]) : $events;
         $chartEvents = $this->chartEvents($chartDonationEvents);
         ['chartData' => $chartData, 'chartTickValues' => $chartTickValues] = $this->buildChartData($chartDonationEvents, $chartEvents, $donations);

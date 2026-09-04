@@ -38,6 +38,10 @@
     @else
         <flux:badge size="sm" :color="$confirmed ? 'zinc' : 'red'">{{ $confirmed ? 'OK' : 'NOK' }}</flux:badge>
     @endif
+@elseif ($columnKey === 'registration_time')
+    {{ $this->formatDateTime($this->selectedRegistrationCreatedAt($row)) }}
+@elseif ($columnKey === 'donation_count')
+    {{ data_get($row, 'selected_donation_count', 0) }}
 @else
     {{ $this->displayValue($row, $columnKey) }}
 @endif

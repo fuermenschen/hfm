@@ -8,8 +8,9 @@ use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Settings\EventSettings;
+use Pest\Browser\Playwright\Playwright;
 
-it('shows side-by-side rankings on large screens and a carousel on small screens', function (): void {
+it('shows side-by-side rankings on large screens and cycles rankings on small screens', function (): void {
     $event = DonationEvent::factory()->create(['is_published' => true, 'title' => 'HoFi 2026']);
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
@@ -49,11 +50,7 @@ it('shows side-by-side rankings on large screens and a carousel on small screens
 
     $page = visit(route('results'));
 
-    // The carousel slides are always attached to the DOM; their visibility
-    // flips with the breakpoint. checkVisibility() sees through attachment.
-    $carouselVisibleScript = "document.querySelector('[data-flux-carousel-slide]')?.checkVisibility() ?? false";
-
-    // Large screens (TV): both rankings side by side, carousel hidden.
+    // Large screens (TV): both rankings side by side.
     // assertNoJavaScriptErrors is intentionally not used here: the page
     // polls every 15 seconds, so the network never settles.
     $page->resize(1920, 1080)
@@ -62,11 +59,16 @@ it('shows side-by-side rankings on large screens and a carousel on small screens
         ->assertSee('Anna Z.')
         ->assertSee('Team Blau');
 
-    expect($page->script($carouselVisibleScript))->toBeFalse();
-
-    // Small screens (phone): auto-playing carousel alternates the rankings.
+    // Small screens (phone): custom cycle alternates rankings every 10 seconds.
     $page->resize(390, 844)
         ->assertSee('Anna Z.');
 
-    expect($page->script($carouselVisibleScript))->toBeTrue();
+    $timeout = Playwright::timeout();
+    Playwright::setTimeout(15_000);
+
+    try {
+        $page->assertSee('Team Blau');
+    } finally {
+        Playwright::setTimeout($timeout);
+    }
 });

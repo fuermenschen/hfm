@@ -158,6 +158,42 @@ it('scopes dashboard data and activities to an event', function (): void {
         ->not->toContain('Other');
 });
 
+it('distributes equal-split donations across event partners', function (): void {
+    $event = DonationEvent::factory()->create(['has_equal_split_option' => true]);
+    $sportType = SportType::query()->create(['name' => 'Run']);
+    $firstPartner = Partner::factory()->create(['name' => 'First Partner']);
+    $secondPartner = Partner::factory()->create(['name' => 'Second Partner']);
+    $thirdPartner = Partner::factory()->create(['name' => 'Third Partner']);
+    $event->partners()->attach([$firstPartner->id, $secondPartner->id, $thirdPartner->id]);
+
+    $registration = AthleteRegistration::factory()->create([
+        'donation_event_id' => $event->id,
+        'sport_type_id' => $sportType->id,
+        'partner_id' => null,
+        'rounds_estimated' => 10,
+        'rounds_done' => 12,
+    ]);
+    Donation::factory()
+        ->forPair(ExternalUser::factory()->create(), $registration)
+        ->create([
+            'amount_per_round' => 10,
+            'amount_min' => null,
+            'amount_max' => null,
+        ]);
+
+    $data = app(GetDashboardDataAction::class)($event);
+
+    expect($data['estimatedAmounts'])->toBe([
+        $firstPartner->id => 33.34,
+        $secondPartner->id => 33.33,
+        $thirdPartner->id => 33.33,
+    ])->and($data['actualAmounts'])->toBe([
+        $firstPartner->id => 40.0,
+        $secondPartner->id => 40.0,
+        $thirdPartner->id => 40.0,
+    ]);
+});
+
 it('builds cumulative chart data relative to each event start', function (): void {
     Carbon::setTestNow('2026-10-01 12:00:00');
     $event = DonationEvent::factory()->year(2026)->create(['starts_at' => '2026-09-12 11:00:00']);

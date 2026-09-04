@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Components;
 
+use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\ExternalUser;
 use App\Services\CurrentDonationEventService;
 use App\Services\DonationService;
 use Illuminate\Database\Eloquent\Builder;
@@ -114,7 +116,24 @@ class AdminDonationTable extends AbstractDatatableComponent
 
     protected function baseQuery(): Builder
     {
-        return Donation::query()->with(['athleteRegistration.donationEvent', 'athleteRegistration.externalUser', 'donorExternalUser']);
+        $athleteNameQuery = AthleteRegistration::query()
+            ->select('external_users.first_name')
+            ->join('external_users', 'external_users.id', '=', 'athlete_registrations.external_user_id')
+            ->whereColumn('athlete_registrations.id', 'donations.athlete_registration_id')
+            ->whereHas('externalUser')
+            ->limit(1);
+
+        $donorNameQuery = ExternalUser::query()
+            ->select('first_name')
+            ->whereColumn('external_users.id', 'donations.donor_external_user_id')
+            ->limit(1);
+
+        return Donation::query()
+            ->with(['athleteRegistration.donationEvent', 'athleteRegistration.externalUser', 'donorExternalUser'])
+            ->addSelect([
+                'selected_athlete_name' => $athleteNameQuery,
+                'selected_donor_name' => $donorNameQuery,
+            ]);
     }
 
     protected function applyFilters(Builder $query): void
@@ -147,6 +166,8 @@ class AdminDonationTable extends AbstractDatatableComponent
             'amount_per_round' => 'donations.amount_per_round',
             'amount_min' => 'donations.amount_min',
             'amount_max' => 'donations.amount_max',
+            'athlete' => 'selected_athlete_name',
+            'donor' => 'selected_donor_name',
         ];
     }
 
@@ -156,8 +177,8 @@ class AdminDonationTable extends AbstractDatatableComponent
     protected function columnDefinitions(): array
     {
         return [
-            'donor' => ['label' => 'Spender:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Spender:in'],
-            'athlete' => ['label' => 'Sportler:in', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Sportler:in'],
+            'donor' => ['label' => 'Spender:in', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Spender:in'],
+            'athlete' => ['label' => 'Sportler:in', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-52', 'export_key' => 'Sportler:in'],
             'event' => ['label' => 'Anlass', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-28', 'export_key' => 'Anlass'],
             'verified' => ['label' => 'Bestätigt', 'sortable' => true, 'align' => 'center', 'width' => 'min-w-28', 'export_key' => 'Bestätigt', 'formatter' => 'yes_no'],
             'amount_per_round' => ['label' => 'Betrag pro Runde', 'sortable' => true, 'align' => 'right', 'width' => 'min-w-40', 'export_key' => 'Betrag pro Runde', 'formatter' => 'money'],

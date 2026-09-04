@@ -77,91 +77,34 @@ class Results extends Component
             'rounds' => $roundsTotal,
             'elevation_m' => $roundsTotal * self::METERS_PER_ROUND,
             'donations_total' => $donationService->calculateActualTotal($donations),
-            'per_partner' => $this->perPartnerAmounts($event, $registrations, $donations, $donationService),
-            'athlete_ranking' => $rankings['athletes'],
-            'group_ranking' => $rankings['groups'],
+            'per_partner' => $this->perPartnerAmounts($event, $donations, $donationService),
+            'rankings' => $rankings,
         ];
     }
 
     /**
-     * Actual donation amounts per partner of the current event. Donations of
-     * athletes without an own partner are distributed evenly when the event
-     * has the equal-split option, and the legacy 'alle zu gleichen Teilen'
-     * partner splits evenly among all other partners.
+     * Actual donation amounts per published event partner. Equal-split and
+     * legacy donations are distributed across every active event partner.
      *
-     * @param  Collection<int, AthleteRegistration>  $registrations
      * @param  Collection<int, Donation>  $donations
-     * @return array<string, float>
+     * @return list<array{name: string, amount: float}>
      */
     protected function perPartnerAmounts(
         DonationEvent $event,
-        Collection $registrations,
         Collection $donations,
         DonationService $donationService,
     ): array {
-        $partners = $registrations
-            ->pluck('partner')
-            ->filter()
-            ->unique('id')
-            ->mapWithKeys(fn (Partner $partner): array => [$partner->id => $partner->name]);
+        $partners = $event->partners()
+            ->wherePivot('is_published', true)
+            ->orderByPivot('sort_order')
+            ->orderBy('name')
+            ->get(['partners.id', 'partners.name']);
 
-        $perPartner = collect($donationService->calculateActualTotalPerPartner($donations))
-            ->mapWithKeys(fn (float $amount, int $partnerId): array => [($partners[$partnerId] ?? ('Partner #'.$partnerId)) => $amount]);
+        $perPartner = $donationService->calculateActualTotalPerEventPartner($event, $partners, $donations);
 
-        $perPartner = $this->applyLegacyEqualShareRule($perPartner);
-        $perPartner = $this->applyEqualSplitOption($event, $registrations, $perPartner, $donationService);
-
-        return $perPartner->sortKeys()->all();
-    }
-
-    /**
-     * @param  Collection<string, float>  $perPartner
-     * @return Collection<string, float>
-     */
-    protected function applyLegacyEqualShareRule(Collection $perPartner): Collection
-    {
-        $equalShareName = 'alle zu gleichen Teilen';
-
-        if (! $perPartner->has($equalShareName)) {
-            return $perPartner;
-        }
-
-        $amountToSplit = (float) $perPartner->pull($equalShareName);
-        $targetCount = $perPartner->count();
-
-        if ($amountToSplit <= 0.0 || $targetCount === 0) {
-            return $targetCount === 0 ? collect() : $perPartner;
-        }
-
-        $share = $amountToSplit / $targetCount;
-
-        return $perPartner->map(fn (float $amount): float => $amount + $share);
-    }
-
-    /**
-     * @param  Collection<int, AthleteRegistration>  $registrations
-     * @param  Collection<string, float>  $perPartner
-     * @return Collection<string, float>
-     */
-    protected function applyEqualSplitOption(
-        DonationEvent $event,
-        Collection $registrations,
-        Collection $perPartner,
-        DonationService $donationService,
-    ): Collection {
-        if (! (bool) $event->has_equal_split_option || $perPartner->isEmpty()) {
-            return $perPartner;
-        }
-
-        $equalSplitDonations = $registrations->whereNull('partner_id')->flatMap->donations;
-        $equalSplitAmount = $donationService->calculateActualTotal($equalSplitDonations);
-
-        if ($equalSplitAmount <= 0.0) {
-            return $perPartner;
-        }
-
-        $share = $equalSplitAmount / $perPartner->count();
-
-        return $perPartner->map(fn (float $amount): float => $amount + $share);
+        return $partners
+            ->reject(fn (Partner $partner): bool => $partner->name === 'alle zu gleichen Teilen')
+            ->map(fn (Partner $partner): array => ['name' => $partner->name, 'amount' => $perPartner[$partner->id]])
+            ->all();
     }
 }

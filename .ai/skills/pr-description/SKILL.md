@@ -38,6 +38,7 @@ If base branch not `main`, swap base:
 3. Start with impact (why this matters).
 4. Reviewer setup must be diff-based, not habit-based.
 5. If branch has mixed unrelated work, warn user first.
+6. Never mention local test, lint, build, or precommit results in PR text. CI owns validation; local precommit is a commit-readiness check, not reviewer information.
 
 ## Body shape
 
@@ -52,7 +53,7 @@ Use this shape. Drop empty sections.
 
 ## Notes
 
-<only real must-know: deploy steps, risk, migration/backfill instructions, env/config change, test note>
+<only real must-know: deploy steps, risk, migration/backfill instructions, or env/config change. Never add local validation results.>
 
 ## Reviewer Setup
 
@@ -175,7 +176,7 @@ php artisan inspire --no-interaction
 - opening with `## Summary`
 - putting code snippets in PR body
 - guessing issue numbers
-- adding empty sections
+- mentioning local test, lint, build, or precommit results
 - adding setup commands not implied by diff
 - using `composer update` in reviewer setup
 - putting `php artisan optimize:clear` anywhere but last
