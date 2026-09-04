@@ -9,6 +9,7 @@ use App\Actions\DownloadAthleteDocumentArchiveAction;
 use App\Actions\DownloadAthleteStoryImageArchiveAction;
 use App\Enums\AthleteDocumentType;
 use App\Models\AthleteRegistration;
+use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Services\AthleteService;
@@ -133,7 +134,21 @@ class AdminPersonTable extends AbstractDatatableComponent
                 $registrationQuery->whereHas('donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
             }
 
-            return $query->addSelect(['selected_partner_name' => $partnerQuery, 'selected_registration_created_at' => $registrationQuery]);
+            $donationCountQuery = Donation::query()
+                ->selectRaw('count(*)')
+                ->whereHas('athleteRegistration', function (Builder $registration): void {
+                    $registration->whereColumn('external_user_id', 'external_users.id');
+
+                    if ($this->eventSlug !== null && $this->eventSlug !== '') {
+                        $registration->whereHas('donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
+                    }
+                });
+
+            return $query->addSelect([
+                'selected_partner_name' => $partnerQuery,
+                'selected_registration_created_at' => $registrationQuery,
+                'selected_donation_count' => $donationCountQuery,
+            ]);
         }
 
         return $this->donorService->all()->with('donationsAsDonor.athleteRegistration.donationEvent');
@@ -195,6 +210,7 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         if ($this->role === 'athlete') {
             $columns['registration_time'] = ['label' => 'Anmeldedatum', 'sortable' => true, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Anmeldedatum', 'formatter' => 'date_time'];
+            $columns['donation_count'] = ['label' => 'Anzahl Spenden', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-32', 'export_key' => 'Anzahl Spenden'];
         }
 
         $columns += [
@@ -231,8 +247,8 @@ class AdminPersonTable extends AbstractDatatableComponent
         ];
 
         if ($this->role === 'athlete') {
-            array_splice($columns, 2, 0, ['registration_time']);
-            array_splice($columns, 6, 0, ['partner', 'group', 'confirmed']);
+            array_splice($columns, 2, 0, ['registration_time', 'donation_count']);
+            array_splice($columns, 7, 0, ['partner', 'group', 'confirmed']);
         }
 
         return $columns;
@@ -578,6 +594,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             $confirmed = $this->selectedAthleteConfirmed($row);
             $export['OK'] = $confirmed === null ? '-' : ($confirmed ? 'OK' : 'NOK');
             $export['Anmeldedatum'] = $this->selectedRegistrationCreatedAt($row) ?? '-';
+            $export['Anzahl Spenden'] = (int) data_get($row, 'selected_donation_count', 0);
         }
 
         return $export;

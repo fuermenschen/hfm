@@ -200,6 +200,8 @@
                                         @endif
                                     @elseif ($columnKey === 'registration_time')
                                         {{ $this->formatDateTime($this->selectedRegistrationCreatedAt($row)) }}
+                                    @elseif ($columnKey === 'donation_count')
+                                        {{ data_get($row, 'selected_donation_count', 0) }}
                                     @else
                                         {{ $this->displayValue($row, $columnKey) }}
                                     @endif

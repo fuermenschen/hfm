@@ -2,6 +2,7 @@
 
 use App\Components\AdminPersonTable;
 use App\Models\AthleteRegistration;
+use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\EventGroup;
 use App\Models\ExternalUser;
@@ -422,6 +423,7 @@ it('shows registration time directly after the athlete name columns', function (
             'first_name',
             'last_name',
             'registration_time',
+            'donation_count',
             'email',
             'phone_number',
             'city',
@@ -460,4 +462,51 @@ it('sorts athletes by registration time', function (): void {
 it('does not show registration time for donors', function (): void {
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
         ->assertDontSee('Anmeldedatum');
+});
+
+it('shows all athlete donations for the selected event', function (): void {
+    $event = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()->asAthlete($event)->create(['first_name' => 'Counted Athlete']);
+    $registration = AthleteRegistration::query()
+        ->where('external_user_id', $athlete->id)
+        ->where('donation_event_id', $event->id)
+        ->firstOrFail();
+
+    Donation::factory()->forAthleteRegistration($registration)->create(['verified' => true]);
+    Donation::factory()->forAthleteRegistration($registration)->create(['verified' => false]);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee('Anzahl Spenden')
+        ->assertSeeInOrder(['Counted Athlete', '2']);
+});
+
+it('scopes athlete donation counts to the selected event and shows zero', function (): void {
+    $event2025 = DonationEvent::factory()->year(2025)->create();
+    $event2026 = DonationEvent::factory()->year(2026)->create();
+    $athlete = ExternalUser::factory()
+        ->asAthlete($event2025)
+        ->asAthlete($event2026)
+        ->create(['first_name' => 'Multi Event Athlete']);
+    $registration2025 = AthleteRegistration::query()
+        ->where('external_user_id', $athlete->id)
+        ->where('donation_event_id', $event2025->id)
+        ->firstOrFail();
+
+    Donation::factory()->count(2)->forAthleteRegistration($registration2025)->create();
+    $zeroDonationAthlete = ExternalUser::factory()->asAthlete($event2026)->create(['first_name' => 'Zero Donations']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event2025->slug)
+        ->assertSeeInOrder(['Multi Event Athlete', '2']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event2026->slug)
+        ->assertSeeInOrder(['Multi Event Athlete', '0'])
+        ->assertSeeInOrder([$zeroDonationAthlete->first_name, '0']);
+});
+
+it('does not show donation counts for donors', function (): void {
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->assertDontSee('Anzahl Spenden');
 });
