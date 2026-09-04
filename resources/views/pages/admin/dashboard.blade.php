@@ -122,10 +122,7 @@
                                     </flux:chart.svg>
 
                                     <flux:chart.tooltip>
-                                        <div class="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 p-2 text-xs font-medium text-zinc-800 dark:border-zinc-500 dark:bg-zinc-600 dark:text-zinc-100">
-                                            <!-- noinspection HtmlUnknownAttribute -->
-                                            Tag&nbsp;<slot field="day"></slot>
-                                        </div>
+                                        <flux:chart.tooltip.heading field="day" class="before:content-['Tag_']" />
                                         @foreach ($chartEvents as $chartEvent)
                                             <flux:chart.tooltip.value
                                                 :field="$chartEvent['field']"
