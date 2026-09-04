@@ -37,6 +37,14 @@ function resultsTestRegistration(DonationEvent $event, int $rounds, ?int $partne
     ]);
 }
 
+function resultsTestPartner(DonationEvent $event, string $name): Partner
+{
+    $partner = Partner::factory()->create(['name' => $name]);
+    $event->partners()->attach($partner, ['sort_order' => 0, 'is_published' => true]);
+
+    return $partner;
+}
+
 function resultsTestDonation(AthleteRegistration $registration, float $perRound, ?int $donorId = null): Donation
 {
     return Donation::create([
@@ -64,16 +72,15 @@ it('shows an empty state when no current event is configured', function (): void
         ->assertSeeText('Aktuell ist kein Anlass aktiv.');
 });
 
-it('renders successfully and shows per-partner section', function () {
+it('renders successfully and shows partner totals', function () {
     $event = resultsTestEvent();
 
-    $partner = Partner::factory()->create(['name' => 'Partner X']);
+    $partner = resultsTestPartner($event, 'Partner X');
     $registration = resultsTestRegistration($event, 3, $partner->id);
     resultsTestDonation($registration, 10.0);
 
     Livewire::test(Results::class)
         ->assertStatus(200)
-        ->assertSee('Spenden pro Benefizpartner:in')
         ->assertSee('Partner X')
         ->assertDontSee('Einzelresultate');
 });
@@ -92,7 +99,7 @@ it('ignores registrations of soft-deleted athletes on the public page', function
     Livewire::test(Results::class)
         ->assertSet('totals.athletes', 0)
         ->assertSet('totals.rounds', 0)
-        ->assertSet('totals.athlete_ranking', []);
+        ->assertSet('totals.rankings.athletes.rounds', []);
 });
 
 it('ignores data from other events', function (): void {
@@ -113,10 +120,11 @@ it('ignores data from other events', function (): void {
         ->assertDontSee('Fr. 700');
 });
 
-it('distributes equal-split donations across the event partners', function () {
-    $b = Partner::factory()->create(['name' => 'B Partner']);
-    $c = Partner::factory()->create(['name' => 'C Partner']);
+it('distributes equal-split donations across every event partner', function () {
     $donationEvent = resultsTestEvent(['has_equal_split_option' => true]);
+    $b = resultsTestPartner($donationEvent, 'B Partner');
+    $c = resultsTestPartner($donationEvent, 'C Partner');
+    $unused = resultsTestPartner($donationEvent, 'Unused Partner');
 
     $registrationEqual = resultsTestRegistration($donationEvent, 10, null); // 10 * 10 = 100
     $registrationB = resultsTestRegistration($donationEvent, 5, $b->id); // 5 * 10 = 50
@@ -126,20 +134,25 @@ it('distributes equal-split donations across the event partners', function () {
     resultsTestDonation($registrationB, 10.0);
     resultsTestDonation($registrationC, 5.0);
 
-    Livewire::test(Results::class)
+    $component = Livewire::test(Results::class);
+
+    $component
+        ->assertSet('totals.per_partner', fn (array $partners): bool => round(array_sum(array_column($partners, 'amount')), 2) === 180.0)
         ->assertStatus(200)
-        // Equal-split amount (100) is distributed evenly: B and C get +50 each.
+        // Equal-split amount (100) is distributed evenly across all event partners.
         ->assertSee('B Partner')
-        ->assertSee('Fr. 100')
+        ->assertSee('Fr. 83')
         ->assertSee('C Partner')
-        ->assertSee('Fr. 80');
+        ->assertSee('Fr. 63')
+        ->assertSee('Unused Partner')
+        ->assertSee('Fr. 33');
 });
 
 it('splits a legacy "alle zu gleichen Teilen" partner across remaining partners', function () {
-    $equal = Partner::factory()->create(['name' => 'alle zu gleichen Teilen']);
-    $b = Partner::factory()->create(['name' => 'B Partner']);
-    $c = Partner::factory()->create(['name' => 'C Partner']);
     $donationEvent = resultsTestEvent();
+    $equal = resultsTestPartner($donationEvent, 'alle zu gleichen Teilen');
+    $b = resultsTestPartner($donationEvent, 'B Partner');
+    $c = resultsTestPartner($donationEvent, 'C Partner');
 
     $registrationEqual = resultsTestRegistration($donationEvent, 10, $equal->id); // 10 * 10 = 100
     $registrationB = resultsTestRegistration($donationEvent, 5, $b->id); // 5 * 10 = 50
@@ -159,7 +172,7 @@ it('splits a legacy "alle zu gleichen Teilen" partner across remaining partners'
         ->assertSee('Fr. 80');
 });
 
-it('does not expose single athlete results anymore', function () {
+it('shows athlete rankings independently from group rankings', function () {
     $event = resultsTestEvent();
     $partner = Partner::factory()->create(['name' => 'Partner X']);
 
@@ -175,7 +188,8 @@ it('does not expose single athlete results anymore', function () {
     Livewire::test(Results::class)
         ->assertStatus(200)
         ->assertDontSee('Einzelresultate')
-        ->assertDontSee($three->privacyName());
+        ->assertSee('Rangliste Sportler:innen')
+        ->assertSee($three->privacyName());
 });
 
 it('counts unique donors via external user identities', function () {
@@ -207,7 +221,7 @@ it('recomputes totals on subsequent renders so polling picks up new rounds', fun
         ->assertSet('totals.rounds', 9);
 });
 
-it('ranks athletes by actual donations using privacy names', function (): void {
+it('ranks athletes by donations, rounds, and elevation using privacy names', function (): void {
     $event = resultsTestEvent();
     $b = Partner::factory()->create(['name' => 'B Partner']);
 
@@ -218,11 +232,25 @@ it('ranks athletes by actual donations using privacy names', function (): void {
     $withoutDonations = resultsTestRegistration($event, 99, $b->id);
 
     Livewire::test(Results::class)
-        ->assertSet('totals.athlete_ranking.0.name', $first->externalUser->privacy_name)
-        ->assertSet('totals.athlete_ranking.0.amount', 100.0)
-        ->assertSet('totals.athlete_ranking.1.name', $second->externalUser->privacy_name)
-        ->assertSet('totals.athlete_ranking.1.amount', 40.0)
-        ->assertSet('totals.athlete_ranking', fn ($ranking): bool => count($ranking) === 2);
+        ->assertSet('totals.rankings.athletes.donations.0.name', $first->externalUser->privacy_name)
+        ->assertSet('totals.rankings.athletes.donations.0.value', 100.0)
+        ->assertSet('totals.rankings.athletes.rounds.0.value', 99)
+        ->assertSet('totals.rankings.athletes.elevation_m.0.value', 4950)
+        ->assertSet('totals.rankings.athletes.donations', fn ($ranking): bool => count($ranking) === 2);
+});
+
+it('orders tied rankings by name', function (): void {
+    $event = resultsTestEvent();
+    $first = resultsTestRegistration($event, 10);
+    $second = resultsTestRegistration($event, 10);
+    $first->externalUser->update(['first_name' => 'Beat', 'last_name' => 'Ziegler']);
+    $second->externalUser->update(['first_name' => 'Anna', 'last_name' => 'Aebi']);
+    resultsTestDonation($first, 10.0);
+    resultsTestDonation($second, 10.0);
+
+    Livewire::test(Results::class)
+        ->assertSet('totals.rankings.athletes.donations.0.name', 'Anna A.')
+        ->assertSet('totals.rankings.athletes.donations.1.name', 'Beat Z.');
 });
 
 it('ranks groups by the donations of their accepted members', function (): void {
@@ -252,11 +280,13 @@ it('ranks groups by the donations of their accepted members', function (): void 
     resultsTestDonation($pending, 50.0);
 
     Livewire::test(Results::class)
-        ->assertSet('totals.group_ranking.0.name', 'Team Blau')
-        ->assertSet('totals.group_ranking.0.amount', 100.0)
-        ->assertSet('totals.group_ranking.1.name', 'Team Rot')
-        ->assertSet('totals.group_ranking.1.amount', 20.0)
-        ->assertSet('totals.group_ranking', fn ($ranking): bool => count($ranking) === 2);
+        ->assertSet('totals.rankings.groups.donations.0.name', 'Team Blau')
+        ->assertSet('totals.rankings.groups.donations.0.value', 100.0)
+        ->assertSet('totals.rankings.groups.rounds.0.value', 10)
+        ->assertSet('totals.rankings.groups.elevation_m.0.value', 500)
+        ->assertSet('totals.rankings.groups.donations.1.name', 'Team Rot')
+        ->assertSet('totals.rankings.groups.donations.1.value', 20.0)
+        ->assertSet('totals.rankings.groups.donations', fn ($ranking): bool => count($ranking) === 2);
 });
 
 it('includes min-max clamped amounts in the athlete ranking', function (): void {
@@ -273,8 +303,8 @@ it('includes min-max clamped amounts in the athlete ranking', function (): void 
     ]);
 
     Livewire::test(Results::class)
-        ->assertSet('totals.athlete_ranking.0.amount', 50.0)
-        ->assertSet('totals.athlete_ranking', fn ($ranking): bool => count($ranking) === 1);
+        ->assertSet('totals.rankings.athletes.donations.0.value', 50.0)
+        ->assertSet('totals.rankings.athletes.donations', fn ($ranking): bool => count($ranking) === 1);
 });
 
 it('loads totals without per-donation queries', function (): void {
@@ -306,7 +336,7 @@ it('limits each ranking to the top ten entries', function (): void {
     }
 
     Livewire::test(Results::class)
-        ->assertSet('totals.athlete_ranking', fn ($ranking): bool => count($ranking) === 10 && $ranking[0]['amount'] === 11.0);
+        ->assertSet('totals.rankings.athletes.donations', fn ($ranking): bool => count($ranking) === 10 && $ranking[0]['value'] === 11.0);
 });
 
 it('refreshes every 15 seconds and supports light and dark appearance', function (): void {
@@ -328,6 +358,9 @@ it('pins the important sections to the viewport with scalable rankings', functio
         ->assertSee('h-screen')
         ->assertSee('overflow-hidden')
         ->assertSee('min-h-0 flex-1')
+        ->assertSee('flex h-full min-h-0 flex-col')
+        ->assertSee('[scrollbar-width:none]')
+        ->assertSee('overflow-y-auto')
         ->assertDontSee('Sportler:innen</p>')
         ->assertDontSee('Spender:innen</p>');
 });
