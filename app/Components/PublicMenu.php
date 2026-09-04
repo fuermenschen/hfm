@@ -7,10 +7,12 @@ namespace App\Components;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class PublicMenu extends Component
 {
+    #[Locked]
     public array $menuItems = [
         [
             'name' => 'Startseite',
