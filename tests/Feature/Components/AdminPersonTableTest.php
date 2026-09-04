@@ -1,21 +1,87 @@
 <?php
 
 use App\Components\AdminPersonTable;
+use App\Jobs\CreateDonorInvoice;
+use App\Mail\DonorInvoiceMail;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
+use App\Models\DonorEventInvoice;
 use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Models\User;
+use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Settings\EventSettings;
+use App\Settings\WeblingApiSettings;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Mockery\MockInterface;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+
+function endedDonorInvoiceEvent(): DonationEvent
+{
+    return DonationEvent::factory()->create([
+        'starts_at' => now('Europe/Zurich')->subDays(2),
+        'ends_at' => now('Europe/Zurich')->subDay(),
+    ]);
+}
+
+function fakeWeblingSettings(): void
+{
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+        'accounting_period_id' => 321,
+    ]);
+}
+
+function donorInvoiceFixture(DonationEvent $event, array $invoiceOverrides = []): array
+{
+    fakeWeblingSettings();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = DonorEventInvoice::factory()->forEvent($event)->forExternalUser($donor)->create($invoiceOverrides);
+
+    return [$donor, $invoice];
+}
+
+function donorInvoicePdfFixture(DonationEvent $event, ExternalUser $donor, array $invoiceOverrides = []): DonorEventInvoice
+{
+    fakeWeblingSettings();
+    $invoice = DonorEventInvoice::factory()->forEvent($event)->forExternalUser($donor)->create($invoiceOverrides + [
+        'webling_debitor_id' => 4242,
+        'source_total_cents' => 2500,
+        'pdf_disk' => 'local',
+        'pdf_path' => 'webling/donor-invoices/'.Str::uuid().'/test.pdf',
+    ]);
+    Storage::disk('local')->put($invoice->pdf_path, '%PDF-'.$invoice->id);
+
+    return $invoice;
+}
+
+/**
+ * @return MockInterface&WeblingInvoiceService
+ */
+function weblingInvoiceDetailsMock(array $details): MockInterface
+{
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('invoiceDetails')->andReturn($details);
+    $webling->shouldReceive('debitorUrl')->andReturnUsing(
+        fn (int $debitorId): string => 'https://demo.webling.ch/admin#/accounting/321/debitor/:debitor/view/'.$debitorId,
+    );
+    app()->instance(WeblingInvoiceService::class, $webling);
+
+    return $webling;
+}
 
 it('renders athlete and donor tables with their role labels', function (string $role, string $label): void {
     Livewire::test(AdminPersonTable::class, ['role' => $role])
@@ -401,6 +467,478 @@ it('downloads story images for admins and blocks external users', function (): v
 
     get(route('admin.story-image.download', [$registration, 'light']))
         ->assertRedirect();
+});
+
+it('shows invoice status and amounts for donors in the selected event', function (): void {
+    $event = DonationEvent::factory()->create();
+    [$donor] = donorInvoiceFixture($event, [
+        'webling_debitor_id' => 42,
+        'webling_invoice_number' => '1542',
+        'webling_state' => 'open',
+        'invoice_sent_at' => now(),
+        'source_total_cents' => 2500,
+    ]);
+    $otherDonor = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Rowless Donor']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('toggleColumn', 'invoice_number')
+        ->assertSee('Rechnung')
+        ->assertSee('Gesendet')
+        ->assertSee('1542')
+        ->assertSee('25.00')
+        ->assertSee($donor->first_name)
+        ->assertSee('Nicht erstellt')
+        ->assertSee($otherDonor->first_name);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'athlete'])
+        ->set('eventSlug', $event->slug)
+        ->assertDontSee('Rechnungs-Nr.');
+});
+
+it('scopes invoice display to the selected event', function (): void {
+    $eventA = DonationEvent::factory()->create();
+    $eventB = DonationEvent::factory()->create();
+    $donor = ExternalUser::factory()->asDonor($eventA)->asDonor($eventB)->create(['first_name' => 'Multi Donor']);
+    DonorEventInvoice::factory()->forEvent($eventA)->forExternalUser($donor)->create([
+        'webling_debitor_id' => 11,
+        'webling_state' => 'paid',
+    ]);
+    DonorEventInvoice::factory()->forEvent($eventB)->forExternalUser($donor)->create([
+        'webling_debitor_id' => 22,
+        'webling_state' => 'partially paid',
+    ]);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $eventA->slug)
+        ->assertSee('Bezahlt')
+        ->assertDontSee('Teilbezahlt')
+        ->set('eventSlug', $eventB->slug)
+        ->assertSee('Teilbezahlt')
+        ->assertDontSee('Bezahlt');
+});
+
+it('explains why invoice actions require one selected event', function (): void {
+    ExternalUser::factory()->asDonor()->create();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', '')
+        ->assertSee('Für Rechnungen bitte genau einen Anlass auswählen.')
+        ->assertSee('Rechnungen')
+        ->assertSee('Status aus Webling laden')
+        ->assertSee('Zahlungsstatus');
+});
+
+it('creates donor invoices after confirmation before event end', function (): void {
+    Bus::fake();
+    $event = DonationEvent::factory()->create();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmCreateInvoice', $donor->id)
+        ->assertSet('confirmingInvoiceAction', 'create')
+        ->assertSet('confirmingInvoiceUserId', $donor->id);
+
+    Bus::assertNotDispatched(CreateDonorInvoice::class);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('confirmingInvoiceAction', 'create')
+        ->set('confirmingInvoiceUserId', $donor->id)
+        ->call('runConfirmedInvoiceAction');
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+    expect(DonorEventInvoice::query()->where('external_user_id', $donor->id)->where('donation_event_id', $event->id)->exists())->toBeTrue();
+});
+
+it('creates donor invoices directly after event end', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmCreateInvoice', $donor->id)
+        ->assertSet('confirmingInvoiceAction', null);
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+});
+
+it('does not create an invoice for a donor outside the selected event', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $otherEvent = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($otherEvent)->create();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmCreateInvoice', $donor->id);
+
+    expect(DonorEventInvoice::query()->where('external_user_id', $donor->id)->where('donation_event_id', $event->id)->exists())->toBeFalse();
+    Bus::assertNotDispatched(CreateDonorInvoice::class);
+});
+
+it('reuses the same row when recreating a deleted invoice', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = DonorEventInvoice::factory()->forEvent($event)->forExternalUser($donor)->create([
+        'remote_deleted_at' => now(),
+    ]);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmCreateInvoice', $donor->id);
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+    expect(DonorEventInvoice::query()->sole()->id)->toBe($invoice->id);
+});
+
+it('recreates a missing PDF for an existing debitor', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = donorInvoicePdfFixture($event, $donor);
+    $invoice->forceFill(['pdf_disk' => null, 'pdf_path' => null])->save();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmCreateInvoice', $donor->id);
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+});
+
+it('sends donor invoices and confirms resends', function (): void {
+    Mail::fake();
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = donorInvoicePdfFixture($event, $donor);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('sendInvoice', $donor->id)
+        ->assertSet('confirmingInvoiceAction', null);
+
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
+    expect($invoice->refresh()->invoice_sent_at)->not->toBeNull();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('sendInvoice', $donor->id)
+        ->assertSet('confirmingInvoiceAction', 'send');
+
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('confirmingInvoiceAction', 'send')
+        ->set('confirmingInvoiceUserId', $donor->id)
+        ->call('runConfirmedInvoiceAction');
+
+    Mail::assertQueued(DonorInvoiceMail::class, 2);
+});
+
+it('sends reminders after live webling check', function (): void {
+    Mail::fake();
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = donorInvoicePdfFixture($event, $donor, ['invoice_sent_at' => now()->subDays(3)]);
+    weblingInvoiceDetailsMock([
+        'state' => 'open',
+        'due_date' => now()->subDay()->toDateString(),
+        'invoice_number' => '99',
+        'total_cents' => 2500,
+        'remaining_cents' => 2500,
+    ]);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('sendInvoiceReminder', $donor->id)
+        ->assertSet('confirmingInvoiceAction', null);
+
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
+    expect($invoice->refresh()->invoice_reminder_sent_at)->not->toBeNull();
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('confirmingInvoiceAction', 'reminder')
+        ->set('confirmingInvoiceUserId', $donor->id)
+        ->call('runConfirmedInvoiceAction');
+
+    Mail::assertQueued(DonorInvoiceMail::class, 2);
+});
+
+it('deletes unsettled invoices after confirmation', function (): void {
+    Storage::fake('local');
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = donorInvoicePdfFixture($event, $donor);
+    $pdfPath = $invoice->pdf_path;
+
+    $webling = weblingInvoiceDetailsMock([
+        'state' => 'open',
+        'due_date' => now()->addWeek()->toDateString(),
+        'invoice_number' => '99',
+        'total_cents' => 2500,
+        'remaining_cents' => 2500,
+    ]);
+    $webling->shouldReceive('deleteInvoice')->once()->andReturn(
+        new Response(new GuzzleHttp\Psr7\Response(204)),
+    );
+
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('confirmDeleteInvoice', $donor->id)
+        ->assertSet('confirmingInvoiceAction', 'delete')
+        ->call('runConfirmedInvoiceAction');
+
+    $invoice->refresh();
+    expect($invoice->remote_deleted_at)->not->toBeNull()
+        ->and($invoice->pdf_path)->toBeNull();
+    Storage::disk('local')->assertMissing($pdfPath);
+});
+
+it('downloads invoice pdfs and reports missing files', function (): void {
+    Storage::fake('local');
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = donorInvoicePdfFixture($event, $donor);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('downloadInvoicePdf', $donor->id)
+        ->assertFileDownloaded(sprintf('invoice_DON-%d-%d.pdf', $event->id, $donor->id));
+
+    Storage::disk('local')->delete($invoice->pdf_path);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('downloadInvoicePdf', $donor->id)
+        ->assertNoFileDownloaded();
+});
+
+it('hides send and download actions when the cached invoice pdf is missing', function (): void {
+    Storage::fake('local');
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $donor);
+    $invoice = DonorEventInvoice::query()->sole();
+    Storage::disk('local')->delete($invoice->pdf_path);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->assertDontSee('Rechnung herunterladen')
+        ->assertDontSee('Rechnung senden');
+});
+
+it('hides delete action for paid invoices', function (): void {
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $donor, ['webling_state' => 'paid']);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->assertDontSee('Rechnung löschen');
+});
+
+it('links invoices to webling', function (): void {
+    $event = DonationEvent::factory()->create();
+    [$donor] = donorInvoiceFixture($event, ['webling_debitor_id' => 55]);
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->assertSee('https://demo.webling.ch/admin#/accounting/321/debitor/:debitor/view/55', false);
+});
+
+it('bulk creates invoices for selected donors with preflight counts', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $withInvoice = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Existing']);
+    donorInvoicePdfFixture($event, $withInvoice);
+    $withoutInvoice = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Missing']);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$withInvoice->id, $withoutInvoice->id])
+        ->call('confirmBulkCreateInvoices')
+        ->assertSet('bulkEligibleCount', 1)
+        ->assertSet('bulkSkippedCount', 1)
+        ->assertSet('confirmingInvoiceAction', 'bulk_create')
+        ->call('runConfirmedInvoiceAction')
+        ->assertSet('checkboxValues', []);
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+});
+
+it('counts donors outside the selected event as skipped when creating invoices in bulk', function (): void {
+    Bus::fake();
+    $event = endedDonorInvoiceEvent();
+    $otherEvent = endedDonorInvoiceEvent();
+    $eventDonor = ExternalUser::factory()->asDonor($event)->create();
+    $otherEventDonor = ExternalUser::factory()->asDonor($otherEvent)->create();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$eventDonor->id, $otherEventDonor->id])
+        ->call('confirmBulkCreateInvoices')
+        ->assertSet('bulkEligibleCount', 1)
+        ->assertSet('bulkSkippedCount', 1)
+        ->call('runConfirmedInvoiceAction');
+
+    Bus::assertDispatched(CreateDonorInvoice::class, 1);
+});
+
+it('bulk sends invoices only for eligible donors', function (): void {
+    Mail::fake();
+    Storage::fake('local');
+    $event = endedDonorInvoiceEvent();
+    $unsent = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Unsent']);
+    $unsentInvoice = donorInvoicePdfFixture($event, $unsent);
+    $alreadySent = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Sent']);
+    $sentInvoice = donorInvoicePdfFixture($event, $alreadySent, ['invoice_sent_at' => now()]);
+    $withoutInvoice = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'None']);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$unsent->id, $alreadySent->id, $withoutInvoice->id])
+        ->call('confirmBulkSendInvoices')
+        ->assertSet('bulkEligibleCount', 1)
+        ->assertSet('bulkSkippedCount', 2)
+        ->call('runConfirmedInvoiceAction')
+        ->assertSet('checkboxValues', []);
+
+    Mail::assertQueued(DonorInvoiceMail::class, 1);
+    expect($unsentInvoice->refresh()->invoice_sent_at)->not->toBeNull()
+        ->and($sentInvoice->refresh()->invoice_sent_at)->not->toBeNull();
+});
+
+it('shows only locally eligible invoices in bulk-send preflight', function (): void {
+    Storage::fake('local');
+    $event = endedDonorInvoiceEvent();
+    $sendable = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $sendable);
+    $paid = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $paid, ['webling_state' => 'paid']);
+    $withoutEmail = ExternalUser::factory()->asDonor($event)->create(['email' => '']);
+    donorInvoicePdfFixture($event, $withoutEmail);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$sendable->id, $paid->id, $withoutEmail->id])
+        ->call('confirmBulkSendInvoices')
+        ->assertSet('bulkEligibleCount', 1)
+        ->assertSet('bulkSkippedCount', 2);
+});
+
+it('warns before bulk creation when the event has not ended', function (): void {
+    $event = DonationEvent::factory()->create(['ends_at' => now('Europe/Zurich')->addDay()]);
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$donor->id])
+        ->call('confirmBulkCreateInvoices')
+        ->assertSee('Der Anlass ist noch nicht beendet.');
+});
+
+it('bulk downloads selected invoice pdfs as a zip', function (): void {
+    Storage::fake('local');
+    $event = endedDonorInvoiceEvent();
+    $first = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $first);
+    $second = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $second);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$first->id, $second->id])
+        ->call('downloadSelectedInvoiceArchive')
+        ->assertFileDownloaded($event->slug.'_rechnungen.zip');
+});
+
+it('refreshes invoice statuses only for the selected event', function (): void {
+    $event = DonationEvent::factory()->create();
+    $otherEvent = DonationEvent::factory()->create();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    $invoice = DonorEventInvoice::factory()->forEvent($event)->forExternalUser($donor)->create(['webling_debitor_id' => 77]);
+    $untrackedDonor = ExternalUser::factory()->asDonor($event)->create();
+    $untrackedInvoice = DonorEventInvoice::factory()->forEvent($event)->forExternalUser($untrackedDonor)->create();
+    $otherDonor = ExternalUser::factory()->asDonor($otherEvent)->create();
+    $otherInvoice = DonorEventInvoice::factory()->forEvent($otherEvent)->forExternalUser($otherDonor)->create(['webling_debitor_id' => 88]);
+
+    weblingInvoiceDetailsMock([
+        'state' => 'paid',
+        'due_date' => null,
+        'invoice_number' => '1542',
+        'total_cents' => 2500,
+        'remaining_cents' => 0,
+    ]);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('refreshInvoiceStatuses');
+
+    $invoice->refresh();
+    $otherInvoice->refresh();
+    $untrackedInvoice->refresh();
+    expect($invoice->webling_state)->toBe('paid')
+        ->and($invoice->webling_synced_at)->not->toBeNull()
+        ->and($otherInvoice->webling_state)->toBeNull()
+        ->and($otherInvoice->webling_synced_at)->toBeNull()
+        ->and($untrackedInvoice->webling_state)->toBeNull()
+        ->and($untrackedInvoice->webling_synced_at)->toBeNull();
+});
+
+it('dispatches payment status summary for the selected event', function (): void {
+    $event = DonationEvent::factory()->create();
+    $otherEvent = DonationEvent::factory()->create();
+    $paidDonor = ExternalUser::factory()->asDonor($event)->create();
+    DonorEventInvoice::factory()->forEvent($event)->forExternalUser($paidDonor)->create([
+        'webling_debitor_id' => 11,
+        'webling_state' => 'paid',
+    ]);
+    $deletedDonor = ExternalUser::factory()->asDonor($event)->create();
+    DonorEventInvoice::factory()->forEvent($event)->forExternalUser($deletedDonor)->create([
+        'remote_deleted_at' => now(),
+    ]);
+    ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Rowless Donor']);
+    $otherEventDonor = ExternalUser::factory()->asDonor($otherEvent)->create();
+    DonorEventInvoice::factory()->forEvent($otherEvent)->forExternalUser($otherEventDonor)->create([
+        'webling_debitor_id' => 33,
+        'webling_state' => 'paid',
+    ]);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->call('paymentStatusSummary')
+        ->assertDispatched('showPaymentStatusSummary', function (string $eventName, array $params): bool {
+            expect($eventName)->toBe('showPaymentStatusSummary')
+                ->and($params['summary']['paid'])->toBe(1)
+                ->and($params['summary']['remote_deleted'])->toBe(1)
+                ->and($params['summary']['not_created'])->toBe(1)
+                ->and($params['summary']['created'])->toBe(0);
+
+            return true;
+        });
 });
 
 it('shows registration time for athletes in the selected event', function (): void {

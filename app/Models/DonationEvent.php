@@ -8,6 +8,7 @@ use App\Casts\LocalizedDateTime;
 use Carbon\Carbon;
 use Database\Factories\DonationEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -20,6 +21,7 @@ use Illuminate\Support\Str;
 /**
  * @property Carbon|null $starts_at
  * @property Carbon|null $ends_at
+ * @property Collection<int, DonorEventInvoice> $donorEventInvoices
  */
 #[Fillable([
     'slug',
@@ -52,6 +54,12 @@ class DonationEvent extends Model
     public function eventGroups(): HasMany
     {
         return $this->hasMany(EventGroup::class);
+    }
+
+    /** @return HasMany<DonorEventInvoice, $this> */
+    public function donorEventInvoices(): HasMany
+    {
+        return $this->hasMany(DonorEventInvoice::class);
     }
 
     /** @return BelongsToMany<Partner, $this, Pivot, 'pivot'> */

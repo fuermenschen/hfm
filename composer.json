@@ -88,6 +88,7 @@
         "precommit": [
             "vendor/bin/rector process",
             "vendor/bin/pint",
+            "npm run prettier -- --write .",
             "vendor/bin/peck",
             "npm run build",
             "vendor/bin/phpstan analyze",
@@ -110,6 +111,7 @@
         ],
         "precommit:ai": [
             "@lint:ai",
+            "npm run prettier -- --write .",
             "npm run build:ai",
             "@test:sca:ai",
             "@test:pest:ai",

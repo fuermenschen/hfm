@@ -9,11 +9,14 @@ There are two valid approaches — choose one and apply it consistently across t
 ```php
 class InvalidOrderException extends Exception
 {
-    public function report(): void { /* custom reporting */ }
+    public function report(): void
+    {
+        /* custom reporting */
+    }
 
     public function render(Request $request): Response
     {
-        return response()->view('errors.invalid-order', status: 422);
+        return response()->view("errors.invalid-order", status: 422);
     }
 }
 ```
@@ -53,7 +56,7 @@ Laravel auto-detects `Accept: application/json` but API clients may not set it. 
 
 ```php
 $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
-    return $request->is('api/*') || $request->expectsJson();
+    return $request->is("api/*") || $request->expectsJson();
 });
 ```
 
@@ -66,7 +69,7 @@ class InvalidOrderException extends Exception
 {
     public function context(): array
     {
-        return ['order_id' => $this->orderId];
+        return ["order_id" => $this->orderId];
     }
 }
 ```

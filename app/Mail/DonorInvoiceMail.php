@@ -12,7 +12,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class GenericMailMessage extends Mailable implements ShouldQueue
+class DonorInvoiceMail extends Mailable implements ShouldQueue
 {
     use Queueable;
     use SerializesModels;
@@ -21,7 +21,7 @@ class GenericMailMessage extends Mailable implements ShouldQueue
      * Create a new message instance.
      *
      * @param  string  $subject  The subject of the email.
-     * @param  string  $html  The HTML content of the email.
+     * @param  string  $body  The plain-text content of the email.
      * @param  array  $storageAttachments  An array of attachments sourced from storage disks.
      */
     /**
@@ -29,12 +29,10 @@ class GenericMailMessage extends Mailable implements ShouldQueue
      */
     public function __construct(
         string $subject,
-        string $html,
+        public string $body,
         public array $storageAttachments = [],
     ) {
-        // Assign to Mailable base properties (untyped in parent)
         $this->subject = $subject;
-        $this->html = $html;
     }
 
     /**
@@ -53,9 +51,10 @@ class GenericMailMessage extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'mail.generic',
+            view: 'mail.donor-invoice',
+            text: 'mail.donor-invoice-text',
             with: [
-                'bodyHtml' => $this->html,
+                'body' => $this->body,
             ]
         );
     }
@@ -78,21 +77,21 @@ class GenericMailMessage extends Mailable implements ShouldQueue
         }
 
         $attachments = [];
-        foreach ($this->storageAttachments as $att) {
-            $disk = (string) ($att['disk'] ?? 'local');
-            $path = (string) ($att['path'] ?? '');
+        foreach ($this->storageAttachments as $attachmentData) {
+            $disk = (string) ($attachmentData['disk'] ?? 'local');
+            $path = (string) ($attachmentData['path'] ?? '');
             if ($path === '') {
                 continue;
             }
 
             $attachment = Attachment::fromStorageDisk($disk, $path);
 
-            if (! empty($att['name'])) {
-                $attachment = $attachment->as((string) $att['name']);
+            if (! empty($attachmentData['name'])) {
+                $attachment = $attachment->as((string) $attachmentData['name']);
             }
 
-            if (! empty($att['mime'])) {
-                $attachment = $attachment->withMime((string) $att['mime']);
+            if (! empty($attachmentData['mime'])) {
+                $attachment = $attachment->withMime((string) $attachmentData['mime']);
             }
 
             $attachments[] = $attachment;

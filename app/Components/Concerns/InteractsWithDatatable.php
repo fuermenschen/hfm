@@ -271,6 +271,30 @@ trait InteractsWithDatatable
         return $this->valueFormatter()->dateTimeOrNull($value);
     }
 
+    public function displayValue(mixed $row, string $column): string
+    {
+        $definition = $this->columnDefinitions()[$column] ?? [];
+        $formatter = (string) ($definition['formatter'] ?? 'text');
+        $value = data_get($row, $column);
+
+        return match ($formatter) {
+            'money' => $this->formatMoney($this->toNumeric($value)),
+            'date' => $this->formatDate($value),
+            'date_time' => $this->formatDateTime($value),
+            'yes_no' => is_bool($value) ? ($value ? 'Ja' : 'Nein') : '-',
+            default => $this->fallbackText(is_scalar($value) ? (string) $value : null),
+        };
+    }
+
+    protected function toNumeric(mixed $value): float|int|string|null
+    {
+        if (is_numeric($value) || $value === null) {
+            return $value;
+        }
+
+        return null;
+    }
+
     protected function valueFormatter(): DatatableValueFormatter
     {
         return $this->datatableValueFormatter ??= resolve(DatatableValueFormatter::class);

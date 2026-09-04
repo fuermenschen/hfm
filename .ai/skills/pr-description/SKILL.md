@@ -71,6 +71,7 @@ php artisan optimize:clear
 Fixes #<number>
 
 ---
+
 **«<inspiring quote here>»**
 _<author>_
 ````

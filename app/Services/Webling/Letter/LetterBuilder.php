@@ -80,8 +80,8 @@ class LetterBuilder
             headerText: $this->headerText,
             bodyIntro: $this->body1,
             bodyOutro: $this->body2,
-            qr: $this->qr,
-            options: $this->options,
+            qr: $this->qr->toArray(),
+            options: $this->options->toArray(),
         );
     }
 }

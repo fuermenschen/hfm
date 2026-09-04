@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Webling\Letter\Template;
 
 use App\Services\Webling\Letter\Dto\LetterDraft;
+use Carbon\CarbonInterface;
 
 /**
  * Minimal invoice template mapping builder slots to Webling letter JSON shape.
@@ -16,8 +17,8 @@ class InvoiceLetterTemplate
      */
     public function render(LetterDraft $draft): array
     {
-        $options = $draft->options?->toArray() ?? [];
-        $qr = $draft->qr?->toArray() ?? [];
+        $options = $draft->options;
+        $qr = $draft->qr;
 
         $headerHtml = '';
         if ($options['showHeader'] ?? true) {
@@ -50,6 +51,10 @@ class InvoiceLetterTemplate
 
         $bodyIntroHtml = '<div>'.nl2br(e($draft->bodyIntro)).'</div>';
         $bodyOutroHtml = '<div>'.nl2br(e($draft->bodyOutro)).'</div>';
+        $dateHtml = '<span class="fr-deletable webling-placeholder webling-simple-placeholder" contenteditable="false" data-webling-placeholder="%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22D.%20MMMM%20YYYY%22%7D">{{D. MMMM YYYY}}</span>';
+        if ($draft->date instanceof CarbonInterface) {
+            $dateHtml = e($draft->date->locale('de_CH')->translatedFormat('j. F Y'));
+        }
 
         return [
             'options' => $options,
@@ -102,7 +107,7 @@ class InvoiceLetterTemplate
                         'padding' => ['top' => 4.94, 'right' => 0, 'bottom' => 4.94, 'left' => 0],
                         'options' => [],
                         'content' => [
-                            'html' => '<div style="text-align: left;">Winterthur, <span class="fr-deletable webling-placeholder webling-simple-placeholder" contenteditable="false" data-webling-placeholder="%7B%22type%22%3A%22simple%22%2C%22field%22%3A%22D.%20MMMM%20YYYY%22%7D">{{D. MMMM YYYY}}</span></div>',
+                            'html' => '<div style="text-align: left;">Winterthur, '.$dateHtml.'</div>',
                         ],
                     ],
                 ],

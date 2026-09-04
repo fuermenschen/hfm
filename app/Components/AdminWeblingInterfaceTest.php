@@ -176,7 +176,7 @@ class AdminWeblingInterfaceTest extends Component
                 periodId: $settings->accounting_period_id,
                 invoiceLines: [
                     [
-                        'amount' => (float) $this->testData['amount'],
+                        'amount_cents' => (int) round((float) $this->testData['amount'] * 100),
                         'title' => 'Testspende – '.$this->testData['sport'].' für '.$this->testData['purpose'],
                     ],
                 ],

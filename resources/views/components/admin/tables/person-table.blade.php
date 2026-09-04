@@ -18,101 +18,10 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <x-datatable.export-dropdown />
                         @if ($role === 'athlete')
-                            <flux:dropdown>
-                                <flux:button
-                                    variant="ghost"
-                                    size="sm"
-                                    icon="document-text"
-                                    wire:loading.attr="disabled"
-                                    wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
-                                    :disabled="! $this->documentDownloadsEnabled()"
-                                >
-                                    <span
-                                        wire:loading.remove
-                                        wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
-                                    >Dokumente</span>
-                                    <span
-                                        wire:loading
-                                        wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
-                                    >Wird erstellt...</span>
-                                </flux:button>
-                                <flux:menu>
-                                    <flux:menu.group heading="Willkommensbrief">
-                                        <flux:menu.item
-                                            wire:click="downloadAllAthleteDocuments('welcome-letter')"
-                                            wire:loading.attr="disabled"
-                                            wire:target="downloadAllAthleteDocuments"
-                                            icon="document-text"
-                                            :disabled="! $this->documentDownloadsEnabled()"
-                                        >
-                                            Alle Sportler:innen
-                                        </flux:menu.item>
-                                        <flux:menu.item
-                                            wire:click="downloadSelectedAthleteDocuments('welcome-letter')"
-                                            wire:loading.attr="disabled"
-                                            wire:target="downloadSelectedAthleteDocuments"
-                                            icon="check-circle"
-                                            :disabled="! $this->documentDownloadsEnabled() || $this->selectedCount() === 0"
-                                        >
-                                            Ausgewählte Sportler:innen
-                                        </flux:menu.item>
-                                    </flux:menu.group>
-                                    <flux:menu.group heading="Personalisierter Flyer">
-                                        <flux:menu.item
-                                            wire:click="downloadAllAthleteDocuments('personalized-flyer')"
-                                            wire:loading.attr="disabled"
-                                            wire:target="downloadAllAthleteDocuments"
-                                            icon="document-text"
-                                            :disabled="! $this->documentDownloadsEnabled()"
-                                        >
-                                            Alle Sportler:innen
-                                        </flux:menu.item>
-                                        <flux:menu.item
-                                            wire:click="downloadSelectedAthleteDocuments('personalized-flyer')"
-                                            wire:loading.attr="disabled"
-                                            wire:target="downloadSelectedAthleteDocuments"
-                                            icon="check-circle"
-                                            :disabled="! $this->documentDownloadsEnabled() || $this->selectedCount() === 0"
-                                        >
-                                            Ausgewählte Sportler:innen
-                                        </flux:menu.item>
-                                    </flux:menu.group>
-                                    <flux:menu.group heading="Story-Bilder">
-                                        <flux:menu.item
-                                            wire:click="downloadAllAthleteStoryImages"
-                                            wire:loading.attr="disabled"
-                                            wire:target="downloadAllAthleteStoryImages"
-                                            icon="photo"
-                                            :disabled="! $this->documentDownloadsEnabled()"
-                                        >
-                                            Alle Sportler:innen
-                                        </flux:menu.item>
-                                        <flux:menu.item
-                                            wire:click="downloadSelectedAthleteStoryImages"
-                                            wire:loading.attr="disabled"
-                                            wire:target="downloadSelectedAthleteStoryImages"
-                                            icon="check-circle"
-                                            :disabled="! $this->documentDownloadsEnabled() || $this->selectedCount() === 0"
-                                        >
-                                            Ausgewählte Sportler:innen
-                                        </flux:menu.item>
-                                    </flux:menu.group>
-                                </flux:menu>
-                            </flux:dropdown>
-                            @if (! $this->documentDownloadsEnabled())
-                                <flux:callout icon="information-circle" variant="secondary" class="py-1.5">
-                                    <flux:callout.text>
-                                        Für Dokumente bitte genau einen Anlass auswählen.</flux:callout.text>
-                                </flux:callout>
-                            @endif
-                            <flux:text
-                                wire:loading.flex
-                                wire:target="downloadAllAthleteDocuments,downloadSelectedAthleteDocuments,downloadAllAthleteStoryImages,downloadSelectedAthleteStoryImages"
-                                class="items-center gap-1 text-sm text-zinc-500"
-                            >
-                                <flux:icon.arrow-path class="size-4 animate-spin" />
-                                Dokumente werden erstellt...
-                            </flux:text>
+                            <x-admin.tables.person.athlete-downloads />
+                        @endif
+                        @if ($role === 'donor')
+                            <x-admin.tables.person.invoice-actions />
                         @endif
                         <x-datatable.column-visibility-dropdown :column-options="$this->visibleColumnOptions()" />
                     </div>
@@ -179,32 +88,7 @@
                                 @php($cellAlignClass = ($columnDefinition['align'] ?? 'left') === 'right' ? 'text-right' : (($columnDefinition['align'] ?? 'left') === 'center' ? 'text-center' : 'text-left'))
                                 @php($cellClass = trim(($columnDefinition['width'] ?? '').' '.$cellAlignClass))
                                 <flux:table.cell class="{{ $cellClass }}">
-                                    @if ($columnKey === 'events')
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach ($this->linkedEvents($row) as $event)
-                                                <flux:badge size="sm" color="zinc">{{ $event->slug }}</flux:badge>
-                                            @endforeach
-                                        </div>
-                                    @elseif ($columnKey === 'partner')
-                                        {{ $this->selectedAthletePartner($row) }}
-                                    @elseif ($columnKey === 'group')
-                                        {{ $this->selectedAthleteGroup($row) }}
-                                    @elseif ($columnKey === 'confirmed')
-                                        @php($confirmed = $this->selectedAthleteConfirmed($row))
-                                        @if ($confirmed === null)
-                                            -
-                                        @else
-                                            <flux:badge size="sm" :color="$confirmed ? 'zinc' : 'red'">
-                                                {{ $confirmed ? 'OK' : 'NOK' }}
-                                            </flux:badge>
-                                        @endif
-                                    @elseif ($columnKey === 'registration_time')
-                                        {{ $this->formatDateTime($this->selectedRegistrationCreatedAt($row)) }}
-                                    @elseif ($columnKey === 'donation_count')
-                                        {{ data_get($row, 'selected_donation_count', 0) }}
-                                    @else
-                                        {{ $this->displayValue($row, $columnKey) }}
-                                    @endif
+                                    <x-admin.tables.person.cell :row="$row" :column-key="$columnKey" />
                                 </flux:table.cell>
                             @endforeach
                             @if ($role === 'athlete')
@@ -259,26 +143,7 @@
                                 </flux:table.cell>
                             @endif
                             <flux:table.cell class="w-1 whitespace-nowrap">
-                                <div class="flex justify-end gap-1">
-                                    <flux:button
-                                        size="xs"
-                                        variant="ghost"
-                                        icon="pencil-square"
-                                        square
-                                        tooltip="Person bearbeiten"
-                                        wire:click="$dispatchTo('admin-external-user-editor', 'open-external-user-editor', { externalUserId: {{ $row->id }} })"
-                                    />
-                                    @if ($role === 'athlete' && ($registration = $this->selectedAthleteRegistration($row)))
-                                        <flux:button
-                                            size="xs"
-                                            variant="ghost"
-                                            icon="clipboard-document"
-                                            square
-                                            tooltip="Anmeldung bearbeiten"
-                                            wire:click="$dispatchTo('admin-athlete-registration-editor', 'open-athlete-registration-editor', { athleteRegistrationId: {{ $registration->id }} })"
-                                        />
-                                    @endif
-                                </div>
+                                <x-admin.tables.person.row-actions :row="$row" :role="$role" />
                             </flux:table.cell>
                         </flux:table.row>
                     @empty
@@ -313,5 +178,31 @@
     <livewire:admin-external-user-editor @external-user-saved="$refresh" />
     @if ($role === 'athlete')
         <livewire:admin-athlete-registration-editor @athlete-registration-saved="$refresh" />
+    @endif
+
+    @if ($role === 'donor')
+        <flux:modal name="admin-person-invoice-confirm" class="min-w-[22rem]" wire:close="cancelInvoiceConfirm">
+            <div class="space-y-4">
+                <flux:heading size="lg">{{ $this->invoiceConfirmHeading() }}</flux:heading>
+                <flux:text>{{ $this->invoiceConfirmText() }}</flux:text>
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="ghost" wire:click="cancelInvoiceConfirm">Abbrechen</flux:button>
+                    </flux:modal.close>
+                    <flux:button
+                        :variant="$this->confirmingInvoiceIsDestructive() ? 'danger' : 'primary'"
+                        wire:click="runConfirmedInvoiceAction"
+                        wire:loading.attr="disabled"
+                        wire:target="runConfirmedInvoiceAction"
+                    >
+                        <span
+                            wire:loading.remove
+                            wire:target="runConfirmedInvoiceAction"
+                        >{{ $this->invoiceConfirmButtonLabel() }}</span>
+                        <span wire:loading wire:target="runConfirmedInvoiceAction">Wird ausgeführt...</span>
+                    </flux:button>
+                </div>
+            </div>
+        </flux:modal>
     @endif
 </div>

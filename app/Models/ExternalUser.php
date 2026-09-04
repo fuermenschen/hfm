@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
  * @property string $public_id_string
  * @property Collection<int, AthleteRegistration> $athleteRegistrations
  * @property Collection<int, Donation> $donationsAsDonor
+ * @property Collection<int, DonorEventInvoice> $donorEventInvoices
  */
 #[Appends([
     'full_name',
@@ -79,6 +80,12 @@ class ExternalUser extends Authenticatable
     public function donationsAsDonor(): HasMany
     {
         return $this->hasMany(Donation::class, 'donor_external_user_id');
+    }
+
+    /** @return HasMany<DonorEventInvoice, $this> */
+    public function donorEventInvoices(): HasMany
+    {
+        return $this->hasMany(DonorEventInvoice::class);
     }
 
     public function privacyName(): string

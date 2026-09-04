@@ -101,11 +101,14 @@ function prepareStoryFile(container, variant) {
             return file;
         });
 
-    state.files.set(variant, promise.catch((error) => {
-        state.files.delete(variant);
+    state.files.set(
+        variant,
+        promise.catch((error) => {
+            state.files.delete(variant);
 
-        throw error;
-    }));
+            throw error;
+        }),
+    );
 
     return state.files.get(variant);
 }
@@ -145,7 +148,12 @@ function initStoryShare(scope = document) {
         }
 
         container.dataset.storyShareInitialized = "1";
-        container.storyShareState = { files: new Map(), readyFiles: new Map(), previewUrls: new Map(), variant: "light" };
+        container.storyShareState = {
+            files: new Map(),
+            readyFiles: new Map(),
+            previewUrls: new Map(),
+            variant: "light",
+        };
         container.querySelectorAll("[data-story-variant]").forEach((button) => {
             button.addEventListener("click", () => selectStoryVariant(container, button.dataset.storyVariant));
         });
@@ -158,16 +166,18 @@ function initStoryShare(scope = document) {
             }
 
             if (typeof navigator.share !== "function" || navigator.canShare?.({ files: [file] }) === false) {
-                setStoryShareStatus(container, "Teilen wird von diesem Browser nicht unterstützt. Nutze Story-Bild herunterladen.");
+                setStoryShareStatus(
+                    container,
+                    "Teilen wird von diesem Browser nicht unterstützt. Nutze Story-Bild herunterladen.",
+                );
                 return;
             }
 
-            navigator.share({ files: [file] })
-                .catch((error) => {
-                    if (error?.name !== "AbortError") {
-                        setStoryShareStatus(container, "Teilen nicht verfügbar. Nutze Story-Bild herunterladen.");
-                    }
-                });
+            navigator.share({ files: [file] }).catch((error) => {
+                if (error?.name !== "AbortError") {
+                    setStoryShareStatus(container, "Teilen nicht verfügbar. Nutze Story-Bild herunterladen.");
+                }
+            });
         });
         container.querySelector("[data-download-story]")?.addEventListener("click", () => {
             window.location.assign(storyUrl(container, container.storyShareState.variant, "Download"));
@@ -209,12 +219,11 @@ function initShareTexts(scope = document) {
                 return;
             }
 
-            navigator.share({ text: textarea.value })
-                .catch((error) => {
-                    if (error?.name !== "AbortError") {
-                        status.textContent = "Teilen nicht verfügbar. Nutze Text kopieren.";
-                    }
-                });
+            navigator.share({ text: textarea.value }).catch((error) => {
+                if (error?.name !== "AbortError") {
+                    status.textContent = "Teilen nicht verfügbar. Nutze Text kopieren.";
+                }
+            });
         });
         template.querySelector("[data-copy-text]")?.addEventListener("click", () => {
             copyShareText(textarea)
@@ -378,7 +387,9 @@ document.addEventListener("click", (event) => {
         setStoryShareStatus(container, "Bilder werden vorbereitet. Das kann einen Moment dauern.");
         Promise.all([prepareStoryFile(container, "light"), prepareStoryFile(container, "dark")])
             .then(() => setStoryShareStatus(container, "Bilder sind bereit zum Teilen."))
-            .catch(() => setStoryShareStatus(container, "Bilder konnten nicht vorbereitet werden. Bitte versuche es erneut."));
+            .catch(() =>
+                setStoryShareStatus(container, "Bilder konnten nicht vorbereitet werden. Bitte versuche es erneut."),
+            );
         selectStoryVariant(container, "light");
     }
 });

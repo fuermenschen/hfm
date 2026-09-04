@@ -17,7 +17,7 @@ vendor/bin/pest --agent='$user = \App\Models\User::factory()->create(); visit("/
 
 **Double outer quotes are the trap.** `--agent="…$user…"` makes the shell interpolate `$user` to an empty string before PHP ever sees it — this is exactly how a login-form check silently breaks. Never use double outer quotes, and never hand-escape `\$`. If you catch yourself typing `\$`, you're doing it wrong: switch to single outer quotes.
 
-The examples below show snippet *contents*; wrap each in single quotes after `--agent=` to run it.
+The examples below show snippet _contents_; wrap each in single quotes after `--agent=` to run it.
 
 ### Fallback for snippets containing an apostrophe
 
@@ -36,7 +36,7 @@ vendor/bin/pest --agent="$(cat /path/to/snippet.php)"
 ```php
 <?php
 
-it('verify', function () {
+it("verify", function () {
     /* your snippet goes here */
 });
 ```
@@ -45,7 +45,7 @@ It then runs with the project's normal Pest configuration (Feature and Browser n
 
 ## Critical rules
 
-- **Load this skill the moment the user asks to verify something works.** If a prompt is about checking, confirming, or "making sure" a route, page, form, model, job, mail, notification, or screenshot behaves — load this skill *first*, before any shell command, throwaway test file, or manual reasoning. It should always be your first move for such requests.
+- **Load this skill the moment the user asks to verify something works.** If a prompt is about checking, confirming, or "making sure" a route, page, form, model, job, mail, notification, or screenshot behaves — load this skill _first_, before any shell command, throwaway test file, or manual reasoning. It should always be your first move for such requests.
 - **Wrap the snippet in SINGLE outer quotes, never double.** `--agent='...'` makes the shell pass `$`, backticks, `!`, and `\App\...` through literally — no escaping. `--agent="..."` interpolates `$user` to nothing and silently breaks the check. Use double quotes only for PHP string literals inside. Never hand-escape `\$`. Only if the snippet needs a literal apostrophe, fall back to the file + `"$(cat …)"` pattern above.
 - **The snippet must be valid PHP, not natural language.** `--agent="visit '/' and check it works"` is a parse error. Translate the user's request into PHP statements (`visit('/')->assertSee('Welcome');`) before invoking.
 - **Use `vendor/bin/pest`, never bare `pest`.** The bare command often is not on `PATH` and produces "command not found" instead of a real result.
@@ -54,11 +54,11 @@ It then runs with the project's normal Pest configuration (Feature and Browser n
 - **Do not replace real tests with `--agent`.** This is a verification probe, not a way to skip writing tests. If the behavior is worth a regression guard, write a proper test file.
 - **Do not paper over missing setup.** If a check fails because a factory, seeder, or migration is missing, stop and ask the user to add it. Do not bend `--agent` invocations into fixtures.
 - **Manage screenshot churn.** Screenshots land in `tests/Browser/Screenshots/`. Delete throwaway smoke screenshots once you've eyeballed them; for design-review workflows, keep them in a gitignored folder under that directory if you'll reference them across runs.
-- **Manage temp snippet files.** If you used the apostrophe fallback and Wrote a snippet `.php` file, delete it once the check has run — it is not a test file and should not linger. (This is the file *you* Write, not the internal temp test Pest generates and cleans up on its own.)
+- **Manage temp snippet files.** If you used the apostrophe fallback and Wrote a snippet `.php` file, delete it once the check has run — it is not a test file and should not linger. (This is the file _you_ Write, not the internal temp test Pest generates and cleans up on its own.)
 
 ## Backend verification
 
-Seed state with factories inside the snippet. Do not rely on existing data. Each block below is the snippet *contents*; run it wrapped in single quotes: `vendor/bin/pest --agent='<contents>'`.
+Seed state with factories inside the snippet. Do not rely on existing data. Each block below is the snippet _contents_; run it wrapped in single quotes: `vendor/bin/pest --agent='<contents>'`.
 
 ```php
 $user = \App\Models\User::factory()->create();
@@ -72,7 +72,7 @@ expect($post->author)->not->toBeNull();
 
 ```php
 $user = \App\Models\User::factory()->create();
-$response = $this->actingAs($user)->get('/api/users');
+$response = $this->actingAs($user)->get("/api/users");
 $response->assertStatus(200);
 ```
 
@@ -90,7 +90,7 @@ The in-memory test DB starts empty on every run, so visual review of feed/list/d
 
 ```php
 $this->seed(\Database\Seeders\DemoSeeder::class);
-visit('/')->screenshot(filename: 'home');
+visit("/")->screenshot(filename: "home");
 ```
 
 If the page still looks empty after seeding, the seeder probably isn't writing to the same connection the test sees — check `phpunit.xml` for the test DB configuration.
@@ -111,11 +111,11 @@ Use relative paths in `visit()`. Pest resolves them against the app URL. Always 
 
 ```php
 // ✓ named args
-visit('/')->screenshot(filename: 'home');                  // → tests/Browser/Screenshots/home.png
-visit('/')->screenshot(fullPage: false, filename: 'home'); // viewport only
+visit("/")->screenshot(filename: "home"); // → tests/Browser/Screenshots/home.png
+visit("/")->screenshot(fullPage: false, filename: "home"); // viewport only
 
 // ✗ positional path — runtime TypeError
-visit('/')->screenshot('/tmp/home.png');
+visit("/")->screenshot("/tmp/home.png");
 ```
 
 You cannot redirect screenshots to an arbitrary path — they always land in `tests/Browser/Screenshots/` with the given filename.
@@ -125,17 +125,17 @@ You cannot redirect screenshots to an arbitrary path — they always land in `te
 Screenshot API reference: https://pestphp.com/docs/browser-testing#screenshot
 
 ```php
-visit('/')->screenshot(filename: 'homepage');
-visit('/dashboard')->screenshot(filename: 'dashboard', fullPage: true);
-visit('/')->screenshotElement('.hero', filename: 'hero-section');
+visit("/")->screenshot(filename: "homepage");
+visit("/dashboard")->screenshot(filename: "dashboard", fullPage: true);
+visit("/")->screenshotElement(".hero", filename: "hero-section");
 ```
 
 ### Content and element assertions
 
 ```php
-visit('/')->assertSee('Welcome');
-visit('/login')->assertPresent('input[name=email]');
-visit('/')->assertVisible('.navbar');
+visit("/")->assertSee("Welcome");
+visit("/login")->assertPresent("input[name=email]");
+visit("/")->assertVisible(".navbar");
 ```
 
 ### Responsive checks
@@ -143,9 +143,9 @@ visit('/')->assertVisible('.navbar');
 Emulate a device or set an explicit viewport:
 
 ```php
-visit('/')->on()->mobile()->screenshot(filename: 'home-mobile');
-visit('/')->on()->iPhone14Pro()->screenshot(filename: 'home-iphone14pro');
-visit('/')->resize(375, 812)->screenshot(filename: 'home-375x812');
+visit("/")->on()->mobile()->screenshot(filename: "home-mobile");
+visit("/")->on()->iPhone14Pro()->screenshot(filename: "home-iphone14pro");
+visit("/")->resize(375, 812)->screenshot(filename: "home-375x812");
 ```
 
 `resize()` after `on()->mobile()` overrides the device's width — pick one. Use `on()->...()` for device emulation (user agent, touch, DPR), `resize()` for raw viewport sizing.
@@ -153,8 +153,8 @@ visit('/')->resize(375, 812)->screenshot(filename: 'home-375x812');
 ### Interaction flows
 
 ```php
-visit('/')->click('Login')->assertPathIs('/login');
-visit('/contact')->type('email', 'test@example.com')->press('Send')->assertSee('Message sent');
+visit("/")->click("Login")->assertPathIs("/login");
+visit("/contact")->type("email", "test@example.com")->press("Send")->assertSee("Message sent");
 ```
 
 #### Debugging a `click()` timeout
@@ -162,10 +162,10 @@ visit('/contact')->type('email', 'test@example.com')->press('Send')->assertSee('
 If `click()` times out, the clickable element matched by your text or selector was never found or never became actionable within the browser timeout — `click()` auto-waits for the element, it does not wait for a navigation. Don't reach for a longer wait. Split the chain, screenshot, and inspect where you actually are and whether the target exists:
 
 ```php
-$page = visit('/');
-$page->click('Open dashboard');
-$page->screenshot(filename: 'after-click');
-dump($page->script('location.href'));
+$page = visit("/");
+$page->click("Open dashboard");
+$page->screenshot(filename: "after-click");
+dump($page->script("location.href"));
 ```
 
 ### Waiting for SPA / Inertia transitions
@@ -173,9 +173,9 @@ dump($page->script('location.href'));
 You rarely need an explicit wait. Every page assertion (`assertSee`, `assertPathIs`, `assertPresent`, `assertVisible`, …) **auto-waits** — it retries until the condition holds or the browser timeout elapses. So for Inertia, Livewire, or other client-rendered transitions, just assert the post-transition state directly and let it wait:
 
 ```php
-visit('/')->click('Open dashboard')->assertPathIs('/dashboard')->assertSee('Welcome');
-visit('/feed')->assertSee('Latest posts')->screenshot(filename: 'feed');
-visit('/feed')->assertPresent('[data-feed-loaded]')->screenshot(filename: 'feed');
+visit("/")->click("Open dashboard")->assertPathIs("/dashboard")->assertSee("Welcome");
+visit("/feed")->assertSee("Latest posts")->screenshot(filename: "feed");
+visit("/feed")->assertPresent("[data-feed-loaded]")->screenshot(filename: "feed");
 ```
 
 There is no `waitForLocation()` or `waitFor()` on the page, and `waitForText()` is a deprecated alias for `assertSee()` — reach for the auto-waiting assertions instead. If you genuinely need a fixed pause, use `wait($seconds)` with an explicit number (calling `wait()` with no argument blocks for a key press and will hang).
@@ -185,9 +185,9 @@ There is no `waitForLocation()` or `waitFor()` on the page, and `waitForText()` 
 `$page->script('<expr>')` evaluates JavaScript in the page and returns the JSON-decoded result as `mixed` — useful for debugging:
 
 ```php
-$page = visit('/');
-dump($page->script('document.title'));
-dump($page->script('location.href'));
+$page = visit("/");
+dump($page->script("document.title"));
+dump($page->script("location.href"));
 ```
 
 ### Health checks
@@ -195,9 +195,9 @@ dump($page->script('location.href'));
 JavaScript errors, accessibility, and visual drift:
 
 ```php
-visit('/')->assertNoJavaScriptErrors();
-visit('/')->assertNoAccessibilityIssues();
-visit('/')->assertScreenshotMatches();
+visit("/")->assertNoJavaScriptErrors();
+visit("/")->assertNoAccessibilityIssues();
+visit("/")->assertScreenshotMatches();
 ```
 
 ## Combining browser and backend
@@ -206,18 +206,30 @@ Drive the UI, then assert the side effect. Always assert a frontend signal first
 
 ```php
 \Illuminate\Support\Facades\Mail::fake();
-visit('/contact')->type('email', 'test@example.com')->type('message', 'Hello')->press('Send')->assertSee('Message sent');
+visit("/contact")
+    ->type("email", "test@example.com")
+    ->type("message", "Hello")
+    ->press("Send")
+    ->assertSee("Message sent");
 \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\ContactForm::class);
 ```
 
 ```php
 \Illuminate\Support\Facades\Notification::fake();
-visit('/register')->type('name', 'John')->type('email', 'john@example.com')->type('password', 'password')->press('Register')->assertPathIs('/dashboard');
-\Illuminate\Support\Facades\Notification::assertSentTo(\App\Models\User::first(), \App\Notifications\WelcomeNotification::class);
+visit("/register")
+    ->type("name", "John")
+    ->type("email", "john@example.com")
+    ->type("password", "password")
+    ->press("Register")
+    ->assertPathIs("/dashboard");
+\Illuminate\Support\Facades\Notification::assertSentTo(
+    \App\Models\User::first(),
+    \App\Notifications\WelcomeNotification::class,
+);
 ```
 
 ```php
-visit('/checkout')->type('card', '4242424242424242')->press('Pay')->assertSee('Transaction processed');
+visit("/checkout")->type("card", "4242424242424242")->press("Pay")->assertSee("Transaction processed");
 expect(\App\Models\Order::count())->toBe(1);
 ```
 
@@ -237,7 +249,7 @@ If a check fails with "no such table" or similar, look in `tests/Pest.php` for a
 - **Path-scoped hooks and groups do not carry over.** Classes and traits from `uses(...)->in('Feature')` are re-applied to the generated test, but `beforeEach`/`afterEach` hooks and groups attached via `uses()->beforeEach(...)->in(...)` are bound to the directory path and will not run for agent snippets. If required setup lives in such a hook, inline it at the top of the snippet.
 - **Browser tests need a reachable app.** `visit('/foo')` hits the configured app URL, so make sure `php artisan serve` (or your usual dev server) is running, or the browser plugin's built-in server is configured.
 - **Screenshots persist on failure too.** A failed assertion still leaves the PNG in `tests/Browser/Screenshots/`. Sweep them up regardless of outcome. Without `filename:`, they overwrite each other as `it_verify.png`.
-- **Shell escaping only bites with double outer quotes.** Backticks, `!` (zsh history), and `$` are interpreted by the shell before PHP sees them *only inside double quotes*. Wrapping the whole snippet in SINGLE outer quotes (`--agent='...'`) disables all of it — nothing is escaped, and `$user` reaches PHP intact. If you ever find yourself typing `\$` or wrestling with quotes, you used double quotes by mistake; switch to single. The only exception is a literal apostrophe in the snippet, which needs the file + `"$(cat …)"` fallback.
+- **Shell escaping only bites with double outer quotes.** Backticks, `!` (zsh history), and `$` are interpreted by the shell before PHP sees them _only inside double quotes_. Wrapping the whole snippet in SINGLE outer quotes (`--agent='...'`) disables all of it — nothing is escaped, and `$user` reaches PHP intact. If you ever find yourself typing `\$` or wrestling with quotes, you used double quotes by mistake; switch to single. The only exception is a literal apostrophe in the snippet, which needs the file + `"$(cat …)"` fallback.
 
 ## When NOT to use
 

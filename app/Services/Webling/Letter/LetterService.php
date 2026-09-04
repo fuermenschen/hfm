@@ -9,8 +9,6 @@ use Illuminate\Http\Client\Response;
 
 class LetterService
 {
-    // TODO(dead-code): Remove ignore when donor_event_invoices letter flow is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function __construct(
         public LetterRenderer $renderer,
         public LetterSchemaValidator $validator,
@@ -38,5 +36,15 @@ class LetterService
         $this->validator->validate($json);
 
         return $this->client->createLetter($json, $debitorId, $title);
+    }
+
+    /**
+     * Create a letter from persisted source snapshot data.
+     *
+     * @param  array<string,mixed>  $snapshot
+     */
+    public function createFromSnapshot(array $snapshot, string $title, int $debitorId): Response
+    {
+        return $this->createFromDraft(LetterDraft::fromSnapshot($snapshot), $title, $debitorId);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Webling;
 
+use App\Exceptions\Webling\WeblingApiException;
 use App\Settings\WeblingApiSettings;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Http\Client\ConnectionException;
@@ -40,8 +41,9 @@ class WeblingApiService
             ->timeout((int) ($options['timeout'] ?? 10))
             ->connectTimeout((int) ($options['connecttimeout'] ?? 5))
             ->withUserAgent((string) ($options['useragent'] ?? 'HFM Webling Client'))
-            // Throw RequestException on 4xx/5xx responses
-            ->throw();
+            ->throw(static function (Response $response): never {
+                throw WeblingApiException::fromResponse($response);
+            });
     }
 
     /**

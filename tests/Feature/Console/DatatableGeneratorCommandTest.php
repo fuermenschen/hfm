@@ -40,6 +40,7 @@ it('generates datatable class, view, and test files', function (): void {
     expect($files->get($componentPath))->toContain("public string \$sortField = 'id';");
     expect($files->get($componentPath))->toContain("'name' => ['label' => 'Name', 'sortable' => true");
     expect($files->get($componentPath))->toContain('public function exportAll(string $format): ?HttpResponse');
+    expect($files->get($componentPath))->not->toContain('public function displayValue');
     expect($files->get($viewPath))->toContain('<x-datatable.export-dropdown />');
 
     $files->delete($componentPath);

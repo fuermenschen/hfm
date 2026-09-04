@@ -3,7 +3,7 @@ name: blaze-optimize
 description: Set up and optimize Blade component rendering with Blaze. Use when installing Blaze, optimizing components, or configuring @blaze directives and strategies.
 license: MIT
 metadata:
-  author: livewire
+    author: livewire
 ---
 
 # Blaze Optimize
@@ -27,6 +27,7 @@ composer require livewire/blaze:^1.0
 Quick scan before making changes. Do not read individual component files.
 
 Check:
+
 - `composer.json` for `livewire/flux`, `livewire/flux-pro`, `livewire/livewire`, `livewire/blaze`
 - Component count: glob `resources/views/components/**/*.blade.php`
 - Directory structure under `resources/views/components/`
@@ -46,13 +47,13 @@ Describe the current setup. Do not make further changes unless the user asks.
 
 Before enabling Blaze for a directory, grep its components for patterns Blaze does not support. Exclude any components or directories that match:
 
-| Pattern | What to grep for | Why |
-|---------|-----------------|-----|
-| Class-based components | PHP class files in `app/View/Components/` that correspond to component directories | Blaze only supports anonymous components |
-| `$component` variable | `$component` | Not available in Blaze |
-| View composers/creators | `View::composer(` or `View::creator(` in `app/Providers/` targeting component views | These do not fire for Blaze components |
-| `View::share()` variables | `View::share(` in providers, then grep components for those variable names | Shared variables are not auto-injected — must use `$__env->shared('key')` instead |
-| Rendered via `view()` | `view('components.` or `View::make('components.` | Blaze components can only be rendered using component tags (`<x-...>`) |
+| Pattern                   | What to grep for                                                                    | Why                                                                               |
+| ------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Class-based components    | PHP class files in `app/View/Components/` that correspond to component directories  | Blaze only supports anonymous components                                          |
+| `$component` variable     | `$component`                                                                        | Not available in Blaze                                                            |
+| View composers/creators   | `View::composer(` or `View::creator(` in `app/Providers/` targeting component views | These do not fire for Blaze components                                            |
+| `View::share()` variables | `View::share(` in providers, then grep components for those variable names          | Shared variables are not auto-injected — must use `$__env->shared('key')` instead |
+| Rendered via `view()`     | `view('components.` or `View::make('components.`                                    | Blaze components can only be rendered using component tags (`<x-...>`)            |
 
 Report any incompatible components so they can be excluded in the next step.
 
@@ -72,18 +73,16 @@ public function boot(): void
 Include any custom component paths found in step 2:
 
 ```php
-Blaze::optimize()
-    ->in(resource_path('views/components'))
-    ->in(resource_path('views/other-components'));
+Blaze::optimize()->in(resource_path("views/components"))->in(resource_path("views/other-components"));
 ```
 
 Exclude any directories or files flagged in the compatibility check:
 
 ```php
 Blaze::optimize()
-    ->in(resource_path('views/components'))
-    ->in(resource_path('views/components/legacy'), compile: false)                    // directory
-    ->in(resource_path('views/components/complex-widget.blade.php'), compile: false); // single file
+    ->in(resource_path("views/components"))
+    ->in(resource_path("views/components/legacy"), compile: false) // directory
+    ->in(resource_path("views/components/complex-widget.blade.php"), compile: false); // single file
 ```
 
 ## 5. Enable Debug + Clear Views
@@ -105,8 +104,8 @@ Keep the summary SHORT and concise. A few bullet points, no tables, no per-direc
 If components were excluded, list them briefly. If there are refactors to suggest, add:
 
 - **Suggested refactors:**
-  - **Class-based components** — convert to anonymous so Blaze can compile them
-  - **View::share / composer / creator reliance** — pass data via props instead, or use `$__env->shared('key')`
+    - **Class-based components** — convert to anonymous so Blaze can compile them
+    - **View::share / composer / creator reliance** — pass data via props instead, or use `$__env->shared('key')`
 
 Then present the advanced optimization options. Use the SAME formatting as written below — numbered options with a clear ask for the user to pick one. Only include Option 3 if the compatibility check found refactors to suggest. If there are no refactors, omit Option 3 entirely. Mark Option 3 as RECOMMENDED when present, otherwise mark Option 1 as RECOMMENDED.
 

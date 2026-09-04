@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
         $eventSettings = resolve(EventSettings::class);
         $eventSettings->current_event_id = $futureEvent->id;
         $eventSettings->save();
-        $this->seedOfficialAddressSettings();
+        $this->seedInvoiceSettings();
 
         if (in_array(config('app.env'), ['local', 'testing'], true)) {
             $this->seedLocalScenario($pastEvent, $futureEvent);
@@ -62,16 +62,17 @@ class DatabaseSeeder extends Seeder
         }
     }
 
-    protected function seedOfficialAddressSettings(): void
+    protected function seedInvoiceSettings(): void
     {
         $settings = resolve(InvoiceSettings::class);
 
-        $settings->creditor_name = $settings->creditor_name !== '' ? $settings->creditor_name : 'Verein für Menschen';
-        $settings->creditor_care_of = $settings->creditor_care_of !== '' ? $settings->creditor_care_of : 'Kai Frehner';
-        $settings->creditor_street = $settings->creditor_street !== '' ? $settings->creditor_street : 'Rössligasse';
-        $settings->creditor_building_number = $settings->creditor_building_number !== '' ? $settings->creditor_building_number : '6';
-        $settings->creditor_postal_code = $settings->creditor_postal_code !== '' ? $settings->creditor_postal_code : '8400';
-        $settings->creditor_city = $settings->creditor_city !== '' ? $settings->creditor_city : 'Winterthur';
+        $settings->qr_iban = 'CH2030700114903053924';
+        $settings->creditor_name = 'Verein für Menschen';
+        $settings->creditor_care_of = 'Kai Frehner';
+        $settings->creditor_street = 'Rössligasse';
+        $settings->creditor_building_number = '6';
+        $settings->creditor_postal_code = '8400';
+        $settings->creditor_city = 'Winterthur';
         $settings->save();
     }
 

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Webling\Invoice;
 
+use App\Exceptions\Webling\WeblingApiException;
 use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
 use App\Services\Webling\WeblingApiService;
 use App\Settings\WeblingApiSettings;
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use RuntimeException;
 
 /**
  * Service for working with invoices ("debitor") via Webling API.
@@ -18,6 +21,8 @@ use Illuminate\Http\Client\Response;
  */
 class WeblingInvoiceService
 {
+    public const string DonorInvoiceMarkerPrefix = 'HFM-DONOR-INVOICE:';
+
     public function __construct(public WeblingApiService $api, public WeblingApiSettings $settings) {}
 
     /**
@@ -55,7 +60,7 @@ class WeblingInvoiceService
     /**
      * Convenience helper to create an invoice from discrete arguments.
      *
-     * @param  array<int,array{amount: float, title: string}>  $invoiceLines
+     * @param  array<int,array{amount_cents:int, title:string}>  $invoiceLines
      */
     public function createInvoiceFromParams(
         string $title,
@@ -95,7 +100,7 @@ class WeblingInvoiceService
      * - duedate: Carbon|string (Y-m-d)
      * - address_lines: string[]
      * - period_id: int
-     * - invoice_lines: array<int, array{amount: float, title: string}>
+     * - invoice_lines: array<int, array{amount_cents: int, title: string}>
      * - accounting_period_id: int (defaults to settings)
      * - debit_account_id: int (defaults to settings)
      * - credit_account_id: int (defaults to settings)
@@ -128,14 +133,123 @@ class WeblingInvoiceService
     }
 
     /**
-     * Retrieve an invoice by ID.
+     * Create an invoice with the stable local invoice marker.
+     *
+     * @param  InvoiceCreateData|array<string,mixed>  $data
      */
-    // Temporarily unused in active flows; kept for upcoming Webling sync operations.
-    // TODO(dead-code): Remove ignore when get-by-id flow is reintroduced.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function createInvoiceWithMarker(int $localInvoiceId, InvoiceCreateData|array $data): Response
+    {
+        $marker = $this->commentMarker($localInvoiceId);
+
+        if (is_array($data)) {
+            $data['comment'] = $marker;
+        } else {
+            $data->comment = $marker;
+        }
+
+        return $this->createInvoice($data);
+    }
+
+    public function commentMarker(int $localInvoiceId): string
+    {
+        return self::DonorInvoiceMarkerPrefix.$localInvoiceId;
+    }
+
+    /**
+     * Derive the Webling web UI URL for a Debitor (verified against demo1.webling.ch).
+     */
+    public function debitorUrl(int $debitorId): string
+    {
+        return sprintf(
+            '%s/admin#/accounting/%d/debitor/:debitor/view/%d',
+            rtrim($this->settings->api_url, '/'),
+            $this->settings->accounting_period_id,
+            $debitorId,
+        );
+    }
+
+    /**
+     * Find full Debitor records whose comment exactly matches the marker.
+     *
+     * @return list<int>
+     */
+    public function findInvoiceIdsByCommentMarker(string $marker): array
+    {
+        $filter = rawurlencode('`comment`='.$this->formatValue($marker));
+        $response = $this->api->get('debitor?format=full&filter='.$filter);
+        $payload = $response->json();
+        $objects = match (true) {
+            ! is_array($payload) => [],
+            isset($payload['objects']) && is_array($payload['objects']) => $payload['objects'],
+            array_is_list($payload) => $payload,
+            isset($payload['id']) => [$payload],
+            default => [],
+        };
+
+        $ids = [];
+        foreach ($objects as $key => $object) {
+            if (is_int($object) || (is_string($object) && ctype_digit($object))) {
+                $ids[] = (int) $object;
+
+                continue;
+            }
+
+            if (! is_array($object)) {
+                continue;
+            }
+
+            $comment = $object['properties']['comment'] ?? null;
+            if ($comment !== $marker) {
+                continue;
+            }
+
+            $id = $object['id'] ?? (is_int($key) ? null : $key);
+            if (is_int($id) || (is_string($id) && ctype_digit($id))) {
+                $ids[] = (int) $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * Retrieve an invoice by ID.
+     *
+     * @throws WeblingApiException
+     * @throws ConnectionException
+     */
     public function getInvoice(int $id): Response
     {
         return $this->api->get('debitor/'.$id);
+    }
+
+    /**
+     * Read and normalize the current live details of a Debitor from Webling.
+     *
+     * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int}
+     *
+     * @throws WeblingApiException
+     * @throws ConnectionException
+     * @throws RuntimeException
+     */
+    public function invoiceDetails(int $debitorId): array
+    {
+        $payload = $this->getInvoice($debitorId)->json();
+        $properties = is_array($payload) ? ($payload['properties'] ?? null) : null;
+        throw_unless(is_array($properties), RuntimeException::class, 'Webling returned an unreadable Debitor payload for ID '.$debitorId.'.');
+
+        $state = $properties['state'] ?? null;
+        throw_unless(is_string($state) && $state !== '', RuntimeException::class, 'Webling returned no Debitor state for ID '.$debitorId.'.');
+
+        $dueDate = $properties['duedate'] ?? null;
+
+        return [
+            'state' => $state,
+            'due_date' => is_string($dueDate) && $dueDate !== '' ? $dueDate : null,
+            'invoice_number' => is_numeric($properties['debitorid'] ?? null) ? (string) (int) $properties['debitorid'] : null,
+            'total_cents' => InvoiceCreateData::decimalToCents($properties['totalamount'] ?? null),
+            'remaining_cents' => InvoiceCreateData::decimalToCents($properties['remainingamount'] ?? null),
+        ];
     }
 
     /**
@@ -153,6 +267,9 @@ class WeblingInvoiceService
 
     /**
      * Delete an invoice by ID.
+     *
+     * @throws WeblingApiException
+     * @throws ConnectionException
      */
     public function deleteInvoice(int $id): Response
     {
