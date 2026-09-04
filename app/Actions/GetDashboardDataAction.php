@@ -14,6 +14,7 @@ use App\Services\AthleteService;
 use App\Services\DonationService;
 use App\Services\DonorService;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -268,7 +269,7 @@ class GetDashboardDataAction
         return compact('chartData', 'chartTickValues');
     }
 
-    protected function relativeDay(Carbon $createdAt, DonationEvent $event): int
+    protected function relativeDay(CarbonInterface $createdAt, DonationEvent $event): int
     {
         return (int) $event->starts_at
             ->copy()

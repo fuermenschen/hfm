@@ -1,3 +1,9 @@
+@php
+    /**
+     * @var array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>} $chartData
+     * @var array<int, int> $chartTickValues
+     */
+@endphp
 @component('layouts.admin', ['title' => $greeting.Auth::user()->name])
     @section('content')
         @php
@@ -92,7 +98,7 @@
                                                 stroke-width="2"
                                                 stroke-dasharray="4 4"
                                                 pointer-events="none"
-                                            />
+                                            ></line>
                                         @endforeach
 
                                         <flux:chart.axis
@@ -117,6 +123,7 @@
 
                                     <flux:chart.tooltip>
                                         <div class="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 p-2 text-xs font-medium text-zinc-800 dark:border-zinc-500 dark:bg-zinc-600 dark:text-zinc-100">
+                                            <!-- noinspection HtmlUnknownAttribute -->
                                             Tag&nbsp;<slot field="day"></slot>
                                         </div>
                                         @foreach ($chartEvents as $chartEvent)
