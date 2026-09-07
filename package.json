@@ -21,7 +21,7 @@
         "laravel-vite-plugin": "^3.2.0",
         "playwright": "^1.59.1",
         "prettier": "^3.9.6",
-        "prettier-plugin-blade": "^3.3.0",
+        "prettier-plugin-blade": "^3.3.2",
         "prettier-plugin-tailwindcss": "^0.8.1",
         "sharp": "^0.35.4",
         "svgo": "^4.1.0",
