@@ -157,7 +157,7 @@ it('renders the fallback letterhead when no creditor name is configured', functi
         $data = json_decode($payload['properties']['data'], true);
 
         expect($data['header'][0][0]['content']['html'])->toContain('Verein für Menschen')
-            ->and($data['header'][0][0]['content']['html'])->toContain('Nelkenstrasse 6');
+            ->and($data['header'][0][0]['content']['html'])->toContain('Rössligasse 6');
 
         return true;
     })->andReturn($response);
