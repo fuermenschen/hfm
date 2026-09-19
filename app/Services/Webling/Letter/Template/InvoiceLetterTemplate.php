@@ -23,7 +23,7 @@ class InvoiceLetterTemplate
         $settings = resolve(InvoiceSettings::class);
 
         if (trim($settings->creditor_name) === '') {
-            return ['Verein für Menschen', 'c/o Kai Frehner', 'Nelkenstrasse 6', '8400 Winterthur'];
+            return ['Verein für Menschen', 'c/o Kai Frehner', 'Rössligasse 6', '8405 Winterthur'];
         }
 
         return array_values(array_filter([
