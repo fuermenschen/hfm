@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Webling\Letter\Template;
 
 use App\Services\Webling\Letter\Dto\LetterDraft;
+use App\Settings\InvoiceSettings;
 use Carbon\CarbonInterface;
 
 /**
@@ -12,6 +13,35 @@ use Carbon\CarbonInterface;
  */
 class InvoiceLetterTemplate
 {
+    /**
+     * Official association address from settings, used as letterhead.
+     *
+     * @return list<string>
+     */
+    protected function officialAddressLines(): array
+    {
+        $settings = resolve(InvoiceSettings::class);
+
+        if (trim($settings->creditor_name) === '') {
+            return ['Verein für Menschen', 'c/o Kai Frehner', 'Rössligasse 6', '8405 Winterthur'];
+        }
+
+        return array_values(array_filter([
+            trim($settings->creditor_name),
+            trim($settings->creditor_care_of) !== '' ? 'c/o '.trim($settings->creditor_care_of) : null,
+            trim(implode(' ', array_filter([
+                trim($settings->creditor_street),
+                trim($settings->creditor_building_number),
+            ]))),
+            trim($settings->creditor_postal_code.' '.$settings->creditor_city),
+        ], fn (string $line): bool => $line !== ''));
+    }
+
+    protected function officialAddressText(): string
+    {
+        return implode("\n", $this->officialAddressLines());
+    }
+
     /**
      * @return array<string,mixed>
      */
@@ -33,10 +63,7 @@ class InvoiceLetterTemplate
                 $headerHtml = '<div style="line-height: 1.25;">'
                     .'<div style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">Höhenmeter<br>für Menschen</div>'
                     .'<div style="font-size: 14px; white-space: pre-line;">'
-                    ."Verein für Menschen\n"
-                    ."c/o Kai Frehner\n"
-                    ."Nelkenstrasse 6\n"
-                    .'8400 Winterthur'
+                    .e($this->officialAddressText())
                     .'</div>'
                     .'</div>';
             }

@@ -7,6 +7,7 @@ use App\Services\Webling\Letter\LetterRenderer;
 use App\Services\Webling\Letter\LetterSchemaValidator;
 use App\Services\Webling\Letter\LetterService;
 use App\Services\Webling\WeblingApiService;
+use App\Settings\InvoiceSettings;
 use App\Settings\WeblingApiSettings;
 use Illuminate\Http\Client\Response;
 
@@ -98,4 +99,76 @@ it('renders persisted letter snapshots without reading current settings', functi
     $service = new LetterService(new LetterRenderer, new LetterSchemaValidator, new LetterApiClient($api));
 
     $service->createFromSnapshot($snapshot, 'Frozen invoice', 12345);
+});
+
+it('renders the default letterhead from the configured creditor address', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    InvoiceSettings::fake([
+        'creditor_name' => 'Verein für Menschen',
+        'creditor_care_of' => 'Ada Lovelace',
+        'creditor_street' => 'Musterweg',
+        'creditor_building_number' => '12',
+        'creditor_postal_code' => '8000',
+        'creditor_city' => 'Zürich',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $response = Mockery::mock(Response::class);
+    $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload): bool {
+        $data = json_decode($payload['properties']['data'], true);
+
+        expect($data['header'][0][0]['content']['html'])->toContain('Verein für Menschen')
+            ->and($data['header'][0][0]['content']['html'])->toContain('c/o Ada Lovelace')
+            ->and($data['header'][0][0]['content']['html'])->toContain('Musterweg 12')
+            ->and($data['header'][0][0]['content']['html'])->toContain('8000 Zürich')
+            ->and($data['header'][0][0]['content']['html'])->not->toContain('Nelkenstrasse');
+
+        return true;
+    })->andReturn($response);
+
+    $service = new LetterService(new LetterRenderer, new LetterSchemaValidator, new LetterApiClient($api));
+
+    $service->createInvoiceLetter('Invoice Title', function (LetterBuilder $b): void {
+        $b->body1('Liebe:r Anna')
+            ->body2('Bitte verwende zur')
+            ->withQrInvoice(function (QrInvoiceOptions $q): void {
+                $q->withAmount = false;
+            });
+    }, 12345);
+});
+
+it('renders the fallback letterhead when no creditor name is configured', function (): void {
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch',
+        'api_key' => 'fake-key',
+    ]);
+
+    InvoiceSettings::fake([
+        'creditor_name' => '',
+    ]);
+
+    $api = Mockery::mock(WeblingApiService::class);
+    $response = Mockery::mock(Response::class);
+    $api->shouldReceive('post')->once()->withArgs(function (string $path, array $payload): bool {
+        $data = json_decode($payload['properties']['data'], true);
+
+        expect($data['header'][0][0]['content']['html'])->toContain('Verein für Menschen')
+            ->and($data['header'][0][0]['content']['html'])->toContain('Rössligasse 6');
+
+        return true;
+    })->andReturn($response);
+
+    $service = new LetterService(new LetterRenderer, new LetterSchemaValidator, new LetterApiClient($api));
+
+    $service->createInvoiceLetter('Invoice Title', function (LetterBuilder $b): void {
+        $b->body1('Liebe:r Anna')
+            ->body2('Bitte verwende zur')
+            ->withQrInvoice(function (QrInvoiceOptions $q): void {
+                $q->withAmount = false;
+            });
+    }, 12345);
 });
