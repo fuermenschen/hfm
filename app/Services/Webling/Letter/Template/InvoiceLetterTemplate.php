@@ -35,8 +35,8 @@ class InvoiceLetterTemplate
                     .'<div style="font-size: 14px; white-space: pre-line;">'
                     ."Verein für Menschen\n"
                     ."c/o Kai Frehner\n"
-                    ."Nelkenstrasse 6\n"
-                    .'8400 Winterthur'
+                    ."Rössligasse 6\n"
+                    .'8405 Winterthur'
                     .'</div>'
                     .'</div>';
             }
