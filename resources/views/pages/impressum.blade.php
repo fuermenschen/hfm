@@ -8,6 +8,6 @@
     <p>Diese Website ist ein Projekt von:</p>
     <p>Verein für Menschen</p>
     <p>c/o Kai Frehner</p>
-    <p>Nelkenstrasse 6</p>
-    <p>8400 Winterthur</p>
+    <p>Rössligasse 6</p>
+    <p>8405 Winterthur</p>
 @endsection
