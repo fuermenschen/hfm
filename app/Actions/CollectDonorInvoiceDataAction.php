@@ -35,7 +35,7 @@ class CollectDonorInvoiceDataAction
 
             return [
                 'athlete' => $registration->externalUser->privacy_name,
-                'partner' => $registration->partner?->name,
+                'partner' => $registration->partner->name ?? __('app.equal_split_full'),
                 'rounds' => $rounds,
                 'amount_per_round_cents' => $amountPerRoundCents,
                 'subtotal_cents' => $subtotalCents,

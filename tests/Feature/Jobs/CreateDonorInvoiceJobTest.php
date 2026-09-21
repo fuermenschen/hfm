@@ -149,6 +149,46 @@ it('does not create a debitor without billable lines', function (): void {
     expect($invoice->refresh()->source_snapshot)->toBeNull();
 });
 
+it('renders the equal split label in the invoice line title', function (): void {
+    $donor = ExternalUser::factory()->create([
+        'first_name' => 'Anna',
+        'last_name' => 'Muster',
+        'country_of_residence' => 'CH',
+        'zip_code' => '8400',
+    ]);
+    $event = DonationEvent::factory()->create();
+    $registration = AthleteRegistration::factory()
+        ->forEvent($event)
+        ->forExternalUser(ExternalUser::factory()->create(['first_name' => 'Ben', 'last_name' => 'Keller']))
+        ->create(['rounds_done' => 2]);
+    Donation::factory()->forPair($donor, $registration)->create([
+        'amount_per_round' => 5,
+        'amount_min' => null,
+        'amount_max' => null,
+        'verified' => false,
+    ]);
+    $invoice = DonorEventInvoice::factory()->forExternalUser($donor)->forEvent($event)->create();
+
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $letter = Mockery::mock(LetterService::class);
+
+    $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+    $webling->shouldReceive('createInvoiceWithMarker')->once()->withArgs(function (int $invoiceId, InvoiceCreateData $data): bool {
+        expect($data->invoiceLines)->toHaveCount(1)
+            ->and($data->invoiceLines[0]['title'])
+            ->toBe('Ben K. für alle Benefizpartner:innen zu gleichen Teilen | 2 Runden à Fr. 5.00');
+
+        return true;
+    })->andReturn(successfulResponse(4321));
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-test'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    expect($invoice->refresh()->source_snapshot['lines'][0]['partner'])
+        ->toBe(__('app.equal_split_full'));
+});
+
 it('clears remote_deleted_at when persisting the debitor id', function (): void {
     $invoice = donorInvoiceWithDonation();
     $invoice->forceFill(['remote_deleted_at' => now()])->save();

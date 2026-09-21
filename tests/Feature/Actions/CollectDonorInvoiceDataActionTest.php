@@ -58,6 +58,29 @@ it('collects confirmed and unconfirmed donations in integer cents', function ():
         ]);
 });
 
+it('collects the equal split label for registrations without a partner', function (): void {
+    $donor = ExternalUser::factory()->create();
+    $event = DonationEvent::factory()->create();
+    $athlete = ExternalUser::factory()->create(['first_name' => 'Alice', 'last_name' => 'Doe']);
+    $registration = AthleteRegistration::factory()
+        ->forEvent($event)
+        ->forExternalUser($athlete)
+        ->create(['rounds_done' => 3]);
+    $invoice = DonorEventInvoice::factory()->forExternalUser($donor)->forEvent($event)->create();
+
+    Donation::factory()->forPair($donor, $registration)->create([
+        'amount_per_round' => 2.50,
+        'amount_min' => null,
+        'amount_max' => null,
+    ]);
+
+    $lines = app(CollectDonorInvoiceDataAction::class)($invoice);
+
+    expect($lines)->toHaveCount(1)
+        ->and($lines[0]['partner'])->toBe(__('app.equal_split_full'))
+        ->and($lines[0]['total_cents'])->toBe(750);
+});
+
 it('does not collect donations from another event', function (): void {
     $donor = ExternalUser::factory()->create();
     $event = DonationEvent::factory()->create();
