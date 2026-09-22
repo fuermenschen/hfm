@@ -77,7 +77,7 @@ it('collects the equal split label for registrations without a partner', functio
     $lines = app(CollectDonorInvoiceDataAction::class)($invoice);
 
     expect($lines)->toHaveCount(1)
-        ->and($lines[0]['partner'])->toBe(__('app.equal_split_full'))
+        ->and($lines[0]['partner'])->toBe(__('app.equal_split'))
         ->and($lines[0]['total_cents'])->toBe(750);
 });
 
