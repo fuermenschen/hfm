@@ -464,7 +464,7 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         $invoice = $this->donorInvoice($person);
 
-        return ! $invoice instanceof DonorEventInvoice ? DonorInvoiceStatus::NotCreated : $this->donorInvoices->status($invoice);
+        return $invoice instanceof DonorEventInvoice ? $this->donorInvoices->status($invoice) : DonorInvoiceStatus::NotCreated;
     }
 
     public function invoiceStatusColor(DonorInvoiceStatus $status): string
@@ -641,7 +641,7 @@ class AdminPersonTable extends AbstractDatatableComponent
         }
 
         $invoice = $this->eventInvoice(ExternalUser::query()->findOrFail($externalUserId), $event);
-        $payload = ! $invoice instanceof DonorEventInvoice ? null : ($this->downloadDonorInvoicePdf)($invoice);
+        $payload = $invoice instanceof DonorEventInvoice ? ($this->downloadDonorInvoicePdf)($invoice) : null;
 
         if ($payload === null) {
             Flux::toast(

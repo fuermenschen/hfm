@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Support\Facades\Route;
 
@@ -38,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'portal.donation.confirm',
         ];
 
-        $exceptions->render(function (InvalidSignatureException $exception, Request $request) use ($authSignedRouteNames): ?\Illuminate\Http\Response {
+        $exceptions->render(function (InvalidSignatureException $exception, Request $request) use ($authSignedRouteNames): ?Response {
             $route = $request->route();
 
             if ($route instanceof Illuminate\Routing\Route && in_array($route->getName(), $authSignedRouteNames, true)) {

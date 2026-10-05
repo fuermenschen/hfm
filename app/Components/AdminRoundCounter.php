@@ -85,7 +85,7 @@ class AdminRoundCounter extends Component
     {
         $event = $this->selectedEvent();
         $counts = $this->stateCounts($event);
-        $this->totalRounds = ! $event instanceof DonationEvent ? 0 : (int) AthleteRegistration::query()->whereBelongsTo($event)->whereHas('externalUser')->sum('rounds_done');
+        $this->totalRounds = $event instanceof DonationEvent ? (int) AthleteRegistration::query()->whereBelongsTo($event)->whereHas('externalUser')->sum('rounds_done') : 0;
 
         return view('components.admin.round-counter', [
             'events' => DonationEvent::query()->latest('starts_at')->get(['id', 'title', 'slug', 'is_published']),
@@ -271,9 +271,9 @@ class AdminRoundCounter extends Component
 
     protected function filteredRegistrations(?DonationEvent $event): Builder
     {
-        $query = ! $event instanceof DonationEvent
-            ? AthleteRegistration::query()->whereRaw('0 = 1')
-            : AthleteRegistration::query()->whereBelongsTo($event)->whereHas('externalUser');
+        $query = $event instanceof DonationEvent
+            ? AthleteRegistration::query()->whereBelongsTo($event)->whereHas('externalUser')
+            : AthleteRegistration::query()->whereRaw('0 = 1');
 
         $query->with('externalUser:id,first_name,last_name');
 
