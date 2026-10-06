@@ -69,6 +69,10 @@ it('keeps historical FAQs accessible after the current edition changes', functio
         'title' => 'Vergangene Ausgabe',
         'starts_at' => '2026-09-11 12:00:00',
         'ends_at' => '2026-09-11 16:00:00',
+        'content' => ['seo' => [
+            'meta_description_md' => 'HISTORICAL FAQ META',
+            'og_description_md' => 'HISTORICAL FAQ OG',
+        ]],
     ]);
     $current = DonationEvent::factory()->create([
         'slug' => 'current',
@@ -78,6 +82,10 @@ it('keeps historical FAQs accessible after the current edition changes', functio
         'registration_opens_at' => '2026-09-01 00:00:00',
         'athlete_registration_closes_at' => '2026-09-13 16:00:00',
         'donor_registration_closes_at' => '2026-09-14 16:00:00',
+        'content' => ['seo' => [
+            'meta_description_md' => 'CURRENT FAQ META',
+            'og_description_md' => 'CURRENT FAQ OG',
+        ]],
     ]);
     $past->faqs()->attach(Faq::factory()->create(['title' => 'Historische Frage']), ['group' => 'general', 'is_published' => true]);
     $current->faqs()->attach(Faq::factory()->create(['title' => 'Aktuelle Frage']), ['group' => 'general', 'is_published' => true]);
@@ -96,6 +104,11 @@ it('keeps historical FAQs accessible after the current edition changes', functio
         ->assertSeeText('11. September 2026')
         ->assertSeeText('Diese Informationen beziehen sich auf die vergangene Ausgabe.')
         ->assertSeeText('Anmeldungen über das Menü beziehen sich auf Aktuelle Ausgabe')
+        ->assertSee('<title>Fragen und Antworten · 2026 - '.config('app.name').'</title>', false)
+        ->assertSee('content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)
+        ->assertSee('name="og:description" content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)
+        ->assertSee('content="'.route('questions-and-answers.show', ['donationEvent' => 'past']).'"', false)
+        ->assertDontSee('CURRENT FAQ META')
         ->assertDontSeeText('Aktuelle Frage');
 
     expect(app(EventSettings::class)->current_event_id)->toBe($current->id);

@@ -43,7 +43,7 @@ Route::view('datenschutz', 'pages.privacy')->name('privacy');
 Route::view('verein', 'pages.association')->name('association');
 
 // Results
-Route::view('resultate', 'pages.results')->name('results');
+Route::get('resultate', [ResultsController::class, 'index'])->name('results');
 Route::get('resultate/{donationEvent:slug}', [ResultsController::class, 'show'])->name('results.show');
 
 // User Login

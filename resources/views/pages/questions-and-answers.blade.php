@@ -3,6 +3,7 @@
     use App\Enums\PublicEventLifecycle;
     use Illuminate\Support\Str;
 @endphp
+@section('title', 'Fragen und Antworten')
 @section('content')
     <div>
         <x-page-title>Fragen und Antworten</x-page-title>

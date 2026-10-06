@@ -35,6 +35,7 @@ class FaqController extends Controller
         return view('pages.questions-and-answers', [
             'publicDonationEvent' => $event,
             'publicEventLifecycle' => $event instanceof DonationEvent ? $this->eventService->lifecycle($event) : null,
+            'publicPageTitle' => 'Fragen und Antworten'.($event instanceof DonationEvent ? ' · '.$event->starts_at->format('Y') : ''),
             'publicEventFaqs' => $publicData['faqs'],
             'historicalEvents' => $this->eventService->resolve()['historical'],
         ]);

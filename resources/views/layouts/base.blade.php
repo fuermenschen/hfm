@@ -1,22 +1,55 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
+    @php
+        use App\Enums\PublicEventLifecycle;
+
+        $metadataEvent = $publicDonationEvent ?? $currentDonationEvent;
+        $sectionTitle = trim($__env->yieldContent('title'));
+        $siteName = config('app.name');
+        $pageTitle = $publicPageTitle ?? ($sectionTitle !== '' ? $sectionTitle : $siteName);
+        $documentTitle = $pageTitle === $siteName || str_starts_with($pageTitle, $siteName.' ·')
+            ? $pageTitle
+            : $pageTitle.' - '.$siteName;
+        $metaDescription = $metadataEvent?->contentPlainText('seo.meta_description_md')
+            ?: 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
+        $ogDescription = $metadataEvent?->contentPlainText('seo.og_description_md')
+            ?: 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
+
+        if ($metadataEvent !== null) {
+            $lifecycleDescription = match ($publicEventLifecycle ?? null) {
+                PublicEventLifecycle::Upcoming => 'Bevorstehender Anlass',
+                PublicEventLifecycle::Live => 'Der Anlass findet jetzt statt',
+                PublicEventLifecycle::Completed => 'Vergangener Anlass',
+                default => null,
+            };
+            $eventFacts = sprintf(
+                '%s%s in %s am %s.',
+                $lifecycleDescription === null ? '' : $lifecycleDescription.' · ',
+                $metadataEvent->title,
+                $metadataEvent->location_city,
+                $metadataEvent->starts_at->translatedFormat('j. F Y'),
+            );
+            if (($publicEventLifecycle ?? null) === PublicEventLifecycle::Completed) {
+                $metaDescription = sprintf(
+                    '%s in %s am %s. Dieser Anlass ist abgeschlossen.',
+                    $metadataEvent->title,
+                    $metadataEvent->location_city,
+                    $metadataEvent->starts_at->translatedFormat('j. F Y'),
+                );
+                $ogDescription = $metaDescription;
+            } else {
+                $metaDescription = trim($metaDescription.' '.$eventFacts);
+                $ogDescription = trim($ogDescription.' '.$eventFacts);
+            }
+        }
+    @endphp
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    @hasSection('title')
-        <title>
-            @yield('title')
-            - {{ config('app.name') }}
-        </title>
-    @else
-        <title>{{ config('app.name') }}</title>
-    @endif
+    <title>{{ $documentTitle }}</title>
 
     <!-- SEO Information -->
-    <meta
-        name="description"
-        content="{{ $currentDonationEvent?->contentPlainText('seo.meta_description_md', 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.') ?: 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.' }}"
-    />
+    <meta name="description" content="{{ $metaDescription }}" />
     <meta
         name="keywords"
         content="Höhenmeter für Menschen, fundraising, charity event, Wohltätigkeit, Winterthur, sponsored run, Sponsorenlauf, Spendenlauf, Brühlgut Stiftung, Institut Kinderseele Schweiz, Tel 143, Dargebotene Hand, Roundtable, Round Table"
@@ -36,13 +69,10 @@
     <meta name="teoma" content="index, follow" />
     <meta name="baiduspider" content="noindex, nofollow" />
     <meta name="apple-mobile-web-app-title" content="Höhenmeter für Menschen" />
-    <meta name="og:title" content="Höhenmeter für Menschen" />
-    <meta
-        name="og:description"
-        content="{{ $currentDonationEvent?->contentPlainText('seo.og_description_md', 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.') ?: 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.' }}"
-    />
+    <meta name="og:title" content="{{ $documentTitle }}" />
+    <meta name="og:description" content="{{ $ogDescription }}" />
     <meta name="og:image" content="{{ Vite::asset("resources/images/logo_light.svg") }}" />
-    <meta name="og:url" content="https://hfm-winti.ch" />
+    <meta name="og:url" content="{{ url()->current() }}" />
     <meta name="og:type" content="website" />
     <meta name="og:site_name" content="Höhenmeter für Menschen" />
 

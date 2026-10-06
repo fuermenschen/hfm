@@ -68,19 +68,50 @@ function resultsTestDonation(AthleteRegistration $registration, float $perRound,
 }
 
 it('renders the live event as standalone page with its date', function (): void {
-    $event = resultsTestEvent(['title' => 'HöFi 2026']);
+    $event = resultsTestEvent([
+        'title' => 'HöFi 2026',
+        'content' => ['seo' => [
+            'meta_description_md' => 'LIVE RESULTS META',
+            'og_description_md' => 'LIVE RESULTS OG',
+        ]],
+    ]);
 
     get(route('results'))
         ->assertSuccessful()
         ->assertSeeText('HöFi 2026')
         ->assertSeeText('12. September 2026')
-        ->assertSeeText('Live');
+        ->assertSeeText('Live')
+        ->assertSee('<title>Resultate · 2026 - '.config('app.name').'</title>', false)
+        ->assertSee('content="LIVE RESULTS META Der Anlass findet jetzt statt · HöFi 2026 in Winterthur am 12. September 2026."', false)
+        ->assertSee('content="LIVE RESULTS OG Der Anlass findet jetzt statt · HöFi 2026 in Winterthur am 12. September 2026."', false)
+        ->assertSee('content="'.route('results').'"', false);
 });
 
 it('shows an empty state when no published edition exists', function (): void {
     get(route('results'))
         ->assertSuccessful()
-        ->assertSeeText('Aktuell sind keine veröffentlichten Anlassinformationen verfügbar.');
+        ->assertSeeText('Aktuell sind keine veröffentlichten Anlassinformationen verfügbar.')
+        ->assertSee('<title>Resultate - '.config('app.name').'</title>', false)
+        ->assertSee('content="Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', false)
+        ->assertSee('content="Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', false);
+});
+
+it('uses the automatic results edition consistently for page metadata and Livewire content', function (): void {
+    $event = DonationEvent::factory()->create([
+        'slug' => 'archive',
+        'title' => 'Archivierte Ausgabe',
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = null;
+    $settings->save();
+
+    get(route('results'))
+        ->assertViewHas('resultsEvent', fn (DonationEvent $resultsEvent): bool => $resultsEvent->id === $event->id)
+        ->assertSeeText('Archivierte Ausgabe')
+        ->assertSee('<title>Resultate · 2026 - '.config('app.name').'</title>', false)
+        ->assertSee('content="Archivierte Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false);
 });
 
 it('shows a holding state before the event starts without exposing premature totals', function (): void {
@@ -123,6 +154,10 @@ it('renders the explicitly requested published edition rather than the operation
         'title' => 'Historischer Anlass',
         'starts_at' => '2025-09-13 13:00:00',
         'ends_at' => '2025-09-13 18:00:00',
+        'content' => ['seo' => [
+            'meta_description_md' => 'This edition is upcoming and happening now.',
+            'og_description_md' => 'This edition is upcoming and happening now.',
+        ]],
     ]);
     $partner = resultsTestPartner($historical, 'Historischer Partner');
     resultsTestDonation(resultsTestRegistration($historical, 3, $partner->id), 10.0);
@@ -132,8 +167,14 @@ it('renders the explicitly requested published edition rather than the operation
         ->assertSeeText('13. September 2025')
         ->assertSeeText('Historischer Partner')
         ->assertSeeText('Fr. 30')
+        ->assertSee('<title>Resultate · 2025 - '.config('app.name').'</title>', false)
+        ->assertSee('content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
+        ->assertSee('name="og:description" content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
+        ->assertDontSee('This edition is upcoming and happening now.')
+        ->assertSee('content="'.route('results.show', ['donationEvent' => $historical->slug]).'"', false)
         ->assertDontSeeText('Aktueller Anlass')
-        ->assertDontSeeText('Fr. 200');
+        ->assertDontSeeText('Fr. 200')
+        ->assertDontSee('Aktueller Anlass');
 });
 
 it('returns 404 for an unpublished or missing edition', function (string $slug): void {

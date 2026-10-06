@@ -34,6 +34,7 @@ class HomeController extends Controller
             'donationCount' => $donationCount,
             'publicDonationEvent' => $event,
             'publicEventLifecycle' => $event instanceof DonationEvent ? $this->eventService->lifecycle($event) : null,
+            'publicPageTitle' => $event instanceof DonationEvent ? $event->title.' · '.$event->starts_at->format('Y') : config('app.name'),
             'publicEventPartners' => $publicData['partners'],
             'publicEventSponsors' => $publicData['sponsors'],
             'historicalEvents' => $editions['historical'],
