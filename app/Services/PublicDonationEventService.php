@@ -60,11 +60,6 @@ class PublicDonationEventService
         return $events['live'] ?? $events['upcoming'] ?? $events['completed'];
     }
 
-    /**
-     * Public page entrypoint; production integration follows in step 2 of #264.
-     *
-     * @api
-     */
     public function results(): ?DonationEvent
     {
         $events = $this->resolve();

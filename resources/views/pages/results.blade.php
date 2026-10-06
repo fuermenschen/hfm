@@ -3,5 +3,5 @@
 @section('title', 'Resultate')
 
 @section('body')
-    <livewire:results />
+    <livewire:results :donation-event="$resultsEvent ?? null" />
 @endsection

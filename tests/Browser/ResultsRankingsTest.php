@@ -11,7 +11,12 @@ use App\Settings\EventSettings;
 use Pest\Browser\Playwright\Playwright;
 
 it('shows side-by-side rankings on large screens and cycles rankings on small screens', function (): void {
-    $event = DonationEvent::factory()->create(['is_published' => true, 'title' => 'HoFi 2026']);
+    $event = DonationEvent::factory()->create([
+        'is_published' => true,
+        'title' => 'HoFi 2026',
+        'starts_at' => now('Europe/Zurich')->subHour(),
+        'ends_at' => now('Europe/Zurich')->addHour(),
+    ]);
     $settings = app(EventSettings::class);
     $settings->current_event_id = $event->id;
     $settings->save();

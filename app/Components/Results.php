@@ -5,19 +5,25 @@ declare(strict_types=1);
 namespace App\Components;
 
 use App\Actions\GetEventRankingsAction;
+use App\Enums\PublicEventLifecycle;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
 use App\Models\Partner;
 use App\Services\CurrentDonationEventService;
 use App\Services\DonationService;
+use App\Services\PublicDonationEventService;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Results extends Component
 {
     private const int METERS_PER_ROUND = 50;
+
+    #[Locked]
+    public ?int $donationEventId = null;
 
     /**
      * Public state passed to the view.
@@ -25,6 +31,13 @@ class Results extends Component
      * @var array<string, mixed>
      */
     public array $totals = [];
+
+    public function mount(?DonationEvent $donationEvent = null): void
+    {
+        $donationEvent ??= resolve(CurrentDonationEventService::class)->current()
+            ?? resolve(PublicDonationEventService::class)->results();
+        $this->donationEventId = $donationEvent?->id;
+    }
 
     public function render(): ViewContract
     {
@@ -41,10 +54,24 @@ class Results extends Component
      */
     protected function computeTotals(): array
     {
-        $event = resolve(CurrentDonationEventService::class)->current();
-
-        if (! $event instanceof DonationEvent) {
+        if ($this->donationEventId === null) {
             return ['has_event' => false];
+        }
+
+        $event = DonationEvent::query()
+            ->where('is_published', true)
+            ->findOrFail($this->donationEventId);
+        $lifecycle = resolve(PublicDonationEventService::class)->lifecycle($event);
+        $eventData = [
+            'has_event' => true,
+            'event_title' => $event->title,
+            'event_date' => $event->starts_at->translatedFormat('j. F Y'),
+            'event_datetime' => $event->starts_at->toDateString(),
+            'lifecycle' => $lifecycle,
+        ];
+
+        if ($lifecycle === PublicEventLifecycle::Upcoming) {
+            return $eventData;
         }
 
         $registrations = AthleteRegistration::query()
@@ -70,8 +97,7 @@ class Results extends Component
         $rankings = resolve(GetEventRankingsAction::class)($registrations);
 
         return [
-            'has_event' => true,
-            'event_title' => $event->title,
+            ...$eventData,
             'athletes' => $registrations->count(),
             'donors' => $donations->pluck('donor_external_user_id')->filter()->unique()->count(),
             'rounds' => $roundsTotal,
