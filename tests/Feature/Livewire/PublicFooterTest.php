@@ -1,15 +1,10 @@
 <?php
 
-use App\Components\PublicFooter;
-use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
-use Livewire\Livewire;
+use function Pest\Laravel\get;
 
-test('renders successfully', function () {
-    Livewire::test(PublicFooter::class)
-        ->assertStatus(200);
-});
-
-test('does not accept client mutations to footer items', function (): void {
-    expect(fn () => Livewire::test(PublicFooter::class)->set('footerItems.0', 1))
-        ->toThrow(CannotUpdateLockedPropertyException::class);
+test('renders footer without a Livewire component', function (): void {
+    get(route('home'))
+        ->assertSee('Kontakt')
+        ->assertSee('Newsletter')
+        ->assertDontSee('footerItems');
 });

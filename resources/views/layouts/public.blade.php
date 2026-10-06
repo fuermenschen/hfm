@@ -3,7 +3,7 @@
 @section('body')
     <div class="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-between">
         <div>
-            @livewire('public-menu')
+            <x-public-menu />
 
             <div
                 class="relative m-auto w-full p-9 pt-12 sm:items-center sm:justify-center"
@@ -13,7 +13,7 @@
             </div>
         </div>
 
-        @livewire('public-footer')
+        <x-public-footer />
     </div>
 
     @isset($slot)
