@@ -41,7 +41,7 @@ it('resolves events using their local timezone rather than the application timez
 
     expect($resolved['live']?->id)->toBe($event->id);
     expect($resolved['upcoming'])->toBeNull();
-    expect($resolved['completed'])->toBeNull();
+    expect($resolved['historical'])->toBeEmpty();
 })->with([
     'Zurich' => ['Europe/Zurich', '2026-09-12 13:00:00', '2026-09-12 16:00:00'],
     'New York' => ['America/New_York', '2026-09-12 07:00:00', '2026-09-12 10:00:00'],
@@ -66,7 +66,7 @@ it('selects deterministic editions and orders historical editions by their end d
 
     expect($resolved['live']?->id)->toBe($events[1]->id);
     expect($resolved['upcoming']?->id)->toBe($events[4]->id);
-    expect($resolved['completed']?->id)->toBe($events[7]->id);
+    expect($resolved['historical']->first()?->id)->toBe($events[7]->id);
     expect($resolved['historical']->pluck('slug')->all())->toBe(['last-completed', 'tied-completed', 'older-completed']);
 });
 
@@ -104,7 +104,6 @@ it('returns no public editions when events are absent or unpublished', function 
 
     expect($resolved['live'])->toBeNull();
     expect($resolved['upcoming'])->toBeNull();
-    expect($resolved['completed'])->toBeNull();
     expect($resolved['historical'])->toBeEmpty();
     expect($service->homepage())->toBeNull();
     expect($service->results())->toBeNull();
@@ -129,7 +128,7 @@ it('keeps registration windows independent of event timing', function (): void {
 
     expect($resolved['upcoming']?->id)->toBe($upcoming->id);
     expect($upcoming->athleteRegistrationIsOpen())->toBeFalse();
-    expect($resolved['completed']?->id)->toBe($completed->id);
+    expect($resolved['historical']->first()?->id)->toBe($completed->id);
     expect($completed->donorRegistrationIsOpen())->toBeTrue();
 });
 
@@ -167,7 +166,7 @@ it('reclassifies editions when time advances on the same resolver', function ():
     travelTo(Date::parse('2026-09-12 12:00:00', 'Europe/Zurich'));
     expect($service->resolve()['live']?->id)->toBe($event->id);
     travelTo(Date::parse('2026-09-12 16:00:00', 'Europe/Zurich'));
-    expect($service->resolve()['completed']?->id)->toBe($event->id);
+    expect($service->resolve()['historical']->first()?->id)->toBe($event->id);
 });
 
 it('reads published editions without changing settings or the operational current event', function (): void {

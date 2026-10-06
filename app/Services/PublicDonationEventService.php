@@ -26,7 +26,6 @@ class PublicDonationEventService
      * @return array{
      *     live: ?DonationEvent,
      *     upcoming: ?DonationEvent,
-     *     completed: ?DonationEvent,
      *     historical: Collection<int, DonationEvent>,
      * }
      */
@@ -46,7 +45,6 @@ class PublicDonationEventService
         return [
             'live' => $eventsByLifecycle->get(PublicEventLifecycle::Live->value)?->first(),
             'upcoming' => $eventsByLifecycle->get(PublicEventLifecycle::Upcoming->value)?->first(),
-            'completed' => $historical->first(),
             'historical' => $historical,
         ];
     }
@@ -73,13 +71,13 @@ class PublicDonationEventService
 
         $events = $this->resolve();
 
-        return $events['live'] ?? $events['upcoming'] ?? $events['completed'];
+        return $events['live'] ?? $events['upcoming'] ?? $events['historical']->first();
     }
 
     public function results(): ?DonationEvent
     {
         $events = $this->resolve();
 
-        return $events['live'] ?? $events['completed'] ?? $events['upcoming'];
+        return $events['live'] ?? $events['historical']->first() ?? $events['upcoming'];
     }
 }
