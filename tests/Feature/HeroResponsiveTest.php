@@ -22,8 +22,7 @@ it('falls back to an available hero image', function () {
         ->andReturn('/build/2.png');
     Vite::shouldReceive('asset')
         ->with('resources/images/hero_badge.svg')
-        ->once()
-        ->andReturn('/build/hero_badge.svg');
+        ->never();
 
     $html = Blade::render('<x-home-hero img="1" />');
 

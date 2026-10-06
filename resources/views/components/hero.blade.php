@@ -3,6 +3,7 @@
 @props([
     // Base filename (without extension) for the landing image, e.g. "01", "07"
     'img' => '02',
+    'showBadge' => true,
 ])
 
 @php
@@ -73,21 +74,24 @@
         <div class="hfm-hero__overlay pointer-events-none absolute inset-0 z-10 mix-blend-normal"></div>
     </div>
 
-    <div
-        class="hfm-hero__badge absolute left-2 z-50 hidden items-center justify-center sm:left-6 md:flex portrait:hidden"
-        aria-hidden="true"
-    >
-        <div class="hfm-hero__badgeCircle">
-            <img
-                src="{{ Vite::asset('resources/images/hero_badge.svg') }}"
-                alt=""
-                width="170"
-                height="170"
-                class="block h-full w-full"
-                decoding="async"
-            />
+    @if ($showBadge)
+        <div
+            class="hfm-hero__badge absolute left-2 z-50 hidden items-center justify-center sm:left-6 md:flex portrait:hidden"
+            aria-hidden="true"
+        >
+            <div class="hfm-hero__badgeCircle">
+                <img
+                    src="{{ Vite::asset('resources/images/hero_badge.svg') }}"
+                    alt=""
+                    width="170"
+                    height="170"
+                    class="block h-full w-full"
+                    decoding="async"
+                />
+            </div>
         </div>
-    </div>
+
+    @endif
 
     <div class="hfm-hero__content text-hfm-dark dark:text-hfm-white absolute right-0 bottom-0 left-0 z-20 px-6 text-inherit portrait:static portrait:mt-4">
         <div class="hfm-hero__inner mx-auto w-full max-w-[min(88vw,70ch)] pt-6 pb-6 text-center sm:pb-10">

@@ -51,7 +51,7 @@ class PublicMenu extends Component
         $currentRoute = Route::currentRouteName();
 
         foreach ($this->menuItems as $key => $menuItem) {
-            if ($menuItem['route'] === $currentRoute) {
+            if ($menuItem['route'] === $currentRoute || $currentRoute === $menuItem['route'].'.show') {
                 $this->menuItems[$key]['active'] = true;
             }
         }

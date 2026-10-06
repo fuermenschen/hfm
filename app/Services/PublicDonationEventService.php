@@ -7,9 +7,12 @@ namespace App\Services;
 use App\Enums\PublicEventLifecycle;
 use App\Models\DonationEvent;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 
 class PublicDonationEventService
 {
+    public function __construct(private CurrentDonationEventService $currentEventService) {}
+
     public function lifecycle(DonationEvent $event): PublicEventLifecycle
     {
         if ($event->hasEnded()) {
@@ -48,13 +51,26 @@ class PublicDonationEventService
         ];
     }
 
-    /**
-     * Public page entrypoint; production integration follows in step 4 of #264.
-     *
-     * @api
-     */
     public function homepage(): ?DonationEvent
     {
+        $current = $this->currentEventService->current();
+
+        if ($current instanceof DonationEvent) {
+            if (! $current->hasEnded()) {
+                return $current;
+            }
+
+            if ($current->registration_opens_at !== null) {
+                $now = Date::now($current->timezone);
+
+                foreach ([$current->athlete_registration_closes_at, $current->donor_registration_closes_at] as $closesAt) {
+                    if ($closesAt !== null && $now->lessThanOrEqualTo($closesAt)) {
+                        return $current;
+                    }
+                }
+            }
+        }
+
         $events = $this->resolve();
 
         return $events['live'] ?? $events['upcoming'] ?? $events['completed'];

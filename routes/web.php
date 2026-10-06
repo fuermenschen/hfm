@@ -33,6 +33,7 @@ Route::post('newsletter/abmelden/{email}', [NewsletterSubscriptionController::cl
     ->name('newsletter.unsubscribe.perform')
     ->middleware('signed');
 Route::get('fragen-und-antworten', [FaqController::class, 'index'])->name('questions-and-answers');
+Route::get('fragen-und-antworten/{donationEvent:slug}', [FaqController::class, 'show'])->name('questions-and-answers.show');
 
 // Footer Menu
 Route::view('login', 'pages.login')->name('login');

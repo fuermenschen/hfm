@@ -1,8 +1,10 @@
 @php
+    use App\Enums\PublicEventLifecycle;
     use Illuminate\Support\Facades\Vite;
 
     $randomImgPortrait = sprintf('%02d', rand(1, 8));
     $randomImgLandscape = sprintf('%02d', rand(1, 7));
+    $canRegister = $publicDonationEvent->id === $currentDonationEvent?->id;
 @endphp
 @props(['athleteCount', 'donationCount'])
 <div class="relative">
@@ -29,17 +31,39 @@
         <div class="px-6 lg:contents">
             <div class="mx-auto max-w-2xl pt-16 pb-24 sm:pt-20 sm:pb-32 lg:mr-0 lg:ml-8 lg:w-full lg:max-w-lg lg:flex-none lg:pt-32 xl:w-1/2">
                 <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                    {{ $currentDonationEvent?->contentValue('home.about_heading', '') }}
+                    {{ $publicEventLifecycle === PublicEventLifecycle::Completed ? 'Rückblick' : $publicDonationEvent->contentValue('home.about_heading', 'Um was geht es?') }}
                 </h1>
                 <div class="prose prose-xl dark:prose-invert mt-6 max-w-none">
-                    {!! $currentDonationEvent?->contentMarkdown('home.about_intro_md') !!}
+                    @if ($publicEventLifecycle === PublicEventLifecycle::Completed)
+                        Am {{ $publicDonationEvent->starts_at->translatedFormat('j. F Y') }} hat
+                        {{ $publicDonationEvent->title }} in {{ $publicDonationEvent->location_city }} stattgefunden.
+                        Gemeinsam haben wir lokale Benefizpartner:innen unterstützt.
+                    @else
+                        {!! $publicDonationEvent->contentMarkdown('home.about_intro_md') !!}
+                    @endif
                 </div>
                 <div class="mt-10 max-w-xl text-base leading-7 lg:max-w-none">
                     <div class="prose dark:prose-invert max-w-none">
-                        {!! $currentDonationEvent?->contentMarkdown('home.about_body_md') !!}
+                        @unless ($publicEventLifecycle === PublicEventLifecycle::Completed)
+                            {!! $publicDonationEvent->contentMarkdown('home.about_body_md') !!}
+                        @endunless
                     </div>
+                    <p class="mt-6">
+                        <x-inline-link href="{{ route('questions-and-answers.show', ['donationEvent' => $publicDonationEvent->slug]) }}">Fragen und Antworten zu diesem Anlass</x-inline-link>
+                        @unless ($publicEventLifecycle === PublicEventLifecycle::Upcoming)
+                            ·
+                            <x-inline-link href="{{ route('results.show', ['donationEvent' => $publicDonationEvent->slug]) }}">Resultate zu diesem Anlass</x-inline-link>
+                        @endunless
+                    </p>
+                    @if ($publicEventLifecycle === PublicEventLifecycle::Completed && ! $hasNextPublishedEvent)
+                        <p class="mt-6">Noch kein nächster Anlass veröffentlicht.</p>
+                        <p>
+                            <x-inline-link href="{{ route('newsletter') }}">Newsletter abonnieren</x-inline-link>, um
+                            über kommende Anlässe informiert zu bleiben.
+                        </p>
+                    @endif
                     <ul role="list" class="mt-8 space-y-8">
-                        @if ($currentDonationEvent?->athleteRegistrationIsOpen())
+                        @if ($canRegister && $publicDonationEvent->athleteRegistrationIsOpen())
                             <li class="flex items-start gap-x-3">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -63,7 +87,7 @@
                                 </span>
                             </li>
                         @endif
-                        @if ($currentDonationEvent?->donorRegistrationIsOpen())
+                        @if ($canRegister && $publicDonationEvent->donorRegistrationIsOpen())
                             <li class="flex items-start gap-x-3">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -99,11 +123,15 @@
 
                     <h2 class="mt-16 text-2xl font-bold tracking-tight">Wer profitiert?</h2>
                     <p class="mt-6">
-                        Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der Benefizpartner:innen von
-                        deinem Einsatz profitiert.
+                        @if ($publicEventLifecycle === PublicEventLifecycle::Completed)
+                            Mit diesem Anlass wurden folgende Benefizpartner:innen unterstützt.
+                        @else
+                            Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der Benefizpartner:innen von
+                            deinem Einsatz profitiert.
+                        @endif
                     </p>
                     <ul role="list" class="mt-8 space-y-8">
-                        @forelse ($currentEventPartners as $partner)
+                        @forelse ($publicEventPartners as $partner)
                             <li class="flex gap-x-3">
                                 <span>
                                     <strong class="font-semibold"> {{ $partner->name }} </strong>

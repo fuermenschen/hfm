@@ -175,6 +175,9 @@ it('reads published editions without changing settings or the operational curren
     $configured = DonationEvent::factory()->create([
         'starts_at' => '2026-09-11 12:00:00',
         'ends_at' => '2026-09-11 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-11 16:00:00',
+        'donor_registration_closes_at' => '2026-09-11 16:00:00',
     ]);
     $upcoming = DonationEvent::factory()->create([
         'starts_at' => '2026-09-13 12:00:00',
@@ -199,3 +202,61 @@ it('reads published editions without changing settings or the operational curren
     expect(DB::table('settings')->orderBy('id')->get()->toJson())->toBe($settingsBefore);
     expect(app(CurrentDonationEventService::class)->current()?->id)->toBe($configured->id);
 });
+
+it('keeps the configured edition until the event and registration windows are finished', function (array $attributes, bool $keepCurrent): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $current = DonationEvent::factory()->create(array_merge([
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-11 16:00:00',
+        'donor_registration_closes_at' => '2026-09-11 16:00:00',
+    ], $attributes));
+    $next = DonationEvent::factory()->create([
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $current->id;
+    $settings->save();
+
+    $selected = app(PublicDonationEventService::class)->homepage();
+
+    expect($selected?->id)->toBe($keepCurrent ? $current->id : $next->id);
+    expect(app(CurrentDonationEventService::class)->current()?->id)->toBe($current->id);
+})->with([
+    'upcoming event with closed registration' => [['starts_at' => '2026-09-12 15:00:00', 'ends_at' => '2026-09-12 16:00:00'], true],
+    'live event with closed registration' => [['starts_at' => '2026-09-12 12:00:00', 'ends_at' => '2026-09-12 16:00:00'], true],
+    'athlete window remains' => [['athlete_registration_closes_at' => '2026-09-13 16:00:00'], true],
+    'donor window remains' => [['donor_registration_closes_at' => '2026-09-13 16:00:00'], true],
+    'scheduled athlete opening after event end' => [['registration_opens_at' => '2026-09-13 12:00:00', 'athlete_registration_closes_at' => '2026-09-14 16:00:00', 'donor_registration_closes_at' => null], true],
+    'scheduled donor opening after event end' => [['registration_opens_at' => '2026-09-13 12:00:00', 'athlete_registration_closes_at' => null, 'donor_registration_closes_at' => '2026-09-14 16:00:00'], true],
+    'event and windows finished' => [[], false],
+    'exact event end with expired windows' => [['starts_at' => '2026-09-12 12:00:00', 'ends_at' => '2026-09-12 14:00:00'], false],
+    'unavailable opening' => [['registration_opens_at' => null, 'donor_registration_closes_at' => '2026-09-13 16:00:00'], false],
+    'unavailable deadlines' => [['athlete_registration_closes_at' => null, 'donor_registration_closes_at' => null], false],
+]);
+
+it('promotes the next edition only after the last inclusive registration deadline', function (string $closingField): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $current = DonationEvent::factory()->create([
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-11 16:00:00',
+        'donor_registration_closes_at' => '2026-09-11 16:00:00',
+        $closingField => '2026-09-12 14:00:00',
+    ]);
+    $next = DonationEvent::factory()->create([
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $current->id;
+    $settings->save();
+    $service = app(PublicDonationEventService::class);
+
+    expect($service->homepage()?->id)->toBe($current->id);
+    travelTo(Date::parse('2026-09-12 14:00:01', 'Europe/Zurich'));
+    expect($service->homepage()?->id)->toBe($next->id);
+})->with(['athlete' => 'athlete_registration_closes_at', 'donor' => 'donor_registration_closes_at']);
