@@ -38,14 +38,15 @@ class PublicMenu extends Component
 
     public function mount(): void
     {
-        $hasActiveEvent = resolve(CurrentDonationEventService::class)->current() !== null;
-
-        if (! $hasActiveEvent) {
-            $this->menuItems = array_values(array_filter(
-                $this->menuItems,
-                fn (array $menuItem): bool => ! in_array($menuItem['route'], ['become-athlete', 'become-donor'], true),
-            ));
-        }
+        $event = resolve(CurrentDonationEventService::class)->current();
+        $this->menuItems = array_values(array_filter(
+            $this->menuItems,
+            fn (array $menuItem): bool => match ($menuItem['route']) {
+                'become-athlete' => $event?->athleteRegistrationIsOpen() ?? false,
+                'become-donor' => $event?->donorRegistrationIsOpen() ?? false,
+                default => true,
+            },
+        ));
 
         $currentRoute = Route::currentRouteName();
 

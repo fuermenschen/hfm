@@ -58,8 +58,13 @@
                 href="#info"
                 class="bg-hfm-red hover:bg-hfm-dark dark:hover:bg-hfm-light rounded-md px-3.5 py-2.5 text-xs font-semibold text-white shadow-sm sm:text-sm"
             >Mehr dazu</a>
-            <a href="{{ route('become-donor') }}" class="text-xs leading-6 font-semibold sm:text-sm"
-                >Spender:in werden <span aria-hidden="true">→</span></a>
+            @if ($currentDonationEvent->donorRegistrationIsOpen())
+                <a href="{{ route('become-donor') }}" class="text-xs leading-6 font-semibold sm:text-sm"
+                    >Spender:in werden <span aria-hidden="true">→</span></a>
+            @elseif ($currentDonationEvent->athleteRegistrationIsOpen())
+                <a href="{{ route('become-athlete') }}" class="text-xs leading-6 font-semibold sm:text-sm"
+                    >Sportler:in werden <span aria-hidden="true">→</span></a>
+            @endif
         @else
             <a
                 href="{{ route('newsletter') }}"

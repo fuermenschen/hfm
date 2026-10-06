@@ -14,6 +14,7 @@ use Carbon\Carbon;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+use function Pest\Laravel\travelTo;
 
 it('defaults home to current event and shows owned summary with global confirmation callouts', function (): void {
     $currentEvent = DonationEvent::factory()->year(2036)->create(['title' => 'Current Event']);
@@ -330,6 +331,22 @@ it('offers current event registration links in empty states', function (): void 
         ->assertSuccessful()
         ->assertSeeText('Noch keine Spende')
         ->assertSee(route('become-donor'));
+});
+
+it('shows a neutral empty state when both registration windows are closed', function (): void {
+    travelTo(Carbon::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $event = DonationEvent::factory()->create([
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-12 13:59:59',
+        'donor_registration_closes_at' => '2026-09-12 13:59:59',
+    ]);
+    setPortalCurrentEvent($event);
+    actingAs(ExternalUser::factory()->create(), 'external');
+
+    get(route('portal.dashboard'))
+        ->assertSeeText('Aktuell ist keine Anmeldung als Sportler:in oder Spender:in möglich.')
+        ->assertDontSee(route('become-athlete'))
+        ->assertDontSee(route('become-donor'));
 });
 
 it('promotes material for a confirmed upcoming athlete participation', function (): void {
