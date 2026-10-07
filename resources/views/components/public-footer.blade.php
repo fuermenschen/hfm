@@ -4,16 +4,41 @@
     </svg>
     <div class="flex flex-col space-y-6 px-6 md:flex-row md:items-baseline md:justify-between">
         <div class="grid grid-cols-2 justify-items-center gap-4 md:flex md:flex-row md:flex-wrap md:justify-center md:space-x-7">
-            @foreach ($footerItems as $item)
-                <a
-                    href="{{ route($item['route']) }}"
-                    wire:key="{{ $item['name'] }}"
-                    wire:navigate.hover
-                    class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white text-sm"
-                >
-                    {{ $item['name'] }}
-                </a>
-            @endforeach
+            <a
+                href="{{ route('contact') }}"
+                wire:navigate.hover
+                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white text-sm"
+            >
+                Kontakt
+            </a>
+            <a
+                href="{{ route('impressum') }}"
+                wire:navigate.hover
+                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white text-sm"
+            >
+                Impressum
+            </a>
+            <a
+                href="{{ route('privacy') }}"
+                wire:navigate.hover
+                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white text-sm"
+            >
+                Datenschutz
+            </a>
+            <a
+                href="{{ route('association') }}"
+                wire:navigate.hover
+                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white text-sm"
+            >
+                Verein
+            </a>
+            <a
+                href="{{ route('newsletter') }}"
+                wire:navigate.hover
+                class="hover:text-hfm-light text-hfm-dark dark:text-hfm-white text-sm"
+            >
+                Newsletter
+            </a>
         </div>
         <a
             class="flex flex-col-reverse items-center md:flex-row md:items-baseline md:space-x-4"
