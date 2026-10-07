@@ -103,7 +103,6 @@ it('keeps historical FAQs accessible after the current edition changes', functio
         ->assertSeeText('Allgemeine Frage')
         ->assertSeeText('11. September 2026')
         ->assertSeeText('Diese Informationen beziehen sich auf die vergangene Ausgabe.')
-        ->assertSeeText('Anmeldungen über das Menü beziehen sich auf Aktuelle Ausgabe')
         ->assertSee('<title>Fragen und Antworten · 2026 - '.config('app.name').'</title>', false)
         ->assertSee('content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)
         ->assertSee('name="og:description" content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)

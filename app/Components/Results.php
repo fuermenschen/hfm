@@ -34,8 +34,7 @@ class Results extends Component
 
     public function mount(?DonationEvent $donationEvent = null): void
     {
-        $donationEvent ??= resolve(CurrentDonationEventService::class)->current()
-            ?? resolve(PublicDonationEventService::class)->results();
+        $donationEvent ??= $this->currentResultsEvent();
         $this->donationEventId = $donationEvent?->id;
     }
 
@@ -54,6 +53,8 @@ class Results extends Component
      */
     protected function computeTotals(): array
     {
+        $this->donationEventId ??= $this->currentResultsEvent()?->id;
+
         if ($this->donationEventId === null) {
             return ['has_event' => false];
         }
@@ -132,5 +133,11 @@ class Results extends Component
             ->reject(fn (Partner $partner): bool => $partner->name === 'alle zu gleichen Teilen')
             ->map(fn (Partner $partner): array => ['name' => $partner->name, 'amount' => $perPartner[$partner->id]])
             ->all();
+    }
+
+    protected function currentResultsEvent(): ?DonationEvent
+    {
+        return resolve(CurrentDonationEventService::class)->current()
+            ?? resolve(PublicDonationEventService::class)->results();
     }
 }

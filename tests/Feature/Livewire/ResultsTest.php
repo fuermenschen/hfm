@@ -96,6 +96,26 @@ it('shows an empty state when no published edition exists', function (): void {
         ->assertSee('content="Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', false);
 });
 
+it('selects a newly published edition on poll when page initially had no edition', function (): void {
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = null;
+    $settings->save();
+    $component = Livewire::test(Results::class)
+        ->assertSet('donationEventId', null)
+        ->assertSee('Aktuell sind keine veröffentlichten Anlassinformationen verfügbar.');
+    $event = DonationEvent::factory()->create([
+        'title' => 'Neu veröffentlichte Ausgabe',
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+
+    $component->call('$refresh')
+        ->assertSet('donationEventId', $event->id)
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Upcoming)
+        ->assertSee('Neu veröffentlichte Ausgabe')
+        ->assertSee('Die Resultate sind ab Beginn des Anlasses verfügbar.');
+});
+
 it('uses the automatic results edition consistently for page metadata and Livewire content', function (): void {
     $event = DonationEvent::factory()->create([
         'slug' => 'archive',

@@ -7,7 +7,8 @@
         @endcomponent
 
         <div class="mx-auto w-full max-w-2xl text-left sm:text-center">
-            Hier findest du Informationen zur Anmeldung als Sportler:in für
+            Du möchtest als Sportler:in dein Bestes geben und damit Winterthurer Benefizpartner:innen unterstützen? Hier
+            findest du alle Infos zur Teilnahme am Anlass
             <strong>{{ $currentDonationEvent->title }}</strong>
             am {{ $currentDonationEvent->starts_at->translatedFormat('j. F Y') }}.
         </div>

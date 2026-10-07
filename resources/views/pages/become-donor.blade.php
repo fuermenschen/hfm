@@ -7,7 +7,8 @@
         @endcomponent
 
         <div class="mx-auto w-full max-w-2xl text-left sm:text-center">
-            Hier findest du Informationen zur Anmeldung als Spender:in für
+            Du lässt lieber andere schwitzen und möchtest als Spender:in einen Beitrag für Winterthurer
+            Benefizpartner:innen leisten? Hier findest du alle Infos zum Spenden beim Anlass
             <strong>{{ $currentDonationEvent->title }}</strong>
             am {{ $currentDonationEvent->starts_at->translatedFormat('j. F Y') }}.
         </div>
@@ -32,7 +33,10 @@
                 @livewire('donor-registration-wizard')
             @elseif ($currentDonationEvent?->donorRegistrationIsOpen())
                 <div class="border-hfm-red/40 bg-hfm-red/10 mt-6 mb-9 rounded-lg border px-9 py-6">
-                    <p class="text-hfm-red font-semibold">Aktuell sind noch keine Sportler:innen angemeldet.</p>
+                    <p class="text-hfm-red font-semibold">
+                        Aktuell sind noch keine Sportler:innen angemeldet, für welche du dich als Spender:in eintragen
+                        kannst.
+                    </p>
                     <p class="mt-1">Versuche es später erneut oder melde dich für den Newsletter an.</p>
                 </div>
             @else

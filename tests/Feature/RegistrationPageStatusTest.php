@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Date;
 use function Pest\Laravel\get;
 use function Pest\Laravel\travelTo;
 
-it('shows truthful copy when the registration window is not open', function (string $route, string $role, string $closingField, ?string $opensAt, ?string $closesAt, string $expectedStatus, string $expectedDetail): void {
+it('shows truthful copy when the registration window is not open', function (string $route, string $role, string $closingField, string $expectedIntro, ?string $opensAt, ?string $closesAt, string $expectedStatus, string $expectedDetail): void {
     travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
     $event = DonationEvent::factory()->create([
         'title' => 'Anlass 2026',
@@ -24,6 +24,7 @@ it('shows truthful copy when the registration window is not open', function (str
     get(route($route))
         ->assertSeeText('Anlass 2026')
         ->assertSeeText('12. September 2026')
+        ->assertSeeText($expectedIntro)
         ->assertSeeText("Die Anmeldung als {$role} {$expectedStatus}.")
         ->assertSeeText($expectedDetail)
         ->assertSeeText('Newsletter Anmeldung')
@@ -31,8 +32,8 @@ it('shows truthful copy when the registration window is not open', function (str
         ->assertDontSeeText('Wir informieren dich sofort, sobald die Anmeldung startet.')
         ->assertDontSeeText('Mit welcher E-Mail-Adresse möchtest du dich anmelden?');
 })->with([
-    'athlete' => ['become-athlete', 'Sportler:in', 'athlete_registration_closes_at'],
-    'donor' => ['become-donor', 'Spender:in', 'donor_registration_closes_at'],
+    'athlete' => ['become-athlete', 'Sportler:in', 'athlete_registration_closes_at', 'Du möchtest als Sportler:in dein Bestes geben und damit Winterthurer Benefizpartner:innen unterstützen?'],
+    'donor' => ['become-donor', 'Spender:in', 'donor_registration_closes_at', 'Du lässt lieber andere schwitzen und möchtest als Spender:in einen Beitrag für Winterthurer Benefizpartner:innen leisten?'],
 ])->with([
     'before opening' => ['2026-09-13 09:30:00', '2026-09-14 16:00:00', 'ist aktuell noch nicht offen', 'Die Anmeldung öffnet am 13. September 2026 um 09:30 Uhr.'],
     'after deadline' => ['2026-09-01 00:00:00', '2026-09-12 13:59:59', 'ist für diesen Anlass geschlossen', 'Über unseren Newsletter erhältst du Neuigkeiten zu kommenden Anlässen.'],
