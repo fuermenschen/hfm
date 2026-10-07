@@ -95,6 +95,7 @@ class AthleteRegistrationFactory extends Factory
             : EventGroup::query()->findOrFail($group);
 
         return $this->state(fn (): array => [
+            'donation_event_id' => $eventGroup->donation_event_id,
             'event_group_id' => $eventGroup->id,
         ])->afterMaking(function (AthleteRegistration $registration) use ($eventGroup): void {
             $registration->event_group_id = $eventGroup->id;

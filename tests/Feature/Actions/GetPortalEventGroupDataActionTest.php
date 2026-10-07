@@ -8,12 +8,14 @@ use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use Carbon\Carbon;
 
-it('aggregates confirmed donations for accepted group members', function (): void {
+it('aggregates confirmed donations using the existing group event', function (): void {
     Carbon::setTestNow('2036-09-01 12:00:00');
     $event = DonationEvent::factory()->year(2036)->create();
     $group = EventGroup::factory()->forEvent($event)->create();
     $member = AthleteRegistration::factory()->acceptedMember($group)->create(['rounds_estimated' => 10, 'rounds_done' => 4]);
     $pendingMember = AthleteRegistration::factory()->pendingGroup($group)->create(['rounds_estimated' => 100]);
+
+    expect(DonationEvent::query()->count())->toBe(1);
 
     Donation::factory()->forPair(ExternalUser::factory()->create(), $member)->create([
         'amount_per_round' => 2,
