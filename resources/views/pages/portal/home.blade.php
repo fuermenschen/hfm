@@ -214,7 +214,13 @@
                         <flux:icon.sparkles class="size-6" />
                     </div>
                     <flux:heading size="lg" level="3" class="mt-4">Hier beginnt dein Engagement</flux:heading>
-                    <flux:text class="mx-auto mt-2 max-w-xl">Melde dich beim aktuellen Anlass an oder unterstütze eine:n Sportler:in.</flux:text>
+                    <flux:text class="mx-auto mt-2 max-w-xl">
+                        @if ($athleteRegistrationOpen || $donorRegistrationOpen)
+                            Informiere dich über die aktuell verfügbaren Anmeldungen.
+                        @else
+                            Aktuell ist keine Anmeldung als Sportler:in oder Spender:in möglich.
+                        @endif
+                    </flux:text>
                     <div class="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
                         @if ($athleteRegistrationOpen)
                             <flux:button href="{{ route('become-athlete') }}" wire:navigate icon="trophy"

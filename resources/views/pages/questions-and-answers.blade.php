@@ -1,14 +1,35 @@
 @extends('layouts.public')
-@php use Illuminate\Support\Str; @endphp
+@php
+    use App\Enums\PublicEventLifecycle;
+    use Illuminate\Support\Str;
+@endphp
 @section('title', 'Fragen und Antworten')
 @section('meta_description', 'Informationen zu Ablauf, Teilnahme und Spenden beim Spendenlauf Höhenmeter für Menschen in Winterthur.')
 @section('content')
     <div>
         <x-page-title>Fragen und Antworten</x-page-title>
         <div class="mx-auto w-full max-w-2xl text-left sm:text-center">
-            Auf dieser Seite findest du alle wichtigen Informationen rund um den Spendenlauf &laquo;<strong
-                >Höhenmeter für Menschen</strong
-            >&raquo;. Sollte dennoch etwas unklar sein,
+            @if ($publicDonationEvent !== null)
+                Informationen zu
+                <strong>{{ $publicDonationEvent->title }}</strong>
+                am
+                <time
+                    datetime="{{ $publicDonationEvent->starts_at->toDateString() }}"
+                    >{{ $publicDonationEvent->starts_at->translatedFormat('j. F Y') }}</time
+                >.
+                <p class="mt-3">
+                    {{
+                        match ($publicEventLifecycle) {
+                            PublicEventLifecycle::Upcoming => 'Dieser Anlass steht bevor.',
+                            PublicEventLifecycle::Live => 'Dieser Anlass findet jetzt statt.',
+                            PublicEventLifecycle::Completed => 'Dieser Anlass ist abgeschlossen. Diese Informationen beziehen sich auf die vergangene Ausgabe.',
+                        }
+                    }}
+                </p>
+            @else
+                Hier findest du allgemeine Informationen zu Höhenmeter für Menschen.
+            @endif
+            Sollte dennoch etwas unklar sein,
             <x-inline-link href=" {{ route('contact') }}">schreib uns</x-inline-link>
             !
         </div>
@@ -19,10 +40,9 @@
             <flux:button href="#hintergruende" variant="filled" size="xs">Hintergründe</flux:button>
         </div>
 
-        @if ($currentDonationEvent === null)
+        @if ($publicDonationEvent === null)
             <div class="mx-auto mt-2 w-full max-w-3xl rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-600/60 dark:bg-amber-950/40 dark:text-amber-100">
-                Aktuell ist kein Anlass als aktiv veröffentlicht. Allgemeine Informationen auf dieser Seite bleiben
-                korrekt, anlassbezogene Angaben können jedoch fehlen oder nicht aktuell sein.
+                Aktuell ist noch kein Anlass veröffentlicht. Hier findest du allgemeine Informationen.
             </div>
         @endif
     </div>
@@ -35,7 +55,7 @@
             ['id' => 'hintergruende', 'title' => 'Hintergründe', 'group' => 'background'],
         ];
 
-        $faqsByGroup = $currentEventFaqs->groupBy('group_name');
+        $faqsByGroup = $publicEventFaqs->groupBy('group_name');
     @endphp
 
     @foreach ($faqSections as $section)
@@ -62,4 +82,6 @@
             @endforelse
         </dl>
     @endforeach
+
+    <x-public-event-history :events="$historicalEvents" />
 @endsection

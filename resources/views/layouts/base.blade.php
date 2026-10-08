@@ -1,43 +1,83 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
+    @php
+        use App\Enums\PublicEventLifecycle;
+
+        $publicEditionPage = isset($publicPageTitle);
+        $metadataEvent = $publicEditionPage ? ($publicDonationEvent ?? null) : $currentDonationEvent;
+        $sectionTitle = trim($__env->yieldContent('title'));
+        $siteName = config('app.name');
+        $defaultMetaDescription = 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
+        $defaultOgDescription = 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
+        $sectionMetaDescription = trim($__env->yieldContent('meta_description'));
+        $sectionOgDescription = trim($__env->yieldContent('og_description'));
+        $eventMetaDescription = $metadataEvent?->contentPlainText('seo.meta_description_md');
+        $eventOgDescription = $metadataEvent?->contentPlainText('seo.og_description_md');
+
+        if ($publicEditionPage) {
+            $pageTitle = $publicPageTitle;
+            $metaDescription = $metadataEvent === null
+                ? ($sectionMetaDescription ?: $defaultMetaDescription)
+                : ($eventMetaDescription ?: $sectionMetaDescription ?: $defaultMetaDescription);
+            $ogDescription = $metadataEvent === null
+                ? ($sectionOgDescription ?: $sectionMetaDescription ?: $defaultOgDescription)
+                : ($eventOgDescription ?: $eventMetaDescription ?: $sectionOgDescription ?: $sectionMetaDescription ?: $defaultOgDescription);
+        } else {
+            $pageTitle = $sectionTitle !== '' ? $sectionTitle : ($currentDonationEvent?->title ?? $siteName);
+            $metaDescription = $sectionMetaDescription ?: $eventMetaDescription ?: $defaultMetaDescription;
+            $ogDescription = $sectionOgDescription ?: $sectionMetaDescription ?: $eventOgDescription ?: $defaultOgDescription;
+        }
+
+        $documentTitle = $publicEditionPage
+            ? ($pageTitle === $siteName || str_starts_with($pageTitle, $siteName.' ·') ? $pageTitle : $pageTitle.' - '.$siteName)
+            : ($sectionTitle !== '' ? $pageTitle.' - '.$siteName : $pageTitle);
+        $ogTitle = trim($__env->yieldContent('og_title')) ?: ($publicEditionPage
+            ? $pageTitle
+            : ($sectionTitle !== '' ? $sectionTitle : ($currentDonationEvent?->title ?? $siteName)));
+
+        if ($publicEditionPage && $metadataEvent !== null) {
+            $lifecycleDescription = match ($publicEventLifecycle ?? null) {
+                PublicEventLifecycle::Upcoming => 'Bevorstehender Anlass',
+                PublicEventLifecycle::Live => 'Der Anlass findet jetzt statt',
+                PublicEventLifecycle::Completed => 'Vergangener Anlass',
+                default => null,
+            };
+            $eventFacts = sprintf(
+                '%s%s in %s am %s.',
+                $lifecycleDescription === null ? '' : $lifecycleDescription.' · ',
+                $metadataEvent->title,
+                $metadataEvent->location_city,
+                $metadataEvent->starts_at->translatedFormat('j. F Y'),
+            );
+            if (($publicEventLifecycle ?? null) === PublicEventLifecycle::Completed) {
+                $metaDescription = sprintf(
+                    '%s in %s am %s. Dieser Anlass ist abgeschlossen.',
+                    $metadataEvent->title,
+                    $metadataEvent->location_city,
+                    $metadataEvent->starts_at->translatedFormat('j. F Y'),
+                );
+                $ogDescription = $metaDescription;
+            } else {
+                $metaDescription = trim($metaDescription.' '.$eventFacts);
+                $ogDescription = trim($ogDescription.' '.$eventFacts);
+            }
+        }
+    @endphp
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    @hasSection('title')
-        <title>
-            @yield('title')
-            - {{ config('app.name') }}
-        </title>
-    @else
-        <title>{{ $currentDonationEvent?->title ?? config('app.name') }}</title>
-    @endif
-
-    @php
-        $defaultMetaDescription =
-            $currentDonationEvent?->contentPlainText(
-                'seo.meta_description_md',
-                'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.',
-            ) ?: 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
-        $defaultOgDescription =
-            $currentDonationEvent?->contentPlainText(
-                'seo.og_description_md',
-                'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.',
-            ) ?: 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
-    @endphp
+    <title>{{ $documentTitle }}</title>
 
     <!-- SEO Information -->
-    <meta name="description" content="@yield('meta_description', e($defaultMetaDescription))" />
+    <meta name="description" content="{{ $metaDescription }}" />
     <meta name="author" content="Verein für Menschen" />
     <meta name="robots" content="{{ request()->attributes->get('robots', 'index, follow') }}" />
     <meta name="yandex" content="noindex, nofollow" />
     <meta name="baiduspider" content="noindex, nofollow" />
     <meta name="apple-mobile-web-app-title" content="Höhenmeter für Menschen" />
     @unless (request()->attributes->has('robots'))
-        <meta property="og:title" content="@yield('title', e($currentDonationEvent?->title ?? config('app.name')))" />
-        <meta
-            property="og:description"
-            content="@yield('og_description', $__env->yieldContent('meta_description', e($defaultOgDescription)))"
-        />
+        <meta property="og:title" content="{{ $ogTitle }}" />
+        <meta property="og:description" content="{{ $ogDescription }}" />
         <meta property="og:image" content="{{ asset('favicons/social_media_preview.png') }}" />
         <meta property="og:image:type" content="image/png" />
         <meta property="og:image:width" content="1201" />

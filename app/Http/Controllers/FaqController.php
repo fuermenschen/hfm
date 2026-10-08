@@ -5,23 +5,39 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\GetCurrentEventPublicDataAction;
-use App\Services\CurrentDonationEventService;
+use App\Models\DonationEvent;
+use App\Services\PublicDonationEventService;
 use Illuminate\Contracts\View\View;
 
 class FaqController extends Controller
 {
     public function __construct(
-        private CurrentDonationEventService $eventService,
+        private PublicDonationEventService $eventService,
         private GetCurrentEventPublicDataAction $publicDataAction,
     ) {}
 
     public function index(): View
     {
-        $event = $this->eventService->current();
+        return $this->page($this->eventService->homepage());
+    }
+
+    public function show(DonationEvent $donationEvent): View
+    {
+        abort_unless($donationEvent->is_published, 404);
+
+        return $this->page($donationEvent);
+    }
+
+    protected function page(?DonationEvent $event): View
+    {
         $publicData = ($this->publicDataAction)($event);
 
         return view('pages.questions-and-answers', [
-            'currentEventFaqs' => $publicData['faqs'],
+            'publicDonationEvent' => $event,
+            'publicEventLifecycle' => $event instanceof DonationEvent ? $this->eventService->lifecycle($event) : null,
+            'publicPageTitle' => 'Fragen und Antworten'.($event instanceof DonationEvent ? ' · '.$event->starts_at->format('Y') : ''),
+            'publicEventFaqs' => $publicData['faqs'],
+            'historicalEvents' => $this->eventService->resolve()['historical'],
         ]);
     }
 }

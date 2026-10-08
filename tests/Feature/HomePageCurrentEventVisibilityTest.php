@@ -1,13 +1,17 @@
 <?php
 
+use App\Enums\PublicEventLifecycle;
 use App\Models\DonationEvent;
+use App\Models\Faq;
 use App\Models\Partner;
 use App\Models\Sponsor;
 use App\Settings\EventSettings;
 use Database\Seeders\DonationEventSeeder;
+use Illuminate\Support\Facades\Date;
 
 use function Pest\Laravel\get;
 use function Pest\Laravel\seed;
+use function Pest\Laravel\travelTo;
 
 it('shows fallback hero message and hides content sections when no active event is configured', function (): void {
     $settings = app(EventSettings::class);
@@ -17,7 +21,7 @@ it('shows fallback hero message and hides content sections when no active event 
     $response = get(route('home'));
 
     $response->assertSuccessful();
-    $response->assertSee('Aktuell ist kein Anlass als aktiv konfiguriert.');
+    $response->assertSee('Aktuell ist noch kein Anlass veröffentlicht.');
     $response->assertSee('Newsletter abonnieren');
     $response->assertDontSee('Um was geht es?');
 });
@@ -26,6 +30,8 @@ it('shows full home content when current event is published', function (): void 
     $event = DonationEvent::factory()->create([
         'slug' => '2095',
         'is_published' => true,
+        'registration_opens_at' => now('Europe/Zurich')->subDay(),
+        'athlete_registration_closes_at' => now('Europe/Zurich')->addDay(),
     ]);
 
     $settings = app(EventSettings::class);
@@ -77,6 +83,7 @@ it('shows only 2026 partner set and no sponsors on home', function (): void {
 });
 
 it('shows 2025 partners and sponsors on home', function (): void {
+    travelTo(Date::parse('2025-09-14 12:00:00', 'Europe/Zurich'));
     seed(DonationEventSeeder::class);
 
     $event = DonationEvent::query()->where('slug', '2025')->firstOrFail();
@@ -145,3 +152,191 @@ it('balances hero partner logos for :dataset', function (int $partnerCount, stri
     'five partners' => [5, 'max-w-84 sm:max-w-[37rem]'],
     'six partners' => [6, 'max-w-84 sm:max-w-[37rem]'],
 ]);
+
+it('uses donor first and athlete fallback for the hero secondary CTA', function (bool $athleteOpen, bool $donorOpen, array $expectedRoutes, array $expectedLabels): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $event = DonationEvent::factory()->create([
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => $athleteOpen ? '2026-09-13 00:00:00' : '2026-09-11 00:00:00',
+        'donor_registration_closes_at' => $donorOpen ? '2026-09-13 00:00:00' : '2026-09-11 00:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+
+    $hero = view('components.home-hero', [
+        'publicDonationEvent' => $event,
+        'publicEventLifecycle' => PublicEventLifecycle::Upcoming,
+        'publicEventPartners' => collect(),
+    ])->render();
+
+    preg_match_all('/href="([^"]+)"/', $hero, $links);
+    preg_match_all('/(?:Sportler|Spender):in werden/', strip_tags($hero), $labels);
+    expect($links[1])->toBe(['#info', ...array_map(fn (string $route): string => route($route), $expectedRoutes)]);
+    expect($labels[0])->toBe($expectedLabels);
+    expect($hero)->toContain('Mehr dazu');
+    expect(str_contains($hero, 'hfm-hero__badgeCircle'))->toBe($athleteOpen || $donorOpen);
+})->with([
+    'both open' => [true, true, ['become-donor'], ['Spender:in werden']],
+    'only donor open' => [false, true, ['become-donor'], ['Spender:in werden']],
+    'only athlete open' => [true, false, ['become-athlete'], ['Sportler:in werden']],
+    'neither open' => [false, false, [], []],
+]);
+
+it('shows menu and body invitations only for each open registration window after the event ends', function (bool $athleteOpen, bool $donorOpen): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $event = DonationEvent::factory()->create([
+        'starts_at' => '2026-09-10 12:00:00',
+        'ends_at' => '2026-09-10 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => $athleteOpen ? '2026-09-13 00:00:00' : '2026-09-11 00:00:00',
+        'donor_registration_closes_at' => $donorOpen ? '2026-09-13 00:00:00' : '2026-09-11 00:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+
+    $response = get(route('home'));
+
+    expect(str_contains($response->getContent(), route('become-athlete')))->toBe($athleteOpen);
+    expect(str_contains($response->getContent(), 'Melde dich als Sportler:in!'))->toBe($athleteOpen);
+    expect(str_contains($response->getContent(), route('become-donor')))->toBe($donorOpen);
+    expect(str_contains($response->getContent(), 'Melde dich als Spender:in!'))->toBe($donorOpen);
+})->with([
+    'both open' => [true, true],
+    'only donor open' => [false, true],
+    'only athlete open' => [true, false],
+    'neither open' => [false, false],
+]);
+
+it('promotes the next edition with its own facts and content without changing registration scope', function (): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $past = DonationEvent::factory()->create([
+        'slug' => 'past',
+        'title' => 'Vergangene Ausgabe',
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-11 16:00:00',
+        'donor_registration_closes_at' => '2026-09-11 16:00:00',
+        'content' => ['hero' => ['copy_md' => 'VERALTETE EINLADUNG']],
+    ]);
+    $next = DonationEvent::factory()->create([
+        'slug' => 'next',
+        'title' => 'Nächste Ausgabe',
+        'location_city' => 'Neue Stadt',
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-13 16:00:00',
+        'donor_registration_closes_at' => '2026-09-14 16:00:00',
+    ]);
+    $past->partners()->attach(Partner::factory()->create(['name' => 'Alter Partner']), ['is_published' => true]);
+    $next->partners()->attach(Partner::factory()->create(['name' => 'Neuer Partner']), ['is_published' => true]);
+    $next->sponsors()->attach(Sponsor::factory()->create(['name' => 'Neuer Sponsor']), ['is_published' => true, 'size' => 'medium', 'contribution_text' => 'Test contribution']);
+    $past->faqs()->attach(Faq::factory()->create(['title' => 'Alte Frage']), ['is_published' => true, 'group' => 'general']);
+    $next->faqs()->attach(Faq::factory()->create(['title' => 'Neue Frage']), ['is_published' => true, 'group' => 'general']);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $past->id;
+    $settings->save();
+
+    get(route('home'))
+        ->assertViewHas('publicDonationEvent', fn (DonationEvent $event): bool => $event->id === $next->id)
+        ->assertViewHas('currentDonationEvent', fn (DonationEvent $event): bool => $event->id === $past->id)
+        ->assertSeeText('Bevorstehender Anlass')
+        ->assertSeeText('13. September 2026')
+        ->assertSeeText('Neue Stadt')
+        ->assertSeeText('Neuer Partner')
+        ->assertSeeText('Neuer Sponsor')
+        ->assertDontSeeText('Alter Partner')
+        ->assertDontSeeText('VERALTETE EINLADUNG')
+        ->assertDontSee(route('become-athlete'))
+        ->assertDontSee(route('become-donor'));
+    get(route('questions-and-answers'))
+        ->assertViewHas('publicDonationEvent', fn (DonationEvent $event): bool => $event->id === $next->id)
+        ->assertSeeText('Neue Frage')
+        ->assertDontSeeText('Alte Frage');
+    get(route('become-donor'))
+        ->assertSeeText('Vergangene Ausgabe')
+        ->assertSeeText('Die Anmeldung als Spender:in ist für diesen Anlass geschlossen.');
+
+    expect(app(EventSettings::class)->current_event_id)->toBe($past->id);
+});
+
+it('keeps retrospective context and valid donor CTA while the current edition still accepts donations', function (): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $past = DonationEvent::factory()->create([
+        'slug' => 'past',
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-11 16:00:00',
+        'donor_registration_closes_at' => '2026-09-13 16:00:00',
+        'content' => ['hero' => ['copy_md' => 'VERALTETE EINLADUNG']],
+    ]);
+    DonationEvent::factory()->create(['starts_at' => '2026-09-14 12:00:00', 'ends_at' => '2026-09-14 16:00:00']);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $past->id;
+    $settings->save();
+
+    get(route('home'))
+        ->assertViewHas('publicDonationEvent', fn (DonationEvent $event): bool => $event->id === $past->id)
+        ->assertSeeText('Rückblick')
+        ->assertSeeText('Dieser Anlass ist abgeschlossen.')
+        ->assertSee(route('become-donor'))
+        ->assertSee(route('results.show', ['donationEvent' => 'past']))
+        ->assertSee('href="#info"', false)
+        ->assertDontSeeText('VERALTETE EINLADUNG')
+        ->assertDontSee('hfm-hero__badgeCircle')
+        ->assertDontSeeText('Noch kein nächster Anlass veröffentlicht.');
+});
+
+it('shows a retrospective and newsletter when no next edition is published', function (int $unpublishedCount): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $past = DonationEvent::factory()->create([
+        'slug' => 'past',
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+        'registration_opens_at' => '2026-09-01 00:00:00',
+        'athlete_registration_closes_at' => '2026-09-11 16:00:00',
+        'donor_registration_closes_at' => '2026-09-11 16:00:00',
+        'content' => ['hero' => ['copy_md' => 'ALTE EINLADUNG'], 'home' => ['about_intro_md' => 'VERALTETE VORSCHAU']],
+    ]);
+    DonationEvent::factory()->count($unpublishedCount)->create([
+        'is_published' => false,
+        'title' => 'Unveröffentlichte Zukunft',
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $past->id;
+    $settings->save();
+
+    get(route('home'))
+        ->assertSeeText('Noch kein nächster Anlass veröffentlicht.')
+        ->assertSeeText('Newsletter abonnieren')
+        ->assertSeeText('Vergangene Anlässe')
+        ->assertSee(route('results.show', ['donationEvent' => 'past']))
+        ->assertSee(route('questions-and-answers.show', ['donationEvent' => 'past']))
+        ->assertSee('id="info"', false)
+        ->assertDontSeeText('ALTE EINLADUNG')
+        ->assertDontSeeText('VERALTETE VORSCHAU')
+        ->assertDontSeeText('Unveröffentlichte Zukunft');
+})->with(['no future edition' => 0, 'unpublished future edition' => 1]);
+
+it('shows live context and edition-specific results while the event is taking place', function (): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+    $event = DonationEvent::factory()->create([
+        'slug' => 'live',
+        'starts_at' => '2026-09-12 12:00:00',
+        'ends_at' => '2026-09-12 16:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $event->id;
+    $settings->save();
+
+    get(route('home'))
+        ->assertSeeText('Findet jetzt statt')
+        ->assertSeeText('Der Anlass findet jetzt statt.')
+        ->assertSee(route('results.show', ['donationEvent' => 'live']));
+});

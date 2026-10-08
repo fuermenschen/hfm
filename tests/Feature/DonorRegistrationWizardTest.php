@@ -521,7 +521,7 @@ it('shows no-athletes message when registration is open but no verified athletes
     $settings->save();
     get(route('become-donor'))
         ->assertSuccessful()
-        ->assertSee('Aktuell sind noch keine Sportler:innen angemeldet.')
+        ->assertSeeText('Aktuell sind noch keine Sportler:innen angemeldet, für welche du dich als Spender:in eintragen kannst.')
         ->assertDontSee('Mit welcher E-Mail-Adresse möchtest du dich anmelden?')
         ->assertSee('Newsletter Anmeldung');
 });

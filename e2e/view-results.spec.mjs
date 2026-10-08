@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Results page", () => {
-    test("renders live totals, rankings, and partner totals on a standalone page", async ({ page }) => {
-        await page.goto("/resultate", { waitUntil: "domcontentloaded" });
+    test("renders historical totals, rankings, and partner totals on a standalone page", async ({ page }) => {
+        await page.goto("/resultate/2025", { waitUntil: "domcontentloaded" });
 
         // Ensure network idle (robust for screenshots); the page polls every
         // 15 seconds, so idle happens between polls.
@@ -10,7 +10,9 @@ test.describe("Results page", () => {
 
         // Standalone TV page: the event title is the heading, no public chrome.
         await expect(page.getByRole("heading", { level: 1 })).toContainText("Höhenmeter für Menschen");
-        await expect(page.getByText("Live", { exact: true })).toBeVisible();
+        await expect(page.getByText("Resultate", { exact: true })).toBeVisible();
+        await expect(page.getByText("13. September 2025", { exact: true })).toBeVisible();
+        await expect(page.getByText("Live", { exact: true })).toHaveCount(0);
 
         // Screenshot
         const startScreenshot = await page.screenshot({ fullPage: true });

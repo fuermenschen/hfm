@@ -1,8 +1,10 @@
 @php
+    use App\Enums\PublicEventLifecycle;
     use Illuminate\Support\Facades\Vite;
 
     $randomImgPortrait = sprintf('%02d', rand(1, 8));
     $randomImgLandscape = sprintf('%02d', rand(1, 7));
+    $canRegister = $publicDonationEvent->id === $currentDonationEvent?->id;
 @endphp
 @props(['athleteCount', 'donationCount'])
 <div class="relative">
@@ -29,61 +31,87 @@
         <div class="px-6 lg:contents">
             <div class="mx-auto max-w-2xl pt-16 pb-24 sm:pt-20 sm:pb-32 lg:mr-0 lg:ml-8 lg:w-full lg:max-w-lg lg:flex-none lg:pt-32 xl:w-1/2">
                 <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                    {{ $currentDonationEvent?->contentValue('home.about_heading', '') }}
+                    {{ $publicEventLifecycle === PublicEventLifecycle::Completed ? 'Rückblick' : $publicDonationEvent->contentValue('home.about_heading', 'Um was geht es?') }}
                 </h1>
                 <div class="prose prose-xl dark:prose-invert mt-6 max-w-none">
-                    {!! $currentDonationEvent?->contentMarkdown('home.about_intro_md') !!}
+                    @if ($publicEventLifecycle === PublicEventLifecycle::Completed)
+                        Am {{ $publicDonationEvent->starts_at->translatedFormat('j. F Y') }} hat
+                        {{ $publicDonationEvent->title }} in {{ $publicDonationEvent->location_city }} stattgefunden.
+                        Gemeinsam haben wir lokale Benefizpartner:innen unterstützt.
+                    @else
+                        {!! $publicDonationEvent->contentMarkdown('home.about_intro_md') !!}
+                    @endif
                 </div>
                 <div class="mt-10 max-w-xl text-base leading-7 lg:max-w-none">
                     <div class="prose dark:prose-invert max-w-none">
-                        {!! $currentDonationEvent?->contentMarkdown('home.about_body_md') !!}
+                        @unless ($publicEventLifecycle === PublicEventLifecycle::Completed)
+                            {!! $publicDonationEvent->contentMarkdown('home.about_body_md') !!}
+                        @endunless
                     </div>
+                    <p class="mt-6">
+                        <x-inline-link href="{{ route('questions-and-answers.show', ['donationEvent' => $publicDonationEvent->slug]) }}">Fragen und Antworten zu diesem Anlass</x-inline-link>
+                        @unless ($publicEventLifecycle === PublicEventLifecycle::Upcoming)
+                            ·
+                            <x-inline-link href="{{ route('results.show', ['donationEvent' => $publicDonationEvent->slug]) }}">Resultate zu diesem Anlass</x-inline-link>
+                        @endunless
+                    </p>
+                    @if ($publicEventLifecycle === PublicEventLifecycle::Completed && ! $hasNextPublishedEvent)
+                        <p class="mt-6">Noch kein nächster Anlass veröffentlicht.</p>
+                        <p>
+                            <x-inline-link href="{{ route('newsletter') }}">Newsletter abonnieren</x-inline-link>, um
+                            über kommende Anlässe informiert zu bleiben.
+                        </p>
+                    @endif
                     <ul role="list" class="mt-8 space-y-8">
-                        <li class="flex items-start gap-x-3">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                                class="stroke-hfm-red dark:stroke-hfm-lightred mt-3 w-6 flex-none"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"
-                                />
-                            </svg>
+                        @if ($canRegister && $publicDonationEvent->athleteRegistrationIsOpen())
+                            <li class="flex items-start gap-x-3">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    class="stroke-hfm-red dark:stroke-hfm-lightred mt-3 w-6 flex-none"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"
+                                    />
+                                </svg>
 
-                            <span class="flex-grow">
-                                <strong class="font-semibold"> Werde Sportler:in </strong> Egal, ob Couch-Potato oder
-                                Marathonläufer:in, ob du mit dem Velo oder dem Rollstuhl kommst: Dein Einsatz bewegt!
-                                Bist auch du dabei als Sportler:in?
-                                <x-inline-link href=" {{ route('become-athlete') }}">Melde dich als Sportler:in!</x-inline-link>
-                            </span>
-                        </li>
-                        <li class="flex items-start gap-x-3">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                                class="stroke-hfm-red dark:stroke-hfm-lightred mt-3 w-6 flex-none"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"
-                                />
-                            </svg>
+                                <span class="flex-grow">
+                                    <strong class="font-semibold"> Werde Sportler:in </strong> Egal, ob Couch-Potato
+                                    oder Marathonläufer:in, ob du mit dem Velo oder dem Rollstuhl kommst: Dein Einsatz
+                                    bewegt! Bist auch du dabei als Sportler:in?
+                                    <x-inline-link href="{{ route('become-athlete') }}">Melde dich als Sportler:in!</x-inline-link>
+                                </span>
+                            </li>
+                        @endif
+                        @if ($canRegister && $publicDonationEvent->donorRegistrationIsOpen())
+                            <li class="flex items-start gap-x-3">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    class="stroke-hfm-red dark:stroke-hfm-lightred mt-3 w-6 flex-none"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"
+                                    />
+                                </svg>
 
-                            <span class="flex-grow">
-                                <strong class="font-semibold"> Werde Spender:in </strong> Du lässt lieber andere
-                                schwitzen? Unterstütze die Sportler:innen dabei, Spenden für die Benefizpartner:innen zu
-                                finden. Egal ob 10 oder 1000 Franken: Dein Einsatz bewegt! Bist auch du dabei als
-                                Spender:in?
-                                <x-inline-link href="{{ route('become-donor') }}">Melde dich als Spender:in!</x-inline-link>
-                            </span>
-                        </li>
+                                <span class="flex-grow">
+                                    <strong class="font-semibold"> Werde Spender:in </strong> Du lässt lieber andere
+                                    schwitzen? Unterstütze die Sportler:innen dabei, Spenden für die
+                                    Benefizpartner:innen zu finden. Egal ob 10 oder 1000 Franken: Dein Einsatz bewegt!
+                                    Bist auch du dabei als Spender:in?
+                                    <x-inline-link href="{{ route('become-donor') }}">Melde dich als Spender:in!</x-inline-link>
+                                </span>
+                            </li>
+                        @endif
                     </ul>
                     <p class="mt-8">
                         <strong class="font-semibold">
@@ -95,11 +123,15 @@
 
                     <h2 class="mt-16 text-2xl font-bold tracking-tight">Wer profitiert?</h2>
                     <p class="mt-6">
-                        Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der Benefizpartner:innen von
-                        deinem Einsatz profitiert.
+                        @if ($publicEventLifecycle === PublicEventLifecycle::Completed)
+                            Mit diesem Anlass wurden folgende Benefizpartner:innen unterstützt.
+                        @else
+                            Wenn du als Sportler:in mitmachst, kannst du wählen, welche:r der Benefizpartner:innen von
+                            deinem Einsatz profitiert.
+                        @endif
                     </p>
                     <ul role="list" class="mt-8 space-y-8">
-                        @forelse ($currentEventPartners as $partner)
+                        @forelse ($publicEventPartners as $partner)
                             <li class="flex gap-x-3">
                                 <span>
                                     <strong class="font-semibold"> {{ $partner->name }} </strong>

@@ -2,6 +2,7 @@
 
 use App\Components\Results;
 use App\Enums\GroupMembershipStatus;
+use App\Enums\PublicEventLifecycle;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
@@ -9,15 +10,24 @@ use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Settings\EventSettings;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
 use function Pest\Laravel\get;
+use function Pest\Laravel\travelTo;
+
+beforeEach(function (): void {
+    travelTo(Date::parse('2026-09-12 14:00:00', 'Europe/Zurich'));
+});
 
 function resultsTestEvent(array $attributes = []): DonationEvent
 {
     $donationEvent = DonationEvent::factory()->create(array_merge([
         'is_published' => true,
+        'starts_at' => '2026-09-12 12:00:00',
+        'ends_at' => '2026-09-12 16:00:00',
     ], $attributes));
 
     $settings = app(EventSettings::class);
@@ -57,19 +67,235 @@ function resultsTestDonation(AthleteRegistration $registration, float $perRound,
     ]);
 }
 
-it('renders the current event as standalone page', function (): void {
-    $event = resultsTestEvent(['title' => 'HöFi 2026']);
+it('renders the live event as standalone page with its date', function (): void {
+    $event = resultsTestEvent([
+        'title' => 'HöFi 2026',
+        'content' => ['seo' => [
+            'meta_description_md' => 'LIVE RESULTS META',
+            'og_description_md' => 'LIVE RESULTS OG',
+        ]],
+    ]);
 
     get(route('results'))
         ->assertSuccessful()
         ->assertSeeText('HöFi 2026')
-        ->assertSeeText('Live');
+        ->assertSeeText('12. September 2026')
+        ->assertSeeText('Live')
+        ->assertSee('<title>Resultate · 2026 - '.config('app.name').'</title>', false)
+        ->assertSee('content="LIVE RESULTS META Der Anlass findet jetzt statt · HöFi 2026 in Winterthur am 12. September 2026."', false)
+        ->assertSee('content="LIVE RESULTS OG Der Anlass findet jetzt statt · HöFi 2026 in Winterthur am 12. September 2026."', false)
+        ->assertSee('content="'.route('results').'"', false);
 });
 
-it('shows an empty state when no current event is configured', function (): void {
+it('shows an empty state when no published edition exists', function (): void {
     get(route('results'))
         ->assertSuccessful()
-        ->assertSeeText('Aktuell ist kein Anlass aktiv.');
+        ->assertSeeText('Aktuell sind keine veröffentlichten Anlassinformationen verfügbar.')
+        ->assertSee('<title>Resultate - '.config('app.name').'</title>', false)
+        ->assertSee('content="Verfolge Spenden, Runden und Höhenmeter beim Spendenlauf Höhenmeter für Menschen in Winterthur."', false)
+        ->assertSee('property="og:description" content="Verfolge Spenden, Runden und Höhenmeter beim Spendenlauf Höhenmeter für Menschen in Winterthur."', false);
+});
+
+it('selects a newly published edition on poll when page initially had no edition', function (): void {
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = null;
+    $settings->save();
+    $component = Livewire::test(Results::class)
+        ->assertSet('donationEventId', null)
+        ->assertSee('Aktuell sind keine veröffentlichten Anlassinformationen verfügbar.');
+    $event = DonationEvent::factory()->create([
+        'title' => 'Neu veröffentlichte Ausgabe',
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+
+    $component->call('$refresh')
+        ->assertSet('donationEventId', $event->id)
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Upcoming)
+        ->assertSee('Neu veröffentlichte Ausgabe')
+        ->assertSee('Die Resultate sind ab Beginn des Anlasses verfügbar.');
+});
+
+it('uses the automatic results edition consistently for page metadata and Livewire content', function (): void {
+    $event = DonationEvent::factory()->create([
+        'slug' => 'archive',
+        'title' => 'Archivierte Ausgabe',
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+    ]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = null;
+    $settings->save();
+
+    get(route('results'))
+        ->assertViewHas('resultsEvent', fn (DonationEvent $resultsEvent): bool => $resultsEvent->id === $event->id)
+        ->assertSeeText('Archivierte Ausgabe')
+        ->assertSee('<title>Resultate · 2026 - '.config('app.name').'</title>', false)
+        ->assertSee('content="Archivierte Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false);
+});
+
+it('shows a holding state before the event starts without exposing premature totals', function (): void {
+    $event = resultsTestEvent([
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+    resultsTestDonation(resultsTestRegistration($event, 7), 10.0);
+
+    get(route('results'))
+        ->assertSeeText('Bevorstehender Anlass')
+        ->assertSeeText('13. September 2026')
+        ->assertSeeText('Die Resultate sind ab Beginn des Anlasses verfügbar.')
+        ->assertDontSeeText('Total Spenden')
+        ->assertDontSeeText('Absolvierte Runden')
+        ->assertDontSeeText('Rangliste Sportler:innen')
+        ->assertDontSee('animate-pulse');
+});
+
+it('labels completed results without claiming they are live or finally settled', function (): void {
+    $event = resultsTestEvent([
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+    ]);
+    resultsTestDonation(resultsTestRegistration($event, 7), 10.0);
+
+    get(route('results'))
+        ->assertSeeText('Resultate')
+        ->assertSeeText('11. September 2026')
+        ->assertSeeText('Fr. 70')
+        ->assertSeeText('Spendenangaben basieren auf der Annahme, dass alle Rechnungen beglichen werden.')
+        ->assertDontSee('animate-pulse');
+});
+
+it('renders the explicitly requested published edition rather than the operational current event', function (): void {
+    $current = resultsTestEvent(['title' => 'Aktueller Anlass']);
+    resultsTestDonation(resultsTestRegistration($current, 20), 10.0);
+    $historical = DonationEvent::factory()->create([
+        'slug' => '2025',
+        'title' => 'Historischer Anlass',
+        'starts_at' => '2025-09-13 13:00:00',
+        'ends_at' => '2025-09-13 18:00:00',
+        'content' => ['seo' => [
+            'meta_description_md' => 'This edition is upcoming and happening now.',
+            'og_description_md' => 'This edition is upcoming and happening now.',
+        ]],
+    ]);
+    $partner = resultsTestPartner($historical, 'Historischer Partner');
+    resultsTestDonation(resultsTestRegistration($historical, 3, $partner->id), 10.0);
+
+    get(route('results.show', ['donationEvent' => $historical->slug]))
+        ->assertSeeText('Historischer Anlass')
+        ->assertSeeText('13. September 2025')
+        ->assertSeeText('Historischer Partner')
+        ->assertSeeText('Fr. 30')
+        ->assertSee('<title>Resultate · 2025 - '.config('app.name').'</title>', false)
+        ->assertSee('content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
+        ->assertSee('property="og:description" content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
+        ->assertDontSee('This edition is upcoming and happening now.')
+        ->assertSee('content="'.route('results.show', ['donationEvent' => $historical->slug]).'"', false)
+        ->assertDontSeeText('Aktueller Anlass')
+        ->assertDontSeeText('Fr. 200')
+        ->assertDontSee('Aktueller Anlass');
+});
+
+it('returns 404 for an unpublished or missing edition', function (string $slug): void {
+    resultsTestEvent();
+    DonationEvent::factory()->create(['slug' => 'unpublished', 'is_published' => false]);
+
+    get(route('results.show', ['donationEvent' => $slug]))->assertNotFound();
+})->with(['unpublished' => 'unpublished', 'missing' => 'missing']);
+
+it('prefers the configured current event over automatic results selection', function (): void {
+    $configured = resultsTestEvent([
+        'starts_at' => '2026-09-13 12:00:00',
+        'ends_at' => '2026-09-13 16:00:00',
+    ]);
+    DonationEvent::factory()->create([
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+    ]);
+
+    Livewire::test(Results::class)
+        ->assertSet('donationEventId', $configured->id)
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Upcoming);
+
+    expect(app(EventSettings::class)->current_event_id)->toBe($configured->id);
+});
+
+it('falls back to automatic results selection when no published current event is configured', function (bool $configureUnpublished): void {
+    $published = DonationEvent::factory()->create([
+        'starts_at' => '2026-09-11 12:00:00',
+        'ends_at' => '2026-09-11 16:00:00',
+    ]);
+    $unpublished = DonationEvent::factory()->create(['is_published' => false]);
+    $settings = app(EventSettings::class);
+    $settings->current_event_id = $configureUnpublished ? $unpublished->id : null;
+    $settings->save();
+
+    Livewire::test(Results::class)
+        ->assertSet('donationEventId', $published->id)
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Completed);
+})->with(['no configured event' => false, 'unpublished configured event' => true]);
+
+it('retains the requested edition and recomputes totals after the current event changes', function (): void {
+    $selected = resultsTestEvent();
+    $registration = resultsTestRegistration($selected, 3);
+    $component = Livewire::test(Results::class, ['donationEvent' => $selected])
+        ->assertSet('totals.rounds', 3);
+    $other = resultsTestEvent();
+    resultsTestRegistration($other, 20);
+    $registration->update(['rounds_done' => 7]);
+
+    $component->call('$refresh')
+        ->assertSet('donationEventId', $selected->id)
+        ->assertSet('totals.rounds', 7);
+
+    expect(app(EventSettings::class)->current_event_id)->toBe($other->id);
+});
+
+it('rejects an edition that is unpublished after the page loads', function (): void {
+    $event = resultsTestEvent();
+    $component = Livewire::test(Results::class, ['donationEvent' => $event]);
+    $event->update(['is_published' => false]);
+
+    $component->call('$refresh')->assertNotFound();
+});
+
+it('rejects an edition that is deleted after the page loads', function (): void {
+    $event = resultsTestEvent();
+    $component = Livewire::test(Results::class, ['donationEvent' => $event]);
+    $event->delete();
+
+    $component->call('$refresh')->assertNotFound();
+});
+
+it('does not accept client changes to the selected edition', function (): void {
+    $event = resultsTestEvent();
+    $other = resultsTestEvent();
+
+    expect(fn () => Livewire::test(Results::class, ['donationEvent' => $event])
+        ->set('donationEventId', $other->id))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+});
+
+it('changes from upcoming to live to completed when refreshed at event boundaries', function (): void {
+    $event = resultsTestEvent([
+        'starts_at' => '2026-09-12 15:00:00',
+        'ends_at' => '2026-09-12 16:00:00',
+    ]);
+    $component = Livewire::test(Results::class, ['donationEvent' => $event])
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Upcoming);
+    travelTo(Date::parse('2026-09-12 15:00:00', 'Europe/Zurich'));
+
+    $component->call('$refresh')
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Live)
+        ->assertSee('animate-pulse')
+        ->assertSee('Total Spenden');
+    travelTo(Date::parse('2026-09-12 16:00:00', 'Europe/Zurich'));
+
+    $component->call('$refresh')
+        ->assertSet('totals.lifecycle', PublicEventLifecycle::Completed)
+        ->assertDontSee('animate-pulse')
+        ->assertSee('Total Spenden');
 });
 
 it('renders successfully and shows partner totals', function () {

@@ -11,7 +11,9 @@
 
         <div class="mx-auto w-full max-w-2xl text-left sm:text-center">
             Du lässt lieber andere schwitzen und möchtest als Spender:in einen Beitrag für Winterthurer
-            Benefizpartner:innen leisten? Hier bist du goldrichtig zur Anmeldung.
+            Benefizpartner:innen leisten? Hier findest du alle Infos zum Spenden beim Anlass
+            <strong>{{ $currentDonationEvent->title }}</strong>
+            am {{ $currentDonationEvent->starts_at->translatedFormat('j. F Y') }}.
         </div>
 
         <div class="mx-auto mt-12 w-full max-w-2xl text-left sm:text-center">
@@ -32,21 +34,20 @@
         @else
             @if ($currentDonationEvent?->donorRegistrationIsOpen() && $hasVerifiedAthletes)
                 @livewire('donor-registration-wizard')
-            @else
+            @elseif ($currentDonationEvent?->donorRegistrationIsOpen())
                 <div class="border-hfm-red/40 bg-hfm-red/10 mt-6 mb-9 rounded-lg border px-9 py-6">
-                    @if ($currentDonationEvent?->donorRegistrationIsOpen())
-                        <p class="text-hfm-red font-semibold">Aktuell sind noch keine Sportler:innen angemeldet.</p>
-                        <p class="mt-1">Versuche es später erneut oder melde dich für den Newsletter an.</p>
-                    @else
-                        <p class="text-hfm-red font-semibold">
-                            Die Anmeldung als Spender:in ist aktuell noch nicht offen.
-                        </p>
-                        <p class="mt-1">
-                            Melde dich für den Newsletter an. Wir informieren dich, sobald das Spendenformular wieder
-                            verfügbar ist.
-                        </p>
-                    @endif
+                    <p class="text-hfm-red font-semibold">
+                        Aktuell sind noch keine Sportler:innen angemeldet, für welche du dich als Spender:in eintragen
+                        kannst.
+                    </p>
+                    <p class="mt-1">Versuche es später erneut oder melde dich für den Newsletter an.</p>
                 </div>
+            @else
+                <x-registration-unavailable-notice
+                    :event="$currentDonationEvent"
+                    :closes-at="$currentDonationEvent->donor_registration_closes_at"
+                    role="Spender:in"
+                />
             @endif
         @endauth
 

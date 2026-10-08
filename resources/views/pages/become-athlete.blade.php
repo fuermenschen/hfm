@@ -11,7 +11,9 @@
 
         <div class="mx-auto w-full max-w-2xl text-left sm:text-center">
             Du möchtest als Sportler:in dein Bestes geben und damit Winterthurer Benefizpartner:innen unterstützen? Hier
-            bist du goldrichtig zur Anmeldung.
+            findest du alle Infos zur Teilnahme am Anlass
+            <strong>{{ $currentDonationEvent->title }}</strong>
+            am {{ $currentDonationEvent->starts_at->translatedFormat('j. F Y') }}.
         </div>
 
         <div class="mx-auto mt-12 w-full max-w-2xl text-left sm:text-center">
@@ -55,14 +57,11 @@
                 </flux:callout>
                 @livewire('athlete-registration-wizard')
             @else
-                <div class="border-hfm-red/40 bg-hfm-red/10 mt-6 mb-9 rounded-lg border px-9 py-6">
-                    <p class="text-hfm-red font-semibold">
-                        Die Anmeldung als Sportler:in ist aktuell noch nicht offen.
-                    </p>
-                    <p class="mt-1">
-                        Melde dich für den Newsletter an. Wir informieren dich sofort, sobald die Anmeldung startet.
-                    </p>
-                </div>
+                <x-registration-unavailable-notice
+                    :event="$currentDonationEvent"
+                    :closes-at="$currentDonationEvent->athlete_registration_closes_at"
+                    role="Sportler:in"
+                />
             @endif
         @endauth
 

@@ -65,7 +65,7 @@ it('shows faq warning when no active event exists', function (): void {
     $response = get(route('questions-and-answers'));
 
     $response->assertSuccessful();
-    $response->assertSee('anlassbezogene Angaben können jedoch fehlen oder nicht aktuell sein');
+    $response->assertSeeText('Aktuell ist noch kein Anlass veröffentlicht.');
 });
 
 it('renders event timing faq content from faq model', function (): void {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\View\Components;
 
-use App\Models\DonationEvent;
 use App\Services\CurrentDonationEventService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Route;
@@ -38,18 +37,21 @@ class PublicMenu extends Component
             ],
         ];
 
-        if (! $currentDonationEventService->current() instanceof DonationEvent) {
-            $menuItems = array_filter(
-                $menuItems,
-                fn (array $menuItem): bool => ! in_array($menuItem['route'], ['become-athlete', 'become-donor'], true),
-            );
-        }
+        $event = $currentDonationEventService->current();
+        $menuItems = array_filter(
+            $menuItems,
+            fn (array $menuItem): bool => match ($menuItem['route']) {
+                'become-athlete' => $event?->athleteRegistrationIsOpen() ?? false,
+                'become-donor' => $event?->donorRegistrationIsOpen() ?? false,
+                default => true,
+            },
+        );
 
         $currentRoute = Route::currentRouteName();
 
         $this->menuItems = array_map(
-            fn (array $menuItem): array => [...$menuItem, 'active' => $menuItem['route'] === $currentRoute],
-            $menuItems,
+            fn (array $menuItem): array => [...$menuItem, 'active' => $menuItem['route'] === $currentRoute || $currentRoute === $menuItem['route'].'.show'],
+            array_values($menuItems),
         );
     }
 

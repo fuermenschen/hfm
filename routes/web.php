@@ -6,6 +6,7 @@ use App\Http\Controllers\BecomeDonorController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
+use App\Http\Controllers\ResultsController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,7 @@ Route::post('newsletter/abmelden/{email}', [NewsletterSubscriptionController::cl
     ->name('newsletter.unsubscribe.perform')
     ->middleware('signed');
 Route::get('fragen-und-antworten', [FaqController::class, 'index'])->name('questions-and-answers');
+Route::get('fragen-und-antworten/{donationEvent:slug}', [FaqController::class, 'show'])->name('questions-and-answers.show');
 
 // Footer Menu
 Route::view('login', 'pages.login')->name('login');
@@ -41,7 +43,8 @@ Route::view('datenschutz', 'pages.privacy')->name('privacy');
 Route::view('verein', 'pages.association')->name('association');
 
 // Results
-Route::view('resultate', 'pages.results')->name('results');
+Route::get('resultate', [ResultsController::class, 'index'])->name('results');
+Route::get('resultate/{donationEvent:slug}', [ResultsController::class, 'show'])->name('results.show');
 
 // User Login
 Route::get('login/{uuid}', [AdminSessionController::class, 'store'])
