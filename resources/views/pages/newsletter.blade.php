@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Newsletter')
+@section('meta_description', 'Abonniere den Newsletter von Höhenmeter für Menschen und erhalte Neuigkeiten zum Spendenlauf und Verein.')
+
 @section('content')
     <div>
         @component('components.page-title')

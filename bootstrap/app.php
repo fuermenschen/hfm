@@ -3,6 +3,7 @@
 use App\Http\Middleware\ApiKey;
 use App\Http\Middleware\EnsureActivePublishedEvent;
 use App\Http\Middleware\EnsureSingleAuthenticatedGuard;
+use App\Http\Middleware\PreventSearchIndexing;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prependToGroup('web', [
+            PreventSearchIndexing::class,
+        ]);
+
         $middleware->appendToGroup('web', [
             EnsureSingleAuthenticatedGuard::class,
         ]);

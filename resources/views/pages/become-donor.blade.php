@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Spender:in werden')
+@section('meta_description', 'Unterstütze Sportler:innen beim Spendenlauf Höhenmeter für Menschen mit einem Beitrag pro Runde.')
+
 @section('content')
     <div>
         @component('components.page-title')

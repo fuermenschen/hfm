@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Sportler:in werden')
+@section('meta_description', 'Melde dich als Sportler:in für Höhenmeter für Menschen an und unterstütze lokale Benefizpartner:innen in Winterthur.')
+
 @section('content')
     <div>
         @component('components.page-title')
