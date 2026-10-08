@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Verein für Menschen')
+@section('meta_description', 'Der Verein für Menschen organisiert Höhenmeter für Menschen und unterstützt soziale Projekte in Winterthur und der Schweiz.')
+
 @section('content')
     @component('components.page-title')
         Verein für Menschen

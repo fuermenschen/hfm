@@ -9,42 +9,45 @@
             - {{ config('app.name') }}
         </title>
     @else
-        <title>{{ config('app.name') }}</title>
+        <title>{{ $currentDonationEvent?->title ?? config('app.name') }}</title>
     @endif
 
+    @php
+        $defaultMetaDescription =
+            $currentDonationEvent?->contentPlainText(
+                'seo.meta_description_md',
+                'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.',
+            ) ?: 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
+        $defaultOgDescription =
+            $currentDonationEvent?->contentPlainText(
+                'seo.og_description_md',
+                'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.',
+            ) ?: 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.';
+    @endphp
+
     <!-- SEO Information -->
-    <meta
-        name="description"
-        content="{{ $currentDonationEvent?->contentPlainText('seo.meta_description_md', 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.') ?: 'Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.' }}"
-    />
-    <meta
-        name="keywords"
-        content="Höhenmeter für Menschen, fundraising, charity event, Wohltätigkeit, Winterthur, sponsored run, Sponsorenlauf, Spendenlauf, Brühlgut Stiftung, Institut Kinderseele Schweiz, Tel 143, Dargebotene Hand, Roundtable, Round Table"
-    />
-    <meta name="author" content="Round Table 25 Winterthur" />
-    <meta name="robots" content="index, follow" />
-    <meta name="revisit-after" content="1 day" />
-    <meta name="language" content="de" />
-    <meta name="distribution" content="global" />
-    <meta name="rating" content="general" />
-    <meta name="googlebot" content="index, follow" />
-    <meta name="bingbot" content="index, follow" />
+    <meta name="description" content="@yield('meta_description', e($defaultMetaDescription))" />
+    <meta name="author" content="Verein für Menschen" />
+    <meta name="robots" content="{{ request()->attributes->get('robots', 'index, follow') }}" />
     <meta name="yandex" content="noindex, nofollow" />
-    <meta name="msnbot" content="index, follow" />
-    <meta name="alexabot" content="index, follow" />
-    <meta name="slurp" content="index, follow" />
-    <meta name="teoma" content="index, follow" />
     <meta name="baiduspider" content="noindex, nofollow" />
     <meta name="apple-mobile-web-app-title" content="Höhenmeter für Menschen" />
-    <meta name="og:title" content="Höhenmeter für Menschen" />
-    <meta
-        name="og:description"
-        content="{{ $currentDonationEvent?->contentPlainText('seo.og_description_md', 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.') ?: 'Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen.' }}"
-    />
-    <meta name="og:image" content="{{ Vite::asset("resources/images/logo_light.svg") }}" />
-    <meta name="og:url" content="https://hfm-winti.ch" />
-    <meta name="og:type" content="website" />
-    <meta name="og:site_name" content="Höhenmeter für Menschen" />
+    @unless (request()->attributes->has('robots'))
+        <meta property="og:title" content="@yield('title', e($currentDonationEvent?->title ?? config('app.name')))" />
+        <meta
+            property="og:description"
+            content="@yield('og_description', $__env->yieldContent('meta_description', e($defaultOgDescription)))"
+        />
+        <meta property="og:image" content="{{ asset('favicons/social_media_preview.png') }}" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1201" />
+        <meta property="og:image:height" content="631" />
+        <meta property="og:image:alt" content="Logo Höhenmeter für Menschen" />
+        <meta property="og:url" content="{{ url()->current() }}" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Höhenmeter für Menschen" />
+        <meta property="og:locale" content="de_CH" />
+    @endunless
 
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="{{ url(asset('favicons/apple-icon-57x57.png')) }}" />

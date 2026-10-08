@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Kontakt')
+@section('meta_description', 'Kontaktiere den Verein für Menschen mit Fragen zu Höhenmeter für Menschen, dem Spendenlauf in Winterthur.')
+
 @section('content')
     @component('components.page-title')
         Kontakt

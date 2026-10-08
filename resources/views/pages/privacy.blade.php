@@ -1,5 +1,8 @@
 @extends('layouts.public')
 
+@section('title', 'Datenschutz')
+@section('meta_description', 'Informationen zum Umgang mit personenbezogenen Daten bei Höhenmeter für Menschen.')
+
 @section('content')
     @component('components.page-title')
         Datenschutz
