@@ -33,7 +33,6 @@
     <meta name="baiduspider" content="noindex, nofollow" />
     <meta name="apple-mobile-web-app-title" content="Höhenmeter für Menschen" />
     @unless (request()->attributes->has('robots'))
-        <link rel="canonical" href="{{ url()->current() }}" />
         <meta property="og:title" content="@yield('title', e($currentDonationEvent?->title ?? config('app.name')))" />
         <meta
             property="og:description"

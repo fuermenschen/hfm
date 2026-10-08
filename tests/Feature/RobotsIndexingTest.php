@@ -13,7 +13,7 @@ test('keeps public pages indexable', function () {
         ->assertHeaderMissing('X-Robots-Tag');
 });
 
-test('renders page-specific canonical and Open Graph metadata', function () {
+test('renders page-specific Open Graph metadata without canonical tags', function () {
     $response = get('/fragen-und-antworten?utm_source=campaign');
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
@@ -26,7 +26,7 @@ test('renders page-specific canonical and Open Graph metadata', function () {
     $response
         ->assertSee('name="description"', escape: false)
         ->assertSee('content="Informationen zu Ablauf, Teilnahme und Spenden beim Spendenlauf Höhenmeter für Menschen in Winterthur."', escape: false)
-        ->assertSee('<link rel="canonical" href="'.url('/fragen-und-antworten').'" />', escape: false)
+        ->assertDontSee('rel="canonical"', escape: false)
         ->assertSee('<meta property="og:title" content="Fragen und Antworten" />', escape: false)
         ->assertSee('<meta property="og:url" content="'.url('/fragen-und-antworten').'" />', escape: false)
         ->assertSee('<meta property="og:locale" content="de_CH" />', escape: false)
@@ -72,4 +72,14 @@ test('marks admin and portal routes noindex before authentication redirects', fu
 test('omits the login page from the sitemap', function () {
     expect(file_get_contents(public_path('sitemap.xml')))
         ->not->toContain('<loc>https://hfm-winti.ch/login</loc>');
+});
+
+test('advertises the public sitemap without stale modification dates', function () {
+    $sitemap = simplexml_load_file(public_path('sitemap.xml'));
+
+    expect(file_get_contents(public_path('robots.txt')))
+        ->toContain('Sitemap: https://hfm-winti.ch/sitemap.xml');
+    expect(array_map(fn ($url): string => (string) $url->loc, iterator_to_array($sitemap->url, false)))
+        ->toContain('https://hfm-winti.ch/newsletter');
+    expect($sitemap->xpath('//*[local-name()="lastmod"]'))->toBeEmpty();
 });
