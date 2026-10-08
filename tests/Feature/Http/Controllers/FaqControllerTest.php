@@ -105,7 +105,7 @@ it('keeps historical FAQs accessible after the current edition changes', functio
         ->assertSeeText('Diese Informationen beziehen sich auf die vergangene Ausgabe.')
         ->assertSee('<title>Fragen und Antworten · 2026 - '.config('app.name').'</title>', false)
         ->assertSee('content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)
-        ->assertSee('name="og:description" content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)
+        ->assertSee('property="og:description" content="Vergangene Ausgabe in Winterthur am 11. September 2026. Dieser Anlass ist abgeschlossen."', false)
         ->assertSee('content="'.route('questions-and-answers.show', ['donationEvent' => 'past']).'"', false)
         ->assertDontSee('CURRENT FAQ META')
         ->assertDontSeeText('Aktuelle Frage');

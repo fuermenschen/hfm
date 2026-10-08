@@ -134,7 +134,8 @@ it('uses displayed edition for public metadata and operational edition for unrel
         ->assertDontSee('OPERATIONAL EDITION META');
 
     get(route('contact'))
-        ->assertSee('OPERATIONAL EDITION META')
+        ->assertSee('Kontaktiere den Verein für Menschen mit Fragen zu Höhenmeter für Menschen, dem Spendenlauf in Winterthur.')
+        ->assertDontSee('OPERATIONAL EDITION META')
         ->assertDontSee('DISPLAYED EDITION META');
 });
 

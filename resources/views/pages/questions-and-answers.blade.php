@@ -4,6 +4,7 @@
     use Illuminate\Support\Str;
 @endphp
 @section('title', 'Fragen und Antworten')
+@section('meta_description', 'Informationen zu Ablauf, Teilnahme und Spenden beim Spendenlauf Höhenmeter für Menschen in Winterthur.')
 @section('content')
     <div>
         <x-page-title>Fragen und Antworten</x-page-title>

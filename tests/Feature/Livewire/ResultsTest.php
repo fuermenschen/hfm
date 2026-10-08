@@ -92,8 +92,8 @@ it('shows an empty state when no published edition exists', function (): void {
         ->assertSuccessful()
         ->assertSeeText('Aktuell sind keine veröffentlichten Anlassinformationen verfügbar.')
         ->assertSee('<title>Resultate - '.config('app.name').'</title>', false)
-        ->assertSee('content="Höhenmeter für Menschen: Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', false)
-        ->assertSee('content="Ein Spendenlauf in Winterthur für lokale Benefizpartner:innen."', false);
+        ->assertSee('content="Verfolge Spenden, Runden und Höhenmeter beim Spendenlauf Höhenmeter für Menschen in Winterthur."', false)
+        ->assertSee('property="og:description" content="Verfolge Spenden, Runden und Höhenmeter beim Spendenlauf Höhenmeter für Menschen in Winterthur."', false);
 });
 
 it('selects a newly published edition on poll when page initially had no edition', function (): void {
@@ -189,7 +189,7 @@ it('renders the explicitly requested published edition rather than the operation
         ->assertSeeText('Fr. 30')
         ->assertSee('<title>Resultate · 2025 - '.config('app.name').'</title>', false)
         ->assertSee('content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
-        ->assertSee('name="og:description" content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
+        ->assertSee('property="og:description" content="Historischer Anlass in Winterthur am 13. September 2025. Dieser Anlass ist abgeschlossen."', false)
         ->assertDontSee('This edition is upcoming and happening now.')
         ->assertSee('content="'.route('results.show', ['donationEvent' => $historical->slug]).'"', false)
         ->assertDontSeeText('Aktueller Anlass')

@@ -5,6 +5,14 @@
 
     RewriteEngine On
 
+    # Redirect production traffic to the canonical HTTPS hostname behind Infomaniak's proxy.
+    RewriteCond %{HTTP_HOST} ^www\.hfm-winti\.ch$ [NC]
+    RewriteRule ^ https://hfm-winti.ch%{REQUEST_URI} [R=301,L]
+
+    RewriteCond %{HTTP_HOST} ^hfm-winti\.ch$ [NC]
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+    RewriteRule ^ https://hfm-winti.ch%{REQUEST_URI} [R=301,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
