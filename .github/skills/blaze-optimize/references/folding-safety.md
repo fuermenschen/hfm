@@ -10,19 +10,19 @@ Before marking ANY component with `fold: true`, verify ALL of the following:
 
 The component must NOT internally access any of these. Search the component file for these patterns:
 
-| Category   | Patterns to search for                                                                                     |
-| ---------- | ---------------------------------------------------------------------------------------------------------- |
-| Database   | `::where(`, `::find(`, `::get()`, `::all()`, `::first()`, `::count()`, `DB::`, `->get()` on query builders |
-| Auth       | `auth()`, `auth()->`, `@auth`, `@guest`, `Auth::`, `$user` (if from auth)                                  |
-| Session    | `session(`, `session()->`, `Session::`                                                                     |
-| Request    | `request()`, `request()->`, `Request::`, `$request`                                                        |
-| Validation | `$errors`, `@error`                                                                                        |
-| Time       | `now()`, `Carbon::`, `today()`, `time()`                                                                   |
-| CSRF       | `@csrf`, `csrf_token()`, `csrf_field()`                                                                    |
-| URL state  | `url()->current()`, `url()->previous()`, `request()->path()`, `request()->is(`                             |
-| Config/env | `config(`, `env(` (if the value might change between requests)                                             |
-| Cache      | `Cache::`, `cache(`                                                                                        |
-| App state  | `app()->`, `resolve(`, `App::`                                                                             |
+| Category | Patterns to search for |
+|----------|----------------------|
+| Database | `::where(`, `::find(`, `::get()`, `::all()`, `::first()`, `::count()`, `DB::`, `->get()` on query builders |
+| Auth | `auth()`, `auth()->`, `@auth`, `@guest`, `Auth::`, `$user` (if from auth) |
+| Session | `session(`, `session()->`, `Session::` |
+| Request | `request()`, `request()->`, `Request::`, `$request` |
+| Validation | `$errors`, `@error` |
+| Time | `now()`, `Carbon::`, `today()`, `time()` |
+| CSRF | `@csrf`, `csrf_token()`, `csrf_field()` |
+| URL state | `url()->current()`, `url()->previous()`, `request()->path()`, `request()->is(` |
+| Config/env | `config(`, `env(` (if the value might change between requests) |
+| Cache | `Cache::`, `cache(` |
+| App state | `app()->`, `resolve(`, `App::` |
 
 **If ANY of these are found inside the component, do NOT fold it.** The compile strategy is sufficient.
 
@@ -52,13 +52,11 @@ Note: Variables from the component scope must be passed explicitly via the `scop
 For each prop defined in `@props`:
 
 **Static props** (always passed as literal strings/numbers) — safe to fold:
-
 ```blade
 <x-button color="red">Submit</x-button>
 ```
 
 **Dynamic pass-through props** (passed as expressions but output directly without transformation) — safe IF marked `safe`:
-
 ```blade
 {{-- Caller: --}}
 <x-heading :level="$isFeatured ? 1 : 2" />
@@ -71,7 +69,6 @@ For each prop defined in `@props`:
 ```
 
 **Dynamic non-pass-through props** (passed as expressions AND used in internal logic like match/if/switch) — CANNOT fold:
-
 ```blade
 {{-- This will break with folding: --}}
 <x-button :color="$deleting ? 'red' : 'blue'" />
@@ -87,13 +84,11 @@ Blaze automatically aborts folding when a dynamic attribute matches a `@props` n
 ### 3. Slot analysis
 
 **Default slot** — Slots are replaced with placeholders during folding and restored afterwards. They are treated as pass-through by default. This is safe for most cases:
-
 ```blade
 <x-button>{{ $dynamicLabel }}</x-button>
 ```
 
 **Slots used in internal logic** — If the component inspects slot content (e.g., `$slot->hasActualContent()`, `$slot->isEmpty()`), mark the slot as `unsafe`:
-
 ```blade
 @blaze(fold: true, unsafe: ['slot'])
 
@@ -105,7 +100,6 @@ Blaze automatically aborts folding when a dynamic attribute matches a `@props` n
 ```
 
 **Named slots used in logic** — Same rule applies:
-
 ```blade
 @blaze(fold: true, unsafe: ['footer'])
 
@@ -135,19 +129,18 @@ $active = $attributes->get('href') === url()->current();
 ```
 
 You can also mark specific non-@props attributes as unsafe:
-
 ```blade
 @blaze(fold: true, unsafe: ['href'])
 ```
 
 ## Safe/unsafe parameter reference
 
-| Value        | What it targets                           |
-| ------------ | ----------------------------------------- |
-| `*`          | All props, attributes, and slots          |
-| `slot`       | The default slot                          |
-| `[name]`     | A specific prop, attribute, or named slot |
-| `attributes` | All attributes not defined in `@props`    |
+| Value | What it targets |
+|-------|----------------|
+| `*` | All props, attributes, and slots |
+| `slot` | The default slot |
+| `[name]` | A specific prop, attribute, or named slot |
+| `attributes` | All attributes not defined in `@props` |
 
 **`safe`** — Tells Blaze that these `@props` values are pass-through, allowing folding to proceed even when they receive dynamic values.
 
@@ -166,7 +159,6 @@ You can also mark specific non-@props attributes as unsafe:
     {{ $slot }}
 </td>
 ```
-
 `align` is a pass-through prop (output directly in the class), so it's marked `safe`.
 
 ### Icon (better as memo, not fold)
@@ -191,7 +183,6 @@ You can also mark specific non-@props attributes as unsafe:
     {{ $label }}
 </a>
 ```
-
 Works because: `href` and `label` are passed through directly.
 
 ### Form input (use @unblaze for error display)
