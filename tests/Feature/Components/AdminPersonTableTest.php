@@ -761,20 +761,36 @@ it('links invoices to webling', function (): void {
         ->assertSee('https://demo.webling.ch/admin#/accounting/321/debitor/:debitor/view/55', false);
 });
 
-it('bulk creates invoices for selected donors with preflight counts', function (): void {
+it('bulk create preflight excludes invoices with unknown Webling status', function (): void {
     Bus::fake();
     $event = endedDonorInvoiceEvent();
     $withInvoice = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Existing']);
     donorInvoicePdfFixture($event, $withInvoice);
     $withoutInvoice = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Missing']);
+    $unknownStatus = ExternalUser::factory()->asDonor($event)->create(['first_name' => 'Unknown status']);
+    DonorEventInvoice::factory()->forEvent($event)->forExternalUser($unknownStatus)->create([
+        'webling_state' => 'unknown',
+        'webling_debitor_id' => 4242,
+    ]);
     actingAs(User::factory()->create());
 
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
         ->set('eventSlug', $event->slug)
-        ->set('checkboxValues', [$withInvoice->id, $withoutInvoice->id])
+        ->set('checkboxValues', [$unknownStatus->id])
+        ->call('confirmBulkCreateInvoices')
+        ->assertSet('bulkEligibleCount', 0)
+        ->assertSet('bulkSkippedCount', 1)
+        ->assertSet('confirmingInvoiceAction', null)
+        ->assertDispatched('toast-show', function (string $name, array $params): bool {
+            return $params['slots']['text'] === 'Keine der ausgewählten Rechnungen kann erstellt werden.';
+        });
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$withInvoice->id, $withoutInvoice->id, $unknownStatus->id])
         ->call('confirmBulkCreateInvoices')
         ->assertSet('bulkEligibleCount', 1)
-        ->assertSet('bulkSkippedCount', 1)
+        ->assertSet('bulkSkippedCount', 2)
         ->assertSet('confirmingInvoiceAction', 'bulk_create')
         ->call('runConfirmedInvoiceAction')
         ->assertSet('checkboxValues', []);
@@ -843,6 +859,26 @@ it('shows only locally eligible invoices in bulk-send preflight', function (): v
         ->call('confirmBulkSendInvoices')
         ->assertSet('bulkEligibleCount', 1)
         ->assertSet('bulkSkippedCount', 2);
+});
+
+it('explains that bulk reminders are checked against live invoice status', function (): void {
+    $event = endedDonorInvoiceEvent();
+    $donor = ExternalUser::factory()->asDonor($event)->create();
+    donorInvoicePdfFixture($event, $donor, [
+        'invoice_sent_at' => now()->subDays(3),
+        'webling_state' => 'paid',
+    ]);
+    actingAs(User::factory()->create());
+
+    Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
+        ->set('eventSlug', $event->slug)
+        ->set('checkboxValues', [$donor->id])
+        ->call('confirmBulkSendInvoiceReminders')
+        ->assertSet('bulkEligibleCount', 1)
+        ->assertSet('bulkSkippedCount', 0)
+        ->assertSet('confirmingInvoiceAction', 'bulk_reminder')
+        ->assertSee('1 Rechnung(en) werden geprüft.')
+        ->assertSee('Nur offene oder teilweise bezahlte, fällige Rechnungen mit gültiger E-Mail-Adresse und PDF erhalten eine Zahlungserinnerung.');
 });
 
 it('warns before bulk creation when the event has not ended', function (): void {
