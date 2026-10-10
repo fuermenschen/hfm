@@ -671,6 +671,11 @@ class AdminPersonTable extends AbstractDatatableComponent
 
         foreach ($selectedIds as $userId) {
             $row = $rows->get($userId);
+
+            if ($row !== null && $this->donorInvoices->status($row) === DonorInvoiceStatus::Unknown) {
+                continue;
+            }
+
             if ($row === null || $row->remote_deleted_at !== null || $row->webling_debitor_id === null || $row->pdf_path === null) {
                 $this->bulkEligibleCount++;
             }
@@ -681,7 +686,7 @@ class AdminPersonTable extends AbstractDatatableComponent
         if ($this->bulkEligibleCount === 0) {
             Flux::toast(
                 heading: 'Nichts zu tun',
-                text: 'Alle ausgewählten Spender:innen haben bereits eine Rechnung.',
+                text: 'Keine der ausgewählten Rechnungen kann erstellt werden.',
                 variant: 'info',
             );
 
@@ -907,11 +912,12 @@ class AdminPersonTable extends AbstractDatatableComponent
     public function invoiceConfirmText(): string
     {
         if (in_array($this->confirmingInvoiceAction, ['bulk_create', 'bulk_send', 'bulk_reminder'], true)) {
-            $verb = match ($this->confirmingInvoiceAction) {
-                'bulk_create' => 'erstellt',
-                'bulk_send' => 'gesendet',
-                default => 'gemahnt',
-            };
+            if ($this->confirmingInvoiceAction === 'bulk_reminder') {
+                return $this->bulkEligibleCount.' Rechnung(en) werden geprüft. Nur offene oder teilweise bezahlte, fällige Rechnungen mit gültiger E-Mail-Adresse und PDF erhalten eine Zahlungserinnerung. '
+                    .$this->bulkSkippedCount.' werden anhand der gespeicherten Rechnungsdaten übersprungen.';
+            }
+
+            $verb = $this->confirmingInvoiceAction === 'bulk_create' ? 'erstellt' : 'gesendet';
 
             $text = $this->bulkEligibleCount.' Rechnung(en) werden '.$verb.', '.$this->bulkSkippedCount.' werden übersprungen.';
 
@@ -1107,6 +1113,7 @@ class AdminPersonTable extends AbstractDatatableComponent
     protected function selectedEventInvoiceRows(DonationEvent $event): Collection
     {
         return $this->selectedEventInvoiceQuery($event)
+            ->with('donationEvent')
             ->get()
             ->keyBy('external_user_id');
     }
