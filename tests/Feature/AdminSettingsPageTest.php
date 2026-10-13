@@ -54,16 +54,39 @@ it('can update settings via the AdminSettings component and persists them', func
     $component
         ->set("values.$class.api_url", 'https://changed.webling.ch')
         ->set("values.$class.debit_account_id", '4321')
+        ->set("values.$class.bank_account_id", '2999')
+        ->set("values.$class.excess_income_account_id", '2993')
         ->set("values.$class.api_key", 'new-secret-key-but-32-chars-long')
         ->call('saveClass', $class)
         ->call('commitPending');
 
     expect(app(WeblingApiSettings::class)->api_url)->toBe('https://changed.webling.ch')
         ->and(app(WeblingApiSettings::class)->debit_account_id)->toBe(4321)
+        ->and(app(WeblingApiSettings::class)->bank_account_id)->toBe(2999)
+        ->and(app(WeblingApiSettings::class)->excess_income_account_id)->toBe(2993)
         ->and(app(WeblingApiSettings::class)->api_key)->toBe('new-secret-key-but-32-chars-long');
 
     // Component state refreshes after save
     $component->assertSet("values.$class.api_url", 'https://changed.webling.ch');
+});
+
+it('can clear optional payment account settings through the admin settings component', function (): void {
+    $settings = app(WeblingApiSettings::class);
+    $settings->bank_account_id = 2999;
+    $settings->excess_income_account_id = 2993;
+    $settings->save();
+    actingAs(User::factory()->create());
+    $class = WeblingApiSettings::class;
+
+    Livewire::test(AdminSettings::class)
+        ->set("values.$class.bank_account_id", '')
+        ->set("values.$class.excess_income_account_id", '')
+        ->call('saveClass', $class)
+        ->call('commitPending')
+        ->assertHasNoErrors();
+
+    expect(app(WeblingApiSettings::class)->bank_account_id)->toBeNull()
+        ->and(app(WeblingApiSettings::class)->excess_income_account_id)->toBeNull();
 });
 
 it('validates invalid values and shows errors without saving', function (): void {

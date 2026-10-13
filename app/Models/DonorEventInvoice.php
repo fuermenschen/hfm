@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\DonorPaymentVerification;
 use Carbon\Carbon;
 use Database\Factories\DonorEventInvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,6 +23,9 @@ use Illuminate\Support\Facades\Storage;
  * @property Carbon|null $webling_due_date
  * @property int|null $webling_total_cents
  * @property int|null $webling_remaining_cents
+ * @property int|null $webling_received_cents
+ * @property Carbon|null $webling_payment_date
+ * @property DonorPaymentVerification $webling_payment_verification
  * @property Carbon|null $webling_synced_at
  * @property string|null $pdf_disk
  * @property string|null $pdf_path
@@ -42,6 +46,9 @@ use Illuminate\Support\Facades\Storage;
     'webling_due_date',
     'webling_total_cents',
     'webling_remaining_cents',
+    'webling_received_cents',
+    'webling_payment_date',
+    'webling_payment_verification',
     'webling_synced_at',
     'pdf_disk',
     'pdf_path',
@@ -88,6 +95,9 @@ class DonorEventInvoice extends Model
             'webling_due_date' => null,
             'webling_total_cents' => null,
             'webling_remaining_cents' => null,
+            'webling_received_cents' => null,
+            'webling_payment_date' => null,
+            'webling_payment_verification' => DonorPaymentVerification::Unverified,
             'webling_synced_at' => null,
             'pdf_disk' => null,
             'pdf_path' => null,
@@ -108,6 +118,9 @@ class DonorEventInvoice extends Model
             'webling_due_date' => 'date',
             'webling_total_cents' => 'integer',
             'webling_remaining_cents' => 'integer',
+            'webling_received_cents' => 'integer',
+            'webling_payment_date' => 'date',
+            'webling_payment_verification' => DonorPaymentVerification::class,
             'webling_synced_at' => 'datetime',
             'invoice_sent_at' => 'datetime',
             'invoice_reminder_sent_at' => 'datetime',

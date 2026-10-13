@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Webling\Invoice;
 
+use App\Enums\DonorPaymentVerification;
 use App\Exceptions\Webling\WeblingApiException;
 use App\Services\Webling\Invoice\Dto\InvoiceCreateData;
 use App\Services\Webling\WeblingApiService;
@@ -252,13 +253,13 @@ class WeblingInvoiceService
     {
         $payload = $this->getInvoice($debitorId)->json();
         $details = $this->normalizeInvoiceDetails($payload, $debitorId);
-        $result = $details + ['payment_verification' => 'unverified', 'received_cents' => null, 'payment_date' => null];
+        $result = $details + ['payment_verification' => DonorPaymentVerification::Unverified->value, 'received_cents' => null, 'payment_date' => null];
 
         if ($details['state'] !== 'paid') {
             return $result;
         }
 
-        $result['payment_verification'] = 'unclear';
+        $result['payment_verification'] = DonorPaymentVerification::Unclear->value;
         $paidCents = $this->amountInCents($payload['properties']['paidamount'] ?? null);
         $writeoffCents = $this->amountInCents($payload['properties']['writeoffamount'] ?? null);
         $payments = $payload['links']['payment'] ?? null;
@@ -345,7 +346,7 @@ class WeblingInvoiceService
             $receivedCents += $amountCents;
         }
 
-        return array_replace($result, ['payment_verification' => 'verified', 'received_cents' => $receivedCents, 'payment_date' => $date]);
+        return array_replace($result, ['payment_verification' => DonorPaymentVerification::Verified->value, 'received_cents' => $receivedCents, 'payment_date' => $date]);
     }
 
     /**

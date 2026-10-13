@@ -18,6 +18,10 @@ class WeblingApiSettings extends Settings
 
     public int $credit_account_id;
 
+    public ?int $bank_account_id;
+
+    public ?int $excess_income_account_id;
+
     public static function group(): string
     {
         return 'weblingApi';
@@ -47,6 +51,8 @@ class WeblingApiSettings extends Settings
             'accounting_period_id' => 'required|integer|min:1',
             'debit_account_id' => 'required|integer|min:1',
             'credit_account_id' => 'required|integer|min:1',
+            'bank_account_id' => 'nullable|integer|min:1',
+            'excess_income_account_id' => 'nullable|integer|min:1',
         ];
     }
 
@@ -58,6 +64,8 @@ class WeblingApiSettings extends Settings
             'accounting_period_id' => 'ID der Abrechnungsperiode',
             'debit_account_id' => 'Sollkonto ID für Rechnungen',
             'credit_account_id' => 'Habenkonto ID für Rechnungen',
+            'bank_account_id' => 'Bankkonto ID für Zahlungseingänge',
+            'excess_income_account_id' => 'Ertragskonto ID für Mehrzahlungen',
         ];
     }
 
@@ -69,6 +77,8 @@ class WeblingApiSettings extends Settings
             'accounting_period_id' => 'Die ID der aktuellen Abrechnungsperiode (Achtung: die ID, nicht das Jahr selbst).',
             'debit_account_id' => 'Die ID der Sollkontos, i.d.R. Debitoren (Achtung: die ID, nicht die Kontonummer selbst).',
             'credit_account_id' => 'Die ID der Habenkontos, z.B. Einnahmen Veranstaltungen (Achtung: die ID, nicht die Kontonummer selbst).',
+            'bank_account_id' => 'Webling-ID des Bankkontos für Zahlungseingänge in der Abrechnungsperiode. Ohne Angabe können Zahlungen nicht verifiziert werden.',
+            'excess_income_account_id' => 'Webling-ID des erlaubten Ertragskontos für separat gebuchte Mehrzahlungen in derselben Zahlungsbuchung. Ohne Angabe werden solche Mehrzahlungen als unklar eingestuft.',
         ];
     }
 }

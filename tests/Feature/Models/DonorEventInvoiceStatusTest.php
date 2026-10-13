@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\DonorInvoiceStatus;
+use App\Enums\DonorPaymentVerification;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Services\DonorInvoiceService;
@@ -153,6 +154,9 @@ it('deletes the pdf and clears lifecycle fields when marked remotely deleted', f
         'webling_due_date' => today()->addWeek(),
         'webling_total_cents' => 1000,
         'webling_remaining_cents' => 1000,
+        'webling_received_cents' => 1100,
+        'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified,
         'webling_synced_at' => now(),
         'pdf_disk' => 'local',
         'pdf_path' => $path,
@@ -171,6 +175,9 @@ it('deletes the pdf and clears lifecycle fields when marked remotely deleted', f
         ->and($invoice->webling_due_date)->toBeNull()
         ->and($invoice->webling_total_cents)->toBeNull()
         ->and($invoice->webling_remaining_cents)->toBeNull()
+        ->and($invoice->webling_received_cents)->toBeNull()
+        ->and($invoice->webling_payment_date)->toBeNull()
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Unverified)
         ->and($invoice->webling_synced_at)->toBeNull()
         ->and($invoice->pdf_disk)->toBeNull()
         ->and($invoice->pdf_path)->toBeNull()
