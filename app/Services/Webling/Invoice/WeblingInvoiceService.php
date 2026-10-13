@@ -235,6 +235,124 @@ class WeblingInvoiceService
     public function invoiceDetails(int $debitorId): array
     {
         $payload = $this->getInvoice($debitorId)->json();
+
+        return $this->normalizeInvoiceDetails($payload, $debitorId);
+    }
+
+    /**
+     * Read one supported bank receipt, including explicitly allowed excess income.
+     * Account IDs are supplied by the caller for the invoice's accounting period.
+     *
+     * @param  list<int>  $excessIncomeAccountIds
+     * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int,payment_verification:string,received_cents:?int,payment_date:?string}
+     */
+    // TODO(dead-code): Connect this reader to invoice refresh in task 4 of issue #285.
+    // @phpstan-ignore-next-line shipmonk.deadMethod
+    public function settlementDetails(int $debitorId, int $bankAccountId, array $excessIncomeAccountIds = []): array
+    {
+        $payload = $this->getInvoice($debitorId)->json();
+        $details = $this->normalizeInvoiceDetails($payload, $debitorId);
+        $result = $details + ['payment_verification' => 'unverified', 'received_cents' => null, 'payment_date' => null];
+
+        if ($details['state'] !== 'paid') {
+            return $result;
+        }
+
+        $result['payment_verification'] = 'unclear';
+        $paidCents = $this->amountInCents($payload['properties']['paidamount'] ?? null);
+        $writeoffCents = $this->amountInCents($payload['properties']['writeoffamount'] ?? null);
+        $payments = $payload['links']['payment'] ?? null;
+        if ($bankAccountId < 1 || $details['remaining_cents'] !== 0 || $paidCents === null || $paidCents <= 0
+            || $writeoffCents === null || $writeoffCents < 0 || $details['total_cents'] !== $paidCents + $writeoffCents
+            || ! is_array($payments) || ! array_is_list($payments) || count($payments) !== 1 || ! is_array($payments[0])) {
+            return $result;
+        }
+
+        $payment = $payments[0];
+        $paymentId = $this->objectId($payment['id'] ?? null);
+        $parents = $this->objectIds($payment['parents'] ?? null);
+        $debitAccounts = $this->objectIds($payment['links']['debit'] ?? null);
+        $creditAccounts = $this->objectIds($payment['links']['credit'] ?? null);
+        if ($paymentId === null || $parents === null || count($parents) !== 1 || $debitAccounts !== [$bankAccountId]
+            || $creditAccounts === null || count($creditAccounts) !== 1 || $creditAccounts[0] === $bankAccountId
+            || $this->objectIds($payment['links']['debitor'] ?? null) !== [$debitorId]
+            || $this->amountInCents($payment['properties']['amount'] ?? null) !== $paidCents) {
+            return $result;
+        }
+
+        $debitorAccountId = $creditAccounts[0];
+        foreach (['revenue' => $details['total_cents'], 'writeoff' => $writeoffCents] as $category => $expectedCents) {
+            $invoiceEntries = $payload['links'][$category] ?? [];
+            if (! is_array($invoiceEntries) || ! array_is_list($invoiceEntries)) {
+                return $result;
+            }
+
+            $sum = 0;
+            $seenIds = [];
+            foreach ($invoiceEntries as $invoiceEntry) {
+                $id = is_array($invoiceEntry) ? $this->objectId($invoiceEntry['id'] ?? null) : null;
+                $amount = $this->amountInCents($invoiceEntry['properties']['amount'] ?? null);
+                $accountLink = $category === 'revenue' ? 'debit' : 'credit';
+                if ($id === null || isset($seenIds[$id]) || $amount === null || $amount <= 0
+                    || $this->objectIds($invoiceEntry['links'][$accountLink] ?? null) !== [$debitorAccountId]
+                    || $this->objectIds($invoiceEntry['links']['debitor'] ?? null) !== [$debitorId]) {
+                    return $result;
+                }
+
+                $seenIds[$id] = true;
+                $sum += $amount;
+            }
+
+            if ($sum !== $expectedCents) {
+                return $result;
+            }
+        }
+
+        $groupId = $parents[0];
+        $group = $this->readEvidenceObjects('entrygroup', [$groupId])[$groupId];
+        $date = $this->accountingDate($group['properties']['date'] ?? null);
+        $entryIds = $this->objectIds($group['children']['entry'] ?? null);
+        $invoiceParents = $this->objectIds($payload['parents'] ?? null);
+        if ($date === null || $entryIds === null || count($entryIds) < 1 || count($entryIds) > 2
+            || ! in_array($paymentId, $entryIds, true)
+            || $invoiceParents === null || count($invoiceParents) !== 1
+            || $this->objectIds($group['parents'] ?? null) !== $invoiceParents) {
+            return $result;
+        }
+
+        $entries = $this->readEvidenceObjects('entry', $entryIds);
+        $receivedCents = 0;
+        foreach ($entries as $entryId => $entry) {
+            $amountCents = $this->amountInCents($entry['properties']['amount'] ?? null);
+            $credits = $this->objectIds($entry['links']['credit'] ?? null);
+            if ($amountCents === null || $amountCents <= 0 || $this->objectIds($entry['parents'] ?? null) !== [$groupId]
+                || $this->objectIds($entry['links']['debit'] ?? null) !== [$bankAccountId]
+                || $credits === null || count($credits) !== 1) {
+                return $result;
+            }
+
+            if ($entryId === $paymentId) {
+                if ($credits !== [$debitorAccountId] || $amountCents !== $paidCents
+                    || $this->objectIds($entry['links']['debitor'] ?? null) !== [$debitorId]) {
+                    return $result;
+                }
+            } elseif ($this->objectIds($entry['links']['debitor'] ?? []) !== []
+                || in_array($credits[0], [$bankAccountId, $debitorAccountId], true)
+                || ! in_array($credits[0], $excessIncomeAccountIds, true)) {
+                return $result;
+            }
+
+            $receivedCents += $amountCents;
+        }
+
+        return array_replace($result, ['payment_verification' => 'verified', 'received_cents' => $receivedCents, 'payment_date' => $date]);
+    }
+
+    /**
+     * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int}
+     */
+    protected function normalizeInvoiceDetails(mixed $payload, int $debitorId): array
+    {
         $properties = is_array($payload) ? ($payload['properties'] ?? null) : null;
         throw_unless(is_array($properties), RuntimeException::class, 'Webling returned an unreadable Debitor payload for ID '.$debitorId.'.');
 
@@ -242,14 +360,102 @@ class WeblingInvoiceService
         throw_unless(is_string($state) && $state !== '', RuntimeException::class, 'Webling returned no Debitor state for ID '.$debitorId.'.');
 
         $dueDate = $properties['duedate'] ?? null;
+        throw_if($dueDate !== null && $dueDate !== '' && $this->accountingDate($dueDate) === null, RuntimeException::class, 'Webling returned an invalid Debitor due date for ID '.$debitorId.'.');
+        $totalCents = $this->amountInCents($properties['totalamount'] ?? null);
+        $remainingCents = $this->amountInCents($properties['remainingamount'] ?? null);
+        throw_if($totalCents === null || $remainingCents === null, RuntimeException::class, 'Webling returned invalid Debitor amounts for ID '.$debitorId.'.');
 
         return [
             'state' => $state,
             'due_date' => is_string($dueDate) && $dueDate !== '' ? $dueDate : null,
             'invoice_number' => is_numeric($properties['debitorid'] ?? null) ? (string) (int) $properties['debitorid'] : null,
-            'total_cents' => InvoiceCreateData::decimalToCents($properties['totalamount'] ?? null),
-            'remaining_cents' => InvoiceCreateData::decimalToCents($properties['remainingamount'] ?? null),
+            'total_cents' => $totalCents,
+            'remaining_cents' => $remainingCents,
         ];
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, array<string, mixed>>
+     */
+    protected function readEvidenceObjects(string $type, array $ids): array
+    {
+        $path = $type.'/'.implode(',', $ids);
+        try {
+            $payload = $this->api->get($path)->json();
+        } catch (WeblingApiException $weblingApiException) {
+            throw_if($weblingApiException->category === WeblingApiException::NotFound, RuntimeException::class, 'Webling payment evidence was not found at '.$path.'.', 0, $weblingApiException);
+
+            throw $weblingApiException;
+        }
+
+        throw_unless(is_array($payload), RuntimeException::class, 'Webling returned unreadable payment evidence at '.$path.'.');
+        $objects = isset($payload['type']) ? [$payload + ['id' => $ids[0]]] : ($payload['objects'] ?? $payload);
+        throw_unless(is_array($objects) && array_is_list($objects), RuntimeException::class, 'Webling returned unreadable payment evidence at '.$path.'.');
+        $indexed = [];
+        foreach ($objects as $object) {
+            $id = is_array($object) ? $this->objectId($object['id'] ?? null) : null;
+            throw_if($id === null || ($object['type'] ?? null) !== $type || ! is_array($object['properties'] ?? null)
+                || ! in_array($id, $ids, true) || isset($indexed[$id]), RuntimeException::class, 'Webling returned inconsistent payment evidence at '.$path.'.');
+            $indexed[$id] = $object;
+        }
+
+        throw_if(count($indexed) !== count($ids), RuntimeException::class, 'Webling returned incomplete payment evidence at '.$path.'.');
+
+        return $indexed;
+    }
+
+    protected function amountInCents(mixed $amount): ?int
+    {
+        if ((! is_int($amount) && ! is_float($amount) && ! is_string($amount))
+            || ! preg_match('/\A(-?)([0-9]{1,15})(?:\.([0-9]{1,2}))?\z/', (string) $amount, $matches)) {
+            return null;
+        }
+
+        $cents = (int) $matches[2] * 100 + (int) str_pad($matches[3] ?? '', 2, '0');
+
+        return $matches[1] === '-' ? -$cents : $cents;
+    }
+
+    protected function objectId(mixed $id): ?int
+    {
+        if (! is_int($id) && ! is_string($id)) {
+            return null;
+        }
+
+        $id = filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return $id === false ? null : $id;
+    }
+
+    /** @return list<int>|null */
+    protected function objectIds(mixed $ids): ?array
+    {
+        if (! is_array($ids) || ! array_is_list($ids)) {
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($ids as $id) {
+            $id = $this->objectId($id);
+            if ($id === null || in_array($id, $normalized, true)) {
+                return null;
+            }
+
+            $normalized[] = $id;
+        }
+
+        return $normalized;
+    }
+
+    protected function accountingDate(mixed $date): ?string
+    {
+        if (! is_string($date) || ! preg_match('/\A([0-9]{4})-([0-9]{2})-([0-9]{2})\z/', $date, $matches)
+            || ! checkdate((int) $matches[2], (int) $matches[3], (int) $matches[1])) {
+            return null;
+        }
+
+        return $date;
     }
 
     /**
