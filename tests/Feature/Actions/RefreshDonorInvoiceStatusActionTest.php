@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\DownloadDonorInvoicePdfAction;
 use App\Actions\RefreshDonorInvoiceStatusAction;
+use App\Actions\RunDonorInvoiceBulkAction;
 use App\Enums\DonorInvoiceStatus;
 use App\Enums\DonorPaymentVerification;
 use App\Exceptions\DonorInvoiceGuardException;
@@ -15,6 +17,7 @@ use Illuminate\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -164,28 +167,45 @@ function verifiedRefreshDetails(array $overrides = []): array
     ];
 }
 
-/** @param array<string, mixed> $responses */
-function fakeRefreshEvidence(DonorEventInvoice $invoice, array $responses = []): void
+/** @return array<string, mixed> */
+function refreshEvidencePayloads(DonorEventInvoice $invoice): array
 {
     $debitorId = $invoice->webling_debitor_id;
     $payment = [
         'type' => 'entry', 'id' => 20, 'parents' => [30], 'properties' => ['amount' => 15],
         'links' => ['debit' => [3], 'credit' => [2], 'debitor' => [$debitorId]],
     ];
-    Http::preventStrayRequests();
-    Http::fake($responses + [
-        'https://demo.webling.ch/api/1/debitor/'.$debitorId => Http::response([
+
+    return [
+        'invoice' => [
             'type' => 'debitor', 'parents' => [10],
             'properties' => ['state' => 'paid', 'debitorid' => 322, 'totalamount' => 15, 'remainingamount' => 0, 'paidamount' => 15, 'writeoffamount' => 0, 'duedate' => '2026-10-07'],
             'links' => [
                 'payment' => [$payment], 'writeoff' => [],
                 'revenue' => [['id' => 11, 'properties' => ['amount' => 15], 'links' => ['debit' => [2], 'credit' => [8], 'debitor' => [$debitorId]]]],
             ],
-        ]),
-        'https://demo.webling.ch/api/1/entrygroup/30' => Http::response([
+        ],
+        'booking' => [
             'type' => 'entrygroup', 'parents' => [10], 'properties' => ['date' => '2026-10-05'], 'children' => ['entry' => [20]],
-        ]),
-        'https://demo.webling.ch/api/1/entry/20' => Http::response($payment),
+        ],
+        'entries' => [$payment],
+    ];
+}
+
+/**
+ * @param  array<string, mixed>  $responses
+ * @param  array<string, mixed>|null  $payloads
+ */
+function fakeRefreshEvidence(DonorEventInvoice $invoice, array $responses = [], ?array $payloads = null): void
+{
+    $payloads ??= refreshEvidencePayloads($invoice);
+    $entryIds = $payloads['booking']['children']['entry'];
+    $entries = count($payloads['entries']) === 1 ? $payloads['entries'][0] : $payloads['entries'];
+    Http::preventStrayRequests();
+    Http::fake($responses + [
+        'https://demo.webling.ch/api/1/debitor/'.$invoice->webling_debitor_id => Http::response($payloads['invoice']),
+        'https://demo.webling.ch/api/1/entrygroup/30' => Http::response($payloads['booking']),
+        'https://demo.webling.ch/api/1/entry/'.implode(',', $entryIds) => Http::response($entries),
     ]);
 }
 
@@ -444,4 +464,197 @@ it('rejects a response after lease expiry even when no other process has taken t
         ->toThrow(LockTimeoutException::class);
 
     expect($invoice->refresh()->getAttributes())->toBe($before);
+});
+
+it('makes supported HTTP settlements receipt-eligible using persisted bank receipts and immutable invoice snapshots', function (float $total, float $payment, float $writeoff, float $excess, int $totalCents, int $receivedCents): void {
+    travelTo('2026-10-09 12:00:00');
+    $snapshot = ['total_cents' => 1500, 'webling' => ['date' => '2026-09-23']];
+    $invoice = refreshInvoiceFixture(['source_snapshot' => $snapshot]);
+    $path = $invoice->pdf_path;
+    $payloads = refreshEvidencePayloads($invoice);
+    $payloads['invoice']['properties']['totalamount'] = $total;
+    $payloads['invoice']['properties']['paidamount'] = $payment;
+    $payloads['invoice']['properties']['writeoffamount'] = $writeoff;
+    $payloads['invoice']['links']['revenue'][0]['properties']['amount'] = $total;
+    $payloads['invoice']['links']['payment'][0]['properties']['amount'] = $payment;
+    $payloads['entries'][0]['properties']['amount'] = $payment;
+    if ($writeoff > 0) {
+        $payloads['invoice']['links']['writeoff'][] = [
+            'id' => 50, 'parents' => [60], 'properties' => ['amount' => $writeoff],
+            'links' => ['debit' => [8], 'credit' => [2], 'debitor' => [4321]],
+        ];
+    }
+    if ($excess > 0) {
+        $payloads['booking']['children']['entry'][] = 21;
+        $payloads['entries'][] = [
+            'type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => $excess],
+            'links' => ['debit' => [3], 'credit' => [9]],
+        ];
+    }
+    fakeRefreshEvidence($invoice, payloads: $payloads);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    $stored = $invoice->fresh();
+    expect($stored->webling_received_cents)->toBe($receivedCents)
+        ->and($stored->webling_total_cents)->toBe($totalCents)
+        ->and($stored->webling_payment_date->toDateString())->toBe('2026-10-05')
+        ->and($stored->webling_payment_verification)->toBe(DonorPaymentVerification::Verified)
+        ->and($stored->webling_synced_at->format('Y-m-d H:i:s'))->toBe('2026-10-09 12:00:00')
+        ->and($stored->source_snapshot)->toBe($snapshot)
+        ->and($stored->source_total_cents)->toBe(1500)
+        ->and($stored->pdf_path)->toBe($path);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeTrue();
+    Storage::disk('local')->assertExists($path);
+    Http::assertSentCount(3);
+})->with([
+    'ordinary receipt' => [15.0, 15.0, 0.0, 0.0, 1500, 1500],
+    'accountant increased invoice total' => [20.0, 20.0, 0.0, 0.0, 2000, 2000],
+    'accountant decreased invoice total' => [10.0, 10.0, 0.0, 0.0, 1000, 1000],
+    'underpayment with separate writeoff' => [15.0, 10.0, 5.0, 0.0, 1500, 1000],
+    'excess in same bank booking' => [15.0, 15.0, 0.0, 1.10, 1500, 1610],
+]);
+
+it('withdraws receipt eligibility after unsupported HTTP evidence while retaining invoice PDF access', function (array $changes, DonorPaymentVerification $verification, int $requests): void {
+    travelTo('2026-10-09 12:00:00');
+    $invoice = refreshInvoiceFixture([
+        'webling_state' => 'paid', 'webling_remaining_cents' => 0, 'webling_received_cents' => 1500,
+        'webling_payment_date' => '2026-10-05', 'webling_payment_verification' => DonorPaymentVerification::Verified,
+        'webling_synced_at' => '2026-10-08 12:00:00',
+    ]);
+    $path = $invoice->pdf_path;
+    $payloads = refreshEvidencePayloads($invoice);
+    foreach ($changes as $key => $value) {
+        Arr::set($payloads, $key, $value);
+    }
+    fakeRefreshEvidence($invoice, payloads: $payloads);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    $stored = $invoice->fresh();
+    expect($stored->webling_payment_verification)->toBe($verification)
+        ->and($stored->webling_received_cents)->toBeNull()
+        ->and($stored->webling_payment_date)->toBeNull()
+        ->and($stored->webling_synced_at->format('Y-m-d H:i:s'))->toBe('2026-10-09 12:00:00');
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeFalse();
+    expect(app(DownloadDonorInvoicePdfAction::class)($stored)['path'])->toBe($path);
+    Storage::disk('local')->assertExists($path);
+    Http::assertSentCount($requests);
+})->with([
+    'multiple payments' => [['invoice.links.payment.1' => ['id' => 21]], DonorPaymentVerification::Unclear, 1],
+    'missing payment date' => [['booking.properties.date' => null], DonorPaymentVerification::Unclear, 2],
+    'wrong bank account' => [['invoice.links.payment.0.links.debit' => [4]], DonorPaymentVerification::Unclear, 1],
+    'another invoice in same bank booking' => [[
+        'booking.children.entry' => [20, 21],
+        'entries.1' => ['type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => 1.10], 'links' => ['debit' => [3], 'credit' => [9], 'debitor' => [9999]]],
+    ], DonorPaymentVerification::Unclear, 3],
+    'payment removed and invoice reopened' => [[
+        'invoice.properties.state' => 'open', 'invoice.properties.paidamount' => 0,
+        'invoice.properties.remainingamount' => 15, 'invoice.links.payment' => [],
+    ], DonorPaymentVerification::Unverified, 1],
+]);
+
+it('blocks split-excess receipts when the permitted income account is unconfigured', function (): void {
+    app(WeblingApiSettings::class)->excess_income_account_id = null;
+    $invoice = refreshInvoiceFixture();
+    $payloads = refreshEvidencePayloads($invoice);
+    $payloads['booking']['children']['entry'][] = 21;
+    $payloads['entries'][] = [
+        'type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => 1.10],
+        'links' => ['debit' => [3], 'credit' => [9]],
+    ];
+    fakeRefreshEvidence($invoice, payloads: $payloads);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    expect($invoice->fresh()->webling_payment_verification)->toBe(DonorPaymentVerification::Unclear);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($invoice->fresh()))->toBeFalse();
+    Http::assertSentCount(3);
+});
+
+it('recomputes HTTP payment corrections and dates without accumulating prior receipts', function (): void {
+    $invoice = refreshInvoiceFixture();
+    $first = refreshEvidencePayloads($invoice);
+    $corrected = $first;
+    $corrected['invoice']['properties']['totalamount'] = 20;
+    $corrected['invoice']['properties']['paidamount'] = 20;
+    $corrected['invoice']['links']['revenue'][0]['properties']['amount'] = 20;
+    $corrected['invoice']['links']['payment'][0]['properties']['amount'] = 20;
+    $corrected['entries'][0]['properties']['amount'] = 20;
+    $corrected['booking']['properties']['date'] = '2026-10-06';
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://demo.webling.ch/api/1/debitor/4321' => Http::sequence()->push($first['invoice'])->push($first['invoice'])->push($corrected['invoice']),
+        'https://demo.webling.ch/api/1/entrygroup/30' => Http::sequence()->push($first['booking'])->push($first['booking'])->push($corrected['booking']),
+        'https://demo.webling.ch/api/1/entry/20' => Http::sequence()->push($first['entries'][0])->push($first['entries'][0])->push($corrected['entries'][0]),
+    ]);
+    $refresh = app(RefreshDonorInvoiceStatusAction::class);
+
+    $refresh($invoice);
+    $refresh($invoice);
+    expect($invoice->fresh()->webling_received_cents)->toBe(1500);
+    $refresh($invoice);
+
+    $stored = $invoice->fresh();
+    expect($stored->webling_received_cents)->toBe(2000)
+        ->and($stored->webling_payment_date->toDateString())->toBe('2026-10-06');
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeTrue();
+    Http::assertSentCount(9);
+});
+
+it('isolates failed and unclear HTTP settlements during event-scoped bulk refresh', function (): void {
+    $event = DonationEvent::factory()->create();
+    $failed = refreshInvoiceFixture([
+        'donation_event_id' => $event->id, 'webling_debitor_id' => 9999,
+        'webling_state' => 'paid', 'webling_total_cents' => 1500, 'webling_remaining_cents' => 0,
+        'webling_received_cents' => 1500, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified, 'webling_synced_at' => '2026-10-08 12:00:00',
+    ]);
+    $valid = refreshInvoiceFixture(['donation_event_id' => $event->id]);
+    $unclear = refreshInvoiceFixture(['donation_event_id' => $event->id, 'webling_debitor_id' => 5555]);
+    $other = refreshInvoiceFixture(['webling_debitor_id' => 7777]);
+    $beforeFailure = $failed->refresh()->getAttributes();
+    $beforeOther = $other->refresh()->getAttributes();
+    $unclearPayloads = refreshEvidencePayloads($unclear);
+    $unclearPayloads['invoice']['links']['payment'] = [];
+    fakeRefreshEvidence($valid, [
+        'https://demo.webling.ch/api/1/debitor/9999' => Http::response([], 503),
+        'https://demo.webling.ch/api/1/debitor/5555' => Http::response($unclearPayloads['invoice']),
+    ]);
+    $refresh = app(RefreshDonorInvoiceStatusAction::class);
+
+    $result = app(RunDonorInvoiceBulkAction::class)($event, [$failed, $valid, $unclear, $other], fn (DonorEventInvoice $invoice) => $refresh($invoice));
+
+    expect($result['successful'])->toBe(2)
+        ->and($result['failed'])->toBe(1)
+        ->and($result['skipped'])->toBe(1);
+    expect($failed->refresh()->getAttributes())->toBe($beforeFailure);
+    expect($other->refresh()->getAttributes())->toBe($beforeOther);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($valid->fresh()))->toBeTrue();
+    expect($unclear->fresh()->webling_payment_verification)->toBe(DonorPaymentVerification::Unclear);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($unclear->fresh()))->toBeFalse();
+    Http::assertSentCount(5);
+});
+
+it('revokes receipts and cached invoice downloads after a confirmed invoice HTTP 404', function (): void {
+    $invoice = refreshInvoiceFixture([
+        'webling_state' => 'paid', 'webling_remaining_cents' => 0,
+        'webling_received_cents' => 1500, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified,
+        'webling_synced_at' => '2026-10-08 12:00:00',
+    ]);
+    $path = $invoice->pdf_path;
+    fakeRefreshEvidence($invoice, ['https://demo.webling.ch/api/1/debitor/4321' => Http::response([], 404)]);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    $stored = $invoice->fresh();
+    expect($stored->remote_deleted_at)->not->toBeNull()
+        ->and($stored->webling_received_cents)->toBeNull()
+        ->and($stored->webling_payment_date)->toBeNull()
+        ->and($stored->webling_synced_at)->toBeNull();
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeFalse();
+    expect(app(DownloadDonorInvoicePdfAction::class)($stored))->toBeNull();
+    Storage::disk('local')->assertMissing($path);
+    Http::assertSentCount(1);
 });
