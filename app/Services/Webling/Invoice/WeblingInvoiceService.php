@@ -247,8 +247,6 @@ class WeblingInvoiceService
      * @param  list<int>  $excessIncomeAccountIds
      * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int,payment_verification:string,received_cents:?int,payment_date:?string}
      */
-    // TODO(dead-code): Connect this reader to invoice refresh in task 4 of issue #285.
-    // @phpstan-ignore-next-line shipmonk.deadMethod
     public function settlementDetails(int $debitorId, int $bankAccountId, array $excessIncomeAccountIds = []): array
     {
         $payload = $this->getInvoice($debitorId)->json();

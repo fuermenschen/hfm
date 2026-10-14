@@ -2,18 +2,35 @@
 
 use App\Actions\RefreshDonorInvoiceStatusAction;
 use App\Enums\DonorInvoiceStatus;
+use App\Enums\DonorPaymentVerification;
 use App\Exceptions\DonorInvoiceGuardException;
 use App\Exceptions\Webling\WeblingApiException;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Services\DonorInvoiceService;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
+use App\Settings\WeblingApiSettings;
+use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Cache\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+use function Pest\Laravel\travel;
+use function Pest\Laravel\travelTo;
+
 beforeEach(function (): void {
     Storage::fake('local');
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch', 'api_key' => 'fake-key',
+        'accounting_period_id' => 10, 'debit_account_id' => 2, 'credit_account_id' => 8,
+        'bank_account_id' => 3, 'excess_income_account_id' => 9,
+    ]);
 });
 
 function refreshInvoiceFixture(array $overrides = []): DonorEventInvoice
@@ -32,7 +49,10 @@ function refreshInvoiceFixture(array $overrides = []): DonorEventInvoice
 function refreshWeblingMock(array $details, int $times = 1): WeblingInvoiceService
 {
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldReceive('invoiceDetails')->times($times)->andReturn($details);
+    $webling->shouldReceive('settlementDetails')->times($times)->andReturn($details + [
+        'payment_verification' => $details['state'] === 'paid' ? 'unclear' : 'unverified',
+        'received_cents' => null, 'payment_date' => null,
+    ]);
 
     return $webling;
 }
@@ -60,9 +80,13 @@ it('updates raw state, amounts, invoice number, and sync time from webling', fun
 });
 
 it('marks the invoice remotely deleted on a confirmed 404', function (): void {
-    $invoice = refreshInvoiceFixture();
+    $invoice = refreshInvoiceFixture([
+        'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified,
+    ]);
+    $path = $invoice->pdf_path;
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldReceive('invoiceDetails')->once()->andThrow(
+    $webling->shouldReceive('settlementDetails')->once()->andThrow(
         new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound),
     );
 
@@ -72,15 +96,24 @@ it('marks the invoice remotely deleted on a confirmed 404', function (): void {
     expect($invoice->remote_deleted_at)->not->toBeNull()
         ->and($invoice->webling_debitor_id)->toBeNull()
         ->and($invoice->pdf_path)->toBeNull()
+        ->and($invoice->webling_received_cents)->toBeNull()
+        ->and($invoice->webling_payment_date)->toBeNull()
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Unverified)
         ->and(app(DonorInvoiceService::class)->status($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
-    Storage::disk('local')->assertMissing($invoice->getOriginal('pdf_path'));
+    Storage::disk('local')->assertMissing($path);
 });
 
 it('preserves cached values and reports failure for other webling errors', function (): void {
     $invoice = refreshInvoiceFixture();
-    $invoice->forceFill(['webling_state' => 'open'])->save();
+    $invoice->forceFill([
+        'webling_state' => 'paid', 'webling_total_cents' => 1500, 'webling_remaining_cents' => 0,
+        'webling_payment_verification' => DonorPaymentVerification::Verified,
+        'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
+        'webling_synced_at' => '2026-10-06 12:00:00',
+    ])->save();
+    $before = $invoice->refresh()->getAttributes();
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldReceive('invoiceDetails')->once()->andThrow(
+    $webling->shouldReceive('settlementDetails')->once()->andThrow(
         new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(500)), WeblingApiException::Transient),
     );
 
@@ -88,15 +121,13 @@ it('preserves cached values and reports failure for other webling errors', funct
         ->toThrow(WeblingApiException::class);
 
     $invoice->refresh();
-    expect($invoice->webling_state)->toBe('open')
-        ->and($invoice->webling_synced_at)->toBeNull()
-        ->and($invoice->pdf_path)->not->toBeNull();
+    expect($invoice->getAttributes())->toBe($before);
 });
 
 it('skips invoices that are not created in webling', function (): void {
     $invoice = refreshInvoiceFixture(['webling_debitor_id' => null]);
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldNotReceive('invoiceDetails');
+    $webling->shouldNotReceive('settlementDetails');
 
     expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
         ->toThrow(DonorInvoiceGuardException::class, 'nicht erstellt');
@@ -106,7 +137,7 @@ it('skips remotely deleted invoices', function (): void {
     $invoice = refreshInvoiceFixture();
     $invoice->forceFill(['remote_deleted_at' => now(), 'webling_debitor_id' => null, 'pdf_disk' => null, 'pdf_path' => null])->save();
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldNotReceive('invoiceDetails');
+    $webling->shouldNotReceive('settlementDetails');
 
     expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
         ->toThrow(DonorInvoiceGuardException::class, 'gelöscht');
@@ -122,4 +153,295 @@ it('refreshes only the given invoice', function (): void {
 
     expect($other->refresh()->webling_state)->toBeNull()
         ->and($other->webling_synced_at)->toBeNull();
+});
+
+function verifiedRefreshDetails(array $overrides = []): array
+{
+    return $overrides + [
+        'state' => 'paid', 'due_date' => '2026-10-07', 'invoice_number' => '322',
+        'total_cents' => 1500, 'remaining_cents' => 0, 'received_cents' => 1600,
+        'payment_date' => '2026-10-05', 'payment_verification' => 'verified',
+    ];
+}
+
+/** @param array<string, mixed> $responses */
+function fakeRefreshEvidence(DonorEventInvoice $invoice, array $responses = []): void
+{
+    $debitorId = $invoice->webling_debitor_id;
+    $payment = [
+        'type' => 'entry', 'id' => 20, 'parents' => [30], 'properties' => ['amount' => 15],
+        'links' => ['debit' => [3], 'credit' => [2], 'debitor' => [$debitorId]],
+    ];
+    Http::preventStrayRequests();
+    Http::fake($responses + [
+        'https://demo.webling.ch/api/1/debitor/'.$debitorId => Http::response([
+            'type' => 'debitor', 'parents' => [10],
+            'properties' => ['state' => 'paid', 'debitorid' => 322, 'totalamount' => 15, 'remainingamount' => 0, 'paidamount' => 15, 'writeoffamount' => 0, 'duedate' => '2026-10-07'],
+            'links' => [
+                'payment' => [$payment], 'writeoff' => [],
+                'revenue' => [['id' => 11, 'properties' => ['amount' => 15], 'links' => ['debit' => [2], 'credit' => [8], 'debitor' => [$debitorId]]]],
+            ],
+        ]),
+        'https://demo.webling.ch/api/1/entrygroup/30' => Http::response([
+            'type' => 'entrygroup', 'parents' => [10], 'properties' => ['date' => '2026-10-05'], 'children' => ['entry' => [20]],
+        ]),
+        'https://demo.webling.ch/api/1/entry/20' => Http::response($payment),
+    ]);
+}
+
+it('fetches all HTTP evidence outside the persistence transaction before changing any cached facts', function (): void {
+    $invoice = refreshInvoiceFixture(['webling_state' => 'open', 'webling_synced_at' => '2026-10-04 12:00:00']);
+    $before = $invoice->refresh()->getAttributes();
+    $transactionLevel = DB::transactionLevel();
+    fakeRefreshEvidence($invoice, [
+        'https://demo.webling.ch/api/1/entry/20' => function () use ($invoice, $before, $transactionLevel): PromiseInterface {
+            expect(DB::transactionLevel())->toBe($transactionLevel);
+            expect($invoice->fresh()->getAttributes())->toBe($before);
+            expect(Cache::lock('donor-invoice-creation:'.$invoice->id, 120)->get())->toBeFalse();
+
+            return Http::response([
+                'type' => 'entry', 'parents' => [30], 'properties' => ['amount' => 15],
+                'links' => ['debit' => [3], 'credit' => [2], 'debitor' => [4321]],
+            ]);
+        },
+    ]);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    expect($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified)
+        ->and($invoice->webling_received_cents)->toBe(1500)
+        ->and($invoice->webling_payment_date->toDateString())->toBe('2026-10-05');
+    Http::assertSentCount(3);
+});
+
+it('preserves previous successful facts when real evidence retrieval fails', function (string $path, mixed $response, string $exceptionClass, int $requests): void {
+    $invoice = refreshInvoiceFixture([
+        'webling_state' => 'paid', 'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified, 'webling_synced_at' => '2026-10-06 12:00:00',
+    ]);
+    $before = $invoice->refresh()->getAttributes();
+    fakeRefreshEvidence($invoice, ['https://demo.webling.ch/api/1/'.$path => $response]);
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class)($invoice))->toThrow($exceptionClass);
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    Storage::disk('local')->assertExists($invoice->pdf_path);
+    Http::assertSentCount($requests);
+})->with([
+    'missing booking' => fn () => ['entrygroup/30', Http::response([], 404), RuntimeException::class, 2],
+    'missing entry' => fn () => ['entry/20', Http::response([], 404), RuntimeException::class, 3],
+    'permission error' => fn () => ['debitor/4321', Http::response([], 403), WeblingApiException::class, 1],
+    'rate limiting' => fn () => ['entrygroup/30', Http::response([], 429), WeblingApiException::class, 2],
+    'server error' => fn () => ['entry/20', Http::response([], 503), WeblingApiException::class, 3],
+    'timeout' => fn () => ['entrygroup/30', Http::failedConnection(), ConnectionException::class, 2],
+    'unreadable invoice' => fn () => ['debitor/4321', Http::response('not JSON'), RuntimeException::class, 1],
+]);
+
+it('preserves previous facts and releases the lock when local persistence fails', function (): void {
+    $invoice = refreshInvoiceFixture(['webling_synced_at' => '2026-10-06 12:00:00']);
+    $before = $invoice->refresh()->getAttributes();
+    $webling = refreshWeblingMock(verifiedRefreshDetails());
+    DonorEventInvoice::updating(function (DonorEventInvoice $updating) use ($invoice): void {
+        if ($updating->id === $invoice->id) {
+            throw new RuntimeException('Local persistence failed.');
+        }
+    });
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(RuntimeException::class, 'Local persistence failed.');
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    $lock = Cache::lock('donor-invoice-creation:'.$invoice->id, 120);
+    expect($lock->get())->toBeTrue();
+    $lock->release();
+});
+
+it('persists complete payment facts using explicitly configured accounts', function (): void {
+    travelTo('2026-10-09 12:00:00');
+    $invoice = refreshInvoiceFixture();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->with(4321, 3, [9])->andReturn(verifiedRefreshDetails());
+
+    app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
+
+    expect($invoice->webling_state)->toBe('paid')
+        ->and($invoice->webling_total_cents)->toBe(1500)
+        ->and($invoice->webling_remaining_cents)->toBe(0)
+        ->and($invoice->webling_received_cents)->toBe(1600)
+        ->and($invoice->webling_payment_date->toDateString())->toBe('2026-10-05')
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified)
+        ->and($invoice->webling_synced_at->format('Y-m-d H:i:s'))->toBe('2026-10-09 12:00:00')
+        ->and($invoice->source_total_cents)->toBe(1500);
+});
+
+it('recomputes corrections on repeated refresh without accumulating received amounts', function (): void {
+    $invoice = refreshInvoiceFixture();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->times(3)->andReturn(
+        verifiedRefreshDetails(),
+        verifiedRefreshDetails(),
+        verifiedRefreshDetails(['received_cents' => 1000, 'payment_date' => '2026-10-04']),
+    );
+    $refresh = app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling]);
+
+    $refresh($invoice);
+    $refresh($invoice);
+    expect($invoice->webling_received_cents)->toBe(1600);
+    $refresh($invoice);
+
+    expect($invoice->webling_received_cents)->toBe(1000)
+        ->and($invoice->webling_payment_date->toDateString())->toBe('2026-10-04')
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified);
+});
+
+it('revokes old verified facts when settlement becomes unclear or unpaid', function (array $details, DonorPaymentVerification $verification): void {
+    $invoice = refreshInvoiceFixture([
+        'webling_state' => 'paid', 'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified, 'webling_synced_at' => '2026-10-06 12:00:00',
+    ]);
+    $webling = refreshWeblingMock($details);
+
+    app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
+
+    expect($invoice->webling_payment_verification)->toBe($verification)
+        ->and($invoice->webling_received_cents)->toBeNull()
+        ->and($invoice->webling_payment_date)->toBeNull()
+        ->and($invoice->webling_synced_at->format('Y-m-d H:i:s'))->not->toBe('2026-10-06 12:00:00');
+})->with([
+    'unclear paid settlement' => [verifiedRefreshDetails(['payment_verification' => 'unclear', 'received_cents' => null, 'payment_date' => null]), DonorPaymentVerification::Unclear],
+    'reopened invoice' => [verifiedRefreshDetails(['state' => 'open', 'remaining_cents' => 1500, 'payment_verification' => 'unverified', 'received_cents' => null, 'payment_date' => null]), DonorPaymentVerification::Unverified],
+]);
+
+it('passes unconfigured bank and excess accounts without inventing account IDs', function (): void {
+    app(WeblingApiSettings::class)->bank_account_id = null;
+    app(WeblingApiSettings::class)->excess_income_account_id = null;
+    $invoice = refreshInvoiceFixture();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->with(4321, 0, [])->andReturn(
+        verifiedRefreshDetails(['payment_verification' => 'unclear', 'received_cents' => null, 'payment_date' => null]),
+    );
+
+    app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
+
+    expect($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Unclear);
+});
+
+it('reloads invoice identity after acquiring the shared lifecycle lock', function (): void {
+    $invoice = refreshInvoiceFixture();
+    DB::table('donor_event_invoices')->where('id', $invoice->id)->update(['webling_debitor_id' => 9999]);
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->with(9999, 3, [9])->andReturn(verifiedRefreshDetails());
+
+    app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
+
+    expect($invoice->webling_debitor_id)->toBe(9999)
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified);
+});
+
+it('does not apply old payment facts or an old 404 to a replacement invoice', function (bool $remoteDeleted): void {
+    $invoice = refreshInvoiceFixture();
+    $replacementPath = 'webling/donor-invoices/replacement.pdf';
+    Storage::disk('local')->put($replacementPath, '%PDF-replacement');
+    $replacementFacts = [];
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->andReturnUsing(function () use ($invoice, $replacementPath, &$replacementFacts, $remoteDeleted): array {
+        $replacement = $invoice->fresh();
+        $replacement->forceFill(['webling_debitor_id' => 9999, 'pdf_path' => $replacementPath, 'source_total_cents' => 2500])->save();
+        $replacementFacts = $replacement->refresh()->getAttributes();
+        if ($remoteDeleted) {
+            throw new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound);
+        }
+
+        return verifiedRefreshDetails();
+    });
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(DonorInvoiceGuardException::class, 'während der Aktualisierung geändert');
+
+    expect($invoice->refresh()->getAttributes())->toBe($replacementFacts);
+    Storage::disk('local')->assertExists($replacementPath);
+})->with(['late facts' => false, 'late 404' => true]);
+
+it('does not restore facts after concurrent deletion', function (): void {
+    $invoice = refreshInvoiceFixture();
+    $deletedFacts = [];
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->andReturnUsing(function () use ($invoice, &$deletedFacts): array {
+        $deleted = $invoice->fresh();
+        $deleted->markRemotelyDeleted();
+        $deletedFacts = $deleted->refresh()->getAttributes();
+
+        return verifiedRefreshDetails();
+    });
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(DonorInvoiceGuardException::class, 'während der Aktualisierung geändert');
+
+    expect($invoice->refresh()->getAttributes())->toBe($deletedFacts);
+});
+
+it('rejects late responses after losing ownership of the refresh lock', function (bool $remoteDeleted): void {
+    $invoice = refreshInvoiceFixture();
+    $before = $invoice->refresh()->getAttributes();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->andReturnUsing(function () use ($invoice, $remoteDeleted): array {
+        Cache::lock('donor-invoice-creation:'.$invoice->id)->forceRelease();
+        if ($remoteDeleted) {
+            throw new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound);
+        }
+
+        return verifiedRefreshDetails();
+    });
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(LockTimeoutException::class);
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    Storage::disk('local')->assertExists($invoice->pdf_path);
+})->with(['late facts' => false, 'late 404' => true]);
+
+it('sizes the shared lock for the bounded three-request evidence read', function (int $timeout, int $lease): void {
+    config(['services.webling.options.timeout' => $timeout]);
+    $invoice = refreshInvoiceFixture();
+    $webling = refreshWeblingMock(verifiedRefreshDetails());
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->with(10, Mockery::type('Closure'))->andReturnUsing(fn (int $wait, Closure $operation) => $operation());
+    $lock->shouldReceive('refresh')->once()->with($lease)->andReturnTrue();
+    Cache::partialMock()->shouldReceive('lock')->once()->with('donor-invoice-creation:'.$invoice->id, $lease)->andReturn($lock);
+
+    app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
+
+    expect($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified);
+})->with(['default HTTP budget' => [10, 120], 'longer HTTP budget' => [60, 210]]);
+
+it('preserves all facts when the shared creation or deletion lock is unavailable', function (): void {
+    $invoice = refreshInvoiceFixture();
+    $before = $invoice->refresh()->getAttributes();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldNotReceive('settlementDetails');
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->andThrow(LockTimeoutException::class);
+    Cache::partialMock()->shouldReceive('lock')->once()->with('donor-invoice-creation:'.$invoice->id, 120)->andReturn($lock);
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(LockTimeoutException::class);
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+});
+
+it('rejects a response after lease expiry even when no other process has taken the lock', function (): void {
+    travelTo('2026-10-09 12:00:00');
+    $invoice = refreshInvoiceFixture();
+    $before = $invoice->refresh()->getAttributes();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('settlementDetails')->once()->andReturnUsing(function (): array {
+        travel(121)->seconds();
+
+        return verifiedRefreshDetails();
+    });
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(LockTimeoutException::class);
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
 });
