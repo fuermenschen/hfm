@@ -319,6 +319,7 @@ it('rejects an invoice response without a Webling state', function (): void {
     $response = Mockery::mock(Response::class);
     $api->shouldReceive('get')->once()->with('debitor/42')->andReturn($response);
     $response->shouldReceive('json')->once()->andReturn([
+        'type' => 'debitor',
         'properties' => [
             'duedate' => '2026-01-31',
             'totalamount' => 15,
@@ -470,6 +471,10 @@ describe('bank settlement evidence', function (): void {
         Http::assertSentCount(1);
     })->with([
         'no payment' => ['invoice.links.payment', []],
+        'wrong linked payment type' => ['invoice.links.payment.0.type', 'entrygroup'],
+        'missing linked payment type' => ['invoice.links.payment.0.type', null],
+        'missing invoice period' => ['invoice.parents', null],
+        'wrong configured period' => ['invoice.parents', [99]],
         'multiple payments' => ['invoice.links.payment', [['id' => 20], ['id' => 21]]],
         'missing payment amount' => ['invoice.links.payment.0.properties.amount', null],
         'settlement mismatch' => ['invoice.links.payment.0.properties.amount', 99],
@@ -502,7 +507,6 @@ describe('bank settlement evidence', function (): void {
         'impossible date' => ['booking.properties.date', '2026-02-30'],
         'timestamp instead of date' => ['booking.properties.date', '2026-10-05 12:00:00'],
         'different accounting period' => ['booking.parents', [99]],
-        'missing invoice period' => ['invoice.parents', null],
         'unrelated booking' => ['booking.children.entry', [21]],
         'too many entries' => ['booking.children.entry', [20, 21, 22]],
         'duplicate entry' => ['booking.children.entry', [20, 20]],
@@ -589,6 +593,42 @@ describe('bank settlement evidence', function (): void {
         fakeWeblingSettlement($fixture);
 
         expect(app(WeblingInvoiceService::class)->invoiceDetails(42)['state'])->toBe('paid');
+        Http::assertSentCount(1);
+    });
+
+    it('rejects wrong or missing Debitor types even when invoice properties look valid', function (?string $type): void {
+        $fixture = weblingSettlementFixture();
+        $fixture['invoice']['type'] = $type;
+        fakeWeblingSettlement($fixture);
+
+        expect(fn () => app(WeblingInvoiceService::class)->invoiceDetails(42))
+            ->toThrow(RuntimeException::class, 'invalid Debitor type');
+        Http::assertSentCount(1);
+    })->with(['wrong type' => 'entry', 'missing type' => null]);
+
+    it('marks matching invoice and booking periods unclear when outside the configured period', function (): void {
+        $fixture = weblingSettlementFixture();
+        $fixture['invoice']['parents'] = [99];
+        $fixture['booking']['parents'] = [99];
+        fakeWeblingSettlement($fixture);
+
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+
+        expect($details['payment_verification'])->toBe('unclear')
+            ->and($details['received_cents'])->toBeNull()
+            ->and($details['payment_date'])->toBeNull();
+        Http::assertSentCount(1);
+    });
+
+    it('keeps historical invoice status readable outside the configured accounting period', function (): void {
+        $fixture = weblingSettlementFixture();
+        $fixture['invoice']['parents'] = [99];
+        fakeWeblingSettlement($fixture);
+
+        $details = app(WeblingInvoiceService::class)->invoiceDetails(42);
+
+        expect($details['state'])->toBe('paid')
+            ->and($details['total_cents'])->toBe(10000);
         Http::assertSentCount(1);
     });
 

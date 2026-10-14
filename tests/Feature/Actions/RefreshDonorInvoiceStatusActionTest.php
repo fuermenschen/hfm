@@ -255,6 +255,11 @@ it('preserves previous successful facts when real evidence retrieval fails', fun
     'server error' => fn () => ['entry/20', Http::response([], 503), WeblingApiException::class, 3],
     'timeout' => fn () => ['entrygroup/30', Http::failedConnection(), ConnectionException::class, 2],
     'unreadable invoice' => fn () => ['debitor/4321', Http::response('not JSON'), RuntimeException::class, 1],
+    'wrong invoice object type' => fn () => [
+        'debitor/4321',
+        Http::response(['type' => 'entry', 'properties' => ['state' => 'paid', 'totalamount' => 15, 'remainingamount' => 0]]),
+        RuntimeException::class, 1,
+    ],
 ]);
 
 it('preserves previous facts and releases the lock when local persistence fails', function (): void {
@@ -544,6 +549,10 @@ it('withdraws receipt eligibility after unsupported HTTP evidence while retainin
     'multiple payments' => [['invoice.links.payment.1' => ['id' => 21]], DonorPaymentVerification::Unclear, 1],
     'missing payment date' => [['booking.properties.date' => null], DonorPaymentVerification::Unclear, 2],
     'wrong bank account' => [['invoice.links.payment.0.links.debit' => [4]], DonorPaymentVerification::Unclear, 1],
+    'wrong linked payment type' => [['invoice.links.payment.0.type' => 'entrygroup'], DonorPaymentVerification::Unclear, 1],
+    'invoice and booking outside configured period' => [[
+        'invoice.parents' => [99], 'booking.parents' => [99],
+    ], DonorPaymentVerification::Unclear, 1],
     'another invoice in same bank booking' => [[
         'booking.children.entry' => [20, 21],
         'entries.1' => ['type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => 1.10], 'links' => ['debit' => [3], 'credit' => [9], 'debitor' => [9999]]],

@@ -261,7 +261,9 @@ class WeblingInvoiceService
         $paidCents = $this->amountInCents($payload['properties']['paidamount'] ?? null);
         $writeoffCents = $this->amountInCents($payload['properties']['writeoffamount'] ?? null);
         $payments = $payload['links']['payment'] ?? null;
-        if ($bankAccountId < 1 || $details['remaining_cents'] !== 0 || $paidCents === null || $paidCents <= 0
+        $invoiceParents = $this->objectIds($payload['parents'] ?? null);
+        if ($invoiceParents !== [$this->settings->accounting_period_id]
+            || $bankAccountId < 1 || $details['remaining_cents'] !== 0 || $paidCents === null || $paidCents <= 0
             || $writeoffCents === null || $writeoffCents < 0 || $details['total_cents'] !== $paidCents + $writeoffCents
             || ! is_array($payments) || ! array_is_list($payments) || count($payments) !== 1 || ! is_array($payments[0])) {
             return $result;
@@ -272,7 +274,8 @@ class WeblingInvoiceService
         $parents = $this->objectIds($payment['parents'] ?? null);
         $debitAccounts = $this->objectIds($payment['links']['debit'] ?? null);
         $creditAccounts = $this->objectIds($payment['links']['credit'] ?? null);
-        if ($paymentId === null || $parents === null || count($parents) !== 1 || $debitAccounts !== [$bankAccountId]
+        if (($payment['type'] ?? null) !== 'entry'
+            || $paymentId === null || $parents === null || count($parents) !== 1 || $debitAccounts !== [$bankAccountId]
             || $creditAccounts === null || count($creditAccounts) !== 1 || $creditAccounts[0] === $bankAccountId
             || $this->objectIds($payment['links']['debitor'] ?? null) !== [$debitorId]
             || $this->amountInCents($payment['properties']['amount'] ?? null) !== $paidCents) {
@@ -311,10 +314,8 @@ class WeblingInvoiceService
         $group = $this->readEvidenceObjects('entrygroup', [$groupId])[$groupId];
         $date = $this->accountingDate($group['properties']['date'] ?? null);
         $entryIds = $this->objectIds($group['children']['entry'] ?? null);
-        $invoiceParents = $this->objectIds($payload['parents'] ?? null);
         if ($date === null || $entryIds === null || count($entryIds) < 1 || count($entryIds) > 2
             || ! in_array($paymentId, $entryIds, true)
-            || $invoiceParents === null || count($invoiceParents) !== 1
             || $this->objectIds($group['parents'] ?? null) !== $invoiceParents) {
             return $result;
         }
@@ -352,7 +353,8 @@ class WeblingInvoiceService
      */
     protected function normalizeInvoiceDetails(mixed $payload, int $debitorId): array
     {
-        $properties = is_array($payload) ? ($payload['properties'] ?? null) : null;
+        throw_unless(is_array($payload) && ($payload['type'] ?? null) === 'debitor', RuntimeException::class, 'Webling returned an invalid Debitor type for ID '.$debitorId.'.');
+        $properties = $payload['properties'] ?? null;
         throw_unless(is_array($properties), RuntimeException::class, 'Webling returned an unreadable Debitor payload for ID '.$debitorId.'.');
 
         $state = $properties['state'] ?? null;
