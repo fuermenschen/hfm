@@ -201,3 +201,26 @@ it('uses the shared lifecycle lock before clearing a missing invoice during remi
     expect($invoice->refresh()->remote_deleted_at)->not->toBeNull();
     Mail::assertNothingQueued();
 });
+
+it('preserves invoice facts and pdf when reminder 404 cleanup cannot be persisted', function (): void {
+    Mail::fake();
+    $invoice = reminderInvoiceFixture();
+    $path = $invoice->pdf_path;
+    $before = $invoice->refresh()->getAttributes();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('invoiceDetails')->once()->andThrow(
+        new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound),
+    );
+    DonorEventInvoice::updating(function (DonorEventInvoice $updating) use ($invoice): void {
+        if ($updating->id === $invoice->id) {
+            throw new RuntimeException('Deletion persistence failed.');
+        }
+    });
+
+    expect(fn () => app(SendDonorInvoiceReminderAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(RuntimeException::class, 'Deletion persistence failed.');
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    Storage::disk('local')->assertExists($path);
+    Mail::assertNothingQueued();
+});

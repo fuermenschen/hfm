@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 /**
  * @property int $external_user_id
@@ -79,16 +80,14 @@ class DonorEventInvoice extends Model
     public const array UnpaidStates = ['open', 'partially paid'];
 
     /**
-     * Mark the invoice as remotely deleted: delete the local PDF and clear
-     * all remote, PDF, snapshot, state, and mail fields on the existing row.
+     * Clear invoice lifecycle fields and delete its cached PDF after commit.
      */
     public function markRemotelyDeleted(): void
     {
-        if ($this->pdf_disk !== null && $this->pdf_path !== null) {
-            Storage::disk($this->pdf_disk)->delete($this->pdf_path);
-        }
+        $disk = $this->pdf_disk;
+        $path = $this->pdf_path;
 
-        $this->forceFill([
+        $saved = $this->forceFill([
             'webling_debitor_id' => null,
             'webling_invoice_number' => null,
             'webling_state' => null,
@@ -107,6 +106,13 @@ class DonorEventInvoice extends Model
             'source_total_cents' => null,
             'remote_deleted_at' => Date::now(),
         ])->save();
+        throw_unless($saved, RuntimeException::class, 'Could not persist remote deletion of invoice ID '.$this->id.'.');
+
+        if ($disk !== null && $path !== null) {
+            $this->getConnection()->afterCommit(static function () use ($disk, $path): void {
+                Storage::disk($disk)->delete($path);
+            });
+        }
     }
 
     protected function casts(): array

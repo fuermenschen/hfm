@@ -658,3 +658,27 @@ it('revokes receipts and cached invoice downloads after a confirmed invoice HTTP
     Storage::disk('local')->assertMissing($path);
     Http::assertSentCount(1);
 });
+
+it('preserves invoice facts and pdf when persisting an invoice HTTP 404 fails', function (): void {
+    $invoice = refreshInvoiceFixture([
+        'webling_state' => 'paid', 'webling_remaining_cents' => 0,
+        'webling_received_cents' => 1500, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified,
+        'webling_synced_at' => '2026-10-08 12:00:00',
+    ]);
+    $path = $invoice->pdf_path;
+    $before = $invoice->refresh()->getAttributes();
+    fakeRefreshEvidence($invoice, ['https://demo.webling.ch/api/1/debitor/4321' => Http::response([], 404)]);
+    DonorEventInvoice::updating(function (DonorEventInvoice $updating) use ($invoice): void {
+        if ($updating->id === $invoice->id) {
+            throw new RuntimeException('Deletion persistence failed.');
+        }
+    });
+
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class)($invoice))
+        ->toThrow(RuntimeException::class, 'Deletion persistence failed.');
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    Storage::disk('local')->assertExists($path);
+    Http::assertSentCount(1);
+});

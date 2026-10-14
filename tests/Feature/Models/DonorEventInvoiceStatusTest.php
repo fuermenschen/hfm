@@ -7,6 +7,7 @@ use App\Models\DonorEventInvoice;
 use App\Services\DonorInvoiceService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 function statusOf(DonorEventInvoice $invoice): DonorInvoiceStatus
@@ -188,3 +189,72 @@ it('deletes the pdf and clears lifecycle fields when marked remotely deleted', f
         ->and(statusOf($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
     Storage::disk('local')->assertMissing($path);
 });
+
+it('retains the cached pdf until all application transactions commit', function (): void {
+    Storage::fake('local');
+    $path = 'webling/donor-invoices/deferred.pdf';
+    Storage::disk('local')->put($path, '%PDF-deferred');
+    $invoice = DonorEventInvoice::factory()->create([
+        'webling_debitor_id' => 42, 'pdf_disk' => 'local', 'pdf_path' => $path,
+    ]);
+
+    DB::transaction(function () use ($invoice, $path): void {
+        DB::transaction(function () use ($invoice, $path): void {
+            $invoice->markRemotelyDeleted();
+            expect($invoice->fresh()->remote_deleted_at)->not->toBeNull();
+            Storage::disk('local')->assertExists($path);
+        });
+        Storage::disk('local')->assertExists($path);
+    });
+
+    expect($invoice->fresh()->pdf_path)->toBeNull();
+    Storage::disk('local')->assertMissing($path);
+});
+
+it('preserves invoice facts and its cached pdf when deletion is rolled back after saving', function (): void {
+    Storage::fake('local');
+    $path = 'webling/donor-invoices/rollback.pdf';
+    Storage::disk('local')->put($path, '%PDF-rollback');
+    $invoice = DonorEventInvoice::factory()->create([
+        'webling_debitor_id' => 42, 'pdf_disk' => 'local', 'pdf_path' => $path,
+        'webling_received_cents' => 1000, 'webling_payment_date' => '2026-10-05',
+        'webling_payment_verification' => DonorPaymentVerification::Verified,
+    ]);
+    $before = $invoice->refresh()->getAttributes();
+
+    expect(fn () => DB::transaction(function () use ($invoice): void {
+        $invoice->markRemotelyDeleted();
+
+        throw new RuntimeException('Rollback after deletion save.');
+    }))->toThrow(RuntimeException::class, 'Rollback after deletion save.');
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    DB::transaction(static function (): void {});
+    Storage::disk('local')->assertExists($path);
+});
+
+it('preserves the cached pdf when remote-deletion persistence fails or is cancelled', function (bool $throwException): void {
+    Storage::fake('local');
+    $path = 'webling/donor-invoices/save-failure.pdf';
+    Storage::disk('local')->put($path, '%PDF-save-failure');
+    $invoice = DonorEventInvoice::factory()->create([
+        'webling_debitor_id' => 42, 'pdf_disk' => 'local', 'pdf_path' => $path,
+    ]);
+    $before = $invoice->refresh()->getAttributes();
+    DonorEventInvoice::saving(function (DonorEventInvoice $saving) use ($invoice, $throwException): bool {
+        if ($saving->id === $invoice->id) {
+            if ($throwException) {
+                throw new RuntimeException('Deletion save failed.');
+            }
+
+            return false;
+        }
+
+        return true;
+    });
+
+    expect(fn () => $invoice->markRemotelyDeleted())->toThrow(RuntimeException::class);
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    Storage::disk('local')->assertExists($path);
+})->with(['save exception' => true, 'save cancellation' => false]);
