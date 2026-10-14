@@ -7,7 +7,7 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NewsletterSubscriptionController;
 use App\Http\Controllers\ResultsController;
-use Illuminate\Support\Facades\Artisan;
+use App\Http\Controllers\WebcronController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,9 +52,4 @@ Route::get('login/{uuid}', [AdminSessionController::class, 'store'])
     ->middleware('signed')
     ->whereUuid('uuid');
 
-Route::get('queue-worker', function (): string {
-
-    Artisan::call('queue:work --stop-when-empty --tries=3 --max-time=20');
-
-    return 'Queue worker ran:<br><br>'.nl2br(Artisan::output());
-})->middleware('api-key')->name('queue-worker');
+Route::get('queue-worker', [WebcronController::class, 'index'])->middleware('api-key')->name('queue-worker');

@@ -61,6 +61,7 @@ This command runs formatting (`pint --dirty --blade`), frontend build checks, st
 
 - Development setup: [DEVELOPMENT_SETUP.md](DEVELOPMENT_SETUP.md)
 - Repository conventions: [CONVENTIONS.md](CONVENTIONS.md)
+- Production webcron: [docs/webcron.md](docs/webcron.md)
 
 ## 🤝 Dual Purpose
 

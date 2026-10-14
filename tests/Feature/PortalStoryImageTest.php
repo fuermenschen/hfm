@@ -7,6 +7,8 @@ use App\Models\DonationEvent;
 use App\Models\ExternalUser;
 use App\Models\Partner;
 use App\Services\AthleteStoryImageService;
+use Illuminate\Cache\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -84,6 +86,51 @@ it('shares an event base image between athlete caches', function (): void {
     expect(Cache::has($baseCacheKey))->toBeTrue()
         ->and($cacheKeyMethod->invoke($service, $firstRegistration, StoryImageVariant::Light, $baseCacheKey))
         ->not->toBe($cacheKeyMethod->invoke($service, $secondRegistration, StoryImageVariant::Light, $baseCacheKey));
+});
+
+it('returns a retryable 503 when image rendering remains locked', function (string $lockedImage, string $routeName): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+    $images = app(AthleteStoryImageService::class);
+    $logos = (new ReflectionMethod($images, 'partnerLogos'))->invoke($images, $event, StoryImageVariant::Light);
+    $baseKey = (new ReflectionMethod($images, 'baseCacheKey'))->invoke($images, $event, StoryImageVariant::Light, $logos);
+    $cacheKey = (new ReflectionMethod($images, 'cacheKey'))->invoke($images, $registration, StoryImageVariant::Light, $baseKey);
+    $lockKey = $lockedImage === 'base' ? $baseKey : $cacheKey;
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->with(10, Mockery::type(Closure::class))->andThrow(new LockTimeoutException);
+    $cacheStore = Cache::getFacadeRoot();
+    $cache = Mockery::mock(Cache::getFacadeRoot());
+    $cache->shouldReceive('lock')->andReturnUsing(fn (string $key, int $seconds): Lock => $cacheStore->lock($key, $seconds))->byDefault();
+    $cache->shouldReceive('lock')->with('render:'.$lockKey, 120)->andReturn($lock);
+    Cache::swap($cache);
+    actingAs($athlete, 'external');
+
+    get(route($routeName, [$registration, StoryImageVariant::Light->value]))
+        ->assertServiceUnavailable()->assertHeader('Retry-After', '120');
+})->with(['base', 'personalized'])->with(['portal.story-image.preview', 'portal.story-image.download']);
+
+it('returns an image completed by another renderer just as waiting times out', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    $athlete = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+    $images = app(AthleteStoryImageService::class);
+    $logos = (new ReflectionMethod($images, 'partnerLogos'))->invoke($images, $event, StoryImageVariant::Light);
+    $baseKey = (new ReflectionMethod($images, 'baseCacheKey'))->invoke($images, $event, StoryImageVariant::Light, $logos);
+    $cacheKey = (new ReflectionMethod($images, 'cacheKey'))->invoke($images, $registration, StoryImageVariant::Light, $baseKey);
+    $lock = Mockery::mock(Lock::class);
+    $lock->shouldReceive('block')->once()->with(10, Mockery::type(Closure::class))->andReturnUsing(function () use ($cacheKey): never {
+        Cache::forever($cacheKey, ['contents' => 'completed image', 'filename' => 'image.jpg']);
+
+        throw new LockTimeoutException;
+    });
+    $cache = Mockery::mock(Cache::getFacadeRoot());
+    $cache->shouldReceive('lock')->with('render:'.$cacheKey, 120)->andReturn($lock);
+    Cache::swap($cache);
+    actingAs($athlete, 'external');
+
+    get(route('portal.story-image.preview', [$registration, StoryImageVariant::Light->value]))
+        ->assertOk()->assertContent('completed image')->assertHeader('Content-Type', 'image/jpeg');
 });
 
 it('renders SVG logos without black pixels before scaling', function (): void {
