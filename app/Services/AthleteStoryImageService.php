@@ -11,6 +11,7 @@ use App\Models\Partner;
 use App\Support\AdminFiles\AdminFileStorage;
 use App\Support\AdminFiles\SvgNormalizer;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +19,7 @@ use Intervention\Image\Drivers\Imagick\Driver;
 use Intervention\Image\Format;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Interfaces\ImageInterface;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class AthleteStoryImageService
 {
@@ -56,18 +58,34 @@ class AthleteStoryImageService
         $registration->loadMissing(['donationEvent', 'externalUser']);
         $partnerLogos = $this->partnerLogos($registration->donationEvent, $variant);
         $baseCacheKey = $this->baseCacheKey($registration->donationEvent, $variant, $partnerLogos);
+        $cacheKey = $this->cacheKey($registration, $variant, $baseCacheKey);
 
-        return Cache::rememberForever(
-            $this->cacheKey($registration, $variant, $baseCacheKey),
-            fn (): array => $this->renderPersonalized(
-                $registration,
-                $variant,
-                Cache::rememberForever(
-                    $baseCacheKey,
-                    fn (): string => $this->renderBase($registration->donationEvent, $variant, $partnerLogos),
-                ),
-            ),
-        );
+        try {
+            return Cache::rememberForever(
+                $cacheKey,
+                fn (): array => Cache::lock('render:'.$cacheKey, 120)->block(10, fn (): array => Cache::rememberForever(
+                    $cacheKey,
+                    fn (): array => $this->renderPersonalized(
+                        $registration,
+                        $variant,
+                        Cache::rememberForever(
+                            $baseCacheKey,
+                            fn (): string => Cache::lock('render:'.$baseCacheKey, 120)->block(10, fn (): string => Cache::rememberForever(
+                                $baseCacheKey,
+                                fn (): string => $this->renderBase($registration->donationEvent, $variant, $partnerLogos),
+                            )),
+                        ),
+                    ),
+                )),
+            );
+        } catch (LockTimeoutException $lockTimeoutException) {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+
+            throw new ServiceUnavailableHttpException(120, 'Das Bild wird vorbereitet. Bitte versuche es in zwei Minuten erneut.', $lockTimeoutException);
+        }
     }
 
     /**
