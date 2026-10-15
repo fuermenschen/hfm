@@ -10,6 +10,8 @@ use App\Models\DonationEvent;
 use App\Models\EventGroup;
 use App\Services\AthleteStoryImageService;
 use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\WorkerStopping;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -19,6 +21,36 @@ use function Pest\Laravel\artisan;
 use function Pest\Laravel\freezeTime;
 use function Pest\Laravel\get;
 use function Pest\Laravel\travelTo;
+
+function assertMaintenanceWorkerWithMemoryDiagnostics(): void
+{
+    $snapshots = [];
+    $capture = function (string $stage, array $context = []) use (&$snapshots): void {
+        $snapshots[] = [
+            'stage' => $stage,
+            'allocated_mb' => memory_get_usage(true) / 1024 / 1024,
+            'used_mb' => memory_get_usage(false) / 1024 / 1024,
+            'php_memory_limit' => ini_get('memory_limit'),
+            ...$context,
+        ];
+    };
+    foreach ([JobProcessing::class, JobProcessed::class] as $eventClass) {
+        Event::listen($eventClass, function (JobProcessing|JobProcessed $event) use ($capture): void {
+            $capture(class_basename($event), ['job' => $event->job->resolveName(), 'queue' => $event->job->getQueue()]);
+        });
+    }
+    Event::listen(WorkerStopping::class, function (WorkerStopping $event) use ($capture): void {
+        $capture('WorkerStopping', [
+            'exit_status' => $event->status,
+            'stop_reason' => $event->reason?->value,
+            'worker_memory_limit_mb' => $event->workerOptions?->memory,
+        ]);
+    });
+    $capture('Before request');
+    $response = get(route('queue-worker'), ['X-API-Key' => config('app.api_key')]);
+
+    expect($response->getStatusCode())->toBe(200, $response->getContent()."\nMemory diagnostics:\n".json_encode($snapshots, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+}
 
 it('clears only ended pending memberships and tolerates repeated cleanup', function (): void {
     travelTo(now('UTC')->setTime(12, 0));
@@ -135,8 +167,7 @@ it('drains both queues with configured normal work ahead of maintenance', functi
     WarmAthleteStoryImage::dispatch($registration->id, StoryImageVariant::Dark);
     ExpireEventGroupMembershipRequests::dispatch();
 
-    $response = get(route('queue-worker'), ['X-API-Key' => config('app.api_key')]);
-    expect($response->getStatusCode())->toBe(200, $response->getContent());
+    assertMaintenanceWorkerWithMemoryDiagnostics();
 
     expect($processedQueues)->toBe([$normalQueue, 'maintenance']);
     expect(Queue::size($normalQueue))->toBe(0);
@@ -149,8 +180,7 @@ it('does not dispatch maintenance again in the same minute after queued work com
     artisan('schedule:run')->assertSuccessful();
     expect(Queue::size('default'))->toBe(1);
     expect(Queue::size('maintenance'))->toBe(1);
-    $response = get(route('queue-worker'), ['X-API-Key' => config('app.api_key')]);
-    expect($response->getStatusCode())->toBe(200, $response->getContent());
+    assertMaintenanceWorkerWithMemoryDiagnostics();
 
     artisan('schedule:run')->assertSuccessful();
 
