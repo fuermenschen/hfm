@@ -2,6 +2,7 @@
 
 use App\Actions\CollectDonorInvoiceDataAction;
 use App\Jobs\CreateDonorInvoice;
+use App\Jobs\RefreshDonorInvoiceStatus;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
@@ -17,6 +18,7 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -39,6 +41,7 @@ beforeEach(function (): void {
         'due_days' => 14,
     ]);
     Storage::fake('local');
+    Queue::fake([RefreshDonorInvoiceStatus::class]);
 });
 
 it('creates a marked debitor and caches its PDF from one persisted snapshot', function (): void {
@@ -79,6 +82,7 @@ it('creates a marked debitor and caches its PDF from one persisted snapshot', fu
         ->and($invoice->pdf_disk)->toBe('local')
         ->and($invoice->pdf_path)->toStartWith('webling/donor-invoices/'.$invoice->id.'/');
     Storage::disk('local')->assertExists($invoice->pdf_path);
+    Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn (RefreshDonorInvoiceStatus $job): bool => $job->invoiceId === $invoice->id);
 });
 
 it('recovers a matching debitor without another create request', function (): void {
@@ -95,6 +99,36 @@ it('recovers a matching debitor without another create request', function (): vo
 
     expect($invoice->refresh()->webling_debitor_id)->toBe(999);
 });
+
+it('refreshes synchronously after releasing the creation lock for new and recovered invoices', function (bool $existingDebitor): void {
+    config(['queue.default' => 'sync']);
+    Queue::fake()->except([RefreshDonorInvoiceStatus::class]);
+    $invoice = donorInvoiceWithDonation();
+    if ($existingDebitor) {
+        $invoice->forceFill(['webling_debitor_id' => 4321])->save();
+    }
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    app()->instance(WeblingInvoiceService::class, $webling);
+    if (! $existingDebitor) {
+        $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+        $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+        $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(successfulResponse(4321));
+    }
+    $webling->shouldReceive('settlementDetails')->once()->andReturn([
+        'state' => 'open', 'due_date' => null, 'invoice_number' => '1542',
+        'total_cents' => 1000, 'remaining_cents' => 1000,
+        'received_cents' => null, 'payment_date' => null, 'payment_verification' => 'unverified',
+    ]);
+    $letter = Mockery::mock(LetterService::class);
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-sync'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    $invoice->refresh();
+    expect($invoice->webling_state)->toBe('open')
+        ->and($invoice->webling_synced_at)->not->toBeNull();
+    Storage::disk('local')->assertExists($invoice->pdf_path);
+})->with([false, true]);
 
 it('keeps the frozen snapshot and debitor when PDF creation fails', function (): void {
     $invoice = donorInvoiceWithDonation();

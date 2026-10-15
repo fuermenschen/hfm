@@ -96,6 +96,11 @@ class CreateDonorInvoice implements ShouldQueue
                 'pdf_path' => $path,
             ])->save();
         });
+
+        $invoice = $this->invoice->fresh();
+        if ($invoice !== null && $invoice->webling_debitor_id !== null && $invoice->webling_synced_at === null) {
+            dispatch(new RefreshDonorInvoiceStatus($invoice->id))->afterCommit();
+        }
     }
 
     /**

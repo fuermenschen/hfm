@@ -11,13 +11,13 @@ use App\Actions\DownloadAthleteDocumentArchiveAction;
 use App\Actions\DownloadAthleteStoryImageArchiveAction;
 use App\Actions\DownloadDonorInvoicePdfAction;
 use App\Actions\DownloadEventInvoiceArchiveAction;
-use App\Actions\RefreshDonorInvoiceStatusAction;
 use App\Actions\RunDonorInvoiceBulkAction;
 use App\Actions\SendDonorInvoiceAction;
 use App\Actions\SendDonorInvoiceReminderAction;
 use App\Enums\AthleteDocumentType;
 use App\Enums\DonorInvoiceStatus;
 use App\Exceptions\DonorInvoiceGuardException;
+use App\Jobs\DispatchDonorInvoiceRefresh;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
@@ -81,8 +81,6 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     protected DeleteDonorInvoiceAction $deleteDonorInvoice;
 
-    protected RefreshDonorInvoiceStatusAction $refreshDonorInvoiceStatus;
-
     protected DownloadDonorInvoicePdfAction $downloadDonorInvoicePdf;
 
     protected DownloadEventInvoiceArchiveAction $downloadEventInvoiceArchive;
@@ -108,7 +106,6 @@ class AdminPersonTable extends AbstractDatatableComponent
         SendDonorInvoiceAction $sendDonorInvoice,
         SendDonorInvoiceReminderAction $sendDonorInvoiceReminder,
         DeleteDonorInvoiceAction $deleteDonorInvoice,
-        RefreshDonorInvoiceStatusAction $refreshDonorInvoiceStatus,
         DownloadDonorInvoicePdfAction $downloadDonorInvoicePdf,
         DownloadEventInvoiceArchiveAction $downloadEventInvoiceArchive,
         RunDonorInvoiceBulkAction $runDonorInvoiceBulk,
@@ -125,7 +122,6 @@ class AdminPersonTable extends AbstractDatatableComponent
         $this->sendDonorInvoice = $sendDonorInvoice;
         $this->sendDonorInvoiceReminder = $sendDonorInvoiceReminder;
         $this->deleteDonorInvoice = $deleteDonorInvoice;
-        $this->refreshDonorInvoiceStatus = $refreshDonorInvoiceStatus;
         $this->downloadDonorInvoicePdf = $downloadDonorInvoicePdf;
         $this->downloadEventInvoiceArchive = $downloadEventInvoiceArchive;
         $this->runDonorInvoiceBulk = $runDonorInvoiceBulk;
@@ -349,7 +345,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             array_splice($columns, 2, 0, ['registration_time', 'donation_count']);
             array_splice($columns, 7, 0, ['partner', 'group', 'confirmed']);
         } else {
-            array_splice($columns, 5, 0, ['invoice_status', 'invoice_total', 'invoice_sent_at']);
+            array_splice($columns, 5, 0, ['invoice_status', 'invoice_total', 'invoice_sent_at', 'invoice_synced_at']);
         }
 
         return $columns;
@@ -812,14 +808,14 @@ class AdminPersonTable extends AbstractDatatableComponent
             return;
         }
 
-        $invoices = DonorEventInvoice::query()
+        $hasInvoices = DonorEventInvoice::query()
             ->where('donation_event_id', $event->id)
             ->whereNotNull('webling_debitor_id')
             ->whereNull('remote_deleted_at')
             ->whereHas('externalUser')
-            ->get();
+            ->exists();
 
-        if ($invoices->isEmpty()) {
+        if (! $hasInvoices) {
             Flux::toast(
                 heading: 'Nichts zu aktualisieren',
                 text: 'Für diesen Anlass existieren keine erstellten Rechnungen.',
@@ -829,16 +825,12 @@ class AdminPersonTable extends AbstractDatatableComponent
             return;
         }
 
-        $result = ($this->runDonorInvoiceBulk)(
-            $event,
-            $invoices,
-            fn (DonorEventInvoice $invoice) => ($this->refreshDonorInvoiceStatus)($invoice),
-        );
+        dispatch(new DispatchDonorInvoiceRefresh($event->id));
 
         Flux::toast(
-            heading: 'Rechnungsstatus aktualisiert',
-            text: $this->bulkResultText($result),
-            variant: $result['failed'] > 0 ? 'warning' : 'success',
+            heading: 'Aktualisierung vorgemerkt',
+            text: 'Der Rechnungsstatus wird im Hintergrund aus Webling geladen.',
+            variant: 'success',
         );
     }
 

@@ -2,6 +2,7 @@
 
 use App\Components\AdminPersonTable;
 use App\Jobs\CreateDonorInvoice;
+use App\Jobs\DispatchDonorInvoiceRefresh;
 use App\Mail\DonorInvoiceMail;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
@@ -19,7 +20,9 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -912,7 +915,8 @@ it('bulk downloads selected invoice pdfs as a zip', function (): void {
         ->assertFileDownloaded($event->slug.'_rechnungen.zip');
 });
 
-it('refreshes invoice statuses only for the selected event', function (): void {
+it('queues invoice status refresh only for the selected event', function (): void {
+    Queue::fake([DispatchDonorInvoiceRefresh::class]);
     $event = DonationEvent::factory()->create();
     $otherEvent = DonationEvent::factory()->create();
     $donor = ExternalUser::factory()->asDonor($event)->create();
@@ -922,13 +926,7 @@ it('refreshes invoice statuses only for the selected event', function (): void {
     $otherDonor = ExternalUser::factory()->asDonor($otherEvent)->create();
     $otherInvoice = DonorEventInvoice::factory()->forEvent($otherEvent)->forExternalUser($otherDonor)->create(['webling_debitor_id' => 88]);
 
-    weblingInvoiceDetailsMock([
-        'state' => 'paid',
-        'due_date' => null,
-        'invoice_number' => '1542',
-        'total_cents' => 2500,
-        'remaining_cents' => 0,
-    ]);
+    Http::preventStrayRequests();
     actingAs(User::factory()->create());
 
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
@@ -938,8 +936,10 @@ it('refreshes invoice statuses only for the selected event', function (): void {
     $invoice->refresh();
     $otherInvoice->refresh();
     $untrackedInvoice->refresh();
-    expect($invoice->webling_state)->toBe('paid')
-        ->and($invoice->webling_synced_at)->not->toBeNull()
+    Queue::assertPushed(DispatchDonorInvoiceRefresh::class,
+        fn (DispatchDonorInvoiceRefresh $job): bool => $job->eventId === $event->id);
+    expect($invoice->webling_state)->toBeNull()
+        ->and($invoice->webling_synced_at)->toBeNull()
         ->and($otherInvoice->webling_state)->toBeNull()
         ->and($otherInvoice->webling_synced_at)->toBeNull()
         ->and($untrackedInvoice->webling_state)->toBeNull()
