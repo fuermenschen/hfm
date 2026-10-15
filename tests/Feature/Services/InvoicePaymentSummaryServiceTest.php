@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\DeletePartnerAction;
 use App\Enums\DonorPaymentVerification;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
@@ -65,6 +66,56 @@ it('allocates indivisible cents exactly using frozen equal-split partners', func
     ]);
     expect(array_sum(array_column($summary['partners'], 'amount_cents')))->toBe(101);
 });
+
+it('keeps deleted frozen partners shares unallocated alongside direct allocations', function (int $deletedCount): void {
+    $event = DonationEvent::factory()->create();
+    $a = Partner::factory()->create(['name' => 'A']);
+    $deletedPartners = Partner::factory()->count($deletedCount)->create();
+    $event->partners()->attach($a->id);
+    $equalPartnerIds = [$a->id, ...$deletedPartners->modelKeys()];
+    paidSummaryInvoice($event, [
+        'webling_received_cents' => 15000,
+        'source_snapshot' => ['allocation_partner_ids' => $equalPartnerIds, 'lines' => [
+            ['partner_id' => null, 'total_cents' => 10000],
+            ['partner_id' => $a->id, 'total_cents' => 5000],
+        ]],
+    ]);
+    foreach ($deletedPartners as $partner) {
+        app(DeletePartnerAction::class)->handle($partner);
+    }
+
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect());
+
+    $allocated = 5000 + (int) round(10000 / count($equalPartnerIds));
+    expect($summary['partners'])->toBe([['name' => 'A', 'amount_cents' => $allocated]]);
+    expect($summary['unallocated_cents'])->toBe(15000 - $allocated);
+})->with([1, 2]);
+
+it('recognizes legacy equal-split partner IDs in snapshots and donation fallback', function (bool $hasSnapshot): void {
+    $event = DonationEvent::factory()->create();
+    $a = Partner::factory()->create(['name' => 'A']);
+    $b = Partner::factory()->create(['name' => 'B']);
+    $legacy = Partner::factory()->create(['name' => 'alle zu gleichen Teilen']);
+    $event->partners()->attach([$a->id, $b->id, $legacy->id]);
+    $donor = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forEvent($event)->withPartner($legacy)->create(['rounds_done' => 2]);
+    $donation = Donation::factory()->forPair($donor, $registration)->create(['amount_per_round' => 50, 'amount_min' => null, 'amount_max' => null]);
+    paidSummaryInvoice($event, [
+        'external_user_id' => $donor->id,
+        'source_snapshot' => $hasSnapshot ? [
+            'allocation_partner_ids' => [$a->id, $b->id],
+            'lines' => [['partner_id' => $legacy->id, 'partner' => 'Stale label', 'total_cents' => 10000]],
+        ] : null,
+    ]);
+    $donation->load('athleteRegistration.partner');
+
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect([$donation]));
+
+    expect($summary['partners'])->toBe([
+        ['name' => 'A', 'amount_cents' => 5000], ['name' => 'B', 'amount_cents' => 5000],
+    ]);
+    expect($summary['unallocated_cents'])->toBe(0);
+})->with(['snapshot' => true, 'donation fallback' => false]);
 
 it('preserves exact weights across repeated equal-split invoice lines', function (): void {
     $event = DonationEvent::factory()->create();

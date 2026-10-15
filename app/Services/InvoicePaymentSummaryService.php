@@ -83,8 +83,7 @@ class InvoicePaymentSummaryService
             $equalPartnerIds = array_values(array_unique(array_filter(
                 $equalPartnerIds,
                 fn (mixed $partnerId): bool => is_int($partnerId)
-                    && $partners->has($partnerId)
-                    && $partners->get($partnerId)->name !== 'alle zu gleichen Teilen',
+                    && ($partners->get($partnerId)->name ?? null) !== 'alle zu gleichen Teilen',
             )));
             $directWeightMultiplier = max(1, count($equalPartnerIds));
             $weights = [];
@@ -96,7 +95,8 @@ class InvoicePaymentSummaryService
                 $name = $line['partner'] ?? null;
                 if (array_key_exists('partner_id', $line)) {
                     $partnerId = $line['partner_id'];
-                    $equalSplit = $partnerId === null;
+                    $equalSplit = $partnerId === null
+                        || (is_int($partnerId) && ($partners->get($partnerId)->name ?? null) === 'alle zu gleichen Teilen');
                 } else {
                     $equalSplit = is_string($name) && in_array($name, [__('app.equal_split'), 'alle zu gleichen Teilen'], true);
                     $matchedPartner = is_string($name) ? $eventPartnersByName->get($name) : null;
@@ -111,7 +111,8 @@ class InvoicePaymentSummaryService
                     }
 
                     foreach ($equalPartnerIds as $equalPartnerId) {
-                        $weights[$equalPartnerId] = ($weights[$equalPartnerId] ?? 0) + $line['total_cents'];
+                        $allocationId = $partners->has($equalPartnerId) ? $equalPartnerId : 0;
+                        $weights[$allocationId] = ($weights[$allocationId] ?? 0) + $line['total_cents'];
                     }
 
                     continue;
