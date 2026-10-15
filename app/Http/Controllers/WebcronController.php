@@ -5,74 +5,64 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
-use Throwable;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class WebcronController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $connection = config('queue.default');
         if (config("queue.connections.{$connection}.driver") !== 'database') {
-            Log::error('Webcron requires an asynchronous database queue; scheduler and worker skipped.');
-
             return $this->respond("Webcron requires QUEUE_CONNECTION=database; scheduler and worker skipped.\n", 503);
         }
 
-        $output = '';
-        $status = 200;
+        $startedAt = (float) $request->server('REQUEST_TIME_FLOAT', microtime(true));
+        $output = new BufferedOutput;
         $scheduledTaskFailed = false;
         Event::listen(ScheduledTaskFailed::class, function (ScheduledTaskFailed $event) use (&$scheduledTaskFailed): void {
             $scheduledTaskFailed = true;
         });
 
-        try {
-            $schedulerExitCode = Artisan::call('schedule:run');
-            $output = "Scheduler:\n".Artisan::output();
-            if ($schedulerExitCode !== 0 || $scheduledTaskFailed) {
-                $status = 500;
-            }
-        } catch (Throwable $throwable) {
-            report($throwable);
-            $output = "Scheduler failed; see application logs.\n";
-            $status = 500;
+        $output->writeln('Scheduler:');
+        $schedulerExitCode = Artisan::call('schedule:run', [], $output);
+        $status = $schedulerExitCode !== 0 || $scheduledTaskFailed ? 500 : 200;
+
+        /** Reserve 30 seconds for the last job and 5 seconds for the response. */
+        $budget = (int) floor(min(60, $this->executionLimit() ?: 60) - (microtime(true) - $startedAt) - 35);
+        if ($budget < 1) {
+            $output->writeln('Worker skipped: insufficient execution time remaining.');
+
+            return $this->respond($output->fetch(), 503);
         }
 
-        $executionLimit = $this->executionLimit();
-        if ($executionLimit > 0 && $executionLimit < 120) {
-            Log::error('Webcron worker skipped: max_execution_time must be 0 or at least 120 seconds.', ['max_execution_time' => $executionLimit]);
-
-            return $this->respond($output."\nWorker skipped: max_execution_time must be 0 or at least 120 seconds.\n", 503);
-        }
-
-        $lock = Cache::lock('webcron-worker', 120);
+        $lock = Cache::lock('webcron-worker', 90);
         if (! $lock->get()) {
-            return $this->respond($output."\nWorker already running.\n", $status);
+            $output->writeln('Worker already running.');
+
+            return $this->respond($output->fetch(), $status);
         }
 
         try {
-            $result = Process::path(base_path())->timeout(90)->run([
-                PHP_BINDIR.'/php', 'artisan', 'webcron:work', '--no-interaction',
-            ]);
-            $output .= "\nWorker:\n".$result->output().$result->errorOutput();
-            if (! $result->successful()) {
-                Log::error('Webcron worker exited unsuccessfully.', ['exit_code' => $result->exitCode()]);
+            $output->writeln('Worker:');
+            $workerExitCode = Artisan::call('queue:work', [
+                '--stop-when-empty' => true,
+                '--tries' => 3,
+                '--max-time' => $budget,
+                '--queue' => implode(',', array_unique([config("queue.connections.{$connection}.queue"), 'maintenance'])),
+            ], $output);
+            if ($workerExitCode !== 0) {
                 $status = 500;
             }
-        } catch (Throwable $throwable) {
-            report($throwable);
-            $output .= "\nWorker failed or exceeded its 90-second deadline; see application logs.\n";
-            $status = 500;
         } finally {
             $lock->release();
         }
 
-        return $this->respond($output, $status);
+        return $this->respond($output->fetch(), $status);
     }
 
     protected function executionLimit(): int
