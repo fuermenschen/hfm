@@ -17,6 +17,7 @@ use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 use function Pest\Laravel\artisan;
 use function Pest\Laravel\freezeTime;
+use function Pest\Laravel\get;
 use function Pest\Laravel\travelTo;
 
 it('clears only ended pending memberships and tolerates repeated cleanup', function (): void {
@@ -120,7 +121,7 @@ it('warms both variants and reuses their valid fingerprinted cache entries', fun
 
 it('drains both queues with configured normal work ahead of maintenance', function (string $normalQueue): void {
     freezeTime();
-    config(['queue.default' => 'database', 'queue.connections.database.retry_after' => 120, 'queue.connections.database.queue' => $normalQueue]);
+    config(['queue.default' => 'database', 'queue.connections.database.queue' => $normalQueue]);
     $registration = AthleteRegistration::factory()->verified()->create();
     $images = Mockery::mock(AthleteStoryImageService::class);
     $images->shouldReceive('build')->once()->withArgs(
@@ -134,7 +135,7 @@ it('drains both queues with configured normal work ahead of maintenance', functi
     WarmAthleteStoryImage::dispatch($registration->id, StoryImageVariant::Dark);
     ExpireEventGroupMembershipRequests::dispatch();
 
-    artisan('webcron:work')->assertSuccessful();
+    get(route('queue-worker'), ['X-API-Key' => config('app.api_key')])->assertOk();
 
     expect($processedQueues)->toBe([$normalQueue, 'maintenance']);
     expect(Queue::size($normalQueue))->toBe(0);
@@ -143,11 +144,11 @@ it('drains both queues with configured normal work ahead of maintenance', functi
 
 it('does not dispatch maintenance again in the same minute after queued work completes', function (): void {
     travelTo(now('UTC')->next('Sunday')->setTime(1, 0));
-    config(['queue.default' => 'database', 'queue.connections.database.retry_after' => 120, 'queue.connections.database.queue' => 'default']);
+    config(['queue.default' => 'database', 'queue.connections.database.queue' => 'default']);
     artisan('schedule:run')->assertSuccessful();
     expect(Queue::size('default'))->toBe(1);
     expect(Queue::size('maintenance'))->toBe(1);
-    artisan('webcron:work')->assertSuccessful();
+    get(route('queue-worker'), ['X-API-Key' => config('app.api_key')])->assertOk();
 
     artisan('schedule:run')->assertSuccessful();
 
