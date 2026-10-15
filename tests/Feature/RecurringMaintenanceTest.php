@@ -135,7 +135,8 @@ it('drains both queues with configured normal work ahead of maintenance', functi
     WarmAthleteStoryImage::dispatch($registration->id, StoryImageVariant::Dark);
     ExpireEventGroupMembershipRequests::dispatch();
 
-    get(route('queue-worker'), ['X-API-Key' => config('app.api_key')])->assertOk();
+    $response = get(route('queue-worker'), ['X-API-Key' => config('app.api_key')]);
+    expect($response->getStatusCode())->toBe(200, $response->getContent());
 
     expect($processedQueues)->toBe([$normalQueue, 'maintenance']);
     expect(Queue::size($normalQueue))->toBe(0);
@@ -148,7 +149,8 @@ it('does not dispatch maintenance again in the same minute after queued work com
     artisan('schedule:run')->assertSuccessful();
     expect(Queue::size('default'))->toBe(1);
     expect(Queue::size('maintenance'))->toBe(1);
-    get(route('queue-worker'), ['X-API-Key' => config('app.api_key')])->assertOk();
+    $response = get(route('queue-worker'), ['X-API-Key' => config('app.api_key')]);
+    expect($response->getStatusCode())->toBe(200, $response->getContent());
 
     artisan('schedule:run')->assertSuccessful();
 

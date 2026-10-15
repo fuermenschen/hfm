@@ -371,6 +371,39 @@ it('preserves verified receipt facts when invoice verification context cannot be
     expect(app(DonorInvoiceService::class)->isReceiptEligible($invoice->fresh()))->toBeTrue();
 })->with(['historical period', 'missing bank', 'remote period mismatch']);
 
+it('applies account configuration changes to existing invoices in the current period', function (int $bankAccountId, ?int $excessAccountId): void {
+    $settings = app(WeblingApiSettings::class);
+    $settings->bank_account_id = $bankAccountId;
+    $settings->excess_income_account_id = $excessAccountId;
+    $invoice = refreshInvoiceFixture([
+        'webling_verification_context' => [
+            'accounting_period_id' => 10, 'bank_account_id' => $bankAccountId, 'excess_income_account_id' => $excessAccountId,
+        ],
+    ]);
+    $payloads = refreshEvidencePayloads($invoice);
+    $payloads['booking']['children']['entry'][] = 21;
+    $payloads['entries'][] = [
+        'type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => 1.10],
+        'links' => ['debit' => [3], 'credit' => [9]],
+    ];
+    fakeRefreshEvidence($invoice, payloads: $payloads);
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+    expect($invoice->fresh()->webling_payment_verification)->toBe(DonorPaymentVerification::Unclear);
+
+    $settings->bank_account_id = 3;
+    $settings->excess_income_account_id = 9;
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    $stored = $invoice->fresh();
+    expect($stored->webling_payment_verification)->toBe(DonorPaymentVerification::Verified)
+        ->and($stored->webling_received_cents)->toBe(1610)
+        ->and($stored->webling_excess_cents)->toBe(110)
+        ->and($stored->webling_verification_context)->toBe([
+            'accounting_period_id' => 10, 'bank_account_id' => 3, 'excess_income_account_id' => 9,
+        ]);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeTrue();
+})->with(['configure optional excess account' => [3, null], 'correct bank account' => [4, 9]]);
+
 it('keeps historical receipts verified after global accounting period rollover', function (?array $snapshot): void {
     $settings = app(WeblingApiSettings::class);
     $invoice = refreshInvoiceFixture(['source_snapshot' => $snapshot]);

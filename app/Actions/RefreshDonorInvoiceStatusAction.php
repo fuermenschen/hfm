@@ -34,9 +34,9 @@ class RefreshDonorInvoiceStatusAction
 
             try {
                 $context = $invoice->webling_verification_context;
-                if ($context === null) {
-                    $periodId = $invoice->source_snapshot['webling']['accounting_period_id']
-                        ?? $invoice->source_snapshot['webling']['period_id'] ?? $this->settings->accounting_period_id;
+                $periodId = $context['accounting_period_id'] ?? $invoice->source_snapshot['webling']['accounting_period_id']
+                    ?? $invoice->source_snapshot['webling']['period_id'] ?? $this->settings->accounting_period_id;
+                if ($context === null || $periodId === $this->settings->accounting_period_id) {
                     throw_unless($periodId === $this->settings->accounting_period_id,
                         RuntimeException::class, 'Historical invoice verification accounts are unavailable.');
                     $context = [
