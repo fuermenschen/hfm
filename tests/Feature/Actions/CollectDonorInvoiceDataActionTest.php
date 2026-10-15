@@ -44,6 +44,7 @@ it('collects confirmed and unconfirmed donations in integer cents', function ():
         ->and($lines[0])->toMatchArray([
             'athlete' => 'Alice D.',
             'partner' => 'ACME',
+            'partner_id' => $partner->id,
             'rounds' => 3,
             'amount_per_round_cents' => 250,
             'subtotal_cents' => 750,

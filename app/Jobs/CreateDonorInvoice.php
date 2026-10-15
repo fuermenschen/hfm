@@ -104,7 +104,7 @@ class CreateDonorInvoice implements ShouldQueue
     }
 
     /**
-     * @return array{title:string,total_cents:int,lines:list<array{athlete:string,partner:?string,rounds:int,amount_per_round_cents:int,subtotal_cents:int,min_cents:?int,max_cents:?int,total_cents:int}>,webling:array<string,mixed>,letter:array<string,mixed>,template_version:string}
+     * @return array{title:string,total_cents:int,lines:list<array{athlete:string,partner:?string,partner_id:?int,rounds:int,amount_per_round_cents:int,subtotal_cents:int,min_cents:?int,max_cents:?int,total_cents:int}>,allocation_partner_ids:list<int>,webling:array<string,mixed>,letter:array<string,mixed>,template_version:string}
      */
     protected function createSnapshot(
         DonorEventInvoice $invoice,
@@ -152,6 +152,8 @@ class CreateDonorInvoice implements ShouldQueue
             'title' => $title,
             'total_cents' => $totalCents,
             'lines' => $lines,
+            'allocation_partner_ids' => $donationEvent->partners()
+                ->where('partners.name', '!=', 'alle zu gleichen Teilen')->orderBy('partners.id')->pluck('partners.id')->all(),
             'webling' => [
                 'title' => $title,
                 'date' => $invoiceDate->toDateString(),

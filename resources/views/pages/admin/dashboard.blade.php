@@ -255,6 +255,81 @@
             />
         </x-stats>
 
+        <x-stats title="Spenden (bezahlt)">
+            <x-admin.stat-card
+                title="Verifizierte Zahlungseingänge"
+                :value="'Fr. '.number_format($paymentSummary['received_cents'] / 100, 2, '.', chr(39))"
+                route="admin.donors.index"
+                :route-parameters="$routeParameters"
+            />
+            @foreach ($paymentSummary['partners'] as $paidPartner)
+                <x-admin.stat-card
+                    :title="$paidPartner['name']"
+                    :value="'Fr. '.number_format($paidPartner['amount_cents'] / 100, 2, '.', chr(39))"
+                    route="admin.donors.index"
+                    :route-parameters="$routeParameters"
+                />
+            @endforeach
+            @if ($paymentSummary['unallocated_cents'] > 0)
+                <x-admin.stat-card
+                    title="Noch nicht zugeordnet"
+                    :value="'Fr. '.number_format($paymentSummary['unallocated_cents'] / 100, 2, '.', chr(39))"
+                    route="admin.donors.index"
+                    :route-parameters="$routeParameters"
+                />
+            @endif
+        </x-stats>
+        <flux:text class="mt-3">
+            Nur verifizierte Zahlungseingänge abgeschlossener Rechnungen, inklusive Mehrzahlungen. Teilzahlungen und
+            unklare Zahlungseingänge sind nicht enthalten. Die Verteilung folgt den Partneranteilen der jeweiligen
+            Rechnung, inklusive Mehrzahlungen.
+        </flux:text>
+
+        <x-stats title="Rechnungen und Zahlungsabgleich">
+            @foreach ([
+                'Erstellt (gesamt)' => $paymentSummary['created_total'],
+                'Gesendet (gesamt)' => $paymentSummary['sent_total'],
+                'Verifizierte Zahlungseingänge' => $paymentSummary['verified_receipts'],
+                'Unklare Zahlungseingänge' => $paymentSummary['unclear_payments'],
+                'Noch nie abgeglichen' => $paymentSummary['never_synced'],
+            ] as $label => $count)
+                <x-admin.stat-card
+                    :title="$label"
+                    :value="$count"
+                    route="admin.donors.index"
+                    :route-parameters="$routeParameters"
+                />
+            @endforeach
+            @foreach (\App\Enums\DonorInvoiceStatus::cases() as $status)
+                <x-admin.stat-card
+                    :title="$status->label()"
+                    :value="$paymentSummary['counts'][$status->value]"
+                    route="admin.donors.index"
+                    :route-parameters="$routeParameters"
+                />
+            @endforeach
+            @foreach ([
+                'Offener Rechnungsbetrag (Webling)' => $paymentSummary['outstanding_cents'],
+                'Mehrzahlungen (verifiziert)' => $paymentSummary['excess_cents'],
+                'Abgeschrieben (Webling)' => $paymentSummary['writeoff_cents'],
+            ] as $label => $amount)
+                <x-admin.stat-card
+                    :title="$label"
+                    :value="'Fr. '.number_format($amount / 100, 2, '.', chr(39))"
+                    route="admin.donors.index"
+                    :route-parameters="$routeParameters"
+                />
+            @endforeach
+        </x-stats>
+        <flux:text class="mt-3">
+            Rechnungsstatus gemäss letztem Webling-Abgleich. «Bezahlt» ist nicht gleichbedeutend mit verifiziertem
+            Zahlungseingang. Gesendete Rechnungen zählen unabhängig vom aktuellen Zahlungsstatus.
+            @if ($paymentSummary['breakdown_missing'] > 0)
+                Bei {{ $paymentSummary['breakdown_missing'] }} Rechnung(en) fehlt noch die Aufschlüsselung;
+                Mehrzahlungen und Abschreibungen zeigen nur bereits ermittelte Beträge.
+            @endif
+        </flux:text>
+
         <!-- Recent Activities -->
         <x-admin.activity-list title="Letzte Aktivitäten" :activities="$mostRecentActivities" />
 

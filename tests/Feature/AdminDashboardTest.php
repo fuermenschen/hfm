@@ -2,6 +2,7 @@
 
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
+use App\Models\DonorEventInvoice;
 use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Settings\EventSettings;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -32,6 +34,8 @@ it('renders the admin dashboard for authenticated users', function () {
         ->assertSee('motion-safe:animate-bounce', false)
         ->assertSee('dark:from-zinc-800', false)
         ->assertSee('Spenden (tatsächlich)')
+        ->assertSee('Spenden (bezahlt)')
+        ->assertSee('Rechnungen und Zahlungsabgleich')
         ->assertSee('Letzte Aktivitäten');
 });
 
@@ -148,3 +152,29 @@ it('rejects invalid dashboard event filters', function (string $eventSlug): void
 
     get(route('admin.dashboard', ['anlass' => $eventSlug]))->assertNotFound();
 })->with(['invalid', 'missing-event']);
+
+it('renders persisted payment totals for the selected event and all events without contacting Webling', function (): void {
+    $event = DonationEvent::factory()->create();
+    $otherEvent = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'Cash partner']);
+    $event->partners()->attach($partner->id);
+    foreach ([$event, $otherEvent] as $invoiceEvent) {
+        DonorEventInvoice::factory()->forEvent($invoiceEvent)->create([
+            'webling_debitor_id' => 42, 'webling_state' => 'paid', 'webling_remaining_cents' => 0,
+            'webling_total_cents' => 10000, 'webling_received_cents' => 11000,
+            'webling_excess_cents' => 1000, 'webling_writeoff_cents' => 0,
+            'webling_payment_verification' => 'verified', 'webling_payment_date' => '2026-10-01',
+            'webling_synced_at' => now(),
+            'source_snapshot' => ['lines' => [['partner_id' => $partner->id, 'total_cents' => 10000]]],
+        ]);
+    }
+    actingAs(User::factory()->create());
+    Http::preventStrayRequests();
+
+    get(route('admin.dashboard', ['anlass' => $event->slug]))->assertSuccessful()
+        ->assertViewHas('paymentSummary', fn (array $summary): bool => $summary['received_cents'] === 11000)
+        ->assertSee('Fr. 110.00')->assertSee('Mehrzahlungen (verifiziert)');
+    get(route('admin.dashboard').'?anlass=')->assertSuccessful()
+        ->assertViewHas('paymentSummary', fn (array $summary): bool => $summary['received_cents'] === 22000);
+    Http::assertNothingSent();
+});

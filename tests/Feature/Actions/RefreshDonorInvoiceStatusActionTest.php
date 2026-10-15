@@ -86,6 +86,7 @@ it('marks the invoice remotely deleted on a confirmed 404', function (): void {
     $invoice = refreshInvoiceFixture([
         'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
         'webling_payment_verification' => DonorPaymentVerification::Verified,
+        'webling_excess_cents' => 100, 'webling_writeoff_cents' => 0,
     ]);
     $path = $invoice->pdf_path;
     $webling = Mockery::mock(WeblingInvoiceService::class);
@@ -100,6 +101,8 @@ it('marks the invoice remotely deleted on a confirmed 404', function (): void {
         ->and($invoice->webling_debitor_id)->toBeNull()
         ->and($invoice->pdf_path)->toBeNull()
         ->and($invoice->webling_received_cents)->toBeNull()
+        ->and($invoice->webling_excess_cents)->toBeNull()
+        ->and($invoice->webling_writeoff_cents)->toBeNull()
         ->and($invoice->webling_payment_date)->toBeNull()
         ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Unverified)
         ->and(app(DonorInvoiceService::class)->status($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
@@ -112,6 +115,7 @@ it('preserves cached values and reports failure for other webling errors', funct
         'webling_state' => 'paid', 'webling_total_cents' => 1500, 'webling_remaining_cents' => 0,
         'webling_payment_verification' => DonorPaymentVerification::Verified,
         'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
+        'webling_excess_cents' => 100, 'webling_writeoff_cents' => 0,
         'webling_synced_at' => '2026-10-06 12:00:00',
     ])->save();
     $before = $invoice->refresh()->getAttributes();
@@ -502,6 +506,8 @@ it('makes supported HTTP settlements receipt-eligible using persisted bank recei
 
     $stored = $invoice->fresh();
     expect($stored->webling_received_cents)->toBe($receivedCents)
+        ->and($stored->webling_excess_cents)->toBe((int) round($excess * 100))
+        ->and($stored->webling_writeoff_cents)->toBe((int) round($writeoff * 100))
         ->and($stored->webling_total_cents)->toBe($totalCents)
         ->and($stored->webling_payment_date->toDateString())->toBe('2026-10-05')
         ->and($stored->webling_payment_verification)->toBe(DonorPaymentVerification::Verified)
@@ -526,6 +532,7 @@ it('withdraws receipt eligibility after unsupported HTTP evidence while retainin
         'webling_state' => 'paid', 'webling_remaining_cents' => 0, 'webling_received_cents' => 1500,
         'webling_payment_date' => '2026-10-05', 'webling_payment_verification' => DonorPaymentVerification::Verified,
         'webling_synced_at' => '2026-10-08 12:00:00',
+        'webling_excess_cents' => 100, 'webling_writeoff_cents' => 50,
     ]);
     $path = $invoice->pdf_path;
     $payloads = refreshEvidencePayloads($invoice);
@@ -539,6 +546,8 @@ it('withdraws receipt eligibility after unsupported HTTP evidence while retainin
     $stored = $invoice->fresh();
     expect($stored->webling_payment_verification)->toBe($verification)
         ->and($stored->webling_received_cents)->toBeNull()
+        ->and($stored->webling_excess_cents)->toBeNull()
+        ->and($stored->webling_writeoff_cents)->toBe(0)
         ->and($stored->webling_payment_date)->toBeNull()
         ->and($stored->webling_synced_at->format('Y-m-d H:i:s'))->toBe('2026-10-09 12:00:00');
     expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeFalse();

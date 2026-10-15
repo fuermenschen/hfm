@@ -46,6 +46,8 @@ beforeEach(function (): void {
 
 it('creates a marked debitor and caches its PDF from one persisted snapshot', function (): void {
     $invoice = donorInvoiceWithDonation();
+    $allocatedPartner = Partner::factory()->create(['name' => 'Snapshot allocation partner']);
+    $invoice->donationEvent->partners()->attach($allocatedPartner->id);
     $webling = Mockery::mock(WeblingInvoiceService::class);
     $letter = Mockery::mock(LetterService::class);
     $debitorResponse = successfulResponse(4321);
@@ -82,6 +84,8 @@ it('creates a marked debitor and caches its PDF from one persisted snapshot', fu
         ->and($invoice->pdf_disk)->toBe('local')
         ->and($invoice->pdf_path)->toStartWith('webling/donor-invoices/'.$invoice->id.'/');
     Storage::disk('local')->assertExists($invoice->pdf_path);
+    expect($invoice->source_snapshot['allocation_partner_ids'])->toBe([$allocatedPartner->id]);
+    expect($invoice->source_snapshot['lines'][0]['partner_id'])->not->toBeNull();
     Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn (RefreshDonorInvoiceStatus $job): bool => $job->invoiceId === $invoice->id);
 });
 

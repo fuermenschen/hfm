@@ -245,13 +245,18 @@ class WeblingInvoiceService
      * Account IDs are supplied by the caller for the invoice's accounting period.
      *
      * @param  list<int>  $excessIncomeAccountIds
-     * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int,payment_verification:string,received_cents:?int,payment_date:?string}
+     * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int,payment_verification:string,received_cents:?int,payment_date:?string,excess_cents:?int,writeoff_cents:?int}
      */
     public function settlementDetails(int $debitorId, int $bankAccountId, array $excessIncomeAccountIds = []): array
     {
         $payload = $this->getInvoice($debitorId)->json();
         $details = $this->normalizeInvoiceDetails($payload, $debitorId);
-        $result = $details + ['payment_verification' => DonorPaymentVerification::Unverified->value, 'received_cents' => null, 'payment_date' => null];
+        $writeoffCents = $this->amountInCents($payload['properties']['writeoffamount'] ?? null);
+        $result = $details + [
+            'payment_verification' => DonorPaymentVerification::Unverified->value,
+            'received_cents' => null, 'payment_date' => null, 'excess_cents' => null,
+            'writeoff_cents' => $writeoffCents !== null && $writeoffCents >= 0 ? $writeoffCents : null,
+        ];
 
         if ($details['state'] !== 'paid') {
             return $result;
@@ -259,7 +264,6 @@ class WeblingInvoiceService
 
         $result['payment_verification'] = DonorPaymentVerification::Unclear->value;
         $paidCents = $this->amountInCents($payload['properties']['paidamount'] ?? null);
-        $writeoffCents = $this->amountInCents($payload['properties']['writeoffamount'] ?? null);
         $payments = $payload['links']['payment'] ?? null;
         $invoiceParents = $this->objectIds($payload['parents'] ?? null);
         if ($invoiceParents !== [$this->settings->accounting_period_id]
@@ -345,7 +349,7 @@ class WeblingInvoiceService
             $receivedCents += $amountCents;
         }
 
-        return array_replace($result, ['payment_verification' => DonorPaymentVerification::Verified->value, 'received_cents' => $receivedCents, 'payment_date' => $date]);
+        return array_replace($result, ['payment_verification' => DonorPaymentVerification::Verified->value, 'received_cents' => $receivedCents, 'payment_date' => $date, 'excess_cents' => $receivedCents - $paidCents]);
     }
 
     /**

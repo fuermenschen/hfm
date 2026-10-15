@@ -13,6 +13,7 @@ use App\Models\Partner;
 use App\Services\AthleteService;
 use App\Services\DonationService;
 use App\Services\DonorService;
+use App\Services\InvoicePaymentSummaryService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -45,6 +46,7 @@ class GetDashboardDataAction
      *     actualTotalAmount: float,
      *     estimatedAmounts: array<int, float>,
      *     actualAmounts: array<int, float>,
+     *     paymentSummary: array{received_cents:int,excess_cents:int,writeoff_cents:int,outstanding_cents:int,unallocated_cents:int,breakdown_missing:int,never_synced:int,verified_receipts:int,unclear_payments:int,created_total:int,sent_total:int,counts:array<string,int>,partners:list<array{name:string,amount_cents:int}>},
      *     mostRecentActivities: array<int, array<string, mixed>>,
      *     chartEvents: array<int, array{field: string, slug: string, label: string, colorIndex: int}>,
      *     chartData: array{registrations: array<int, array<string, float|int>>, donations: array<int, array<string, float|int>>, expectedAmount: array<int, array<string, float|int>>},
@@ -94,6 +96,7 @@ class GetDashboardDataAction
 
         $expectedDonationAmount = $this->donationService->calculateEstimatedTotal($donations);
         $actualTotalAmount = $this->donationService->calculateActualTotal($donations);
+        $paymentSummary = resolve(InvoicePaymentSummaryService::class)->summarize($event, $donations);
 
         $estimatedAmounts = $event instanceof DonationEvent
             ? $this->donationService->calculateEstimatedTotalPerEventPartner($event, $partners, $donations)
@@ -139,6 +142,7 @@ class GetDashboardDataAction
             'actualTotalAmount',
             'estimatedAmounts',
             'actualAmounts',
+            'paymentSummary',
             'mostRecentActivities',
             'chartEvents',
             'chartData',

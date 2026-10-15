@@ -403,6 +403,7 @@ describe('bank settlement evidence', function (): void {
             'state' => 'paid', 'due_date' => '2026-10-07', 'invoice_number' => '322',
             'total_cents' => 10000, 'remaining_cents' => 0,
             'payment_verification' => 'verified', 'received_cents' => 10000, 'payment_date' => '2026-10-05',
+            'excess_cents' => 0, 'writeoff_cents' => 0,
         ]);
         Http::assertSentCount(3);
     });
@@ -419,6 +420,8 @@ describe('bank settlement evidence', function (): void {
         $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [9]);
 
         expect($details['received_cents'])->toBe(11010)
+            ->and($details['excess_cents'])->toBe(1010)
+            ->and($details['writeoff_cents'])->toBe(0)
             ->and($details['payment_verification'])->toBe('verified');
         Http::assertSentCount(3);
     });
@@ -435,6 +438,8 @@ describe('bank settlement evidence', function (): void {
         $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
 
         expect($details['received_cents'])->toBe(7000)
+            ->and($details['excess_cents'])->toBe(0)
+            ->and($details['writeoff_cents'])->toBe((int) (($properties['writeoffamount'] ?? 0) * 100))
             ->and($details['payment_verification'])->toBe('verified');
         Http::assertSentCount(3);
     })->with([
@@ -457,6 +462,21 @@ describe('bank settlement evidence', function (): void {
             ->and($details['payment_date'])->toBeNull();
         Http::assertSentCount(1);
     })->with(['open', 'partially paid', 'writeoff', 'unknown']);
+
+    it('reports a fully written-off invoice without treating the writeoff as cash', function (): void {
+        $fixture = weblingSettlementFixture();
+        $fixture['invoice']['properties']['state'] = 'writeoff';
+        $fixture['invoice']['properties']['paidamount'] = 0;
+        $fixture['invoice']['properties']['writeoffamount'] = 100;
+        fakeWeblingSettlement($fixture);
+
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+
+        expect($details['writeoff_cents'])->toBe(10000);
+        expect($details['received_cents'])->toBeNull();
+        expect($details['excess_cents'])->toBeNull();
+        Http::assertSentCount(1);
+    });
 
     it('marks unsupported invoice evidence unclear without further requests', function (string $path, mixed $value): void {
         $fixture = weblingSettlementFixture();

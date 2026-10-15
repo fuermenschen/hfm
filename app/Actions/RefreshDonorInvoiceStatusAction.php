@@ -60,6 +60,8 @@ class RefreshDonorInvoiceStatusAction
                     'webling_total_cents' => $details['total_cents'],
                     'webling_remaining_cents' => $details['remaining_cents'],
                     'webling_received_cents' => $details['received_cents'],
+                    'webling_excess_cents' => $details['excess_cents'] ?? null,
+                    'webling_writeoff_cents' => $details['writeoff_cents'] ?? null,
                     'webling_payment_date' => $details['payment_date'],
                     'webling_payment_verification' => $details['payment_verification'],
                     'webling_synced_at' => Date::now(),

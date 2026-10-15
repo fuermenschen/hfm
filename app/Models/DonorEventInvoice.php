@@ -25,6 +25,8 @@ use RuntimeException;
  * @property int|null $webling_total_cents
  * @property int|null $webling_remaining_cents
  * @property int|null $webling_received_cents
+ * @property int|null $webling_excess_cents
+ * @property int|null $webling_writeoff_cents
  * @property Carbon|null $webling_payment_date
  * @property DonorPaymentVerification $webling_payment_verification
  * @property Carbon|null $webling_synced_at
@@ -48,6 +50,8 @@ use RuntimeException;
     'webling_total_cents',
     'webling_remaining_cents',
     'webling_received_cents',
+    'webling_excess_cents',
+    'webling_writeoff_cents',
     'webling_payment_date',
     'webling_payment_verification',
     'webling_synced_at',
@@ -95,6 +99,8 @@ class DonorEventInvoice extends Model
             'webling_total_cents' => null,
             'webling_remaining_cents' => null,
             'webling_received_cents' => null,
+            'webling_excess_cents' => null,
+            'webling_writeoff_cents' => null,
             'webling_payment_date' => null,
             'webling_payment_verification' => DonorPaymentVerification::Unverified,
             'webling_synced_at' => null,
@@ -125,6 +131,8 @@ class DonorEventInvoice extends Model
             'webling_total_cents' => 'integer',
             'webling_remaining_cents' => 'integer',
             'webling_received_cents' => 'integer',
+            'webling_excess_cents' => 'integer',
+            'webling_writeoff_cents' => 'integer',
             'webling_payment_date' => 'date',
             'webling_payment_verification' => DonorPaymentVerification::class,
             'webling_synced_at' => 'datetime',
