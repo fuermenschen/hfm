@@ -5,18 +5,37 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\DonorInvoiceStatus;
+use App\Enums\DonorPaymentVerification;
 use App\Models\DonorEventInvoice;
 use Illuminate\Support\Facades\Date;
 use LogicException;
 
 /**
- * Derives the display status of donor event invoices.
+ * Derives donor event invoice display status and receipt eligibility.
  *
  * Lives in a service because overdue detection spans the invoice and its
  * donation event timezone; model helpers must stay database-free.
  */
 class DonorInvoiceService
 {
+    /**
+     * Shared contract for receipt generation and portal receipt downloads.
+     * Writeoffs may settle an invoice without covering its total in cash.
+     *
+     * @api
+     */
+    public function isReceiptEligible(DonorEventInvoice $invoice): bool
+    {
+        return $invoice->remote_deleted_at === null
+            && ($invoice->webling_debitor_id ?? 0) > 0
+            && $invoice->webling_state === 'paid'
+            && $invoice->webling_remaining_cents === 0
+            && $invoice->webling_payment_verification === DonorPaymentVerification::Verified
+            && ($invoice->webling_received_cents ?? 0) > 0
+            && $invoice->webling_payment_date !== null
+            && $invoice->webling_synced_at !== null;
+    }
+
     public function status(DonorEventInvoice $invoice): DonorInvoiceStatus
     {
         if ($invoice->remote_deleted_at !== null) {

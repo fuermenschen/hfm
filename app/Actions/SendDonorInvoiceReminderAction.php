@@ -9,7 +9,9 @@ use App\Exceptions\Webling\WeblingApiException;
 use App\Mail\DonorInvoiceMail;
 use App\Models\DonorEventInvoice;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -24,14 +26,21 @@ class SendDonorInvoiceReminderAction
         throw_if($invoice->invoice_sent_at === null, DonorInvoiceGuardException::class, 'Die Rechnung wurde noch nicht versendet.');
         throw_if($invoice->remote_deleted_at !== null, DonorInvoiceGuardException::class, 'Die Rechnung wurde in Webling gelöscht und kann nicht gemahnt werden.');
         throw_if($invoice->webling_debitor_id === null, DonorInvoiceGuardException::class, 'Die Rechnung wurde noch nicht in Webling erstellt.');
+        $debitorId = $invoice->webling_debitor_id;
 
         // Live Webling read: fail closed when Webling is unavailable.
         try {
-            $details = $this->weblingInvoices->invoiceDetails($invoice->webling_debitor_id);
+            $details = $this->weblingInvoices->invoiceDetails($debitorId);
         } catch (WeblingApiException $weblingApiException) {
             throw_if($weblingApiException->category !== WeblingApiException::NotFound, $weblingApiException);
 
-            $invoice->markRemotelyDeleted();
+            Cache::lock('donor-invoice-creation:'.$invoice->id, 120)->block(10, function () use ($invoice, $debitorId): void {
+                DB::transaction(function () use ($invoice, $debitorId): void {
+                    $current = DonorEventInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
+                    throw_if($current->webling_debitor_id !== $debitorId || $current->remote_deleted_at !== null, DonorInvoiceGuardException::class, 'Die Rechnung wurde während der Prüfung geändert. Bitte erneut prüfen.');
+                    $current->markRemotelyDeleted();
+                });
+            });
 
             throw new DonorInvoiceGuardException('Die Rechnung wurde in Webling gelöscht und kann nicht gemahnt werden.', $weblingApiException->getCode(), $weblingApiException);
         }

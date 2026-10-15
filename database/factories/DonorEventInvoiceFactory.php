@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\DonorPaymentVerification;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Models\ExternalUser;
@@ -30,6 +31,9 @@ class DonorEventInvoiceFactory extends Factory
             'webling_due_date' => null,
             'webling_total_cents' => null,
             'webling_remaining_cents' => null,
+            'webling_received_cents' => null,
+            'webling_payment_date' => null,
+            'webling_payment_verification' => DonorPaymentVerification::Unverified,
             'webling_synced_at' => null,
             'pdf_disk' => null,
             'pdf_path' => null,

@@ -75,6 +75,9 @@ function weblingInvoiceDetailsMock(array $details): MockInterface
 {
     $webling = Mockery::mock(WeblingInvoiceService::class);
     $webling->shouldReceive('invoiceDetails')->andReturn($details);
+    $webling->shouldReceive('settlementDetails')->andReturn($details + [
+        'payment_verification' => 'unclear', 'received_cents' => null, 'payment_date' => null,
+    ]);
     $webling->shouldReceive('debitorUrl')->andReturnUsing(
         fn (int $debitorId): string => 'https://demo.webling.ch/admin#/accounting/321/debitor/:debitor/view/'.$debitorId,
     );

@@ -9,6 +9,7 @@ use App\Models\DonorEventInvoice;
 use App\Models\ExternalUser;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -159,4 +160,67 @@ it('blocks reminders without a valid donor email', function (): void {
 
     expect(fn () => app(SendDonorInvoiceReminderAction::class, ['weblingInvoices' => $webling])($invoice))
         ->toThrow(DonorInvoiceGuardException::class, 'E-Mail-Adresse');
+});
+
+it('does not clear a replacement invoice when an old reminder read returns 404', function (): void {
+    Mail::fake();
+    $invoice = reminderInvoiceFixture();
+    $path = $invoice->pdf_path;
+    $replacementFacts = [];
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('invoiceDetails')->once()->andReturnUsing(function () use ($invoice, &$replacementFacts): never {
+        $replacement = $invoice->fresh();
+        $replacement->forceFill(['webling_debitor_id' => 9999])->save();
+        $replacementFacts = $replacement->refresh()->getAttributes();
+
+        throw new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound);
+    });
+
+    expect(fn () => app(SendDonorInvoiceReminderAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(DonorInvoiceGuardException::class, 'während der Prüfung geändert');
+
+    expect($invoice->refresh()->getAttributes())->toBe($replacementFacts);
+    Storage::disk('local')->assertExists($path);
+    Mail::assertNothingQueued();
+});
+
+it('uses the shared lifecycle lock before clearing a missing invoice during reminder handling', function (): void {
+    Mail::fake();
+    $invoice = reminderInvoiceFixture();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('invoiceDetails')->once()->andThrow(
+        new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound),
+    );
+    $lock = Mockery::mock();
+    $lock->shouldReceive('block')->once()->with(10, Mockery::type('Closure'))->andReturnUsing(fn (int $wait, Closure $operation) => $operation());
+    Cache::partialMock()->shouldReceive('lock')->once()->with('donor-invoice-creation:'.$invoice->id, 120)->andReturn($lock);
+
+    expect(fn () => app(SendDonorInvoiceReminderAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(DonorInvoiceGuardException::class, 'gelöscht');
+
+    expect($invoice->refresh()->remote_deleted_at)->not->toBeNull();
+    Mail::assertNothingQueued();
+});
+
+it('preserves invoice facts and pdf when reminder 404 cleanup cannot be persisted', function (): void {
+    Mail::fake();
+    $invoice = reminderInvoiceFixture();
+    $path = $invoice->pdf_path;
+    $before = $invoice->refresh()->getAttributes();
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('invoiceDetails')->once()->andThrow(
+        new WeblingApiException(new Response(new GuzzleHttp\Psr7\Response(404)), WeblingApiException::NotFound),
+    );
+    DonorEventInvoice::updating(function (DonorEventInvoice $updating) use ($invoice): void {
+        if ($updating->id === $invoice->id) {
+            throw new RuntimeException('Deletion persistence failed.');
+        }
+    });
+
+    expect(fn () => app(SendDonorInvoiceReminderAction::class, ['weblingInvoices' => $webling])($invoice))
+        ->toThrow(RuntimeException::class, 'Deletion persistence failed.');
+
+    expect($invoice->refresh()->getAttributes())->toBe($before);
+    Storage::disk('local')->assertExists($path);
+    Mail::assertNothingQueued();
 });
