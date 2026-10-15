@@ -91,32 +91,6 @@ it('keeps deleted frozen partners shares unallocated alongside direct allocation
     expect($summary['unallocated_cents'])->toBe(15000 - $allocated);
 })->with([1, 2]);
 
-it('recognizes legacy equal-split partner IDs in snapshots and donation fallback', function (bool $hasSnapshot): void {
-    $event = DonationEvent::factory()->create();
-    $a = Partner::factory()->create(['name' => 'A']);
-    $b = Partner::factory()->create(['name' => 'B']);
-    $legacy = Partner::factory()->create(['name' => 'alle zu gleichen Teilen']);
-    $event->partners()->attach([$a->id, $b->id, $legacy->id]);
-    $donor = ExternalUser::factory()->create();
-    $registration = AthleteRegistration::factory()->forEvent($event)->withPartner($legacy)->create(['rounds_done' => 2]);
-    $donation = Donation::factory()->forPair($donor, $registration)->create(['amount_per_round' => 50, 'amount_min' => null, 'amount_max' => null]);
-    paidSummaryInvoice($event, [
-        'external_user_id' => $donor->id,
-        'source_snapshot' => $hasSnapshot ? [
-            'allocation_partner_ids' => [$a->id, $b->id],
-            'lines' => [['partner_id' => $legacy->id, 'partner' => 'Stale label', 'total_cents' => 10000]],
-        ] : null,
-    ]);
-    $donation->load('athleteRegistration.partner');
-
-    $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect([$donation]));
-
-    expect($summary['partners'])->toBe([
-        ['name' => 'A', 'amount_cents' => 5000], ['name' => 'B', 'amount_cents' => 5000],
-    ]);
-    expect($summary['unallocated_cents'])->toBe(0);
-})->with(['snapshot' => true, 'donation fallback' => false]);
-
 it('preserves exact weights across repeated equal-split invoice lines', function (): void {
     $event = DonationEvent::factory()->create();
     $partners = Partner::factory()->count(3)->create();
@@ -169,7 +143,7 @@ it('resolves legacy snapshot names and equal split within each event', function 
     $b = Partner::factory()->create(['name' => 'B']);
     $first->partners()->attach($a->id);
     $second->partners()->attach($b->id);
-    paidSummaryInvoice($first, ['source_snapshot' => ['lines' => [['partner' => 'alle zu gleichen Teilen', 'total_cents' => 10000]]]]);
+    paidSummaryInvoice($first, ['source_snapshot' => ['lines' => [['partner' => __('app.equal_split'), 'total_cents' => 10000]]]]);
     paidSummaryInvoice($second, ['source_snapshot' => ['lines' => [['partner' => 'B', 'total_cents' => 10000]]]]);
 
     $service = app(InvoicePaymentSummaryService::class);
@@ -236,22 +210,27 @@ it('prefers stored partner IDs over stale equal-split text', function (): void {
     expect(array_column($summary['partners'], 'amount_cents'))->toBe([10000, 0]);
 });
 
-it('uses current donations only when an invoice has no snapshot lines', function (): void {
+it('uses current donations only when an invoice has no snapshot lines', function (bool $equalSplit): void {
     $event = DonationEvent::factory()->create();
     $a = Partner::factory()->create(['name' => 'A']);
     $b = Partner::factory()->create(['name' => 'B']);
     $event->partners()->attach([$a->id, $b->id]);
     $donor = ExternalUser::factory()->create();
-    $athlete = AthleteRegistration::factory()->forEvent($event)->withPartner($a)->create(['rounds_done' => 4]);
+    $athlete = AthleteRegistration::factory()->forEvent($event)->create([
+        'partner_id' => $equalSplit ? null : $a->id, 'rounds_done' => 4,
+    ]);
     $donation = Donation::factory()->forPair($donor, $athlete)->create(['amount_per_round' => 5, 'amount_min' => null, 'amount_max' => null]);
     paidSummaryInvoice($event, ['external_user_id' => $donor->id, 'webling_received_cents' => 1500]);
     $donation->load(['athleteRegistration.partner']);
 
     $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect([$donation]));
 
-    expect($summary['partners'])->toBe([['name' => 'A', 'amount_cents' => 1500], ['name' => 'B', 'amount_cents' => 0]]);
+    expect($summary['partners'])->toBe([
+        ['name' => 'A', 'amount_cents' => $equalSplit ? 750 : 1500],
+        ['name' => 'B', 'amount_cents' => $equalSplit ? 750 : 0],
+    ]);
     expect($summary['unallocated_cents'])->toBe(0);
-});
+})->with(['direct partner' => false, 'equal split' => true]);
 
 it('excludes unclear partial and deleted receipts but counts states and remaining balances', function (): void {
     $event = DonationEvent::factory()->create();

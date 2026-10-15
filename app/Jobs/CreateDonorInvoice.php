@@ -158,7 +158,7 @@ class CreateDonorInvoice implements ShouldQueue
             'total_cents' => $totalCents,
             'lines' => $lines,
             'allocation_partner_ids' => $donationEvent->partners()
-                ->where('partners.name', '!=', 'alle zu gleichen Teilen')->orderBy('partners.id')->pluck('partners.id')->all(),
+                ->orderBy('partners.id')->pluck('partners.id')->all(),
             'webling' => [
                 'title' => $title,
                 'date' => $invoiceDate->toDateString(),

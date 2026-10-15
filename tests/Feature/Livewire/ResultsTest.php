@@ -374,30 +374,6 @@ it('distributes equal-split donations across every event partner', function () {
         ->assertSee('Fr. 33');
 });
 
-it('splits a legacy "alle zu gleichen Teilen" partner across remaining partners', function () {
-    $donationEvent = resultsTestEvent();
-    $equal = resultsTestPartner($donationEvent, 'alle zu gleichen Teilen');
-    $b = resultsTestPartner($donationEvent, 'B Partner');
-    $c = resultsTestPartner($donationEvent, 'C Partner');
-
-    $registrationEqual = resultsTestRegistration($donationEvent, 10, $equal->id); // 10 * 10 = 100
-    $registrationB = resultsTestRegistration($donationEvent, 5, $b->id); // 5 * 10 = 50
-    $registrationC = resultsTestRegistration($donationEvent, 6, $c->id); // 6 * 5 = 30
-
-    resultsTestDonation($registrationEqual, 10.0);
-    resultsTestDonation($registrationB, 10.0);
-    resultsTestDonation($registrationC, 5.0);
-
-    Livewire::test(Results::class)
-        ->assertStatus(200)
-        // The legacy partner's 100 splits evenly onto B and C: +50 each.
-        ->assertDontSee('alle zu gleichen Teilen')
-        ->assertSee('B Partner')
-        ->assertSee('Fr. 100')
-        ->assertSee('C Partner')
-        ->assertSee('Fr. 80');
-});
-
 it('shows athlete rankings independently from group rankings', function () {
     $event = resultsTestEvent();
     $partner = Partner::factory()->create(['name' => 'Partner X']);

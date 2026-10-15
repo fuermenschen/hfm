@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\DonorEventInvoice;
-use App\Models\Partner;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 
 #[Description('Backfill partner IDs in legacy donor invoice snapshots')]
 #[Signature('invoices:backfill-partner-ids')]
@@ -18,7 +16,7 @@ class BackfillInvoicePartnerIdsCommand extends Command
     public function handle(): int
     {
         $counts = ['updated' => 0, 'resolved' => 0, 'equal_split' => 0, 'already_structured' => 0, 'unresolved' => 0];
-        $equalSplitNames = array_unique([__('app.equal_split'), 'alle zu gleichen Teilen']);
+        $equalSplitName = __('app.equal_split');
 
         foreach (DonorEventInvoice::query()
             ->whereNotNull('source_snapshot')
@@ -30,8 +28,8 @@ class BackfillInvoicePartnerIdsCommand extends Command
             }
 
             $eventPartners = $invoice->donationEvent->partners;
-            $eventPartnerIdsByName = $this->eventPartnerIdsByName($eventPartners, $equalSplitNames);
-            $allocationPartnerIds = $this->allocationPartnerIds($eventPartners, $equalSplitNames);
+            $eventPartnerIdsByName = $eventPartners->pluck('id', 'name');
+            $allocationPartnerIds = $eventPartners->sortBy('id')->pluck('id')->all();
             $changed = false;
             $hasEqualSplit = false;
 
@@ -54,7 +52,7 @@ class BackfillInvoicePartnerIdsCommand extends Command
                 }
 
                 $partnerName = $line['partner'] ?? null;
-                if (is_string($partnerName) && in_array($partnerName, $equalSplitNames, true)) {
+                if ($partnerName === $equalSplitName) {
                     $snapshot['lines'][$lineIndex]['partner_id'] = null;
                     $counts['equal_split']++;
                     $hasEqualSplit = true;
@@ -93,31 +91,5 @@ class BackfillInvoicePartnerIdsCommand extends Command
         $this->line('Unresolved legacy lines: '.$counts['unresolved']);
 
         return self::SUCCESS;
-    }
-
-    /**
-     * @param  Collection<int, Partner>  $eventPartners
-     * @param  list<string>  $equalSplitNames
-     * @return Collection<string, int<0, max>>
-     */
-    protected function eventPartnerIdsByName(Collection $eventPartners, array $equalSplitNames): Collection
-    {
-        return $eventPartners
-            ->reject(fn (Partner $partner): bool => in_array($partner->name, $equalSplitNames, true))
-            ->mapWithKeys(fn (Partner $partner): array => [$partner->name => $partner->id]);
-    }
-
-    /**
-     * @param  Collection<int, Partner>  $eventPartners
-     * @param  list<string>  $equalSplitNames
-     * @return list<int>
-     */
-    protected function allocationPartnerIds(Collection $eventPartners, array $equalSplitNames): array
-    {
-        return $eventPartners
-            ->reject(fn (Partner $partner): bool => in_array($partner->name, $equalSplitNames, true))
-            ->sortBy('id')
-            ->pluck('id')
-            ->all();
     }
 }

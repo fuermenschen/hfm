@@ -245,7 +245,7 @@ it('renders the equal split label in the invoice line title', function (): void 
     $webling->shouldReceive('createInvoiceWithMarker')->once()->withArgs(function (int $invoiceId, InvoiceCreateData $data): bool {
         expect($data->invoiceLines)->toHaveCount(1)
             ->and($data->invoiceLines[0]['title'])
-            ->toBe('Ben K. für alle zu gleichen Teilen | 2 Runden à Fr. 5.00');
+            ->toBe('Ben K. für '.__('app.equal_split').' | 2 Runden à Fr. 5.00');
 
         return true;
     })->andReturn(successfulResponse(4321));

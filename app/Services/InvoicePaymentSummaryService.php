@@ -77,13 +77,10 @@ class InvoicePaymentSummaryService
 
             $eventPartners = $invoice->donationEvent->partners;
             $eventPartnersByName = $eventPartners->keyBy('name');
-            $equalPartnerIds = $invoice->source_snapshot['allocation_partner_ids'] ?? $eventPartners
-                ->reject(fn (Partner $partner): bool => $partner->name === 'alle zu gleichen Teilen')
-                ->pluck('id')->all();
+            $equalPartnerIds = $invoice->source_snapshot['allocation_partner_ids'] ?? $eventPartners->pluck('id')->all();
             $equalPartnerIds = array_values(array_unique(array_filter(
                 $equalPartnerIds,
-                fn (mixed $partnerId): bool => is_int($partnerId)
-                    && ($partners->get($partnerId)->name ?? null) !== 'alle zu gleichen Teilen',
+                fn (mixed $partnerId): bool => is_int($partnerId),
             )));
             $directWeightMultiplier = max(1, count($equalPartnerIds));
             $weights = [];
@@ -95,10 +92,9 @@ class InvoicePaymentSummaryService
                 $name = $line['partner'] ?? null;
                 if (array_key_exists('partner_id', $line)) {
                     $partnerId = $line['partner_id'];
-                    $equalSplit = $partnerId === null
-                        || (is_int($partnerId) && ($partners->get($partnerId)->name ?? null) === 'alle zu gleichen Teilen');
+                    $equalSplit = $partnerId === null;
                 } else {
-                    $equalSplit = is_string($name) && in_array($name, [__('app.equal_split'), 'alle zu gleichen Teilen'], true);
+                    $equalSplit = $name === __('app.equal_split');
                     $matchedPartner = is_string($name) ? $eventPartnersByName->get($name) : null;
                     $partnerId = $equalSplit || ! ($matchedPartner instanceof Partner) ? null : $matchedPartner->id;
                 }
@@ -118,8 +114,7 @@ class InvoicePaymentSummaryService
                     continue;
                 }
 
-                $partnerId = is_int($partnerId) && $partners->has($partnerId)
-                    && $partners->get($partnerId)->name !== 'alle zu gleichen Teilen' ? $partnerId : 0;
+                $partnerId = is_int($partnerId) && $partners->has($partnerId) ? $partnerId : 0;
                 $weights[$partnerId] = ($weights[$partnerId] ?? 0) + $line['total_cents'] * $directWeightMultiplier;
             }
 
@@ -133,7 +128,7 @@ class InvoicePaymentSummaryService
         $summary['unallocated_cents'] = $partnerAmounts[0] ?? 0;
         $eventPartnerIds = $event instanceof DonationEvent ? $event->partners()->pluck('partners.id') : $partners->keys();
         foreach ($partners as $partner) {
-            if ($partner->name !== 'alle zu gleichen Teilen' && ($eventPartnerIds->contains($partner->id) || ($partnerAmounts[$partner->id] ?? 0) > 0)) {
+            if ($eventPartnerIds->contains($partner->id) || ($partnerAmounts[$partner->id] ?? 0) > 0) {
                 $summary['partners'][] = ['name' => $partner->name, 'amount_cents' => $partnerAmounts[$partner->id] ?? 0];
             }
         }
