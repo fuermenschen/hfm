@@ -2,6 +2,7 @@
 
 use App\Models\ExternalUser;
 use App\Models\User;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Laravel\Pulse\Http\Middleware\Authorize;
@@ -188,6 +189,8 @@ test('parameterized signed login routes can be accessed with valid parameters', 
 });
 
 test('api-key middleware works', function () {
+    config(['queue.default' => 'database']);
+    Process::fake();
 
     // Test without API key
     $response = get(route('queue-worker'));
@@ -204,4 +207,5 @@ test('api-key middleware works', function () {
         'X-API-Key' => config('app.api_key'),
     ]);
     $response->assertSuccessful();
+    Process::assertRan(fn ($process): bool => in_array('webcron:work', $process->command, true));
 });
