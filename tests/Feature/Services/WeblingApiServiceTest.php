@@ -29,6 +29,11 @@ it('constructs an HTTP client (PendingRequest) from settings and config options'
     expect($service->client())->toBeInstanceOf(PendingRequest::class);
 });
 
+it('blocks unfaked outbound HTTP requests in tests', function (): void {
+    expect(fn () => Http::get('https://demo.webling.ch/api/1/member/1'))
+        ->toThrow(RuntimeException::class);
+});
+
 it('throws an exception when Webling settings are missing', function (): void {
     WeblingApiSettings::fake([
         'api_url' => '',

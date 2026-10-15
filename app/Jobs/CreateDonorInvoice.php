@@ -51,6 +51,11 @@ class CreateDonorInvoice implements ShouldQueue
                 $invoice->forceFill([
                     'source_snapshot' => $snapshot,
                     'source_total_cents' => $snapshot['total_cents'],
+                    'webling_verification_context' => $weblingSettings->bank_account_id === null ? null : [
+                        'accounting_period_id' => $weblingSettings->accounting_period_id,
+                        'bank_account_id' => $weblingSettings->bank_account_id,
+                        'excess_income_account_id' => $weblingSettings->excess_income_account_id,
+                    ],
                 ])->save();
             }
 

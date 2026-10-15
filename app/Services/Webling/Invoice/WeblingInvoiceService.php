@@ -242,12 +242,12 @@ class WeblingInvoiceService
 
     /**
      * Read one supported bank receipt, including explicitly allowed excess income.
-     * Account IDs are supplied by the caller for the invoice's accounting period.
+     * Period and account IDs come from the invoice's frozen verification context.
      *
      * @param  list<int>  $excessIncomeAccountIds
      * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int,payment_verification:string,received_cents:?int,payment_date:?string,excess_cents:?int,writeoff_cents:?int}
      */
-    public function settlementDetails(int $debitorId, int $bankAccountId, array $excessIncomeAccountIds = []): array
+    public function settlementDetails(int $debitorId, int $bankAccountId, array $excessIncomeAccountIds, int $accountingPeriodId): array
     {
         $payload = $this->getInvoice($debitorId)->json();
         $details = $this->normalizeInvoiceDetails($payload, $debitorId);
@@ -257,6 +257,9 @@ class WeblingInvoiceService
             'received_cents' => null, 'payment_date' => null, 'excess_cents' => null,
             'writeoff_cents' => $writeoffCents !== null && $writeoffCents >= 0 ? $writeoffCents : null,
         ];
+        $invoiceParents = $this->objectIds($payload['parents'] ?? null);
+        throw_unless($invoiceParents === [$accountingPeriodId],
+            RuntimeException::class, 'Invoice verification period is unavailable or does not match Webling.');
 
         if ($details['state'] !== 'paid') {
             return $result;
@@ -265,9 +268,9 @@ class WeblingInvoiceService
         $result['payment_verification'] = DonorPaymentVerification::Unclear->value;
         $paidCents = $this->amountInCents($payload['properties']['paidamount'] ?? null);
         $payments = $payload['links']['payment'] ?? null;
-        $invoiceParents = $this->objectIds($payload['parents'] ?? null);
-        if ($invoiceParents !== [$this->settings->accounting_period_id]
-            || $bankAccountId < 1 || $details['remaining_cents'] !== 0 || $paidCents === null || $paidCents <= 0
+        throw_unless($bankAccountId > 0, RuntimeException::class, 'Invoice verification bank account is unavailable.');
+
+        if ($details['remaining_cents'] !== 0 || $paidCents === null || $paidCents <= 0
             || $writeoffCents === null || $writeoffCents < 0 || $details['total_cents'] !== $paidCents + $writeoffCents
             || ! is_array($payments) || ! array_is_list($payments) || count($payments) !== 1 || ! is_array($payments[0])) {
             return $result;

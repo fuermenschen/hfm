@@ -10,6 +10,7 @@ use App\Exceptions\Webling\WeblingApiException;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Services\DonorInvoiceService;
+use App\Services\InvoicePaymentSummaryService;
 use App\Services\Webling\Invoice\WeblingInvoiceService;
 use App\Settings\WeblingApiSettings;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -40,6 +41,7 @@ function refreshInvoiceFixture(array $overrides = []): DonorEventInvoice
 {
     $invoice = DonorEventInvoice::factory()->create($overrides + [
         'webling_debitor_id' => 4321,
+        'source_snapshot' => ['webling' => ['accounting_period_id' => 10]],
         'source_total_cents' => 1500,
         'pdf_disk' => 'local',
         'pdf_path' => 'webling/donor-invoices/'.Str::uuid().'/test.pdf',
@@ -87,6 +89,7 @@ it('marks the invoice remotely deleted on a confirmed 404', function (): void {
         'webling_received_cents' => 1600, 'webling_payment_date' => '2026-10-05',
         'webling_payment_verification' => DonorPaymentVerification::Verified,
         'webling_excess_cents' => 100, 'webling_writeoff_cents' => 0,
+        'webling_verification_context' => ['accounting_period_id' => 10, 'bank_account_id' => 3, 'excess_income_account_id' => 9],
     ]);
     $path = $invoice->pdf_path;
     $webling = Mockery::mock(WeblingInvoiceService::class);
@@ -105,6 +108,7 @@ it('marks the invoice remotely deleted on a confirmed 404', function (): void {
         ->and($invoice->webling_writeoff_cents)->toBeNull()
         ->and($invoice->webling_payment_date)->toBeNull()
         ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Unverified)
+        ->and($invoice->webling_verification_context)->toBeNull()
         ->and(app(DonorInvoiceService::class)->status($invoice))->toBe(DonorInvoiceStatus::RemoteDeleted);
     Storage::disk('local')->assertMissing($path);
 });
@@ -289,7 +293,7 @@ it('persists complete payment facts using explicitly configured accounts', funct
     travelTo('2026-10-09 12:00:00');
     $invoice = refreshInvoiceFixture();
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldReceive('settlementDetails')->once()->with(4321, 3, [9])->andReturn(verifiedRefreshDetails());
+    $webling->shouldReceive('settlementDetails')->once()->with(4321, 3, [9], 10)->andReturn(verifiedRefreshDetails());
 
     app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
 
@@ -341,25 +345,75 @@ it('revokes old verified facts when settlement becomes unclear or unpaid', funct
     'reopened invoice' => [verifiedRefreshDetails(['state' => 'open', 'remaining_cents' => 1500, 'payment_verification' => 'unverified', 'received_cents' => null, 'payment_date' => null]), DonorPaymentVerification::Unverified],
 ]);
 
-it('passes unconfigured bank and excess accounts without inventing account IDs', function (): void {
-    app(WeblingApiSettings::class)->bank_account_id = null;
-    app(WeblingApiSettings::class)->excess_income_account_id = null;
-    $invoice = refreshInvoiceFixture();
-    $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldReceive('settlementDetails')->once()->with(4321, 0, [])->andReturn(
-        verifiedRefreshDetails(['payment_verification' => 'unclear', 'received_cents' => null, 'payment_date' => null]),
-    );
+it('preserves verified receipt facts when invoice verification context cannot be established', function (string $failure): void {
+    $invoice = refreshInvoiceFixture([
+        'webling_state' => 'paid', 'webling_remaining_cents' => 0, 'webling_received_cents' => 1500,
+        'webling_payment_date' => '2026-10-05', 'webling_payment_verification' => DonorPaymentVerification::Verified,
+        'webling_synced_at' => '2026-10-08 12:00:00', 'webling_excess_cents' => 0, 'webling_writeoff_cents' => 0,
+    ]);
+    $before = $invoice->fresh()->getAttributes();
+    if ($failure === 'historical period') {
+        app(WeblingApiSettings::class)->accounting_period_id = 11;
+    } elseif ($failure === 'missing bank') {
+        app(WeblingApiSettings::class)->bank_account_id = null;
+    }
+    $payloads = refreshEvidencePayloads($invoice);
+    if ($failure === 'remote period mismatch') {
+        $payloads['invoice']['parents'] = [99];
+        $payloads['booking']['parents'] = [99];
+    }
+    fakeRefreshEvidence($invoice, payloads: $payloads);
 
-    app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
+    expect(fn () => app(RefreshDonorInvoiceStatusAction::class)($invoice))
+        ->toThrow(RuntimeException::class);
 
-    expect($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Unclear);
-});
+    expect($invoice->fresh()->getAttributes())->toBe($before);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($invoice->fresh()))->toBeTrue();
+})->with(['historical period', 'missing bank', 'remote period mismatch']);
+
+it('keeps historical receipts verified after global accounting period rollover', function (?array $snapshot): void {
+    $settings = app(WeblingApiSettings::class);
+    $invoice = refreshInvoiceFixture(['source_snapshot' => $snapshot]);
+    $payloads = refreshEvidencePayloads($invoice);
+    $payloads['booking']['children']['entry'][] = 21;
+    $payloads['entries'][] = [
+        'type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => 1.10],
+        'links' => ['debit' => [3], 'credit' => [9]],
+    ];
+    fakeRefreshEvidence($invoice, payloads: $payloads);
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    $settings->accounting_period_id = 11;
+    $settings->bank_account_id = 103;
+    $settings->excess_income_account_id = 109;
+    $previousSync = $invoice->fresh()->webling_synced_at;
+    travel(1)->days();
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    $stored = $invoice->fresh();
+    expect($stored->webling_payment_verification)->toBe(DonorPaymentVerification::Verified)
+        ->and($stored->webling_received_cents)->toBe(1610)
+        ->and($stored->webling_excess_cents)->toBe(110)
+        ->and($stored->webling_payment_date->toDateString())->toBe('2026-10-05')
+        ->and($stored->webling_synced_at->greaterThan($previousSync))->toBeTrue()
+        ->and($stored->source_snapshot)->toBe($snapshot);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($stored))->toBeTrue();
+    expect(app(InvoicePaymentSummaryService::class)->summarize($stored->donationEvent, collect())['received_cents'])->toBe(1610);
+    expect($stored->webling_verification_context)->toBe([
+        'accounting_period_id' => 10, 'bank_account_id' => 3, 'excess_income_account_id' => 9,
+    ]);
+})->with([
+    'frozen accounting period' => [['webling' => ['accounting_period_id' => 10]]],
+    'legacy frozen period' => [['webling' => ['period_id' => 10]]],
+    'no snapshot' => [null],
+]);
 
 it('reloads invoice identity after acquiring the shared lifecycle lock', function (): void {
     $invoice = refreshInvoiceFixture();
     DB::table('donor_event_invoices')->where('id', $invoice->id)->update(['webling_debitor_id' => 9999]);
     $webling = Mockery::mock(WeblingInvoiceService::class);
-    $webling->shouldReceive('settlementDetails')->once()->with(9999, 3, [9])->andReturn(verifiedRefreshDetails());
+    $webling->shouldReceive('settlementDetails')->once()->with(9999, 3, [9], 10)->andReturn(verifiedRefreshDetails());
 
     app(RefreshDonorInvoiceStatusAction::class, ['weblingInvoices' => $webling])($invoice);
 
@@ -477,7 +531,7 @@ it('rejects a response after lease expiry even when no other process has taken t
 
 it('makes supported HTTP settlements receipt-eligible using persisted bank receipts and immutable invoice snapshots', function (float $total, float $payment, float $writeoff, float $excess, int $totalCents, int $receivedCents): void {
     travelTo('2026-10-09 12:00:00');
-    $snapshot = ['total_cents' => 1500, 'webling' => ['date' => '2026-09-23']];
+    $snapshot = ['total_cents' => 1500, 'webling' => ['date' => '2026-09-23', 'accounting_period_id' => 10]];
     $invoice = refreshInvoiceFixture(['source_snapshot' => $snapshot]);
     $path = $invoice->pdf_path;
     $payloads = refreshEvidencePayloads($invoice);
@@ -559,9 +613,6 @@ it('withdraws receipt eligibility after unsupported HTTP evidence while retainin
     'missing payment date' => [['booking.properties.date' => null], DonorPaymentVerification::Unclear, 2],
     'wrong bank account' => [['invoice.links.payment.0.links.debit' => [4]], DonorPaymentVerification::Unclear, 1],
     'wrong linked payment type' => [['invoice.links.payment.0.type' => 'entrygroup'], DonorPaymentVerification::Unclear, 1],
-    'invoice and booking outside configured period' => [[
-        'invoice.parents' => [99], 'booking.parents' => [99],
-    ], DonorPaymentVerification::Unclear, 1],
     'another invoice in same bank booking' => [[
         'booking.children.entry' => [20, 21],
         'entries.1' => ['type' => 'entry', 'id' => 21, 'parents' => [30], 'properties' => ['amount' => 1.10], 'links' => ['debit' => [3], 'credit' => [9], 'debitor' => [9999]]],

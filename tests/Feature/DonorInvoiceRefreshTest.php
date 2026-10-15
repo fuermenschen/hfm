@@ -102,13 +102,21 @@ it('pages dispatch and deduplicates overlapping requests', function (): void {
 
 it('keeps prior facts on failure and refreshes another invoice independently', function (): void {
     freezeTime();
-    WeblingApiSettings::fake(['api_url' => 'https://demo.webling.ch', 'api_key' => 'fake-key']);
+    WeblingApiSettings::fake([
+        'api_url' => 'https://demo.webling.ch', 'api_key' => 'fake-key',
+        'accounting_period_id' => 10, 'bank_account_id' => 3, 'excess_income_account_id' => null,
+    ]);
     $failed = DonorEventInvoice::factory()->create(['webling_debitor_id' => 42, 'webling_state' => 'open', 'webling_synced_at' => now()->subDays(2)]);
-    $good = DonorEventInvoice::factory()->create(['webling_debitor_id' => 43]);
+    $good = DonorEventInvoice::factory()->create([
+        'webling_debitor_id' => 43, 'webling_state' => 'unknown', 'webling_synced_at' => now()->subDays(2),
+    ]);
     Http::preventStrayRequests();
     Http::fake([
         'https://demo.webling.ch/api/1/debitor/42' => Http::response([], 503),
-        'https://demo.webling.ch/api/1/debitor/43' => Http::response(['type' => 'debitor', 'properties' => ['state' => 'open', 'totalamount' => 10, 'remainingamount' => 10]]),
+        'https://demo.webling.ch/api/1/debitor/43' => Http::response([
+            'type' => 'debitor', 'parents' => [10],
+            'properties' => ['state' => 'open', 'totalamount' => 10, 'remainingamount' => 10],
+        ]),
     ]);
     $before = $failed->refresh()->getAttributes();
 
@@ -116,7 +124,12 @@ it('keeps prior facts on failure and refreshes another invoice independently', f
     app()->call([new RefreshDonorInvoiceStatus($good->id), 'handle']);
 
     expect($failed->fresh()->getAttributes())->toBe($before);
-    expect($good->fresh()->webling_synced_at->toDateTimeString())->toBe(now()->toDateTimeString());
+    $good->refresh();
+    expect($good->webling_state)->toBe('open')
+        ->and($good->webling_total_cents)->toBe(1000)
+        ->and($good->webling_remaining_cents)->toBe(1000)
+        ->and($good->webling_synced_at->toDateTimeString())->toBe(now()->toDateTimeString());
+    Http::assertSentCount(2);
 });
 
 it('skips invoices deleted while waiting in the queue', function (): void {

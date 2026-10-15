@@ -28,6 +28,8 @@ beforeEach(function (): void {
         'accounting_period_id' => 10,
         'debit_account_id' => 20,
         'credit_account_id' => 30,
+        'bank_account_id' => 3,
+        'excess_income_account_id' => 9,
     ]);
     InvoiceSettings::fake([
         'qr_iban' => 'CH5604835012345678009',
@@ -85,6 +87,9 @@ it('creates a marked debitor and caches its PDF from one persisted snapshot', fu
         ->and($invoice->pdf_path)->toStartWith('webling/donor-invoices/'.$invoice->id.'/');
     Storage::disk('local')->assertExists($invoice->pdf_path);
     expect($invoice->source_snapshot['allocation_partner_ids'])->toBe([$allocatedPartner->id]);
+    expect($invoice->webling_verification_context)->toBe([
+        'accounting_period_id' => 10, 'bank_account_id' => 3, 'excess_income_account_id' => 9,
+    ]);
     expect($invoice->source_snapshot['lines'][0])->toHaveKey('partner_id');
     expect($invoice->source_snapshot['lines'][0]['partner_id'])->not->toBeNull();
     Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn (RefreshDonorInvoiceStatus $job): bool => $job->invoiceId === $invoice->id);

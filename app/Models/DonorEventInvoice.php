@@ -30,6 +30,7 @@ use RuntimeException;
  * @property Carbon|null $webling_payment_date
  * @property DonorPaymentVerification $webling_payment_verification
  * @property Carbon|null $webling_synced_at
+ * @property array{accounting_period_id:int,bank_account_id:int,excess_income_account_id:?int}|null $webling_verification_context
  * @property string|null $pdf_disk
  * @property string|null $pdf_path
  * @property Carbon|null $invoice_sent_at
@@ -55,6 +56,7 @@ use RuntimeException;
     'webling_payment_date',
     'webling_payment_verification',
     'webling_synced_at',
+    'webling_verification_context',
     'pdf_disk',
     'pdf_path',
     'invoice_sent_at',
@@ -104,6 +106,7 @@ class DonorEventInvoice extends Model
             'webling_payment_date' => null,
             'webling_payment_verification' => DonorPaymentVerification::Unverified,
             'webling_synced_at' => null,
+            'webling_verification_context' => null,
             'pdf_disk' => null,
             'pdf_path' => null,
             'invoice_sent_at' => null,
@@ -136,6 +139,7 @@ class DonorEventInvoice extends Model
             'webling_payment_date' => 'date',
             'webling_payment_verification' => DonorPaymentVerification::class,
             'webling_synced_at' => 'datetime',
+            'webling_verification_context' => 'array',
             'invoice_sent_at' => 'datetime',
             'invoice_reminder_sent_at' => 'datetime',
             'source_snapshot' => 'array',

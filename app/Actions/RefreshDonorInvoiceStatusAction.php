@@ -33,16 +33,30 @@ class RefreshDonorInvoiceStatusAction
             $details = null;
 
             try {
+                $context = $invoice->webling_verification_context;
+                if ($context === null) {
+                    $periodId = $invoice->source_snapshot['webling']['accounting_period_id']
+                        ?? $invoice->source_snapshot['webling']['period_id'] ?? $this->settings->accounting_period_id;
+                    throw_unless($periodId === $this->settings->accounting_period_id,
+                        RuntimeException::class, 'Historical invoice verification accounts are unavailable.');
+                    $context = [
+                        'accounting_period_id' => $periodId,
+                        'bank_account_id' => $this->settings->bank_account_id ?? 0,
+                        'excess_income_account_id' => $this->settings->excess_income_account_id,
+                    ];
+                }
+
                 $details = $this->weblingInvoices->settlementDetails(
                     $debitorId,
-                    $this->settings->bank_account_id ?? 0,
-                    $this->settings->excess_income_account_id === null ? [] : [$this->settings->excess_income_account_id],
+                    $context['bank_account_id'],
+                    $context['excess_income_account_id'] === null ? [] : [$context['excess_income_account_id']],
+                    $context['accounting_period_id'],
                 );
             } catch (WeblingApiException $weblingApiException) {
                 throw_if($weblingApiException->category !== WeblingApiException::NotFound, $weblingApiException);
             }
 
-            DB::transaction(function () use ($invoice, $lock, $seconds, $debitorId, $details): void {
+            DB::transaction(function () use ($invoice, $lock, $seconds, $debitorId, $details, $context): void {
                 $current = DonorEventInvoice::query()->lockForUpdate()->findOrFail($invoice->id);
                 throw_unless($lock->refresh($seconds), LockTimeoutException::class, 'Invoice refresh lock expired before persistence.');
                 throw_if($current->webling_debitor_id !== $debitorId || $current->remote_deleted_at !== null, DonorInvoiceGuardException::class, 'Die Rechnung wurde während der Aktualisierung geändert. Bitte erneut aktualisieren.');
@@ -65,6 +79,7 @@ class RefreshDonorInvoiceStatusAction
                     'webling_payment_date' => $details['payment_date'],
                     'webling_payment_verification' => $details['payment_verification'],
                     'webling_synced_at' => Date::now(),
+                    'webling_verification_context' => $context['bank_account_id'] > 0 ? $context : null,
                 ])->save();
             });
             $invoice->refresh();

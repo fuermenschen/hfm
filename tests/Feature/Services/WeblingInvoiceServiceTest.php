@@ -397,7 +397,7 @@ describe('bank settlement evidence', function (): void {
     it('normalizes a single bank receipt using its booking date rather than invoice dates', function (): void {
         fakeWeblingSettlement(weblingSettlementFixture());
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details)->toBe([
             'state' => 'paid', 'due_date' => '2026-10-07', 'invoice_number' => '322',
@@ -417,7 +417,7 @@ describe('bank settlement evidence', function (): void {
         ]);
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [9]);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [9], 10);
 
         expect($details['received_cents'])->toBe(11010)
             ->and($details['excess_cents'])->toBe(1010)
@@ -435,7 +435,7 @@ describe('bank settlement evidence', function (): void {
         $fixture['entries'][0]['properties']['amount'] = 70;
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['received_cents'])->toBe(7000)
             ->and($details['excess_cents'])->toBe(0)
@@ -455,7 +455,7 @@ describe('bank settlement evidence', function (): void {
         $fixture['invoice']['properties']['state'] = $state;
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['payment_verification'])->toBe('unverified')
             ->and($details['received_cents'])->toBeNull()
@@ -470,7 +470,7 @@ describe('bank settlement evidence', function (): void {
         $fixture['invoice']['properties']['writeoffamount'] = 100;
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['writeoff_cents'])->toBe(10000);
         expect($details['received_cents'])->toBeNull();
@@ -483,7 +483,7 @@ describe('bank settlement evidence', function (): void {
         Arr::set($fixture, $path, $value);
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['payment_verification'])->toBe('unclear')
             ->and($details['received_cents'])->toBeNull()
@@ -493,8 +493,6 @@ describe('bank settlement evidence', function (): void {
         'no payment' => ['invoice.links.payment', []],
         'wrong linked payment type' => ['invoice.links.payment.0.type', 'entrygroup'],
         'missing linked payment type' => ['invoice.links.payment.0.type', null],
-        'missing invoice period' => ['invoice.parents', null],
-        'wrong configured period' => ['invoice.parents', [99]],
         'multiple payments' => ['invoice.links.payment', [['id' => 20], ['id' => 21]]],
         'missing payment amount' => ['invoice.links.payment.0.properties.amount', null],
         'settlement mismatch' => ['invoice.links.payment.0.properties.amount', 99],
@@ -517,7 +515,7 @@ describe('bank settlement evidence', function (): void {
         Arr::set($fixture, $path, $value);
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['payment_verification'])->toBe('unclear')
             ->and($details['received_cents'])->toBeNull();
@@ -537,7 +535,7 @@ describe('bank settlement evidence', function (): void {
         Arr::set($fixture, $path, $value);
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['payment_verification'])->toBe('unclear')
             ->and($details['received_cents'])->toBeNull();
@@ -558,7 +556,7 @@ describe('bank settlement evidence', function (): void {
         $fixture['entries'][] = ['type' => 'entry', 'id' => 21, 'properties' => ['amount' => 10.10], 'parents' => [30], 'links' => $links];
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [9]);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [9], 10);
 
         expect($details['payment_verification'])->toBe('unclear')
             ->and($details['received_cents'])->toBeNull();
@@ -576,7 +574,7 @@ describe('bank settlement evidence', function (): void {
             'https://demo.webling.ch/api/1/'.$path => Http::response([], 404),
         ]);
 
-        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3))->toThrow($exceptionClass);
+        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10))->toThrow($exceptionClass);
         Http::assertSentCount($path === 'debitor/42' ? 1 : ($path === 'entrygroup/30' ? 2 : 3));
     })->with([
         'invoice 404' => ['debitor/42', WeblingApiException::class],
@@ -587,7 +585,7 @@ describe('bank settlement evidence', function (): void {
     it('propagates failed evidence requests rather than returning unclear', function (mixed $response, string $exceptionClass): void {
         fakeWeblingSettlement(weblingSettlementFixture(), ['https://demo.webling.ch/api/1/entrygroup/30' => $response]);
 
-        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3))->toThrow($exceptionClass);
+        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10))->toThrow($exceptionClass);
         Http::assertSentCount(2);
     })->with([
         'permission 403' => fn () => [Http::response([], 403), WeblingApiException::class],
@@ -626,19 +624,21 @@ describe('bank settlement evidence', function (): void {
         Http::assertSentCount(1);
     })->with(['wrong type' => 'entry', 'missing type' => null]);
 
-    it('marks matching invoice and booking periods unclear when outside the configured period', function (): void {
+    it('fails refresh when invoice period cannot match its frozen context', function (?array $parents, string $state): void {
         $fixture = weblingSettlementFixture();
-        $fixture['invoice']['parents'] = [99];
+        $fixture['invoice']['parents'] = $parents;
+        $fixture['invoice']['properties']['state'] = $state;
         $fixture['booking']['parents'] = [99];
         fakeWeblingSettlement($fixture);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
-
-        expect($details['payment_verification'])->toBe('unclear')
-            ->and($details['received_cents'])->toBeNull()
-            ->and($details['payment_date'])->toBeNull();
+        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10))
+            ->toThrow(RuntimeException::class);
         Http::assertSentCount(1);
-    });
+    })->with([
+        'missing invoice period' => [null, 'paid'],
+        'wrong period' => [[99], 'paid'],
+        'wrong period before payment' => [[99], 'open'],
+    ]);
 
     it('keeps historical invoice status readable outside the configured accounting period', function (): void {
         $fixture = weblingSettlementFixture();
@@ -662,7 +662,7 @@ describe('bank settlement evidence', function (): void {
             'https://demo.webling.ch/api/1/entry/20' => Http::response(['objects' => $fixture['entries']]),
         ]);
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3);
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10);
 
         expect($details['payment_verification'])->toBe('verified')
             ->and($details['received_cents'])->toBe(10000);
@@ -672,9 +672,8 @@ describe('bank settlement evidence', function (): void {
     it('does not verify without an explicitly identified bank account', function (): void {
         fakeWeblingSettlement(weblingSettlementFixture());
 
-        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 0);
-
-        expect($details['payment_verification'])->toBe('unclear');
+        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 0, [], 10))
+            ->toThrow(RuntimeException::class);
         Http::assertSentCount(1);
     });
 
@@ -683,7 +682,7 @@ describe('bank settlement evidence', function (): void {
             'https://demo.webling.ch/api/1/entry/20' => Http::response($entries),
         ]);
 
-        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3))->toThrow(RuntimeException::class);
+        expect(fn () => app(WeblingInvoiceService::class)->settlementDetails(42, 3, [], 10))->toThrow(RuntimeException::class);
         Http::assertSentCount(3);
     })->with([
         'missing entry' => [[]],
