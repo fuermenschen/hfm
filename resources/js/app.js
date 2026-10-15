@@ -359,6 +359,20 @@ function initChartTodayMarkers(scope = document) {
     });
 }
 
+function registerLivewireChartHooks() {
+    if (!window.Livewire?.hook) {
+        return;
+    }
+
+    window.Livewire.hook("morphed", ({ el }) => initChartTodayMarkers(el));
+}
+
+if (window.Livewire?.hook) {
+    registerLivewireChartHooks();
+} else {
+    document.addEventListener("livewire:init", registerLivewireChartHooks, { once: true });
+}
+
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
         initHeroLqip();
