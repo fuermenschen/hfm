@@ -45,7 +45,7 @@ it('dispatches scheduled work before running a bounded worker in the request', f
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])
         ->assertOk()->assertSeeText('Scheduler:')->assertSeeText('Jobs processed');
 
-    expect(Cache::lock('webcron-worker', 90)->get())->toBeTrue();
+    expect(Cache::lock('webcron-worker', 360)->get())->toBeTrue();
 })->with(['hosting limit' => 300, 'one minute' => 60, 'shorter limit' => 55, 'unlimited' => 0]);
 
 it('skips queue work when the request has no time left for another job', function (int $executionLimit, int $elapsed): void {
@@ -79,17 +79,21 @@ it('rejects a synchronous queue before invoking the scheduler', function (): voi
 it('skips a concurrent worker but recovers when its crash lock expires', function (): void {
     travelTo(now('UTC')->next('Sunday')->setTime(1, 0));
     Queue::fake([ExpireEventGroupMembershipRequests::class, DispatchStoryImageWarming::class]);
-    Cache::lock('webcron-worker', 90)->get();
+    Cache::lock('webcron-worker', 360)->get();
     $kernel = Artisan::getFacadeRoot();
     Artisan::shouldReceive('call')->with('schedule:run', [], Mockery::type(BufferedOutput::class))
-        ->twice()->andReturnUsing(fn (string $command, array $options, BufferedOutput $output): int => $kernel->call($command, $options, $output));
+        ->times(3)->andReturnUsing(fn (string $command, array $options, BufferedOutput $output): int => $kernel->call($command, $options, $output));
     Artisan::shouldReceive('call')->with('queue:work', Mockery::any(), Mockery::type(BufferedOutput::class))->once()->andReturn(0);
 
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])
         ->assertOk()->assertSeeText('Worker already running');
     Queue::assertPushed(ExpireEventGroupMembershipRequests::class);
 
-    travel(91)->seconds();
+    travel(301)->seconds();
+    get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])
+        ->assertOk()->assertSeeText('Worker already running');
+
+    travel(60)->seconds();
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])->assertOk();
 });
 
@@ -99,7 +103,7 @@ it('returns 500 and releases the lock when the worker fails', function (): void 
 
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])->assertInternalServerError();
 
-    expect(Cache::lock('webcron-worker', 90)->get())->toBeTrue();
+    expect(Cache::lock('webcron-worker', 360)->get())->toBeTrue();
 });
 
 it('continues queued work and returns 500 when scheduler orchestration fails', function (): void {
@@ -107,6 +111,25 @@ it('continues queued work and returns 500 when scheduler orchestration fails', f
     Artisan::shouldReceive('call')->with('queue:work', Mockery::any(), Mockery::type(BufferedOutput::class))->once()->ordered()->andReturn(0);
 
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])->assertInternalServerError();
+});
+
+it('reports a thrown scheduler exception and continues queued work with HTTP 500', function (): void {
+    Exceptions::fake();
+    $failure = new RuntimeException('Scheduler filter failed');
+    Artisan::shouldReceive('call')->with('schedule:run', [], Mockery::type(BufferedOutput::class))
+        ->once()->ordered()->andThrow($failure);
+    Artisan::shouldReceive('call')->with('queue:work', Mockery::any(), Mockery::type(BufferedOutput::class))
+        ->once()->ordered()->andReturnUsing(function (string $command, array $options, BufferedOutput $output): int {
+            $output->writeln('Queued work processed');
+
+            return 0;
+        });
+
+    get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])
+        ->assertInternalServerError()->assertSeeText('Scheduler failed')->assertSeeText('Queued work processed');
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception === $failure);
+    expect(Cache::lock('webcron-worker', 360)->get())->toBeTrue();
 });
 
 it('reports worker exceptions and releases the lock', function (): void {
@@ -118,7 +141,7 @@ it('reports worker exceptions and releases the lock', function (): void {
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])->assertInternalServerError();
 
     Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception === $failure);
-    expect(Cache::lock('webcron-worker', 90)->get())->toBeTrue();
+    expect(Cache::lock('webcron-worker', 360)->get())->toBeTrue();
 });
 
 it('returns 500 when a scheduled task fails despite a successful scheduler exit', function (): void {
@@ -133,7 +156,7 @@ it('returns 500 when a scheduled task fails despite a successful scheduler exit'
 it('warms images nightly without dispatching cleanup on other weekdays', function (): void {
     travelTo(now('UTC')->next('Monday')->setTime(1, 0));
     Queue::fake([ExpireEventGroupMembershipRequests::class, DispatchStoryImageWarming::class]);
-    Cache::lock('webcron-worker', 90)->get();
+    Cache::lock('webcron-worker', 360)->get();
 
     get(route('queue-worker'), ['X-API-Key' => 'webcron-test-key'])->assertOk();
 

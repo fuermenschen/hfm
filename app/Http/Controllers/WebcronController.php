@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Throwable;
 
 class WebcronController extends Controller
 {
@@ -29,10 +30,16 @@ class WebcronController extends Controller
         });
 
         $output->writeln('Scheduler:');
-        $schedulerExitCode = Artisan::call('schedule:run', [], $output);
-        $status = $schedulerExitCode !== 0 || $scheduledTaskFailed ? 500 : 200;
+        try {
+            $schedulerExitCode = Artisan::call('schedule:run', [], $output);
+            $status = $schedulerExitCode !== 0 || $scheduledTaskFailed ? 500 : 200;
+        } catch (Throwable $throwable) {
+            report($throwable);
+            $output->writeln('Scheduler failed; see application logs.');
+            $status = 500;
+        }
 
-        /** Reserve 30 seconds for the last job and 5 seconds for the response. */
+        /** Allow an expected 30 seconds for the last job and 5 seconds for the response. */
         $budget = (int) floor(min(60, $this->executionLimit() ?: 60) - (microtime(true) - $startedAt) - 35);
         if ($budget < 1) {
             $output->writeln('Worker skipped: insufficient execution time remaining.');
@@ -40,7 +47,7 @@ class WebcronController extends Controller
             return $this->respond($output->fetch(), 503);
         }
 
-        $lock = Cache::lock('webcron-worker', 90);
+        $lock = Cache::lock('webcron-worker', 360);
         if (! $lock->get()) {
             $output->writeln('Worker already running.');
 
