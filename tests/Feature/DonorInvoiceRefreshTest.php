@@ -6,6 +6,7 @@ use App\Jobs\RefreshDonorInvoiceStatus;
 use App\Models\DonationEvent;
 use App\Models\DonorEventInvoice;
 use App\Settings\WeblingApiSettings;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -50,6 +51,26 @@ it('selects invoices whose last refresh completed seconds after the scheduled ti
 
     Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn ($job): bool => $job->invoiceId === $invoice->id);
 })->with([['open', 1], ['paid', 7], ['writeoff', 7]]);
+
+it('uses UTC calendar cutoffs for daily and weekly refreshes across timezone boundaries', function (string $state, string $scheduledAt, string $lastSyncedAt): void {
+    config(['app.timezone' => 'Europe/Zurich']);
+    travelTo(Carbon::parse($scheduledAt));
+    $invoice = DonorEventInvoice::factory()->create([
+        'webling_debitor_id' => 42,
+        'webling_state' => $state,
+        'webling_synced_at' => $lastSyncedAt,
+    ]);
+    Queue::fake([RefreshDonorInvoiceStatus::class]);
+
+    (new DispatchDonorInvoiceRefresh)->handle();
+
+    Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn (RefreshDonorInvoiceStatus $job): bool => $job->invoiceId === $invoice->id);
+})->with([
+    'daily across UTC midnight' => ['open', '2026-10-15 04:00:00 Europe/Zurich', '2026-10-15 01:00:00'],
+    'weekly across UTC midnight' => ['paid', '2026-10-15 04:00:00 Europe/Zurich', '2026-10-09 01:00:00'],
+    'daily after DST shift' => ['open', '2026-10-26 03:00:00 Europe/Zurich', '2026-10-26 00:00:00'],
+    'weekly after DST shift' => ['writeoff', '2026-10-26 03:00:00 Europe/Zurich', '2026-10-20 00:00:00'],
+]);
 
 it('forces event refresh but excludes untracked deleted and other event invoices', function (): void {
     $event = DonationEvent::factory()->create();

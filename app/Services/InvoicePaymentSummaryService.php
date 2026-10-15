@@ -25,7 +25,6 @@ class InvoicePaymentSummaryService
     public function summarize(?DonationEvent $event, Collection $donations): array
     {
         $partners = Partner::query()->orderBy('id')->get()->keyBy('id');
-        $byName = $partners->keyBy('name');
         $activeDonors = ExternalUser::query()->whereIn('id', $donations->pluck('donor_external_user_id'))->pluck('id')->flip();
         $donationsByInvoice = $donations->filter(fn (Donation $donation): bool => $activeDonors->has($donation->donor_external_user_id))
             ->groupBy(fn (Donation $donation): string => $donation->athleteRegistration->donation_event_id.':'.$donation->donor_external_user_id);
@@ -76,8 +75,18 @@ class InvoicePaymentSummaryService
                     ])->all();
             }
 
-            $equalPartnerIds = $invoice->source_snapshot['allocation_partner_ids'] ?? $invoice->donationEvent->partners
-                ->where('name', '!=', 'alle zu gleichen Teilen')->pluck('id')->all();
+            $eventPartners = $invoice->donationEvent->partners;
+            $eventPartnersByName = $eventPartners->keyBy('name');
+            $equalPartnerIds = $invoice->source_snapshot['allocation_partner_ids'] ?? $eventPartners
+                ->reject(fn (Partner $partner): bool => $partner->name === 'alle zu gleichen Teilen')
+                ->pluck('id')->all();
+            $equalPartnerIds = array_values(array_unique(array_filter(
+                $equalPartnerIds,
+                fn (mixed $partnerId): bool => is_int($partnerId)
+                    && $partners->has($partnerId)
+                    && $partners->get($partnerId)->name !== 'alle zu gleichen Teilen',
+            )));
+            $directWeightMultiplier = max(1, count($equalPartnerIds));
             $weights = [];
             foreach ($lines as $line) {
                 if (! is_array($line) || ! is_int($line['total_cents'] ?? null) || $line['total_cents'] <= 0) {
@@ -85,18 +94,32 @@ class InvoicePaymentSummaryService
                 }
 
                 $name = $line['partner'] ?? null;
-                $partnerId = array_key_exists('partner_id', $line) ? $line['partner_id'] : ($byName->get($name)->id ?? null);
-                $equalSplit = $name === 'alle zu gleichen Teilen'
-                    || (array_key_exists('partner_id', $line) && $partnerId === null)
-                    || $name === __('app.equal_split');
-                $shares = $equalSplit && $equalPartnerIds !== []
-                    ? $this->allocate($line['total_cents'], array_fill_keys($equalPartnerIds, 1))
-                    : [is_int($partnerId) ? $partnerId : 0 => $line['total_cents']];
-
-                foreach ($shares as $id => $amount) {
-                    $id = $partners->has($id) && $partners->get($id)->name !== 'alle zu gleichen Teilen' ? $id : 0;
-                    $weights[$id] = ($weights[$id] ?? 0) + $amount;
+                if (array_key_exists('partner_id', $line)) {
+                    $partnerId = $line['partner_id'];
+                    $equalSplit = $partnerId === null;
+                } else {
+                    $equalSplit = is_string($name) && in_array($name, [__('app.equal_split'), 'alle zu gleichen Teilen'], true);
+                    $matchedPartner = is_string($name) ? $eventPartnersByName->get($name) : null;
+                    $partnerId = $equalSplit || ! ($matchedPartner instanceof Partner) ? null : $matchedPartner->id;
                 }
+
+                if ($equalSplit) {
+                    if ($equalPartnerIds === []) {
+                        $weights[0] = ($weights[0] ?? 0) + $line['total_cents'];
+
+                        continue;
+                    }
+
+                    foreach ($equalPartnerIds as $equalPartnerId) {
+                        $weights[$equalPartnerId] = ($weights[$equalPartnerId] ?? 0) + $line['total_cents'];
+                    }
+
+                    continue;
+                }
+
+                $partnerId = is_int($partnerId) && $partners->has($partnerId)
+                    && $partners->get($partnerId)->name !== 'alle zu gleichen Teilen' ? $partnerId : 0;
+                $weights[$partnerId] = ($weights[$partnerId] ?? 0) + $line['total_cents'] * $directWeightMultiplier;
             }
 
             foreach ($this->allocate($received, array_sum($weights) > 0 ? $weights : [0 => 1]) as $id => $amount) {

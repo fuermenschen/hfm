@@ -66,6 +66,51 @@ it('allocates indivisible cents exactly using frozen equal-split partners', func
     expect(array_sum(array_column($summary['partners'], 'amount_cents')))->toBe(101);
 });
 
+it('preserves exact weights across repeated equal-split invoice lines', function (): void {
+    $event = DonationEvent::factory()->create();
+    $partners = Partner::factory()->count(3)->create();
+    $event->partners()->attach($partners->modelKeys());
+    paidSummaryInvoice($event, [
+        'webling_total_cents' => 300,
+        'webling_received_cents' => 300,
+        'source_snapshot' => [
+            'allocation_partner_ids' => $partners->modelKeys(),
+            'lines' => [
+                ['partner_id' => null, 'total_cents' => 100],
+                ['partner_id' => null, 'total_cents' => 100],
+                ['partner_id' => null, 'total_cents' => 100],
+            ],
+        ],
+    ]);
+
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect());
+
+    expect(array_column($summary['partners'], 'amount_cents'))->toBe([100, 100, 100]);
+});
+
+it('preserves exact equal-split proportions when receipt includes excess payment', function (): void {
+    $event = DonationEvent::factory()->create();
+    $partners = Partner::factory()->count(3)->create();
+    $event->partners()->attach($partners->modelKeys());
+    paidSummaryInvoice($event, [
+        'webling_total_cents' => 300,
+        'webling_received_cents' => 900,
+        'webling_excess_cents' => 600,
+        'source_snapshot' => [
+            'allocation_partner_ids' => $partners->modelKeys(),
+            'lines' => [
+                ['partner_id' => $partners[0]->id, 'total_cents' => 200],
+                ['partner_id' => null, 'total_cents' => 100],
+            ],
+        ],
+    ]);
+
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect());
+
+    expect(array_column($summary['partners'], 'amount_cents'))->toBe([700, 100, 100]);
+    expect(array_sum(array_column($summary['partners'], 'amount_cents')))->toBe(900);
+});
+
 it('resolves legacy snapshot names and equal split within each event', function (): void {
     $first = DonationEvent::factory()->create();
     $second = DonationEvent::factory()->create();
@@ -100,6 +145,44 @@ it('keeps cash with missing partner mappings visible instead of redistributing i
     expect($summary['partners'])->toBe([['name' => 'A', 'amount_cents' => 7500]]);
     expect($summary['unallocated_cents'])->toBe(3500);
     expect($summary['received_cents'])->toBe(11000);
+});
+
+it('does not resolve a legacy partner name from another event', function (): void {
+    $invoiceEvent = DonationEvent::factory()->create();
+    $otherEvent = DonationEvent::factory()->create();
+    $renamedPartner = Partner::factory()->create(['name' => 'Renamed locally']);
+    $otherEventPartner = Partner::factory()->create(['name' => 'Legacy partner name']);
+    $invoiceEvent->partners()->attach($renamedPartner->id);
+    $otherEvent->partners()->attach($otherEventPartner->id);
+    paidSummaryInvoice($invoiceEvent, [
+        'source_snapshot' => ['lines' => [['partner' => 'Legacy partner name', 'total_cents' => 10000]]],
+    ]);
+
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($invoiceEvent, collect());
+
+    expect($summary['unallocated_cents'])->toBe(10000);
+    expect(array_column($summary['partners'], 'amount_cents'))->toBe([0]);
+});
+
+it('prefers stored partner IDs over stale equal-split text', function (): void {
+    $event = DonationEvent::factory()->create();
+    $directPartner = Partner::factory()->create(['name' => 'Direct']);
+    $equalPartner = Partner::factory()->create(['name' => 'Equal']);
+    $event->partners()->attach([$directPartner->id, $equalPartner->id]);
+    paidSummaryInvoice($event, [
+        'source_snapshot' => [
+            'allocation_partner_ids' => [$directPartner->id, $equalPartner->id],
+            'lines' => [[
+                'partner_id' => $directPartner->id,
+                'partner' => __('app.equal_split'),
+                'total_cents' => 10000,
+            ]],
+        ],
+    ]);
+
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($event, collect());
+
+    expect(array_column($summary['partners'], 'amount_cents'))->toBe([10000, 0]);
 });
 
 it('uses current donations only when an invoice has no snapshot lines', function (): void {

@@ -85,8 +85,33 @@ it('creates a marked debitor and caches its PDF from one persisted snapshot', fu
         ->and($invoice->pdf_path)->toStartWith('webling/donor-invoices/'.$invoice->id.'/');
     Storage::disk('local')->assertExists($invoice->pdf_path);
     expect($invoice->source_snapshot['allocation_partner_ids'])->toBe([$allocatedPartner->id]);
+    expect($invoice->source_snapshot['lines'][0])->toHaveKey('partner_id');
     expect($invoice->source_snapshot['lines'][0]['partner_id'])->not->toBeNull();
     Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn (RefreshDonorInvoiceStatus $job): bool => $job->invoiceId === $invoice->id);
+});
+
+it('stores explicit equal-split IDs and frozen allocation partners on the first invoice snapshot', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $event = $invoice->donationEvent;
+    $partners = Partner::factory()->count(2)->create();
+    $event->partners()->attach($partners->modelKeys());
+    AthleteRegistration::query()
+        ->where('donation_event_id', $event->id)
+        ->whereHas('donations', fn ($query) => $query->where('donor_external_user_id', $invoice->external_user_id))
+        ->update(['partner_id' => null]);
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+    $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(successfulResponse(4321));
+    $letter = Mockery::mock(LetterService::class);
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-equal-split'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    $snapshot = $invoice->fresh()->source_snapshot;
+    expect($snapshot['lines'][0])->toHaveKey('partner_id')
+        ->and($snapshot['lines'][0]['partner_id'])->toBeNull()
+        ->and($snapshot['allocation_partner_ids'])->toBe($partners->modelKeys());
 });
 
 it('recovers a matching debitor without another create request', function (): void {
