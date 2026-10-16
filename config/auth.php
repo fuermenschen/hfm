@@ -38,14 +38,17 @@ return [
     */
 
     'guards' => [
+        // remember duration in minutes; caps the magic-link remember-me cookie
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+            'remember' => 20160, // 14 days
         ],
 
         'external' => [
             'driver' => 'session',
             'provider' => 'external_users',
+            'remember' => 172800, // 120 days
         ],
     ],
 
