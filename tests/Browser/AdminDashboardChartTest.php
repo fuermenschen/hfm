@@ -38,6 +38,7 @@ it('keeps dashboard today markers aligned with each chart plot', function (): vo
     actingAs(User::factory()->create());
 
     $page = visit(route('admin.dashboard'))->assertSee('Heute:')->assertNoJavaScriptErrors();
+    $page->assertPresent('ui-chart[data-compact-y-axis][locale="de-CH"] [data-tick-label][data-axis="y"] text');
 
     $alignmentScript = <<<'JS'
         Array.from(document.querySelectorAll('ui-chart')).every((chart) => {

@@ -213,10 +213,6 @@ class DonationService
             }
         }
 
-        $legacyPartnerIds = $partners->where('name', 'alle zu gleichen Teilen')->pluck('id');
-        $legacyAmount = $legacyPartnerIds->sum(fn (int $partnerId): int => $totals->pull($partnerId, 0));
-        $totals = $this->distributeCents($totals, $legacyAmount);
-
         if ($event->has_equal_split_option) {
             $totals = $this->distributeCents($totals, $equalSplitAmount);
         }

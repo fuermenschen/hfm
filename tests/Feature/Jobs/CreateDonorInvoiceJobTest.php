@@ -2,6 +2,7 @@
 
 use App\Actions\CollectDonorInvoiceDataAction;
 use App\Jobs\CreateDonorInvoice;
+use App\Jobs\RefreshDonorInvoiceStatus;
 use App\Models\AthleteRegistration;
 use App\Models\Donation;
 use App\Models\DonationEvent;
@@ -17,6 +18,7 @@ use Illuminate\Cache\CacheManager;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
@@ -26,6 +28,8 @@ beforeEach(function (): void {
         'accounting_period_id' => 10,
         'debit_account_id' => 20,
         'credit_account_id' => 30,
+        'bank_account_id' => 3,
+        'excess_income_account_id' => 9,
     ]);
     InvoiceSettings::fake([
         'qr_iban' => 'CH5604835012345678009',
@@ -39,10 +43,13 @@ beforeEach(function (): void {
         'due_days' => 14,
     ]);
     Storage::fake('local');
+    Queue::fake([RefreshDonorInvoiceStatus::class]);
 });
 
 it('creates a marked debitor and caches its PDF from one persisted snapshot', function (): void {
     $invoice = donorInvoiceWithDonation();
+    $allocatedPartner = Partner::factory()->create(['name' => 'Snapshot allocation partner']);
+    $invoice->donationEvent->partners()->attach($allocatedPartner->id);
     $webling = Mockery::mock(WeblingInvoiceService::class);
     $letter = Mockery::mock(LetterService::class);
     $debitorResponse = successfulResponse(4321);
@@ -79,6 +86,37 @@ it('creates a marked debitor and caches its PDF from one persisted snapshot', fu
         ->and($invoice->pdf_disk)->toBe('local')
         ->and($invoice->pdf_path)->toStartWith('webling/donor-invoices/'.$invoice->id.'/');
     Storage::disk('local')->assertExists($invoice->pdf_path);
+    expect($invoice->source_snapshot['allocation_partner_ids'])->toBe([$allocatedPartner->id]);
+    expect($invoice->webling_verification_context)->toBe([
+        'accounting_period_id' => 10, 'bank_account_id' => 3, 'excess_income_account_id' => 9,
+    ]);
+    expect($invoice->source_snapshot['lines'][0])->toHaveKey('partner_id');
+    expect($invoice->source_snapshot['lines'][0]['partner_id'])->not->toBeNull();
+    Queue::assertPushed(RefreshDonorInvoiceStatus::class, fn (RefreshDonorInvoiceStatus $job): bool => $job->invoiceId === $invoice->id);
+});
+
+it('stores explicit equal-split IDs and frozen allocation partners on the first invoice snapshot', function (): void {
+    $invoice = donorInvoiceWithDonation();
+    $event = $invoice->donationEvent;
+    $partners = Partner::factory()->count(2)->create();
+    $event->partners()->attach($partners->modelKeys());
+    AthleteRegistration::query()
+        ->where('donation_event_id', $event->id)
+        ->whereHas('donations', fn ($query) => $query->where('donor_external_user_id', $invoice->external_user_id))
+        ->update(['partner_id' => null]);
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+    $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+    $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(successfulResponse(4321));
+    $letter = Mockery::mock(LetterService::class);
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-equal-split'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    $snapshot = $invoice->fresh()->source_snapshot;
+    expect($snapshot['lines'][0])->toHaveKey('partner_id')
+        ->and($snapshot['lines'][0]['partner_id'])->toBeNull()
+        ->and($snapshot['allocation_partner_ids'])->toBe($partners->modelKeys());
 });
 
 it('recovers a matching debitor without another create request', function (): void {
@@ -95,6 +133,36 @@ it('recovers a matching debitor without another create request', function (): vo
 
     expect($invoice->refresh()->webling_debitor_id)->toBe(999);
 });
+
+it('refreshes synchronously after releasing the creation lock for new and recovered invoices', function (bool $existingDebitor): void {
+    config(['queue.default' => 'sync']);
+    Queue::fake()->except([RefreshDonorInvoiceStatus::class]);
+    $invoice = donorInvoiceWithDonation();
+    if ($existingDebitor) {
+        $invoice->forceFill(['webling_debitor_id' => 4321])->save();
+    }
+    $webling = Mockery::mock(WeblingInvoiceService::class);
+    app()->instance(WeblingInvoiceService::class, $webling);
+    if (! $existingDebitor) {
+        $webling->shouldReceive('commentMarker')->once()->andReturn('HFM-DONOR-INVOICE:'.$invoice->id);
+        $webling->shouldReceive('findInvoiceIdsByCommentMarker')->once()->andReturn([]);
+        $webling->shouldReceive('createInvoiceWithMarker')->once()->andReturn(successfulResponse(4321));
+    }
+    $webling->shouldReceive('settlementDetails')->once()->andReturn([
+        'state' => 'open', 'due_date' => null, 'invoice_number' => '1542',
+        'total_cents' => 1000, 'remaining_cents' => 1000,
+        'received_cents' => null, 'payment_date' => null, 'payment_verification' => 'unverified',
+    ]);
+    $letter = Mockery::mock(LetterService::class);
+    $letter->shouldReceive('createFromSnapshot')->once()->andReturn(successfulResponse('%PDF-sync'));
+
+    runInvoiceJob($invoice, $webling, $letter);
+
+    $invoice->refresh();
+    expect($invoice->webling_state)->toBe('open')
+        ->and($invoice->webling_synced_at)->not->toBeNull();
+    Storage::disk('local')->assertExists($invoice->pdf_path);
+})->with([false, true]);
 
 it('keeps the frozen snapshot and debitor when PDF creation fails', function (): void {
     $invoice = donorInvoiceWithDonation();
@@ -177,7 +245,7 @@ it('renders the equal split label in the invoice line title', function (): void 
     $webling->shouldReceive('createInvoiceWithMarker')->once()->withArgs(function (int $invoiceId, InvoiceCreateData $data): bool {
         expect($data->invoiceLines)->toHaveCount(1)
             ->and($data->invoiceLines[0]['title'])
-            ->toBe('Ben K. für alle zu gleichen Teilen | 2 Runden à Fr. 5.00');
+            ->toBe('Ben K. für '.__('app.equal_split').' | 2 Runden à Fr. 5.00');
 
         return true;
     })->andReturn(successfulResponse(4321));

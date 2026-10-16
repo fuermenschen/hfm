@@ -10,7 +10,7 @@ use App\Models\DonorEventInvoice;
 class CollectDonorInvoiceDataAction
 {
     /**
-     * @return list<array{athlete:string,partner:?string,rounds:int,amount_per_round_cents:int,subtotal_cents:int,min_cents:?int,max_cents:?int,total_cents:int}>
+     * @return list<array{athlete:string,partner:?string,partner_id:?int,rounds:int,amount_per_round_cents:int,subtotal_cents:int,min_cents:?int,max_cents:?int,total_cents:int}>
      */
     public function __invoke(DonorEventInvoice $invoice): array
     {
@@ -36,6 +36,7 @@ class CollectDonorInvoiceDataAction
             return [
                 'athlete' => $registration->externalUser->privacy_name,
                 'partner' => $registration->partner->name ?? __('app.equal_split'),
+                'partner_id' => $registration->partner_id,
                 'rounds' => $rounds,
                 'amount_per_round_cents' => $amountPerRoundCents,
                 'subtotal_cents' => $subtotalCents,

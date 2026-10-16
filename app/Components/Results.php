@@ -130,7 +130,6 @@ class Results extends Component
         $perPartner = $donationService->calculateActualTotalPerEventPartner($event, $partners, $donations);
 
         return $partners
-            ->reject(fn (Partner $partner): bool => $partner->name === 'alle zu gleichen Teilen')
             ->map(fn (Partner $partner): array => ['name' => $partner->name, 'amount' => $perPartner[$partner->id]])
             ->all();
     }

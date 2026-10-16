@@ -2,6 +2,7 @@
 
 use App\Models\ExternalUser;
 use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Laravel\Pulse\Http\Middleware\Authorize;
@@ -188,7 +189,8 @@ test('parameterized signed login routes can be accessed with valid parameters', 
 });
 
 test('api-key middleware works', function () {
-    config(['queue.default' => 'database']);
+    config(['queue.default' => 'database', 'app.api_key' => 'pages-test-key']);
+    Artisan::shouldReceive('call')->twice()->withAnyArgs()->andReturn(0);
 
     // Test without API key
     $response = get(route('queue-worker'));
@@ -202,7 +204,7 @@ test('api-key middleware works', function () {
 
     // Test with valid API key
     $response = get(route('queue-worker'), [
-        'X-API-Key' => config('app.api_key'),
+        'X-API-Key' => 'pages-test-key',
     ]);
     $response->assertSuccessful();
 });

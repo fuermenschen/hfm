@@ -51,6 +51,11 @@ class CreateDonorInvoice implements ShouldQueue
                 $invoice->forceFill([
                     'source_snapshot' => $snapshot,
                     'source_total_cents' => $snapshot['total_cents'],
+                    'webling_verification_context' => $weblingSettings->bank_account_id === null ? null : [
+                        'accounting_period_id' => $weblingSettings->accounting_period_id,
+                        'bank_account_id' => $weblingSettings->bank_account_id,
+                        'excess_income_account_id' => $weblingSettings->excess_income_account_id,
+                    ],
                 ])->save();
             }
 
@@ -96,10 +101,15 @@ class CreateDonorInvoice implements ShouldQueue
                 'pdf_path' => $path,
             ])->save();
         });
+
+        $invoice = $this->invoice->fresh();
+        if ($invoice !== null && $invoice->webling_debitor_id !== null && $invoice->webling_synced_at === null) {
+            dispatch(new RefreshDonorInvoiceStatus($invoice->id))->afterCommit();
+        }
     }
 
     /**
-     * @return array{title:string,total_cents:int,lines:list<array{athlete:string,partner:?string,rounds:int,amount_per_round_cents:int,subtotal_cents:int,min_cents:?int,max_cents:?int,total_cents:int}>,webling:array<string,mixed>,letter:array<string,mixed>,template_version:string}
+     * @return array{title:string,total_cents:int,lines:list<array{athlete:string,partner:?string,partner_id:?int,rounds:int,amount_per_round_cents:int,subtotal_cents:int,min_cents:?int,max_cents:?int,total_cents:int}>,allocation_partner_ids:list<int>,webling:array<string,mixed>,letter:array<string,mixed>,template_version:string}
      */
     protected function createSnapshot(
         DonorEventInvoice $invoice,
@@ -147,6 +157,8 @@ class CreateDonorInvoice implements ShouldQueue
             'title' => $title,
             'total_cents' => $totalCents,
             'lines' => $lines,
+            'allocation_partner_ids' => $donationEvent->partners()
+                ->orderBy('partners.id')->pluck('partners.id')->all(),
             'webling' => [
                 'title' => $title,
                 'date' => $invoiceDate->toDateString(),

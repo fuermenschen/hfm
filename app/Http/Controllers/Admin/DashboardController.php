@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\GetDashboardDataAction;
 use App\Http\Controllers\Controller;
 use App\Models\DonationEvent;
 use App\Services\CurrentDonationEventService;
-use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 
 class DashboardController extends Controller
 {
     public function __invoke(
         Request $request,
         CurrentDonationEventService $currentDonationEventService,
-        GetDashboardDataAction $getDashboardData,
-    ): Factory|View {
+    ): View {
         $event = $currentDonationEventService->current();
 
         if ($request->query->has('anlass')) {
@@ -33,6 +31,21 @@ class DashboardController extends Controller
             }
         }
 
-        return view('pages.admin.dashboard', $getDashboardData($event));
+        $events = DonationEvent::query()
+            ->latest('starts_at')
+            ->get(['id', 'title', 'slug', 'timezone', 'starts_at', 'is_published']);
+        $hour = Date::now()->hour;
+        $greeting = match (true) {
+            $hour >= 17 => 'Guten Abend ',
+            $hour >= 12 => 'Grüezi ',
+            $hour >= 4 => 'Guten Morgen ',
+            default => 'Hallo ',
+        };
+
+        return view('pages.admin.dashboard', [
+            'greeting' => $greeting,
+            'events' => $events,
+            'selectedEventSlug' => $event?->slug,
+        ]);
     }
 }

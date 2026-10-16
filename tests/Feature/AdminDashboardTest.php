@@ -1,7 +1,10 @@
 <?php
 
+use App\Actions\GetDashboardDataAction;
+use App\Components\AdminDashboardContent;
 use App\Models\AthleteRegistration;
 use App\Models\DonationEvent;
+use App\Models\DonorEventInvoice;
 use App\Models\EventGroup;
 use App\Models\ExternalUser;
 use App\Models\Partner;
@@ -10,29 +13,29 @@ use App\Models\User;
 use App\Settings\EventSettings;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
-it('renders the admin dashboard for authenticated users', function () {
+it('renders the admin dashboard shell before loading expensive content', function (): void {
     $user = User::factory()->create();
+    $getDashboardData = Mockery::mock(GetDashboardDataAction::class);
+    $getDashboardData->shouldNotReceive('__invoke');
+    app()->instance(GetDashboardDataAction::class, $getDashboardData);
 
     actingAs($user);
 
     get('/admin')
         ->assertSuccessful()
         ->assertSee('Sportler:innen')
-        ->assertSee('Entwicklung bis zum Anlass')
-        ->assertSee('Für diesen Zeitraum sind noch keine Daten vorhanden.')
-        ->assertSee('Mehr anzeigen')
-        ->assertSee('mt-9', false)
-        ->assertSee('height: 270px', false)
-        ->assertSee('motion-safe:animate-bounce', false)
-        ->assertSee('dark:from-zinc-800', false)
-        ->assertSee('Spenden (tatsächlich)')
-        ->assertSee('Letzte Aktivitäten');
+        ->assertSee('animate-pulse', false)
+        ->assertSee('Statistiken werden nach dem Laden der Seite berechnet.')
+        ->assertDontSee('Entwicklung bis zum Anlass')
+        ->assertDontSee('Spenden (bezahlt)');
 });
 
 it('renders partner cards even when partner totals are missing', function () {
@@ -41,7 +44,7 @@ it('renders partner cards even when partner totals are missing', function () {
 
     actingAs($user);
 
-    get('/admin')
+    Livewire::test(AdminDashboardContent::class)
         ->assertSuccessful()
         ->assertSee('Test Partner');
 });
@@ -68,8 +71,7 @@ it('renders cumulative charts when dashboard has data from multiple days', funct
 
     actingAs(User::factory()->create());
 
-    get(route('admin.dashboard'))
-        ->assertSuccessful()
+    Livewire::test(AdminDashboardContent::class, ['eventSlug' => $event->slug])
         ->assertSee('Sportler:innen-Registrierungen')
         ->assertSee('Erwartete Spendensumme')
         ->assertSee('scale="linear"', false)
@@ -102,6 +104,8 @@ it('defaults dashboard data and links to the current event', function (): void {
         ->assertSuccessful()
         ->assertSee('value="'.$currentEvent->slug.'" selected', false)
         ->assertSee('onchange="this.form.submit()"', false)
+        ->assertSee('wire:snapshot', false);
+    Livewire::test(AdminDashboardContent::class, ['eventSlug' => $currentEvent->slug])
         ->assertSee(route('admin.athletes.index', ['anlass' => $currentEvent->slug]), false)
         ->assertSee('data-flux-timeline', false);
 });
@@ -118,12 +122,15 @@ it('filters the dashboard by another event or all events', function (): void {
 
     get(route('admin.dashboard', ['anlass' => $otherEvent->slug]))
         ->assertSuccessful()
-        ->assertSee('value="'.$otherEvent->slug.'" selected', false)
+        ->assertSee('value="'.$otherEvent->slug.'" selected', false);
+    Livewire::test(AdminDashboardContent::class, ['eventSlug' => $otherEvent->slug])
         ->assertSee(route('admin.donations.index', ['anlass' => $otherEvent->slug]), false);
 
     get(route('admin.dashboard').'?anlass=')
         ->assertSuccessful()
         ->assertSee('value="" selected', false)
+        ->assertSee('wire:snapshot', false);
+    Livewire::test(AdminDashboardContent::class)
         ->assertSee(route('admin.donors.index').'?anlass=', false);
 });
 
@@ -135,8 +142,7 @@ it('shows the selected event group count', function (): void {
 
     actingAs(User::factory()->create());
 
-    get(route('admin.dashboard', ['anlass' => $event->slug]))
-        ->assertSuccessful()
+    Livewire::test(AdminDashboardContent::class, ['eventSlug' => $event->slug])
         ->assertViewHas('eventGroupCount', 2)
         ->assertSeeText('Gruppen')
         ->assertSeeText('Registriert')
@@ -148,3 +154,29 @@ it('rejects invalid dashboard event filters', function (string $eventSlug): void
 
     get(route('admin.dashboard', ['anlass' => $eventSlug]))->assertNotFound();
 })->with(['invalid', 'missing-event']);
+
+it('renders persisted payment totals for the selected event and all events without contacting Webling', function (): void {
+    $event = DonationEvent::factory()->create();
+    $otherEvent = DonationEvent::factory()->create();
+    $partner = Partner::factory()->create(['name' => 'Cash partner']);
+    $event->partners()->attach($partner->id);
+    foreach ([$event, $otherEvent] as $invoiceEvent) {
+        DonorEventInvoice::factory()->forEvent($invoiceEvent)->create([
+            'webling_debitor_id' => 42, 'webling_state' => 'paid', 'webling_remaining_cents' => 0,
+            'webling_total_cents' => 10000, 'webling_received_cents' => 11000,
+            'webling_excess_cents' => 1000, 'webling_writeoff_cents' => 0,
+            'webling_payment_verification' => 'verified', 'webling_payment_date' => '2026-10-01',
+            'webling_synced_at' => now(),
+            'source_snapshot' => ['lines' => [['partner_id' => $partner->id, 'total_cents' => 10000]]],
+        ]);
+    }
+    actingAs(User::factory()->create());
+    Http::preventStrayRequests();
+
+    Livewire::test(AdminDashboardContent::class, ['eventSlug' => $event->slug])
+        ->assertViewHas('paymentSummary', fn (array $summary): bool => $summary['received_cents'] === 11000)
+        ->assertSee('Fr. 110.00')->assertSee('Mehrzahlungen (verifiziert)');
+    Livewire::test(AdminDashboardContent::class)
+        ->assertViewHas('paymentSummary', fn (array $summary): bool => $summary['received_cents'] === 22000);
+    Http::assertNothingSent();
+});

@@ -44,6 +44,7 @@ it('collects confirmed and unconfirmed donations in integer cents', function ():
         ->and($lines[0])->toMatchArray([
             'athlete' => 'Alice D.',
             'partner' => 'ACME',
+            'partner_id' => $partner->id,
             'rounds' => 3,
             'amount_per_round_cents' => 250,
             'subtotal_cents' => 750,
@@ -78,6 +79,8 @@ it('collects the equal split label for registrations without a partner', functio
 
     expect($lines)->toHaveCount(1)
         ->and($lines[0]['partner'])->toBe(__('app.equal_split'))
+        ->and(array_keys($lines[0]))->toContain('partner_id')
+        ->and($lines[0]['partner_id'])->toBeNull()
         ->and($lines[0]['total_cents'])->toBe(750);
 });
 
