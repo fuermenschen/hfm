@@ -562,7 +562,7 @@ it('rejects a response after lease expiry even when no other process has taken t
     expect($invoice->refresh()->getAttributes())->toBe($before);
 });
 
-it('makes supported HTTP settlements receipt-eligible using persisted bank receipts and immutable invoice snapshots', function (float $total, float $payment, float $writeoff, float $excess, int $totalCents, int $receivedCents): void {
+it('makes supported HTTP settlements receipt-eligible using persisted bank receipts and immutable invoice snapshots', function (float $total, float $payment, float $writeoff, float $excess, int $totalCents, int $receivedCents, int $excessCents): void {
     travelTo('2026-10-09 12:00:00');
     $snapshot = ['total_cents' => 1500, 'webling' => ['date' => '2026-09-23', 'accounting_period_id' => 10]];
     $invoice = refreshInvoiceFixture(['source_snapshot' => $snapshot]);
@@ -593,7 +593,7 @@ it('makes supported HTTP settlements receipt-eligible using persisted bank recei
 
     $stored = $invoice->fresh();
     expect($stored->webling_received_cents)->toBe($receivedCents)
-        ->and($stored->webling_excess_cents)->toBe((int) round($excess * 100))
+        ->and($stored->webling_excess_cents)->toBe($excessCents)
         ->and($stored->webling_writeoff_cents)->toBe((int) round($writeoff * 100))
         ->and($stored->webling_total_cents)->toBe($totalCents)
         ->and($stored->webling_payment_date->toDateString())->toBe('2026-10-05')
@@ -606,11 +606,26 @@ it('makes supported HTTP settlements receipt-eligible using persisted bank recei
     Storage::disk('local')->assertExists($path);
     Http::assertSentCount(3);
 })->with([
-    'ordinary receipt' => [15.0, 15.0, 0.0, 0.0, 1500, 1500],
-    'accountant increased invoice total' => [20.0, 20.0, 0.0, 0.0, 2000, 2000],
-    'accountant decreased invoice total' => [10.0, 10.0, 0.0, 0.0, 1000, 1000],
-    'underpayment with separate writeoff' => [15.0, 10.0, 5.0, 0.0, 1500, 1000],
-    'excess in same bank booking' => [15.0, 15.0, 0.0, 1.10, 1500, 1610],
+    'ordinary receipt' => [15.0, 15.0, 0.0, 0.0, 1500, 1500, 0],
+    'accountant increased invoice total' => [20.0, 20.0, 0.0, 0.0, 2000, 2000, 500],
+    'accountant decreased invoice total' => [10.0, 10.0, 0.0, 0.0, 1000, 1000, 0],
+    'underpayment with separate writeoff' => [15.0, 10.0, 5.0, 0.0, 1500, 1000, 0],
+    'excess in same bank booking' => [15.0, 15.0, 0.0, 1.10, 1500, 1610, 110],
+    'adjusted total and excess in same bank booking' => [20.0, 20.0, 0.0, 1.10, 2000, 2110, 610],
+]);
+
+it('calculates excess only when an original invoice amount is available', function (?int $sourceTotal, ?array $snapshot, ?int $expectedExcess): void {
+    $invoice = refreshInvoiceFixture(['source_total_cents' => $sourceTotal, 'source_snapshot' => $snapshot]);
+    fakeRefreshEvidence($invoice);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    expect($invoice->webling_excess_cents)->toBe($expectedExcess)
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified);
+})->with([
+    'stored original total' => [1000, null, 500],
+    'snapshot original total' => [null, ['total_cents' => 1000], 500],
+    'missing original total' => [null, null, null],
 ]);
 
 it('withdraws receipt eligibility after unsupported HTTP evidence while retaining invoice PDF access', function (array $changes, DonorPaymentVerification $verification, int $requests): void {
