@@ -30,6 +30,18 @@
                 <x-slot:bottomRight>
                     <div class="flex flex-wrap items-center gap-3">
                         <flux:text class="text-sm text-zinc-500">{{ $external_users->total() }} {{ $this->roleLabel() }}</flux:text>
+                        @if ($role === 'donor')
+                            <flux:select
+                                wire:model.live="invoiceFilter"
+                                aria-label="Rechnungsfilter"
+                                :disabled="! $this->invoiceActionsEnabled()"
+                                class="w-full sm:w-60"
+                            >
+                                @foreach ($this->invoiceFilterOptions() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </flux:select>
+                        @endif
                         <x-datatable.event-filter :events="$events" />
                     </div>
                 </x-slot:bottomRight>
@@ -155,6 +167,10 @@
                                         <flux:text>Keine Treffer für "{{ $search }}".</flux:text>
                                         <flux:button variant="ghost" size="sm" wire:click="$set('search', '')"
                                             >Suche zurücksetzen</flux:button>
+                                    @elseif ($role === 'donor' && $invoiceFilter !== '' && $this->invoiceActionsEnabled())
+                                        <flux:text>Keine Spender:innen für diesen Rechnungsfilter.</flux:text>
+                                        <flux:button variant="ghost" size="sm" wire:click="$set('invoiceFilter', '')"
+                                            >Rechnungsfilter zurücksetzen</flux:button>
                                     @elseif ($eventSlug !== null && $eventSlug !== '')
                                         <flux:text>Keine {{ $this->roleLabel() }} für diesen Anlass vorhanden.</flux:text>
                                     @else

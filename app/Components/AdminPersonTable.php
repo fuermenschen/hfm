@@ -16,6 +16,7 @@ use App\Actions\SendDonorInvoiceAction;
 use App\Actions\SendDonorInvoiceReminderAction;
 use App\Enums\AthleteDocumentType;
 use App\Enums\DonorInvoiceStatus;
+use App\Enums\DonorPaymentVerification;
 use App\Exceptions\DonorInvoiceGuardException;
 use App\Jobs\DispatchDonorInvoiceRefresh;
 use App\Models\AthleteRegistration;
@@ -52,6 +53,9 @@ class AdminPersonTable extends AbstractDatatableComponent
 
     #[Url(as: 'anlass', except: '')]
     public ?string $eventSlug = '';
+
+    #[Url(as: 'rechnung', except: '')]
+    public string $invoiceFilter = '';
 
     public ?string $confirmingInvoiceAction = null;
 
@@ -140,6 +144,10 @@ class AdminPersonTable extends AbstractDatatableComponent
             $this->eventSlug = $currentEvent instanceof DonationEvent ? $currentEvent->slug : '';
         }
 
+        if (! $this->invoiceActionsEnabled() || ! array_key_exists($this->invoiceFilter, $this->invoiceFilterOptions())) {
+            $this->reset('invoiceFilter');
+        }
+
         parent::mount();
     }
 
@@ -148,6 +156,7 @@ class AdminPersonTable extends AbstractDatatableComponent
         parent::updated($property);
 
         if ($property === 'eventSlug') {
+            $this->reset('invoiceFilter');
             $this->resolvedInvoiceEvent = null;
             $this->resolvedInvoiceEventChecked = false;
             $this->confirmingInvoiceAction = null;
@@ -252,11 +261,46 @@ class AdminPersonTable extends AbstractDatatableComponent
         }
 
         $query->whereHas('donationsAsDonor.athleteRegistration.donationEvent', fn (Builder $event): Builder => $event->where('slug', $this->eventSlug));
+
+        $event = $this->selectedEvent();
+        if (! $event instanceof DonationEvent || ! array_key_exists($this->invoiceFilter, $this->invoiceFilterOptions()) || $this->invoiceFilter === '') {
+            return;
+        }
+
+        $invoiceQuery = function (Builder $invoice) use ($event): void {
+            $invoice->where('donation_event_id', $event->id)->whereNull('remote_deleted_at')->where('webling_debitor_id', '>', 0);
+            match ($this->invoiceFilter) {
+                'unpaid' => $invoice->where('webling_remaining_cents', '>', 0),
+                'unclear' => $invoice->where('webling_payment_verification', DonorPaymentVerification::Unclear),
+                'writeoff' => $invoice->where('webling_writeoff_cents', '>', 0),
+                'unsynced' => $invoice->whereNull('webling_synced_at'),
+                'excess' => $invoice->where('webling_excess_cents', '>', 0)
+                    ->where('webling_state', 'paid')->where('webling_remaining_cents', 0)
+                    ->where('webling_payment_verification', DonorPaymentVerification::Verified)
+                    ->where('webling_received_cents', '>', 0)->whereNotNull('webling_payment_date')->whereNotNull('webling_synced_at'),
+                default => $invoice,
+            };
+        };
+        if ($this->invoiceFilter === 'missing') {
+            $query->whereDoesntHave('donorEventInvoices', $invoiceQuery);
+        } else {
+            $query->whereHas('donorEventInvoices', $invoiceQuery);
+        }
+    }
+
+    /** @return array<string, string> */
+    public function invoiceFilterOptions(): array
+    {
+        return [
+            '' => 'Alle Rechnungen', 'unpaid' => 'Alle Unbezahlten', 'unclear' => 'Unklare Zahlungen',
+            'excess' => 'Mehrzahlungen', 'writeoff' => 'Mit Abschreibung',
+            'unsynced' => 'Noch nicht abgeglichen', 'missing' => 'Ohne Rechnung',
+        ];
     }
 
     protected function tableFilterProperties(): array
     {
-        return ['eventSlug'];
+        return ['eventSlug', 'invoiceFilter'];
     }
 
     protected function defaultSortColumn(): string
@@ -315,7 +359,16 @@ class AdminPersonTable extends AbstractDatatableComponent
         if ($this->role === 'donor') {
             $columns['invoice_status'] = ['label' => 'Rechnung', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-32', 'export_key' => 'Rechnung'];
             $columns['invoice_number'] = ['label' => 'Rechnungs-Nr.', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-28', 'export_key' => 'Rechnungs-Nr.'];
-            $columns['invoice_total'] = ['label' => 'Rechnungsbetrag', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-36', 'export_key' => 'Rechnungsbetrag'];
+            $columns['invoice_total'] = ['label' => 'Rechnungsbetrag (Webling)', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-36', 'export_key' => 'Rechnungsbetrag (Webling)'];
+            $columns['invoice_verification'] = ['label' => 'Zahlungsprüfung', 'sortable' => false, 'export_key' => 'Zahlungsprüfung'];
+            foreach ([
+                'invoice_original' => 'Ursprünglicher Betrag', 'invoice_received' => 'Zahlungseingang (verifiziert)',
+                'invoice_excess' => 'Mehrzahlung (verifiziert)', 'invoice_writeoff' => 'Abgeschrieben (Webling)',
+            ] as $key => $label) {
+                $columns[$key] = ['label' => $label, 'sortable' => false, 'align' => 'right', 'width' => 'min-w-36', 'export_key' => $label];
+            }
+
+            $columns['invoice_payment_date'] = ['label' => 'Zahlungsdatum', 'sortable' => false, 'export_key' => 'Zahlungsdatum'];
             $columns['invoice_remaining'] = ['label' => 'Offen', 'sortable' => false, 'align' => 'right', 'width' => 'min-w-32', 'export_key' => 'Offen'];
             $columns['invoice_sent_at'] = ['label' => 'Gesendet am', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Gesendet am'];
             $columns['invoice_reminder_sent_at'] = ['label' => 'Erinnerung am', 'sortable' => false, 'align' => 'left', 'width' => 'min-w-36', 'export_key' => 'Erinnerung am'];
@@ -345,7 +398,7 @@ class AdminPersonTable extends AbstractDatatableComponent
             array_splice($columns, 2, 0, ['registration_time', 'donation_count']);
             array_splice($columns, 7, 0, ['partner', 'group', 'confirmed']);
         } else {
-            array_splice($columns, 5, 0, ['invoice_status', 'invoice_total', 'invoice_sent_at', 'invoice_synced_at']);
+            array_splice($columns, 5, 0, ['invoice_status', 'invoice_verification', 'invoice_total', 'invoice_received', 'invoice_sent_at', 'invoice_synced_at']);
         }
 
         return $columns;
@@ -483,16 +536,61 @@ class AdminPersonTable extends AbstractDatatableComponent
     public function invoiceTotal(ExternalUser $person): string
     {
         $invoice = $this->donorInvoice($person);
-        $cents = $invoice->webling_total_cents ?? $invoice->source_total_cents ?? null;
+        $cents = $invoice->webling_total_cents ?? null;
 
-        return $cents === null ? '-' : $this->formatMoney($cents / 100);
+        return $cents === null ? '—' : $this->formatMoney($cents / 100);
     }
 
     public function invoiceRemaining(ExternalUser $person): string
     {
         $cents = $this->donorInvoice($person)?->webling_remaining_cents;
 
-        return $cents === null ? '-' : $this->formatMoney($cents / 100);
+        return $cents === null ? '—' : $this->formatMoney($cents / 100);
+    }
+
+    public function invoiceVerification(ExternalUser $person): string
+    {
+        $invoice = $this->donorInvoice($person);
+        if (! $invoice instanceof DonorEventInvoice || $invoice->remote_deleted_at !== null || $invoice->webling_debitor_id === null) {
+            return '—';
+        }
+
+        return match ($invoice->webling_payment_verification) {
+            DonorPaymentVerification::Verified => 'Verifiziert',
+            DonorPaymentVerification::Unclear => 'Unklar',
+            default => 'Nicht verifiziert',
+        };
+    }
+
+    public function invoiceFinancialValue(ExternalUser $person, string $column): string
+    {
+        $invoice = $this->donorInvoice($person);
+        if (! $invoice instanceof DonorEventInvoice) {
+            return '—';
+        }
+
+        if ($column !== 'invoice_original' && ($invoice->remote_deleted_at !== null || $invoice->webling_debitor_id === null)) {
+            return '—';
+        }
+
+        $eligible = $this->donorInvoices->isReceiptEligible($invoice);
+        $cents = match ($column) {
+            'invoice_original' => $invoice->source_total_cents ?? $invoice->source_snapshot['total_cents'] ?? null,
+            'invoice_received' => $eligible ? $invoice->webling_received_cents : null,
+            'invoice_excess' => $eligible ? $invoice->webling_excess_cents : null,
+            'invoice_writeoff' => $invoice->webling_writeoff_cents,
+            default => null,
+        };
+
+        return $cents === null ? '—' : $this->formatMoney($cents / 100);
+    }
+
+    public function invoicePaymentDate(ExternalUser $person): string
+    {
+        $invoice = $this->donorInvoice($person);
+
+        return $invoice instanceof DonorEventInvoice && $this->donorInvoices->isReceiptEligible($invoice)
+            ? $invoice->webling_payment_date->format('d.m.Y') : '—';
     }
 
     public function invoiceSentAt(ExternalUser $person): string
@@ -1633,7 +1731,13 @@ class AdminPersonTable extends AbstractDatatableComponent
         if ($this->role === 'donor' && $row instanceof ExternalUser) {
             $export['Rechnung'] = $this->invoiceStatus($row)?->label() ?? '';
             $export['Rechnungs-Nr.'] = $this->invoiceNumber($row);
-            $export['Rechnungsbetrag'] = $this->invoiceTotal($row);
+            $export['Rechnungsbetrag (Webling)'] = $this->invoiceTotal($row);
+            $export['Zahlungsprüfung'] = $this->invoiceVerification($row);
+            foreach (['invoice_original', 'invoice_received', 'invoice_excess', 'invoice_writeoff'] as $column) {
+                $export[$this->columnDefinitions()[$column]['label']] = $this->invoiceFinancialValue($row, $column);
+            }
+
+            $export['Zahlungsdatum'] = $this->invoicePaymentDate($row);
             $export['Offen'] = $this->invoiceRemaining($row);
             $export['Gesendet am'] = $this->invoiceSentAt($row);
             $export['Erinnerung am'] = $this->invoiceReminderSentAt($row);

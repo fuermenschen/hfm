@@ -489,6 +489,7 @@ it('shows invoice status and amounts for donors in the selected event', function
     Livewire::test(AdminPersonTable::class, ['role' => 'donor'])
         ->set('eventSlug', $event->slug)
         ->call('toggleColumn', 'invoice_number')
+        ->call('toggleColumn', 'invoice_original')
         ->assertSee('Rechnung')
         ->assertSee('Gesendet')
         ->assertSee('1542')
