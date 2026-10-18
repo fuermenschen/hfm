@@ -23,8 +23,11 @@
         ];
     @endphp
     <x-expandable-card class="mt-9" :max-height="360" expand-mode="icon-animated">
-        <flux:heading size="xl">Entwicklung bis zum Anlass</flux:heading>
-        <flux:text class="mt-1">Kumulative Registrierungen, Spenden und erwartete Spendensumme relativ zum Start des Anlasses.</flux:text>
+        <flux:heading size="xl">Entwicklung rund um den Anlass</flux:heading>
+        <flux:text class="mt-1">
+            Zeitraum von 60 Tagen vor bis 14 Tage nach dem Anlass. Spendenschätzungen werden mit aktuell hinterlegten
+            Werten nach Erfassungsdatum dargestellt, nicht als historische Momentaufnahmen.
+        </flux:text>
 
         @if ($chartEvents === [] || $chartData['registrations'] === [])
             <flux:text class="mt-5">Für diesen Zeitraum sind noch keine Daten vorhanden.</flux:text>
@@ -143,7 +146,8 @@
             :route-parameters="$routeParameters"
         />
         <x-admin.stat-card
-            title="Durchschn. Runden"
+            title="Geschätzte Runden Ø"
+            tooltip="Durchschnitt der bei der Anmeldung geschätzten Runden. Tatsächlich absolvierte Runden werden hier nicht verwendet."
             :value="round($meanNumberOfRounds, 0)"
             route="admin.athletes.index"
             :route-parameters="$routeParameters"
@@ -151,6 +155,7 @@
         <x-admin.stat-card
             title="Durchschn. Spenden"
             :value="round($meanNumberOfDonations, 0)"
+            tooltip="Anzahl Spendenzusagen geteilt durch Anzahl Sportler:innen. Zeigt die durchschnittliche Zahl der Zusagen, nicht deren Geldbetrag."
             route="admin.athletes.index"
             :route-parameters="$routeParameters"
         />
@@ -172,13 +177,15 @@
             :route-parameters="$routeParameters"
         />
         <x-admin.stat-card
-            title="Verifiziert"
+            title="Bestätigt"
             :value="$verifiedDonationCount"
+            tooltip="Bestätigte Spendenzusagen. Die Bestätigung betrifft die Registrierung, nicht den Zahlungseingang."
             route="admin.donations.index"
             :route-parameters="$routeParameters"
         />
         <x-admin.stat-card
             title="Durchschn. Betrag pro Runde"
+            tooltip="Einfacher Durchschnitt der zugesagten Beträge pro Runde. Mindest- und Höchstbeträge sowie tatsächliche Zahlungen sind nicht berücksichtigt."
             :value="'Fr. '.round($meanDonationAmount, 2)"
             route="admin.donations.index"
             :route-parameters="$routeParameters"
@@ -189,6 +196,7 @@
     <x-stats title="Spenden (geschätzt)">
         <x-admin.stat-card
             title="Erwartete Spenden"
+            tooltip="Geschätzte Spendensumme aus erwarteten Runden und Spendenzusagen, einschliesslich Mindest- und Höchstbeträgen."
             :value="'Fr. '.round($expectedDonationAmount, 2)"
             route="admin.donations.index"
             :route-parameters="$routeParameters"
@@ -204,9 +212,10 @@
     </x-stats>
 
     <!-- Actual Amounts -->
-    <x-stats title="Spenden (tatsächlich)">
+    <x-stats title="Spenden (berechnet)">
         <x-admin.stat-card
-            title="Tatsächliche Spenden"
+            title="Berechnete Spenden"
+            tooltip="Aus den erfassten Runden berechnete Spendensumme, unter Berücksichtigung zugesagter Mindest- und Höchstbeträge. Kein Zahlungseingang."
             :value="'Fr. '.round($actualTotalAmount, 2)"
             route="admin.donations.index"
             :route-parameters="$routeParameters"
@@ -232,6 +241,7 @@
         <x-admin.stat-card
             title="Durchschn. Spenden"
             :value="round($meanNumberOfDonationsDonor, 1)"
+            tooltip="Anzahl Spendenzusagen geteilt durch Anzahl Spender:innen. Eine Person kann mehrere Spendenzusagen hinterlegt haben."
             route="admin.donors.index"
             :route-parameters="$routeParameters"
         />
@@ -240,6 +250,7 @@
     <x-stats title="Spenden (bezahlt)">
         <x-admin.stat-card
             title="Verifizierte Zahlungseingänge"
+            tooltip="Verifiziertes Geld zu vollständig abgeglichenen, in Webling als bezahlt geführten Rechnungen. Einschliesslich Mehrzahlungen und mehrerer Teilzahlungen. Zahlungen zu noch offenen oder unklaren Rechnungen sind ausgeschlossen."
             :value="'Fr. '.number_format($paymentSummary['received_cents'] / 100, 2, '.', chr(39))"
             route="admin.donors.index"
             :route-parameters="$routeParameters"
@@ -247,6 +258,7 @@
         @foreach ($paymentSummary['partners'] as $paidPartner)
             <x-admin.stat-card
                 :title="$paidPartner['name']"
+                tooltip="Rechnerischer Anteil der verifizierten Zahlungseingänge nach gespeicherter HFM-Rechnungsaufteilung; fehlt diese, anhand aktueller Spenden. Einschliesslich Mehrzahlungen. Keine Auszahlung an die Partnerorganisation."
                 :value="'Fr. '.number_format($paidPartner['amount_cents'] / 100, 2, '.', chr(39))"
                 route="admin.donors.index"
                 :route-parameters="$routeParameters"
@@ -254,7 +266,8 @@
         @endforeach
         @if ($paymentSummary['unallocated_cents'] > 0)
             <x-admin.stat-card
-                title="Noch nicht zugeordnet"
+                title="Unklare Partnerzuordnung"
+                tooltip="Bereits verifiziertes Geld, dessen Partneranteil nicht eindeutig zugeordnet werden kann. Im gesamten verifizierten Zahlungseingang enthalten."
                 :value="'Fr. '.number_format($paymentSummary['unallocated_cents'] / 100, 2, '.', chr(39))"
                 route="admin.donors.index"
                 :route-parameters="$routeParameters"
@@ -262,50 +275,83 @@
         @endif
     </x-stats>
     <flux:text class="mt-3">
-        Nur verifizierte Zahlungseingänge abgeschlossener Rechnungen, inklusive Mehrzahlungen. Teilzahlungen und unklare
-        Zahlungseingänge sind nicht enthalten. Die Verteilung folgt den Partneranteilen der jeweiligen Rechnung,
-        inklusive Mehrzahlungen.
+        Enthalten sind verifizierte Zahlungseingänge abgeschlossener Rechnungen, einschliesslich Mehrzahlungen. Mehrere
+        Teilzahlungen werden berücksichtigt, sobald die Rechnung vollständig abgeglichen ist.
     </flux:text>
 
     <x-stats title="Rechnungen und Zahlungsabgleich">
         @foreach ([
-            'Erstellt (gesamt)' => $paymentSummary['created_total'],
-            'Gesendet (gesamt)' => $paymentSummary['sent_total'],
-            'Verifizierte Zahlungseingänge' => $paymentSummary['verified_receipts'],
-            'Unklare Zahlungseingänge' => $paymentSummary['unclear_payments'],
-            'Noch nie abgeglichen' => $paymentSummary['never_synced'],
-        ] as $label => $count)
+            'Erstellt (gesamt)' => [
+                'value' => $paymentSummary['created_total'],
+                'tooltip' => 'Rechnungen mit bestehender Webling-Verknüpfung. In Webling gelöschte Rechnungen sind nicht enthalten.',
+            ],
+            'Gesendet (gesamt)' => [
+                'value' => $paymentSummary['sent_total'],
+                'tooltip' => 'Bereits gesendete Rechnungen mit bestehender Webling-Verknüpfung, unabhängig vom aktuellen Zahlungsstatus. In Webling gelöschte Rechnungen sind ausgeschlossen.',
+            ],
+            'Zahlung verifiziert' => [
+                'value' => $paymentSummary['verified_receipts'],
+                'tooltip' => 'Anzahl vollständig abgeglichener Rechnungen mit verifiziertem Zahlungseingang. Mehrere Zahlungen für dieselbe Rechnung zählen einmal.',
+            ],
+            'Zahlung unklar' => [
+                'value' => $paymentSummary['unclear_payments'],
+                'tooltip' => 'Anzahl Rechnungen, deren Zahlungsnachweis nicht automatisch verifiziert werden konnte. Bedeutet nicht, dass Zahlung oder zahlende Person unbekannt sind.',
+            ],
+            'Noch nie abgeglichen' => [
+                'value' => $paymentSummary['never_synced'],
+                'tooltip' => 'Vorhandene Webling-Rechnungen ohne gespeicherten erfolgreichen Abgleich. Fehlgeschlagene Versuche ändern diesen Wert nicht.',
+            ],
+        ] as $label => $card)
             <x-admin.stat-card
                 :title="$label"
-                :value="$count"
+                :value="$card['value']"
+                :tooltip="$card['tooltip']"
                 route="admin.donors.index"
                 :route-parameters="$routeParameters"
             />
         @endforeach
         @foreach (\App\Enums\DonorInvoiceStatus::cases() as $status)
+            @php($statusTooltip = match ($status) {
+                \App\Enums\DonorInvoiceStatus::Paid => 'Rechnungen mit Webling-Status «bezahlt». Dieser Status allein bestätigt keinen verifizierten Zahlungseingang und kann Teilabschreibungen enthalten.',
+                \App\Enums\DonorInvoiceStatus::Writeoff => 'Rechnungen mit Webling-Status «abgeschrieben». Teilabschreibungen auf ansonsten bezahlten Rechnungen sind hier nicht mitgezählt.',
+                \App\Enums\DonorInvoiceStatus::RemoteDeleted => 'Rechnungen, deren Löschung in Webling beim Abgleich festgestellt wurde. Keine gelöschten Spender:innen.',
+                default => null,
+            })
             <x-admin.stat-card
                 :title="$status->label()"
+                :tooltip="$statusTooltip"
                 :value="$paymentSummary['counts'][$status->value]"
                 route="admin.donors.index"
                 :route-parameters="$routeParameters"
             />
         @endforeach
         @foreach ([
-            'Offener Rechnungsbetrag (Webling)' => $paymentSummary['outstanding_cents'],
-            'Mehrzahlungen (verifiziert)' => $paymentSummary['excess_cents'],
-            'Abgeschrieben (Webling)' => $paymentSummary['writeoff_cents'],
-        ] as $label => $amount)
+            'Offener Rechnungsbetrag (Webling)' => [
+                'value' => $paymentSummary['outstanding_cents'],
+                'tooltip' => 'Summe der zuletzt aus Webling übernommenen offenen Rechnungsbeträge. Nachträgliche Änderungen in Webling sind erst nach erneutem Abgleich sichtbar.',
+            ],
+            'Mehrzahlungen (verifiziert)' => [
+                'value' => $paymentSummary['excess_cents'],
+                'tooltip' => 'Verifizierter Zahlungseingang über dem ursprünglichen HFM-Rechnungsbetrag. Ein nachträglich erhöhter Webling-Rechnungsbetrag verändert diese Berechnungsgrundlage nicht.',
+            ],
+            'Abgeschrieben (Webling)' => [
+                'value' => $paymentSummary['writeoff_cents'],
+                'tooltip' => 'Summe der aus Webling übernommenen Abschreibungsbeträge. Enthält auch Teilabschreibungen auf bezahlten Rechnungen; kein Zahlungseingang.',
+            ],
+        ] as $label => $card)
             <x-admin.stat-card
                 :title="$label"
-                :value="'Fr. '.number_format($amount / 100, 2, '.', chr(39))"
+                :value="'Fr. '.number_format($card['value'] / 100, 2, '.', chr(39))"
+                :tooltip="$card['tooltip']"
                 route="admin.donors.index"
                 :route-parameters="$routeParameters"
             />
         @endforeach
     </x-stats>
     <flux:text class="mt-3">
-        Rechnungsstatus gemäss letztem Webling-Abgleich. «Bezahlt» ist nicht gleichbedeutend mit verifiziertem
-        Zahlungseingang. Gesendete Rechnungen zählen unabhängig vom aktuellen Zahlungsstatus.
+        Status aus lokalem Rechnungsstand und letztem Webling-Abgleich. Überfälligkeit wird anhand des heutigen Datums
+        bestimmt. Die Statuskarten zeigen jeweils eine ausschliessliche Kategorie; die Gesamtzahlen für erstellte und
+        gesendete Rechnungen überschneiden sich damit.
         @if ($paymentSummary['breakdown_missing'] > 0)
             Bei {{ $paymentSummary['breakdown_missing'] }} Rechnung(en) fehlt noch die Aufschlüsselung;
                 Mehrzahlungen und Abschreibungen zeigen nur bereits ermittelte Beträge.

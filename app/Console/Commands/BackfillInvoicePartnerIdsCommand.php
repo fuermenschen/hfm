@@ -52,8 +52,9 @@ class BackfillInvoicePartnerIdsCommand extends Command
                 }
 
                 $partnerName = $line['partner'] ?? null;
-                if ($partnerName === $equalSplitName) {
+                if ($partnerName === $equalSplitName || (array_key_exists('partner', $line) && $partnerName === null)) {
                     $snapshot['lines'][$lineIndex]['partner_id'] = null;
+                    $snapshot['lines'][$lineIndex]['partner'] = $equalSplitName;
                     $counts['equal_split']++;
                     $hasEqualSplit = true;
                     $changed = true;

@@ -34,7 +34,7 @@ it('renders the admin dashboard shell before loading expensive content', functio
         ->assertSee('Sportler:innen')
         ->assertSee('animate-pulse', false)
         ->assertSee('Statistiken werden nach dem Laden der Seite berechnet.')
-        ->assertDontSee('Entwicklung bis zum Anlass')
+        ->assertDontSee('Entwicklung rund um den Anlass')
         ->assertDontSee('Spenden (bezahlt)');
 });
 
