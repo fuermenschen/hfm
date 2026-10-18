@@ -119,6 +119,19 @@ class ExternalUser extends Authenticatable
         ];
     }
 
+    /**
+     * Passwordless auth: SessionGuard::userFromRecaller() rejects null passwords
+     * (framework 13.31+), which breaks remember-me recall. A stable empty string
+     * keeps recaller cookies valid without introducing passwords.
+     *
+     * TODO: remove once laravel/framework merges laravel/framework#62055 (tracks laravel/framework#62054),
+     * then verify remember-me recall works again with a null password.
+     */
+    public function getAuthPassword(): string
+    {
+        return '';
+    }
+
     protected static function generatePublicId(): string
     {
         $charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
