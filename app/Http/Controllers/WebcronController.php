@@ -56,7 +56,10 @@ class WebcronController extends Controller
 
         try {
             $output->writeln('Worker:');
+            // queue:work runs in this request, so its limit must include existing request memory.
+            $workerMemoryLimit = (int) ceil(memory_get_usage(true) / 1024 / 1024) + 128;
             $workerExitCode = Artisan::call('queue:work', [
+                '--memory' => $workerMemoryLimit,
                 '--stop-when-empty' => true,
                 '--tries' => 3,
                 '--max-time' => $budget,

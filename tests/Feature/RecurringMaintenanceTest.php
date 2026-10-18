@@ -151,6 +151,18 @@ it('warms both variants and reuses their valid fingerprinted cache entries', fun
     }
 });
 
+it('drains queued work when current process memory exceeds the worker default', function (): void {
+    config(['queue.default' => 'database', 'queue.connections.database.queue' => 'default']);
+    $memoryPressure = str_repeat('x', 130 * 1024 * 1024);
+    expect(memory_get_usage(true))->toBeGreaterThan(128 * 1024 * 1024);
+    ExpireEventGroupMembershipRequests::dispatch();
+
+    assertMaintenanceWorkerWithMemoryDiagnostics();
+
+    expect(Queue::size('default'))->toBe(0);
+    unset($memoryPressure);
+});
+
 it('drains both queues with configured normal work ahead of maintenance', function (string $normalQueue): void {
     freezeTime();
     config(['queue.default' => 'database', 'queue.connections.database.queue' => $normalQueue]);
