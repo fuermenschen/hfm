@@ -14,6 +14,7 @@ use App\Notifications\ConfirmAthleteRegistration;
 use App\Notifications\ContinueAthleteRegistration;
 use App\Settings\EventSettings;
 use Carbon\CarbonInterval;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Sleep;
@@ -22,6 +23,7 @@ use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+use function Pest\Laravel\travelTo;
 
 it('keeps wizard hidden when athlete registration is closed', function (): void {
     createCurrentEventWithPartner();
@@ -57,6 +59,7 @@ it('hides wizard for logged in admins', function (): void {
 });
 
 it('creates external user registration and sends confirmation for new participants', function (): void {
+    travelTo(Date::parse('2026-10-18 12:00:00', 'Europe/Zurich'));
     Sleep::fake();
     Notification::fake();
 
@@ -124,15 +127,15 @@ it('creates external user registration and sends confirmation for new participan
     Notification::assertSentToTimes($externalUser, AthleteRegistrationReminder::class, 2);
 
     $reminderDelays = Notification::sent($externalUser, AthleteRegistrationReminder::class)
-        ->map(fn (AthleteRegistrationReminder $notification): int => $notification->delay->getTimestamp() - now()->getTimestamp())
+        ->map(fn (AthleteRegistrationReminder $notification): string => $notification->delay->format('Y-m-d H:i:s P'))
         ->sort()
         ->values()
         ->all();
 
-    expect($reminderDelays[0])->toBeGreaterThan(2 * 24 * 60 * 60 - 60)
-        ->and($reminderDelays[0])->toBeLessThan(2 * 24 * 60 * 60 + 60)
-        ->and($reminderDelays[1])->toBeGreaterThan(7 * 24 * 60 * 60 - 60)
-        ->and($reminderDelays[1])->toBeLessThan(7 * 24 * 60 * 60 + 60);
+    expect($reminderDelays)->toBe([
+        '2026-10-20 12:00:00 +02:00',
+        '2026-10-25 12:00:00 +01:00',
+    ]);
 });
 
 it('requires swiss residence and telephone format for new participants', function (): void {

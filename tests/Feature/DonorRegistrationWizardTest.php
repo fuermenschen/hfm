@@ -13,11 +13,13 @@ use App\Notifications\ConfirmDonorRegistration;
 use App\Notifications\ContinueDonorRegistration;
 use App\Notifications\DonorRegistrationReminder;
 use App\Settings\EventSettings;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+use function Pest\Laravel\travelTo;
 
 function createDonorTestEventWithAthlete(bool $donorRegistrationOpen = false): DonationEvent
 {
@@ -84,6 +86,7 @@ it('mounts with empty athlete list when no current event is configured', functio
 });
 
 it('creates external user and donation for new donors', function (): void {
+    travelTo(Date::parse('2026-10-18 12:00:00', 'Europe/Zurich'));
     Notification::fake();
 
     $event = createDonorTestEventWithAthlete(donorRegistrationOpen: true);
@@ -135,15 +138,15 @@ it('creates external user and donation for new donors', function (): void {
     Notification::assertSentToTimes($externalUser, DonorRegistrationReminder::class, 2);
 
     $reminderDelays = Notification::sent($externalUser, DonorRegistrationReminder::class)
-        ->map(fn (DonorRegistrationReminder $notification): int => $notification->delay->getTimestamp() - now()->getTimestamp())
+        ->map(fn (DonorRegistrationReminder $notification): string => $notification->delay->format('Y-m-d H:i:s P'))
         ->sort()
         ->values()
         ->all();
 
-    expect($reminderDelays[0])->toBeGreaterThan(2 * 24 * 60 * 60 - 60)
-        ->and($reminderDelays[0])->toBeLessThan(2 * 24 * 60 * 60 + 60)
-        ->and($reminderDelays[1])->toBeGreaterThan(7 * 24 * 60 * 60 - 60)
-        ->and($reminderDelays[1])->toBeLessThan(7 * 24 * 60 * 60 + 60);
+    expect($reminderDelays)->toBe([
+        '2026-10-20 12:00:00 +02:00',
+        '2026-10-25 12:00:00 +01:00',
+    ]);
 
     Notification::assertSentTo($athleteRegistration->externalUser, AthleteNewDonation::class);
 });
