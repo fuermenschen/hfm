@@ -1,12 +1,12 @@
 <?php
 
+use App\Models\DonationEvent;
+use App\Models\DonorEventInvoice;
 use App\Models\User;
-use Database\Seeders\DonorInvoiceDemoSeeder;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 
 use function Pest\Laravel\actingAs;
-use function Pest\Laravel\seed;
 
 it('opens card help without navigating and keeps the whole card linked', function (int $width): void {
     Route::get('/_test/stat-card', fn (): string => Blade::render(<<<'BLADE'
@@ -43,10 +43,11 @@ it('opens card help without navigating and keeps the whole card linked', functio
 })->with(['desktop' => 1280, 'mobile' => 390]);
 
 it('explains dashboard invoice counts without following the donor-table link', function (): void {
-    seed(DonorInvoiceDemoSeeder::class);
+    $event = DonationEvent::factory()->create();
+    DonorEventInvoice::factory()->forEvent($event)->verifiedPaid()->create();
     actingAs(User::factory()->create(), 'web');
 
-    visit('/admin?anlass=rechnungs-demo')
+    visit('/admin?anlass='.$event->slug)
         ->assertSee('Spenden (berechnet)')
         ->click('button[aria-label="Hinweis zu Zahlung verifiziert"]')
         ->assertSee('Mehrere Zahlungen für dieselbe Rechnung zählen einmal.')
