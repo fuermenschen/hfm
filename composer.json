@@ -74,8 +74,13 @@
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --discover --ansi",
-            "@php -r \"if (file_exists('AGENTS.md')) { is_dir('.github') || mkdir('.github', 0777, true); copy('AGENTS.md', '.github/copilot-instructions.md'); }\""
+            "@update-local-boost"
+        ],
+        "post-install-cmd": [
+            "@update-local-boost"
+        ],
+        "update-local-boost": [
+            "@php scripts/update-local-boost.php"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
