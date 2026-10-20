@@ -67,6 +67,7 @@ class RefreshDonorInvoiceStatusAction
                     return;
                 }
 
+                $originalTotalCents = $current->source_total_cents ?? $current->source_snapshot['total_cents'] ?? null;
                 $current->forceFill([
                     'webling_state' => $details['state'],
                     'webling_due_date' => $details['due_date'],
@@ -74,7 +75,8 @@ class RefreshDonorInvoiceStatusAction
                     'webling_total_cents' => $details['total_cents'],
                     'webling_remaining_cents' => $details['remaining_cents'],
                     'webling_received_cents' => $details['received_cents'],
-                    'webling_excess_cents' => $details['excess_cents'] ?? null,
+                    'webling_excess_cents' => $details['received_cents'] !== null && $originalTotalCents !== null
+                        ? max(0, $details['received_cents'] - $originalTotalCents) : null,
                     'webling_writeoff_cents' => $details['writeoff_cents'] ?? null,
                     'webling_payment_date' => $details['payment_date'],
                     'webling_payment_verification' => $details['payment_verification'],
