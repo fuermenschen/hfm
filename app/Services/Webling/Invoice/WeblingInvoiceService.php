@@ -241,8 +241,11 @@ class WeblingInvoiceService
     }
 
     /**
-     * Read one supported bank receipt, including explicitly allowed excess income.
+     * Read supported bank receipts, including explicitly allowed single-booking excess income.
      * Period and account IDs come from the invoice's frozen verification context.
+     * Multiple payments require distinct booking groups containing only their invoice receipt,
+     * matching debtor accounts, and an exact paid-amount sum. Mixed multi-payment bookings,
+     * refunds and reversals remain unclear. The latest booking date is the settlement date.
      *
      * @param  list<int>  $excessIncomeAccountIds
      * @return array{state:string,due_date:?string,invoice_number:?string,total_cents:int,remaining_cents:int,payment_verification:string,received_cents:?int,payment_date:?string,excess_cents:?int,writeoff_cents:?int}
@@ -272,24 +275,42 @@ class WeblingInvoiceService
 
         if ($details['remaining_cents'] !== 0 || $paidCents === null || $paidCents <= 0
             || $writeoffCents === null || $writeoffCents < 0 || $details['total_cents'] !== $paidCents + $writeoffCents
-            || ! is_array($payments) || ! array_is_list($payments) || count($payments) !== 1 || ! is_array($payments[0])) {
+            || ! is_array($payments) || ! array_is_list($payments) || $payments === []) {
             return $result;
         }
 
-        $payment = $payments[0];
-        $paymentId = $this->objectId($payment['id'] ?? null);
-        $parents = $this->objectIds($payment['parents'] ?? null);
-        $debitAccounts = $this->objectIds($payment['links']['debit'] ?? null);
-        $creditAccounts = $this->objectIds($payment['links']['credit'] ?? null);
-        if (($payment['type'] ?? null) !== 'entry'
-            || $paymentId === null || $parents === null || count($parents) !== 1 || $debitAccounts !== [$bankAccountId]
-            || $creditAccounts === null || count($creditAccounts) !== 1 || $creditAccounts[0] === $bankAccountId
-            || $this->objectIds($payment['links']['debitor'] ?? null) !== [$debitorId]
-            || $this->amountInCents($payment['properties']['amount'] ?? null) !== $paidCents) {
+        $paymentAmounts = [];
+        $paymentGroups = [];
+        $debitorAccountId = null;
+        foreach ($payments as $payment) {
+            if (! is_array($payment)) {
+                return $result;
+            }
+
+            $paymentId = $this->objectId($payment['id'] ?? null);
+            $parents = $this->objectIds($payment['parents'] ?? null);
+            $debitAccounts = $this->objectIds($payment['links']['debit'] ?? null);
+            $creditAccounts = $this->objectIds($payment['links']['credit'] ?? null);
+            $paymentAmount = $this->amountInCents($payment['properties']['amount'] ?? null);
+            if (($payment['type'] ?? null) !== 'entry'
+                || $paymentId === null || $parents === null || count($parents) !== 1 || $debitAccounts !== [$bankAccountId]
+                || $creditAccounts === null || count($creditAccounts) !== 1 || $creditAccounts[0] === $bankAccountId
+                || $this->objectIds($payment['links']['debitor'] ?? null) !== [$debitorId]
+                || $paymentAmount === null || $paymentAmount <= 0 || isset($paymentAmounts[$paymentId])
+                || in_array($parents[0], $paymentGroups, true)
+                || ($debitorAccountId !== null && $creditAccounts !== [$debitorAccountId])) {
+                return $result;
+            }
+
+            $debitorAccountId = $creditAccounts[0];
+            $paymentAmounts[$paymentId] = $paymentAmount;
+            $paymentGroups[$paymentId] = $parents[0];
+        }
+
+        if (array_sum($paymentAmounts) !== $paidCents) {
             return $result;
         }
 
-        $debitorAccountId = $creditAccounts[0];
         foreach (['revenue' => $details['total_cents'], 'writeoff' => $writeoffCents] as $category => $expectedCents) {
             $invoiceEntries = $payload['links'][$category] ?? [];
             if (! is_array($invoiceEntries) || ! array_is_list($invoiceEntries)) {
@@ -317,19 +338,32 @@ class WeblingInvoiceService
             }
         }
 
-        $groupId = $parents[0];
-        $group = $this->readEvidenceObjects('entrygroup', [$groupId])[$groupId];
-        $date = $this->accountingDate($group['properties']['date'] ?? null);
-        $entryIds = $this->objectIds($group['children']['entry'] ?? null);
-        if ($date === null || $entryIds === null || count($entryIds) < 1 || count($entryIds) > 2
-            || ! in_array($paymentId, $entryIds, true)
-            || $this->objectIds($group['parents'] ?? null) !== $invoiceParents) {
-            return $result;
+        $groups = $this->readEvidenceObjects('entrygroup', array_values($paymentGroups));
+        $allEntryIds = [];
+        $date = '';
+        foreach ($paymentGroups as $paymentId => $groupId) {
+            $group = $groups[$groupId];
+            $groupDate = $this->accountingDate($group['properties']['date'] ?? null);
+            $entryIds = $this->objectIds($group['children']['entry'] ?? null);
+            if ($groupDate === null || $entryIds === null || count($entryIds) < 1 || count($entryIds) > (count($payments) === 1 ? 2 : 1)
+                || ! in_array($paymentId, $entryIds, true)
+                || $this->objectIds($group['parents'] ?? null) !== $invoiceParents) {
+                return $result;
+            }
+
+            if (array_intersect($allEntryIds, $entryIds) !== []) {
+                return $result;
+            }
+
+            $allEntryIds = array_merge($allEntryIds, $entryIds);
+            $date = max($date, $groupDate);
         }
 
-        $entries = $this->readEvidenceObjects('entry', $entryIds);
+        $entries = $this->readEvidenceObjects('entry', $allEntryIds);
         $receivedCents = 0;
         foreach ($entries as $entryId => $entry) {
+            $paymentId = isset($paymentAmounts[$entryId]) ? $entryId : array_key_first($paymentAmounts);
+            $groupId = $paymentGroups[$paymentId];
             $amountCents = $this->amountInCents($entry['properties']['amount'] ?? null);
             $credits = $this->objectIds($entry['links']['credit'] ?? null);
             if ($amountCents === null || $amountCents <= 0 || $this->objectIds($entry['parents'] ?? null) !== [$groupId]
@@ -339,7 +373,7 @@ class WeblingInvoiceService
             }
 
             if ($entryId === $paymentId) {
-                if ($credits !== [$debitorAccountId] || $amountCents !== $paidCents
+                if ($credits !== [$debitorAccountId] || $amountCents !== $paymentAmounts[$paymentId]
                     || $this->objectIds($entry['links']['debitor'] ?? null) !== [$debitorId]) {
                     return $result;
                 }

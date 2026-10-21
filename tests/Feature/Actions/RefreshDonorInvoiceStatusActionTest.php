@@ -614,6 +614,43 @@ it('makes supported HTTP settlements receipt-eligible using persisted bank recei
     'adjusted total and excess in same bank booking' => [20.0, 20.0, 0.0, 1.10, 2000, 2110, 610],
 ]);
 
+it('persists verified installments and calculates their excess against the original invoice', function (): void {
+    $invoice = refreshInvoiceFixture(['source_total_cents' => 3200]);
+    $payloads = refreshEvidencePayloads($invoice);
+    $payloads['invoice']['properties']['totalamount'] = 90;
+    $payloads['invoice']['properties']['paidamount'] = 90;
+    $payloads['invoice']['links']['revenue'][0]['properties']['amount'] = 90;
+    $first = $payloads['entries'][0];
+    $first['properties']['amount'] = 40;
+    $second = $first;
+    $second['id'] = 21;
+    $second['parents'] = [31];
+    $second['properties']['amount'] = 50;
+    $payloads['invoice']['links']['payment'] = [$first, $second];
+    $firstGroup = $payloads['booking'] + ['id' => 30];
+    $secondGroup = $firstGroup;
+    $secondGroup['id'] = 31;
+    $secondGroup['properties']['date'] = '2026-10-08';
+    $secondGroup['children']['entry'] = [21];
+    Http::preventStrayRequests();
+    Http::fake([
+        'https://demo.webling.ch/api/1/debitor/4321' => Http::response($payloads['invoice']),
+        'https://demo.webling.ch/api/1/entrygroup/30,31' => Http::response([$secondGroup, $firstGroup]),
+        'https://demo.webling.ch/api/1/entry/20,21' => Http::response([$second, $first]),
+    ]);
+
+    app(RefreshDonorInvoiceStatusAction::class)($invoice);
+
+    expect($invoice->webling_received_cents)->toBe(9000)
+        ->and($invoice->webling_excess_cents)->toBe(5800)
+        ->and($invoice->webling_payment_date->toDateString())->toBe('2026-10-08')
+        ->and($invoice->webling_payment_verification)->toBe(DonorPaymentVerification::Verified);
+    expect(app(DonorInvoiceService::class)->isReceiptEligible($invoice))->toBeTrue();
+    $summary = app(InvoicePaymentSummaryService::class)->summarize($invoice->donationEvent, collect());
+    expect($summary)->toMatchArray(['received_cents' => 9000, 'excess_cents' => 5800, 'verified_receipts' => 1, 'unclear_payments' => 0]);
+    Http::assertSentCount(3);
+});
+
 it('calculates excess only when an original invoice amount is available', function (?int $sourceTotal, ?array $snapshot, ?int $expectedExcess): void {
     $invoice = refreshInvoiceFixture(['source_total_cents' => $sourceTotal, 'source_snapshot' => $snapshot]);
     fakeRefreshEvidence($invoice);

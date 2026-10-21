@@ -394,6 +394,53 @@ describe('bank settlement evidence', function (): void {
         ]);
     });
 
+    it('verifies ordinary installments and uses the latest booking date regardless of response order', function (array $changes, string $verification): void {
+        $fixture = weblingSettlementFixture();
+        $first = $fixture['invoice']['links']['payment'][0];
+        $first['properties']['amount'] = 40;
+        $second = $first;
+        $second['id'] = 21;
+        $second['parents'] = [31];
+        $second['properties']['amount'] = 60;
+        $fixture['invoice']['links']['payment'] = [$second, $first];
+        $later = $fixture['booking'] + ['id' => 30];
+        $earlier = $later;
+        $earlier['id'] = 31;
+        $earlier['properties']['date'] = '2026-10-01';
+        $earlier['children']['entry'] = [21];
+        $evidence = ['invoice' => $fixture['invoice'], 'groups' => [$earlier, $later], 'entries' => [$second, $first]];
+        foreach ($changes as $path => $value) {
+            Arr::set($evidence, $path, $value);
+        }
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://demo.webling.ch/api/1/debitor/42' => Http::response($evidence['invoice']),
+            'https://demo.webling.ch/api/1/entrygroup/31,30' => Http::response($evidence['groups']),
+            'https://demo.webling.ch/api/1/entry/21,20' => Http::response($evidence['entries']),
+        ]);
+
+        $details = app(WeblingInvoiceService::class)->settlementDetails(42, 3, [9], 10);
+
+        expect($details['payment_verification'])->toBe($verification)
+            ->and($details['received_cents'])->toBe($verification === 'verified' ? 10000 : null)
+            ->and($details['payment_date'])->toBe($verification === 'verified' ? '2026-10-05' : null);
+    })->with([
+        'ordinary installments' => [[], 'verified'],
+        'duplicate payment' => [['invoice.links.payment.1.id' => 21], 'unclear'],
+        'shared booking group' => [['invoice.links.payment.1.parents' => [31]], 'unclear'],
+        'sum mismatch' => [['invoice.links.payment.1.properties.amount' => 39], 'unclear'],
+        'different debtor account' => [['invoice.links.payment.1.links.credit' => [9]], 'unclear'],
+        'wrong bank' => [['invoice.links.payment.1.links.debit' => [4]], 'unclear'],
+        'another invoice' => [['invoice.links.payment.1.links.debitor' => [43]], 'unclear'],
+        'negative receipt' => [['invoice.links.payment.1.properties.amount' => -40], 'unclear'],
+        'mixed booking' => [['groups.0.children.entry' => [21, 22]], 'unclear'],
+        'wrong period' => [['groups.0.parents' => [99]], 'unclear'],
+        'missing date' => [['groups.0.properties.date' => null], 'unclear'],
+        'changed evidence amount' => [['entries.0.properties.amount' => 59], 'unclear'],
+        'changed evidence bank' => [['entries.0.links.debit' => [4]], 'unclear'],
+        'changed evidence invoice' => [['entries.0.links.debitor' => [43]], 'unclear'],
+    ]);
+
     it('normalizes a single bank receipt using its booking date rather than invoice dates', function (): void {
         fakeWeblingSettlement(weblingSettlementFixture());
 

@@ -17,6 +17,20 @@
     @endif
 @elseif ($columnKey === 'invoice_number')
     {{ $this->invoiceNumber($row) }}
+@elseif ($columnKey === 'invoice_verification')
+    @php($verification = $this->invoiceVerification($row))
+    @if ($verification === '—')
+        —
+    @else
+        <flux:badge
+            size="sm"
+            :color="match ($verification) { 'Verifiziert' => 'green', 'Unklar' => 'amber', default => 'zinc' }"
+        >{{ $verification }}</flux:badge>
+    @endif
+@elseif (in_array($columnKey, ['invoice_original', 'invoice_received', 'invoice_excess', 'invoice_writeoff'], true))
+    {{ $this->invoiceFinancialValue($row, $columnKey) }}
+@elseif ($columnKey === 'invoice_payment_date')
+    {{ $this->invoicePaymentDate($row) }}
 @elseif ($columnKey === 'invoice_total')
     {{ $this->invoiceTotal($row) }}
 @elseif ($columnKey === 'invoice_remaining')
