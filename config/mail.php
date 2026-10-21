@@ -95,7 +95,11 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'info@fuer-menschen.ch'),
+        'name' => env('MAIL_FROM_NAME', 'Höhenmeter für Menschen'),
+    ],
+
+    'return_path' => [
+        'address' => env('MAIL_RETURN_PATH', 'bounces@fuer-menschen.ch'),
     ],
 ];
