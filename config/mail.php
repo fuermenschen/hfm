@@ -99,7 +99,4 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Höhenmeter für Menschen'),
     ],
 
-    'return_path' => [
-        'address' => env('MAIL_RETURN_PATH', 'bounces@fuer-menschen.ch'),
-    ],
 ];
