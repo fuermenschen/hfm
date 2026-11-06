@@ -1,4 +1,6 @@
 <laravel-boost-guidelines>
+For security guidance or audits, first read `.ai/guidelines/security-audit.md` and follow its pre-audit freshness check.
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
