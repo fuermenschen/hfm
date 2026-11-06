@@ -142,7 +142,7 @@ class CreateDonationAction
             ->whereBelongsTo($donationEvent)
             ->whereKey($athleteRegistrationId)
             ->where('verified', true)
-            ->firstOr(fn () => throw ValidationException::withMessages([
+            ->firstOr(fn (): never => throw ValidationException::withMessages([
                 'athlete_registration_id' => 'Die gewählte Sportler:in ist für den aktuellen Anlass nicht verfügbar oder noch nicht bestätigt.',
             ]));
     }
