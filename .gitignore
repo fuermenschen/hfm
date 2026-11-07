@@ -33,7 +33,10 @@ env-production-secret.txt
 /boost.json
 /AGENTS.md
 /CLAUDE.md
-/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/security-audit/
 /.junie/
 /junie/
 /opencode.json

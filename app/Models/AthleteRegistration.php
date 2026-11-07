@@ -55,6 +55,7 @@ class AthleteRegistration extends Model
         return $this->belongsTo(DonationEvent::class);
     }
 
+    /** @return BelongsTo<ExternalUser, $this> */
     public function externalUser(): BelongsTo
     {
         return $this->belongsTo(ExternalUser::class);
@@ -75,6 +76,7 @@ class AthleteRegistration extends Model
         return $this->belongsTo(Partner::class);
     }
 
+    /** @return HasMany<Donation, $this> */
     public function donations(): HasMany
     {
         return $this->hasMany(Donation::class);

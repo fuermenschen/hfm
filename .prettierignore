@@ -11,3 +11,4 @@ vendor
 *.php
 package-lock.json
 composer.lock
+**/skills/security-audit/**
