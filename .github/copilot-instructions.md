@@ -1,5 +1,5 @@
 <laravel-boost-guidelines>
-For security guidance or audits, first read `.ai/guidelines/security-audit.md` and follow its pre-audit freshness check.
+For security guidance or audits, use `.agents/skills/security-audit/SKILL.md`.
 
 === foundation rules ===
 

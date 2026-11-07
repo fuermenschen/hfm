@@ -41,10 +41,10 @@ class PortalParticipationsController extends Controller
                     ]),
                 'donations' => fn ($query) => $query
                     ->select(['id', 'athlete_registration_id', 'donor_external_user_id', 'amount_per_round', 'amount_min', 'amount_max', 'comment', 'verified'])
-                    ->oldest(),
+                    ->oldest()
+                    ->with('donorExternalUser', fn ($query) => $query->withTrashed()->select(['id', 'first_name', 'last_name', 'public_id'])),
                 'donations.athleteRegistration:id,rounds_estimated,rounds_done',
             ])
-            ->with('donations.donorExternalUser', fn ($query) => $query->withTrashed()->select(['id', 'first_name', 'last_name', 'public_id']))
             ->get(['id', 'donation_event_id', 'external_user_id', 'sport_type_id', 'partner_id', 'event_group_id', 'group_membership_status', 'group_membership_role', 'rounds_estimated', 'rounds_done', 'comment', 'verified'])
             ->sortByDesc('donationEvent.starts_at')
             ->values()
