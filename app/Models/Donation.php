@@ -28,11 +28,13 @@ class Donation extends Model
 
     // TODO(refactor-external-user): Dispatch donation-created domain event + notifications from external-user graph.
 
+    /** @return BelongsTo<ExternalUser, $this> */
     public function donorExternalUser(): BelongsTo
     {
         return $this->belongsTo(ExternalUser::class, 'donor_external_user_id');
     }
 
+    /** @return BelongsTo<AthleteRegistration, $this> */
     public function athleteRegistration(): BelongsTo
     {
         return $this->belongsTo(AthleteRegistration::class);

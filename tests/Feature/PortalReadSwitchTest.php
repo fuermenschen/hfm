@@ -173,6 +173,26 @@ it('shows only confirmed pledges in participation amount summary', function (): 
         ->assertDontSeeText('Participation Event · '.$event->starts_at->format('d.m.Y'));
 });
 
+it('keeps participation donations chronological while including deleted donors', function (): void {
+    $event = DonationEvent::factory()->year(2036)->create();
+    setPortalCurrentEvent($event);
+    $athlete = ExternalUser::factory()->create();
+    $registration = AthleteRegistration::factory()->forVerifiedEventUser($event, $athlete)->create();
+    $laterDonor = ExternalUser::factory()->create(['first_name' => 'Later', 'last_name' => 'Donor', 'public_id' => 'XYZ789']);
+    $earlierDonor = ExternalUser::factory()->create(['first_name' => 'Earlier', 'last_name' => 'Donor', 'public_id' => 'ABC123']);
+    Donation::factory()->forPair($laterDonor, $registration)->create(['created_at' => '2035-01-02 12:00:00']);
+    Donation::factory()->forPair($earlierDonor, $registration)->create(['created_at' => '2035-01-01 12:00:00']);
+    $earlierDonor->delete();
+    actingAs($athlete, 'external');
+
+    $response = get(route('portal.participations'));
+
+    $response->assertViewHas('registrations', fn ($registrations): bool => array_column($registrations->sole()['donations'], 'donor') === [
+        'Earlier D. (ABC-123)',
+        'Later D. (XYZ-789)',
+    ]);
+});
+
 it('shows actual donation amount when selected event starts', function (): void {
     Carbon::setTestNow('2036-09-12 11:00:00 Europe/Zurich');
     $event = DonationEvent::factory()->year(2036)->create();
