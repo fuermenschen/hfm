@@ -42,7 +42,7 @@ inputs:
   node-install-command:
     description: Node install command
     required: false
-    default: npm install
+    default: npm ci
   bootstrap-laravel:
     description: Copy the environment file and generate an application key
     required: false
